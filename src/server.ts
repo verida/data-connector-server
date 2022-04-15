@@ -1,7 +1,8 @@
+import EchoModule from './modules/echo'
+
 import express from 'express'
 const cors = require('cors')
 import bodyParser from 'body-parser'
-import router from './routes'
 const basicAuth = require('express-basic-auth')
 import RequestValidator from './request-validator'
 
@@ -26,6 +27,11 @@ app.use(bodyParser.urlencoded({ extended: false }))
   authorizeAsync: true,
   unauthorizedResponse: validator.getUnauthorizedResponse
 }))*/
+
+import ModuleManager from './module-manager'
+
+const moduleManager = new ModuleManager(express.Router())
+const router = moduleManager.initialize()
 app.use(router)
 
 //DbManager.ensureDb(process.env.DB_DOC_NAME)

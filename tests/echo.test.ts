@@ -82,10 +82,10 @@ describe("Generic Server Tests", function() {
                 message: 'world'
             })
 
-            console.log('echo response', response.data.data)
             assert.ok(response && response.data, 'Have a response')
             assert.equal(response.data.status, 'success', 'Have a success response')
             assert.equal(response.data.data.message, `hello world`, 'success', 'Have the expected messge')
+            assert.deepEqual(response.data.data.config, {exampleConfig: 'example config variable'}, 'Have the expected config')
         })
 
         it("Can error", async () => {

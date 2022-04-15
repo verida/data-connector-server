@@ -5,6 +5,12 @@ logger.level = "debug";
 
 export default class DemoController {
 
+    public static config: object
+
+    public static setConfig(config: object): void {
+        DemoController.config = config
+    }
+
     /**
      * 
      * @param {*} req 
@@ -17,7 +23,8 @@ export default class DemoController {
         return res.status(200).send({
             status: "success",
             data: {
-                message: `hello ${message}`
+                message: `hello ${message}`,
+                config: DemoController.config
             }
         })
     }

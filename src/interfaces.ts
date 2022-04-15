@@ -1,1 +1,0 @@
-import Nano from 'nano'
