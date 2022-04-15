@@ -5,8 +5,6 @@ import router from './routes'
 const basicAuth = require('express-basic-auth')
 import RequestValidator from './request-validator'
 
-//import DbManager from './dbManager'
-
 import dotenv from 'dotenv'
 dotenv.config();
 
@@ -28,9 +26,27 @@ app.use(bodyParser.urlencoded({ extended: false }))
 }))*/
 app.use(router)
 
-//DbManager.ensureDb(process.env.DB_DOC_NAME)
-
 const PORT = process.env.SERVER_PORT ? process.env.SERVER_PORT : 5021;
+
 app.listen(PORT, () => {
+  console.log(`server running on port ${PORT}`)
+});
+
+/*
+//Example code to create HTTPS server
+
+const https = require("https")
+const fs = require("fs")
+
+const key = fs.readFileSync("./keys/server.key")
+const cert = fs.readFileSync("./keys/server.cert")
+
+https.createServer(
+    {
+      key,
+      cert
+    },
+    app
+  ).listen(PORT, () => {
   console.log(`server running on port ${PORT}`)
 });
