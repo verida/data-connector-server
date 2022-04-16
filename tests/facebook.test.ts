@@ -82,7 +82,7 @@ describe("Facebook Tests", function() {
             const results = await externalDatastore.getMany()
             assert.equal(results.length >= 5, true, 'Have expected number of results')
             const db = await externalDatastore.getDb()
-            await db._localDb.
+            await db._localDb.destroy()
         })
     })
 })
