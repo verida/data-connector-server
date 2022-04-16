@@ -5,5 +5,6 @@ export default interface ConnectorInterface {
     connect(req: Request, res: Response, next: any): any
     callback(req: Request, res: Response, next: any): any
     sync(req: Request, res: Response, next: any): any
+    schemaUris(): string[]
 
 }

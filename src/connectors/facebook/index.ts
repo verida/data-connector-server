@@ -22,6 +22,7 @@ export default class FacebookConnector implements ConnectorInterface {
         const auth = await passport.authenticate('facebook', {
             scope: ['email', 'user_likes', 'user_age_range', 'user_birthday', 'user_friends', 'user_gender', 'user_hometown', 'user_link', 'user_location', 'user_photos', 'user_posts', 'user_videos']
         })
+
         return auth(req, res, next)
     }
 
@@ -79,19 +80,33 @@ export default class FacebookConnector implements ConnectorInterface {
         Fb.setAccessToken(query.accessToken)
         
         const likes = await FacebookConnector.getAllPages(Fb, '/me/likes')
-        
-        // @todo: handle long running process
-        // @todo: convert data into the correct schema
-        // @todo: save data into database for this user
-        // @todo: snsended inbox message to the user of type (sync complete)
-        
-        console.log(likes, ' likes')
-        /*const posts = await FacebookConnector.getAllPages(Fb, '/me/posts')
-        console.log(posts.length, ' posts')*/
+        /*const posts = await FacebookConnector.getAllPages(Fb, '/me/posts')*/
+
+        const likesProcessed = []
+        for (var l in likes) {
+            const like: any = likes[l]
+            const uriName = like.name.replace(/ /g, '-')
+            const followedTimestamp = like.created_time
+
+            likesProcessed.push({
+                _id: `facebook-${like.id}`,
+                name: like.name,
+                uri: `https://facebook.com/${uriName}-${like.id}`,
+                sourceApplication: 'https://facebook.com/',
+                sourceId: like.id,
+                followedTimestamp
+            })
+        }
 
         return {
-            likes
+            'https://common.schemas.verida.io/social/following/v0.1.0/schema.json': likesProcessed
         }
+    }
+
+    public schemaUris(): string[] {
+        return [
+            'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
+        ]
     }
 
     /**
@@ -99,7 +114,7 @@ export default class FacebookConnector implements ConnectorInterface {
      */
     static async getAllPages(Fb: any, apiEndpoint: string, nextUrl: string = null, results: object[] = []): Promise<object[]> {
         if (!nextUrl) {
-            nextUrl = `${apiEndpoint}?limit=1`
+            nextUrl = `${apiEndpoint}?limit=5`
         }
 
         const pageResults = await Fb.api(nextUrl)
@@ -113,10 +128,6 @@ export default class FacebookConnector implements ConnectorInterface {
 
         return results
     }
-
-    /*static buildNextPageUrl(apiEndpoint: string, url) {
-        
-    }*/
 
     static init() {
         passport.use(new FacebookStrategy({
