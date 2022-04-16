@@ -6,7 +6,6 @@ const FacebookStrategy = require("passport-facebook")
 const {Facebook, FacebookApiException} = require('fb')
 const _ = require('lodash')
 import url from 'url'
-import { connect } from 'http2'
 
 export interface ConfigInterface {
     appId: string
