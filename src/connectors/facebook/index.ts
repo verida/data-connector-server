@@ -6,6 +6,7 @@ const FacebookStrategy = require("passport-facebook")
 const {Facebook, FacebookApiException} = require('fb')
 const _ = require('lodash')
 import url from 'url'
+import { connect } from 'http2'
 
 export interface ConfigInterface {
     appId: string
@@ -31,37 +32,31 @@ export default class FacebookConnector extends BaseConnector {
     public async callback(req: Request, res: Response, next: any): Promise<any> {
         this.init()
 
-        const auth = await passport.authenticate('facebook', {
-            failureRedirect: '/failure/facebook',
-            failureMessage: true
-        }, function(err: any, data: any) {
-            if (err) {
-                // @todo: make pretty error
-                return res.send(`Error! ${err.name}`)
-            } else {
-                const connectionToken = {
-                    id: data.profile.id,
-                    provider: data.profile.provider,
-                    accessToken: data.accessToken,
-                    refreshToken: data.refreshToken,
-                    profile: data.profile
+        const promise = new Promise((resolve, rejects) => {
+            const auth = passport.authenticate('facebook', {
+                failureRedirect: '/failure/facebook',
+                failureMessage: true
+            }, function(err: any, data: any) {
+                if (err) {
+                    rejects(err)
+                } else {
+                    const connectionToken = {
+                        id: data.profile.id,
+                        provider: data.profile.provider,
+                        accessToken: data.accessToken,
+                        refreshToken: data.refreshToken,
+                        profile: data.profile
+                    }
+    
+                    resolve(connectionToken)
                 }
+            })
 
-                // @todo: Generate nice looking thank you page
-                const redirectUrl = `https://vault.verida.io/inbox?page=connector-auth-complete&connector=facebook&accessToken=${connectionToken.accessToken}`
-                const output = `<html>
-                <head></head>
-                <body>
-                <a href="${redirectUrl}">Click me</a> (doesn't work as deep linking needs to be fixed)
-                Access token: ${connectionToken.accessToken}
-                </body>
-                </html>`
-                
-                res.send(output)
-            }
+            auth(req, res, next)
         })
 
-        auth(req, res, next)
+        const result = await promise
+        return result
     }
 
     public async sync(req: Request, res: Response, next: any): Promise<any> {

@@ -46,7 +46,22 @@ export default class ConnectorsController {
         const connectorName = req.params.connector
         // @ts-ignore
         const connector = Connectors(connectorName, CONFIG.connectors[connectorName])
-        return connector.callback(req, res, next)
+
+        // @todo: handle error and show error message
+        const connectionToken = await connector.callback(req, res, next)
+        //console.log(connectionToken)
+
+        // @todo: Generate nice looking thank you page
+        const redirectUrl = `https://vault.verida.io/inbox?page=connector-auth-complete&connector=${connectorName}&accessToken=${connectionToken.accessToken}`
+        const output = `<html>
+        <head></head>
+        <body>
+        <a href="${redirectUrl}">Click me</a> (doesn't work as deep linking needs to be fixed)
+        Access token: ${connectionToken.accessToken}
+        </body>
+        </html>`
+        
+        res.send(output)
     }
 
     /**
