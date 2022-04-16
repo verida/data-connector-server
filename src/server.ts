@@ -2,15 +2,15 @@ import express from 'express'
 const cors = require('cors')
 import bodyParser from 'body-parser'
 import router from './routes'
-const basicAuth = require('express-basic-auth')
-import RequestValidator from './request-validator'
+//const basicAuth = require('express-basic-auth')
+//import RequestValidator from './request-validator'
 
 import dotenv from 'dotenv'
 dotenv.config();
 
 // Set up the express app
 const app = express();
-const validator = new RequestValidator()
+//const validator = new RequestValidator()
 
 const corsConfig = {}
 

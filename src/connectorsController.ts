@@ -4,7 +4,7 @@ import { Client, EnvironmentType, ContextInterfaces } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 import EncryptionUtils from '@verida/encryption-utils'
 
-import CONFIG from "../config"
+import CONFIG from "./config"
 
 const VERIDA_ENVIRONMENT = CONFIG.verida.environment
 const CONTEXT_NAME = CONFIG.verida.contextName
@@ -100,7 +100,6 @@ export default class ConnectorsController {
             try {
                 for (var i in data[schemaUri]) {
                     const record = data[schemaUri][i]
-                    console.log(record)
                     try {
                         if (record._id) {
                             // Since we manually set the `_id`, we need to manually set `insertedAt` because
@@ -133,6 +132,9 @@ export default class ConnectorsController {
                 console.log(err.status, err.name)
                 console.log(err)
             }
+
+            // destroy the local database so we don't use up all the disk space
+            await db._localDb.destroy()
         }
 
         // Return the signerDid and contextName so the Vault can locate the correct
@@ -188,7 +190,7 @@ export default class ConnectorsController {
 
             try {
                 // @todo: use `db.destroy()` once its released
-                const d1 = await db._localDb.destroy()
+                await db._localDb.destroy()
                 clearedDatabases.push(schemaUri)
             } catch (err) {
                 console.log('error!')

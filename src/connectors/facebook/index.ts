@@ -19,7 +19,6 @@ export default class FacebookConnector extends BaseConnector {
     protected config: ConfigInterface
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
-        console.log('Facebook connect()')
         this.init()
 
         const auth = await passport.authenticate('facebook', {
@@ -30,7 +29,6 @@ export default class FacebookConnector extends BaseConnector {
     }
 
     public async callback(req: Request, res: Response, next: any): Promise<any> {
-        console.log('Facebook callback()')
         this.init()
 
         const auth = await passport.authenticate('facebook', {
@@ -49,14 +47,7 @@ export default class FacebookConnector extends BaseConnector {
                     profile: data.profile
                 }
 
-                //console.log('sending data', data)
-                //return res.send(connectionToken)
-                //const redirectUrl = `veridavault://connector-auth-complete?connector=facebook&accessToken=${connectionToken.accessToken}`
-                //const redirectUrl = `/sync/facebook?accessToken=${connectionToken.accessToken}`
-                //console.log(`redirecting to ${redirectUrl}`)
-                //return res.redirect(redirectUrl)
-
-                //const redirectUrl = `veridavault://connector-auth-complete?connector=facebook&accessToken=${connectionToken.accessToken}`
+                // @todo: Generate nice looking thank you page
                 const redirectUrl = `https://vault.verida.io/inbox?page=connector-auth-complete&connector=facebook&accessToken=${connectionToken.accessToken}`
                 const output = `<html>
                 <head></head>
@@ -123,7 +114,7 @@ export default class FacebookConnector extends BaseConnector {
         const pageResults = await Fb.api(nextUrl)
         results = results.concat(pageResults.data)
 
-        if (_.has(pageResults, 'paging.next') && this.config.limitResults) {
+        if (_.has(pageResults, 'paging.next') && !this.config.limitResults) {
             const next = pageResults.paging.next
             const urlParts = url.parse(next, true)
             return await this.getAllPages(Fb, apiEndpoint, `${apiEndpoint}${urlParts.search}`, results)
@@ -145,9 +136,6 @@ export default class FacebookConnector extends BaseConnector {
                 refreshToken,
                 profile
             })
-            /*User.findOrCreate({ facebookId: profile.id }, function (err, user) {
-              return cb(err, user);
-            });*/
           }
         ));
     }
