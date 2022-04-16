@@ -29,8 +29,7 @@ export default class ConnectorsController {
      */
     public static async connect(req: Request, res: Response, next: any) {
         const connectorName = req.params.connector
-        // @ts-ignore
-        const connector = Connectors(connectorName, CONFIG.connectors[connectorName])
+        const connector = Connectors(connectorName)
         return connector.connect(req, res, next)
     }
 
@@ -44,8 +43,7 @@ export default class ConnectorsController {
      */
     public static async callback(req: Request, res: Response, next: any) {
         const connectorName = req.params.connector
-        // @ts-ignore
-        const connector = Connectors(connectorName, CONFIG.connectors[connectorName])
+        const connector = Connectors(connectorName)
 
         // @todo: handle error and show error message
         const connectionToken = await connector.callback(req, res, next)
@@ -79,8 +77,7 @@ export default class ConnectorsController {
      */
     public static async sync(req: Request, res: Response, next: any) {
         const connectorName = req.params.connector
-        // @ts-ignore
-        const connector = Connectors(connectorName, CONFIG.connectors[connectorName])
+        const connector = Connectors(connectorName)
 
 
         const data = await connector.sync(req, res, next)
@@ -177,8 +174,7 @@ export default class ConnectorsController {
      */
     public static async syncDone(req: Request, res: Response, next: any) {
         const connectorName = req.params.connector
-        // @ts-ignore
-        const connector = Connectors(connectorName, CONFIG.connectors[connectorName])
+        const connector = Connectors(connectorName)
         const schemaUris = connector.schemaUris()
 
         const query = req.query
