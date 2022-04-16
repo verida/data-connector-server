@@ -1,5 +1,5 @@
 
-export default function (connectorName: string): any {
+export default function (connectorName: string, connectorConfig: object = {}): any {
     const connector = require(`./${connectorName}`)
-    return new connector.default()
+    return new connector.default(connectorConfig)
 }

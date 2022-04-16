@@ -1,6 +1,5 @@
-import { profile } from 'console'
 import { Request, Response } from 'express'
-import ConnectorInterface from "../connectorInterface"
+import BaseConnector from "../baseConnector"
 const passport = require("passport")
 const FacebookStrategy = require("passport-facebook")
 
@@ -8,27 +7,31 @@ const {Facebook, FacebookApiException} = require('fb')
 const _ = require('lodash')
 import url from 'url'
 
-const FACEBOOK_APP_ID = ''
-const FACEBOOK_APP_SECRET = ''
-const CALLBACK_URL = 'http://localhost:5021/callback/facebook'
+export interface ConfigInterface {
+    appId: string
+    appSecret: string
+    callbackUrl: string
+    limitResults: boolean
+}
 
+export default class FacebookConnector extends BaseConnector {
 
-export default class FacebookConnector implements ConnectorInterface {
+    protected config: ConfigInterface
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
         console.log('Facebook connect()')
-        FacebookConnector.init()
+        this.init()
 
         const auth = await passport.authenticate('facebook', {
             scope: ['email', 'user_likes', 'user_age_range', 'user_birthday', 'user_friends', 'user_gender', 'user_hometown', 'user_link', 'user_location', 'user_photos', 'user_posts', 'user_videos']
         })
-
+        
         return auth(req, res, next)
     }
 
     public async callback(req: Request, res: Response, next: any): Promise<any> {
         console.log('Facebook callback()')
-        FacebookConnector.init()
+        this.init()
 
         const auth = await passport.authenticate('facebook', {
             failureRedirect: '/failure/facebook',
@@ -73,13 +76,13 @@ export default class FacebookConnector implements ConnectorInterface {
     public async sync(req: Request, res: Response, next: any): Promise<any> {
         const query = req.query
         const Fb = new Facebook({
-            appId: FACEBOOK_APP_ID,
-            appSecret: FACEBOOK_APP_SECRET
+            appId: this.config.appId,
+            appSecret: this.config.appSecret
         })
 
         Fb.setAccessToken(query.accessToken)
         
-        const likes = await FacebookConnector.getAllPages(Fb, '/me/likes')
+        const likes = await this.getAllPages(Fb, '/me/likes')
         /*const posts = await FacebookConnector.getAllPages(Fb, '/me/posts')*/
 
         const likesProcessed = []
@@ -112,7 +115,7 @@ export default class FacebookConnector implements ConnectorInterface {
     /**
      * Helper method to fetch all the pages of data for any Facebook API endpoint
      */
-    static async getAllPages(Fb: any, apiEndpoint: string, nextUrl: string = null, results: object[] = []): Promise<object[]> {
+    public async getAllPages(Fb: any, apiEndpoint: string, nextUrl: string = null, results: object[] = []): Promise<object[]> {
         if (!nextUrl) {
             nextUrl = `${apiEndpoint}?limit=5`
         }
@@ -120,20 +123,20 @@ export default class FacebookConnector implements ConnectorInterface {
         const pageResults = await Fb.api(nextUrl)
         results = results.concat(pageResults.data)
 
-        if (_.has(pageResults, 'paging.next') && false) {
+        if (_.has(pageResults, 'paging.next') && this.config.limitResults) {
             const next = pageResults.paging.next
             const urlParts = url.parse(next, true)
-            return await FacebookConnector.getAllPages(Fb, apiEndpoint, `${apiEndpoint}${urlParts.search}`, results)
+            return await this.getAllPages(Fb, apiEndpoint, `${apiEndpoint}${urlParts.search}`, results)
         }
 
         return results
     }
 
-    static init() {
+    public init() {
         passport.use(new FacebookStrategy({
-            clientID: FACEBOOK_APP_ID,
-            clientSecret: FACEBOOK_APP_SECRET,
-            callbackURL: CALLBACK_URL
+            clientID: this.config.appId,
+            clientSecret: this.config.appSecret,
+            callbackURL: this.config.callbackUrl
           },
           function(accessToken: string, refreshToken: string, profile: any, cb: any) {
             // Simply return the raw data

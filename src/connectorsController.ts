@@ -4,21 +4,12 @@ import { Client, EnvironmentType, ContextInterfaces } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 import EncryptionUtils from '@verida/encryption-utils'
 
-const VERIDA_ENVIRONMENT = EnvironmentType.TESTNET
-const CONTEXT_NAME = 'Verida: Data Connector'
-const PRIVATE_KEY = ''
-const DATABASE_SERVER = 'https://db.testnet.verida.io:5002/'
-const MESSAGE_SERVER = 'https://db.testnet.verida.io:5002/'
-const DEFAULT_ENDPOINTS = {
-    defaultDatabaseServer: {
-        type: 'VeridaDatabase',
-        endpointUri: 'https://db.testnet.verida.io:5002/'
-    },
-    defaultMessageServer: {
-        type: 'VeridaMessage',
-        endpointUri: 'https://db.testnet.verida.io:5002/'
-    },
-}
+import CONFIG from "../config"
+
+const VERIDA_ENVIRONMENT = CONFIG.verida.environment
+const CONTEXT_NAME = CONFIG.verida.contextName
+const PRIVATE_KEY = CONFIG.verida.privateKey
+const DEFAULT_ENDPOINTS = CONFIG.verida.defaultEndpoints
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -27,7 +18,6 @@ logger.level = "debug"
 import Connectors from "./connectors"
 
 export default class ConnectorsController {
-
 
     /**
      * Initiate an auth connection for a given connector.
@@ -38,7 +28,9 @@ export default class ConnectorsController {
      * @returns 
      */
     public static async connect(req: Request, res: Response, next: any) {
-        const connector = Connectors(req.params.connector)
+        const connectorName = req.params.connector
+        // @ts-ignore
+        const connector = Connectors(connectorName, CONFIG.connectors[connectorName])
         return connector.connect(req, res, next)
     }
 
@@ -51,7 +43,9 @@ export default class ConnectorsController {
      * @returns 
      */
     public static async callback(req: Request, res: Response, next: any) {
-        const connector = Connectors(req.params.connector)
+        const connectorName = req.params.connector
+        // @ts-ignore
+        const connector = Connectors(connectorName, CONFIG.connectors[connectorName])
         return connector.callback(req, res, next)
     }
 
@@ -69,7 +63,11 @@ export default class ConnectorsController {
      * @returns 
      */
     public static async sync(req: Request, res: Response, next: any) {
-        const connector = Connectors(req.params.connector)
+        const connectorName = req.params.connector
+        // @ts-ignore
+        const connector = Connectors(connectorName, CONFIG.connectors[connectorName])
+
+
         const data = await connector.sync(req, res, next)
 
         const { account, context } = await ConnectorsController.getNetwork()
@@ -161,7 +159,9 @@ export default class ConnectorsController {
      * @returns 
      */
     public static async syncDone(req: Request, res: Response, next: any) {
-        const connector = Connectors(req.params.connector)
+        const connectorName = req.params.connector
+        // @ts-ignore
+        const connector = Connectors(connectorName, CONFIG.connectors[connectorName])
         const schemaUris = connector.schemaUris()
 
         const query = req.query
