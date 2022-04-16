@@ -30,7 +30,7 @@ const SCHEMA_LIKES = 'https://common.schemas.verida.io/social/following/v0.1.0/s
 // token must be manually fetched for now
 // the account linked to this token must have
 //  - At least 5 page likes
-const accessToken = 'EAAP5ZANvAUzMBAPYqkvmGZCSk9WZBL2kMO34sTG2m0XXlLOEg83GZAvBvjDEZAKPOqYuMaE1OPXUTyDXHuBQ4zN01Vtdpp1jKA9z98JbZALSBMQKvssCL580n9QyWqOV8CTTOZCVqNVSr8wrZAr97mvfZAZAtGrL0W6vuiCi8coeN4rRIuTO33pJqK8Deo2rOpj1PgV5XXpjQU3aQJhabb5qw7pEeXjFlaHTJqreFa4K5eECIutyi3OLF8'
+const accessToken = ''
 const axios = Axios.create()
 
 describe("Facebook Tests", function() {
@@ -82,7 +82,7 @@ describe("Facebook Tests", function() {
             const results = await externalDatastore.getMany()
             assert.equal(results.length >= 5, true, 'Have expected number of results')
             const db = await externalDatastore.getDb()
-            await db._localDb.destroy()
+            await db._localDb.
         })
     })
 })
