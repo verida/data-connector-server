@@ -90,7 +90,6 @@ export default class ConnectorsController {
         const did = query.did.toString()
 
         const response: any = {}
-        const databases = []
 
         for (var schemaUri in data) {
             const databaseName = EncryptionUtils.hash(`${did}-${schemaUri}-${nonce}`)
@@ -108,6 +107,7 @@ export default class ConnectorsController {
             // Get database info so we can retreive the encryption key used
             const db = await datastore.getDb()
             let info = await db.info()
+            console.log(info)
 
             try {
                 for (var i in data[schemaUri]) {
@@ -119,7 +119,12 @@ export default class ConnectorsController {
                             record.insertedAt = new Date().toISOString()
                         }
 
-                        await datastore.save(record)
+                        const result = await datastore.save(record)
+                        if (!result) {
+                            // Validation errors, how to log? Should only happen in dev
+                            console.log(datastore.errors)
+                            console.log(record)
+                        }
                     } catch (err) {
                         // ignore conflict errors (ie; document already existed)
                         if (err.status == 409) {
@@ -146,7 +151,9 @@ export default class ConnectorsController {
             }
 
             // destroy the local database so we don't use up all the disk space
-            await db._localDb.destroy()
+            // @todo: can't destroy here. too early and data not synced to couch server
+            // Can we monitor when sync has completed, then destroy local?
+            //await db._localDb.destroy()
         }
 
         // Return the signerDid and contextName so the Vault can locate the correct

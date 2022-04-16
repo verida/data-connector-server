@@ -2,9 +2,10 @@ import { Request, Response } from 'express'
 import BaseConnector from "../baseConnector"
 const passport = require("passport")
 const TwitterStrategy = require("passport-twitter")
+import { TwitterClient } from 'twitter-api-client'
 
 const _ = require('lodash')
-import url from 'url'
+import dayjs from 'dayjs'
 
 export interface ConfigInterface {
     apiKey: string
@@ -57,38 +58,51 @@ export default class TwitterConnector extends BaseConnector {
         return result
     }
 
-    /*public async sync(req: Request, res: Response, next: any): Promise<any> {
+    public async sync(req: Request, res: Response, next: any): Promise<any> {
         const query = req.query
-        const Fb = new Facebook({
-            appId: this.config.appId,
-            appSecret: this.config.appSecret
+        const client = new TwitterClient({
+            apiKey: this.config.apiKey,
+            apiSecret: this.config.apiSecret,
+            accessToken: query.accessToken.toString(),
+            accessTokenSecret: query.refreshToken.toString()
+        })
+        
+        // note this can return 5000 ids at a time
+        const data = await client.accountsAndUsers.friendsIds()
+
+        // for now, just fetch 5
+        const ids = data.ids.slice(0, 10)
+        console.log(ids)
+        console.log(ids.join(','))
+
+        // note: this method only supports 100 at a time
+        const users = await client.accountsAndUsers.usersLookup({
+            user_id: ids.join(',')
         })
 
-        Fb.setAccessToken(query.accessToken)
-        
-        const likes = await this.getAllPages(Fb, '/me/likes')
-        /*const posts = await FacebookConnector.getAllPages(Fb, '/me/posts')*
+        console.log(users.length)
+        const finalUsers = []
+        for (let u in users) {
+            const user: any = users[u]
+            const createdAt = dayjs(user.created_at).toISOString()
 
-        const likesProcessed = []
-        for (var l in likes) {
-            const like: any = likes[l]
-            const uriName = like.name.replace(/ /g, '-')
-            const followedTimestamp = like.created_time
-
-            likesProcessed.push({
-                _id: `facebook-${like.id}`,
-                name: like.name,
-                uri: `https://facebook.com/${uriName}-${like.id}`,
-                sourceApplication: 'https://facebook.com/',
-                sourceId: like.id,
-                followedTimestamp,
-                insertedAt: followedTimestamp
+            finalUsers.push({
+                _id: `twitter-${user.id_str}`,
+                name: user.name,
+                icon: user.profile_image_url_https,
+                summary: user.description.substring(0,100),
+                uri: `https://twitter.com/${user.screen_name}`,
+                sourceApplication: 'https://twitter.com/',
+                sourceId: user.id_str,
+                followedTimestamp: createdAt,
+                insertedAt: createdAt
             })
         }
 
         return {
-            'https://common.schemas.verida.io/social/following/v0.1.0/schema.json': likesProcessed
+            'https://common.schemas.verida.io/social/following/v0.1.0/schema.json': finalUsers
         }
+
     }
 
     public schemaUris(): string[] {
