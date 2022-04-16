@@ -2,6 +2,9 @@ import express from 'express'
 const cors = require('cors')
 import bodyParser from 'body-parser'
 import router from './routes'
+
+// @todo: See not in express-session about not using memory session
+const session = require('express-session')
 //const basicAuth = require('express-basic-auth')
 //import RequestValidator from './request-validator'
 
@@ -12,9 +15,16 @@ dotenv.config();
 const app = express();
 //const validator = new RequestValidator()
 
-const corsConfig = {}
+app.use(session({
+  secret: 'c20n498n720489t729amx9 8es',
+  resave: false,
+  saveUninitialized: true,
+  // Enable this if HTTPS is enabled (ie: production)
+  // cookie: { secure: true }
+}))
 
 // Parse incoming requests data
+const corsConfig = {}
 app.use(cors(corsConfig))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
