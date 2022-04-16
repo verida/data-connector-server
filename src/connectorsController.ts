@@ -116,7 +116,7 @@ export default class ConnectorsController {
                 for (var i in data[schemaUri]) {
                     const record = data[schemaUri][i]
                     try {
-                        if (record._id) {
+                        if (!record.insertedAt) {
                             // Since we manually set the `_id`, we need to manually set `insertedAt` because
                             // the database library will assume the record is an update
                             record.insertedAt = new Date().toISOString()

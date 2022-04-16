@@ -82,7 +82,8 @@ export default class FacebookConnector extends BaseConnector {
                 uri: `https://facebook.com/${uriName}-${like.id}`,
                 sourceApplication: 'https://facebook.com/',
                 sourceId: like.id,
-                followedTimestamp
+                followedTimestamp,
+                insertedAt: followedTimestamp
             })
         }
 
