@@ -4,3 +4,4 @@ coverage
 dist/
 keys/
 src/config.ts
+v*/

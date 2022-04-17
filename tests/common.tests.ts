@@ -21,4 +21,11 @@ export default class CommonTests {
         await db._localDbEncrypted.destroy()
     }
 
+    static async hasValidSyncResult(syncResult: any, connection: any) {
+        assert.ok(syncResult, 'Have a sync result')
+        assert.ok(syncResult.data, 'Have sync result data')
+        assert.equal(syncResult.data.did, connection.did, 'Expected DID returned')
+        assert.equal(syncResult.data.contextName, 'Verida: Data Connector', 'Have expected context name')
+    }
+
 }

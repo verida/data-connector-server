@@ -19,11 +19,7 @@ describe(`${provider} Tests`, function() {
         it("Can sync", async () => {
             connection = await CommonUtils.getNetwork()
             syncResult = await CommonUtils.syncConnector(provider, creds.accessToken, creds.refreshToken, connection.did, nonce)
-
-            assert.ok(syncResult, 'Have a sync result')
-            assert.ok(syncResult.data, 'Have sync result data')
-            assert.equal(syncResult.data.did, connection.did, 'Expected DID returned')
-            assert.equal(syncResult.data.contextName, 'Verida: Data Connector', 'Have expected context name')
+            await CommonTests.hasValidSyncResult(syncResult, connection)
         })
 
         it("Has valid following schema data", async () => {
