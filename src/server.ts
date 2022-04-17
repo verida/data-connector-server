@@ -2,9 +2,15 @@ import express from 'express'
 const cors = require('cors')
 import bodyParser from 'body-parser'
 import router from './routes'
-
 // @todo: See not in express-session about not using memory session
 const session = require('express-session')
+
+const log4js = require("log4js")
+const logger = log4js.getLogger()
+import CONFIG from "./config"
+logger.level = CONFIG.logLevel
+
+
 //const basicAuth = require('express-basic-auth')
 //import RequestValidator from './request-validator'
 

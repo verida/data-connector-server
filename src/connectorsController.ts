@@ -13,8 +13,6 @@ const DEFAULT_ENDPOINTS = CONFIG.verida.defaultEndpoints
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
-logger.level = CONFIG.logLevel
-console.log(logger.level)
 
 import Connectors from "./connectors"
 
@@ -131,7 +129,7 @@ export default class ConnectorsController {
                     } catch (err) {
                         // ignore conflict errors (ie; document already existed)
                         if (err.status == 409) {
-                            logger.debug(`Conflict error inserting:`, record._id)
+                            logger.trace(`Conflict error inserting:`, record._id)
                             continue
                         }
 

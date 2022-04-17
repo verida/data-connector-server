@@ -4,6 +4,9 @@ const passport = require("passport")
 const TwitterStrategy = require("passport-twitter")
 import { TwitterClient } from 'twitter-api-client'
 
+const log4js = require("log4js")
+const logger = log4js.getLogger()
+
 const _ = require('lodash')
 import dayjs from 'dayjs'
 
@@ -70,17 +73,15 @@ export default class TwitterConnector extends BaseConnector {
         // note this can return 5000 ids at a time
         const data = await client.accountsAndUsers.friendsIds()
 
-        // for now, just fetch 5
-        const ids = data.ids.slice(0, 10)
-        console.log(ids)
-        console.log(ids.join(','))
+        // for now, just fetch 10
+        const ids = data.ids.slice(0, 20)
 
         // note: this method only supports 100 at a time
         const users = await client.accountsAndUsers.usersLookup({
             user_id: ids.join(',')
         })
 
-        console.log(users.length)
+        logger.debug(`Found ${users.length} twitter users`)
         const finalUsers = []
         for (let u in users) {
             const user: any = users[u]
