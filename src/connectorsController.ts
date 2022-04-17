@@ -13,7 +13,8 @@ const DEFAULT_ENDPOINTS = CONFIG.verida.defaultEndpoints
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
-logger.level = "debug"
+logger.level = CONFIG.logLevel
+console.log(logger.level)
 
 import Connectors from "./connectors"
 
@@ -107,11 +108,13 @@ export default class ConnectorsController {
             // Get database info so we can retreive the encryption key used
             const db = await datastore.getDb()
             let info = await db.info()
-            console.log(info)
+            logger.trace(`Inserting into database:`, info)
 
             try {
                 for (var i in data[schemaUri]) {
                     const record = data[schemaUri][i]
+                    logger.trace(`Inserting record:`, record)
+
                     try {
                         if (!record.insertedAt) {
                             // Since we manually set the `_id`, we need to manually set `insertedAt` because
@@ -128,6 +131,7 @@ export default class ConnectorsController {
                     } catch (err) {
                         // ignore conflict errors (ie; document already existed)
                         if (err.status == 409) {
+                            logger.debug(`Conflict error inserting:`, record._id)
                             continue
                         }
 
@@ -145,9 +149,7 @@ export default class ConnectorsController {
                     encryptionKey
                 }
             } catch (err) {
-                // @todo: log these errors properly
-                console.log(err.status, err.name)
-                console.log(err)
+                logger.error(err.status, err.name)
             }
 
             // close the local database so we don't use up all the disk space
@@ -209,8 +211,7 @@ export default class ConnectorsController {
                 await db._localDb.destroy()
                 clearedDatabases.push(schemaUri)
             } catch (err) {
-                console.log('error!')
-                console.log(err)
+                logger.error(err.status, err.name)
             }
         }
 
