@@ -20,5 +20,17 @@ This server enables the Verida Vault to establish a connection to third party se
 ## Implementation comments
 
 1. The database for a user is shared between conenctors. ie: Sync Facebook and Sync Facebook data using the `followers` schema and data will be pushed into the same database for both. Should they be split?
-2. The `sync` endpoint pulls data from the third party API, converts it into the correct Verida schema, then saves it to a datastore owned and controlled by this server (but readable by the user who made the request). This data is stored, encrypted, on the Verida network. It is also stored, unencrypted on the local disk , until `syncDone` is called by the Vault. `syncDone` calls `destroy()` on the local database, which deletes the files from disk. It's not currently possible to delete from the Storage Node (this will be fixed). I tried calling `destroy()` on the local copy once the `sync` process had completed, but no data ended up in CouchDB. I suspect this is because there hadn't been enough time to sync data between the local copy and the server copy. It could be possible to detect when syncing has completed and then destroy.
 
+## Security
+
+This server is designed to receive `accessToken` and `refreshToken` values from the user for each sync request. These credentials are not stored on the server.
+
+User data is fetched on behalf of the user and processed. This processing involves:
+
+- Fetching from third party API
+- Temporarily storing the data on disk
+- Encrypting the data on disk
+- Sending the encrypted data to a CouchDB server where this server and the user has `read` / `write` access
+- Deleting the data from disk
+
+This server only has access to data fetched from the third party API. It can not view the full set of data owned by the user for a given dataset. For example, if this API pulls a user's Twitter posts, it will not have access to any other posts stored in the user's Vault.
