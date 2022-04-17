@@ -150,10 +150,8 @@ export default class ConnectorsController {
                 console.log(err)
             }
 
-            // destroy the local database so we don't use up all the disk space
-            // @todo: can't destroy here. too early and data not synced to couch server
-            // Can we monitor when sync has completed, then destroy local?
-            //await db._localDb.destroy()
+            // close the local database so we don't use up all the disk space
+            await db.close()
         }
 
         // Return the signerDid and contextName so the Vault can locate the correct
