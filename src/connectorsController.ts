@@ -106,7 +106,7 @@ export default class ConnectorsController {
             // Get database info so we can retreive the encryption key used
             const db = await datastore.getDb()
             let info = await db.info()
-            logger.trace(`Inserting into database:`, info)
+            logger.info(`Inserting ${data[schemaUri].length} records into database: ${databaseName} (${info.databaseHash})`)
 
             try {
                 for (var i in data[schemaUri]) {

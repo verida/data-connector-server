@@ -16,9 +16,9 @@ export default class CommonTests {
         const results = await externalDatastore.getMany()
         assert.equal(results.length >= minCount, true, 'Have expected number of results')
 
-        // close database
+        // destroy local database to cleanup disk space
         const db = await externalDatastore.getDb()
-        await db._localDb.close()
+        await db._localDbEncrypted.destroy()
     }
 
 }
