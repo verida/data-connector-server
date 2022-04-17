@@ -1,11 +1,12 @@
 import { Request, Response } from 'express'
-import Base from "../base"
+import Base from "../baseProvider"
 const passport = require("passport")
 const FacebookStrategy = require("passport-facebook")
 
 const {Facebook, FacebookApiException} = require('fb')
-const _ = require('lodash')
-import url from 'url'
+
+
+import Following from './following'
 
 export interface ConfigInterface {
     appId: string
@@ -17,6 +18,12 @@ export interface ConfigInterface {
 export default class FacebookProvider extends Base {
 
     protected config: ConfigInterface
+
+    public syncHandlers(): any[] {
+        return [
+            Following
+        ]
+    }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
         this.init()
@@ -58,64 +65,14 @@ export default class FacebookProvider extends Base {
         return result
     }
 
-    public async sync(req: Request, res: Response, next: any): Promise<any> {
-        const query = req.query
+    public async getApi(accessToken?: string, refreshToken?: string): Promise<any> {
         const Fb = new Facebook({
             appId: this.config.appId,
             appSecret: this.config.appSecret
         })
 
-        Fb.setAccessToken(query.accessToken)
-        
-        const likes = await this.getAllPages(Fb, '/me/likes')
-        /*const posts = await FacebookProvider.getAllPages(Fb, '/me/posts')*/
-
-        const likesProcessed = []
-        for (var l in likes) {
-            const like: any = likes[l]
-            const uriName = like.name.replace(/ /g, '-')
-            const followedTimestamp = like.created_time
-
-            likesProcessed.push({
-                _id: `facebook-${like.id}`,
-                name: like.name,
-                uri: `https://facebook.com/${uriName}-${like.id}`,
-                sourceApplication: 'https://facebook.com/',
-                sourceId: like.id,
-                followedTimestamp,
-                insertedAt: followedTimestamp
-            })
-        }
-
-        return {
-            'https://common.schemas.verida.io/social/following/v0.1.0/schema.json': likesProcessed
-        }
-    }
-
-    public schemaUris(): string[] {
-        return [
-            'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
-        ]
-    }
-
-    /**
-     * Helper method to fetch all the pages of data for any Facebook API endpoint
-     */
-    public async getAllPages(Fb: any, apiEndpoint: string, nextUrl: string = null, results: object[] = []): Promise<object[]> {
-        if (!nextUrl) {
-            nextUrl = `${apiEndpoint}?limit=5`
-        }
-
-        const pageResults = await Fb.api(nextUrl)
-        results = results.concat(pageResults.data)
-
-        if (_.has(pageResults, 'paging.next') && !this.config.limitResults) {
-            const next = pageResults.paging.next
-            const urlParts = url.parse(next, true)
-            return await this.getAllPages(Fb, apiEndpoint, `${apiEndpoint}${urlParts.search}`, results)
-        }
-
-        return results
+        Fb.setAccessToken(accessToken)
+        return Fb
     }
 
     public init() {

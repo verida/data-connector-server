@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import Base from "../base"
+import Base from "../baseProvider"
 const passport = require("passport")
 const TwitterStrategy = require("passport-twitter")
 import { TwitterClient } from 'twitter-api-client'
