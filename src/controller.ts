@@ -14,12 +14,12 @@ const DEFAULT_ENDPOINTS = CONFIG.verida.defaultEndpoints
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 
-import Connectors from "./connectors"
+import Providers from "./providers"
 
-export default class ConnectorsController {
+export default class Controller {
 
     /**
-     * Initiate an auth connection for a given connector.
+     * Initiate an auth connection for a given provider.
      * 
      * @param req 
      * @param res 
@@ -27,13 +27,13 @@ export default class ConnectorsController {
      * @returns 
      */
     public static async connect(req: Request, res: Response, next: any) {
-        const connectorName = req.params.connector
-        const connector = Connectors(connectorName)
-        return connector.connect(req, res, next)
+        const providerName = req.params.provider
+        const provider = Providers(providerName)
+        return provider.connect(req, res, next)
     }
 
     /**
-     * Facilitate an auth callback for a given connector.
+     * Facilitate an auth callback for a given provider.
      * 
      * @param req 
      * @param res 
@@ -41,15 +41,14 @@ export default class ConnectorsController {
      * @returns 
      */
     public static async callback(req: Request, res: Response, next: any) {
-        const connectorName = req.params.connector
-        const connector = Connectors(connectorName)
+        const providerName = req.params.provider
+        const provider = Providers(providerName)
 
         // @todo: handle error and show error message
-        const connectionToken = await connector.callback(req, res, next)
-        //console.log(connectionToken)
+        const connectionToken = await provider.callback(req, res, next)
 
         // @todo: Generate nice looking thank you page
-        const redirectUrl = `https://vault.verida.io/inbox?page=connector-auth-complete&connector=${connectorName}&accessToken=${connectionToken.accessToken}`
+        const redirectUrl = `https://vault.verida.io/inbox?page=provider-auth-complete&provider=${providerName}&accessToken=${connectionToken.accessToken}`
         const output = `<html>
         <head></head>
         <body>
@@ -75,13 +74,12 @@ export default class ConnectorsController {
      * @returns 
      */
     public static async sync(req: Request, res: Response, next: any) {
-        const connectorName = req.params.connector
-        const connector = Connectors(connectorName)
+        const providerName = req.params.provider
+        const provider = Providers(providerName)
 
+        const data = await provider.sync(req, res, next)
 
-        const data = await connector.sync(req, res, next)
-
-        const { account, context } = await ConnectorsController.getNetwork()
+        const { account, context } = await Controller.getNetwork()
         const signerDid = await account.did()
 
         const query = req.query
@@ -177,14 +175,14 @@ export default class ConnectorsController {
      * @returns 
      */
     public static async syncDone(req: Request, res: Response, next: any) {
-        const connectorName = req.params.connector
-        const connector = Connectors(connectorName)
-        const schemaUris = connector.schemaUris()
+        const providerName = req.params.provider
+        const provider = Providers(providerName)
+        const schemaUris = provider.schemaUris()
 
         const query = req.query
         const did: string = query.did.toString()
 
-        const { context } = await ConnectorsController.getNetwork()
+        const { context } = await Controller.getNetwork()
 
         const clearedDatabases = []
         for (let i in schemaUris) {

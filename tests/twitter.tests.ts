@@ -6,7 +6,7 @@ import CommonTests from "./common.tests"
 const SCHEMA_FOLLOWING = 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
 
 const provider = 'twitter'
-const creds = CONFIG.connectors[provider].testing
+const creds = CONFIG.providers[provider].testing
 
 describe(`${provider} Tests`, function() {
     this.timeout(100000)

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import BaseConnector from "../baseConnector"
+import Base from "../base"
 const passport = require("passport")
 const FacebookStrategy = require("passport-facebook")
 
@@ -14,7 +14,7 @@ export interface ConfigInterface {
     limitResults: boolean
 }
 
-export default class FacebookConnector extends BaseConnector {
+export default class FacebookProvider extends Base {
 
     protected config: ConfigInterface
 
@@ -68,7 +68,7 @@ export default class FacebookConnector extends BaseConnector {
         Fb.setAccessToken(query.accessToken)
         
         const likes = await this.getAllPages(Fb, '/me/likes')
-        /*const posts = await FacebookConnector.getAllPages(Fb, '/me/posts')*/
+        /*const posts = await FacebookProvider.getAllPages(Fb, '/me/posts')*/
 
         const likesProcessed = []
         for (var l in likes) {

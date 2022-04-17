@@ -18,7 +18,7 @@ export default {
             },
         },
     },
-    connectors: {
+    providers: {
         facebook: {
             appId: '',
             appSecret: '',
@@ -36,7 +36,7 @@ export default {
             }
         }
     },
-    connectorDefaults: {
+    providerDefaults: {
         limitResults: true
     }
     

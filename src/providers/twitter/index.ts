@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import BaseConnector from "../baseConnector"
+import Base from "../base"
 const passport = require("passport")
 const TwitterStrategy = require("passport-twitter")
 import { TwitterClient } from 'twitter-api-client'
@@ -18,7 +18,7 @@ export interface ConfigInterface {
     limitResults: boolean
 }
 
-export default class TwitterConnector extends BaseConnector {
+export default class TwitterProvider extends Base {
 
     protected config: ConfigInterface
 

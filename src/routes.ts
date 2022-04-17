@@ -1,11 +1,11 @@
 import express from 'express'
-import ConnectorsController from './connectorsController'
+import Controller from './controller'
 
 const router = express.Router()
 
-router.get('/connect/:connector', ConnectorsController.connect)
-router.get('/callback/:connector', ConnectorsController.callback)
-router.get('/sync/:connector', ConnectorsController.sync)
-router.get('/syncDone/:connector', ConnectorsController.syncDone)
+router.get('/connect/:provider', Controller.connect)
+router.get('/callback/:provider', Controller.callback)
+router.get('/sync/:provider', Controller.sync)
+router.get('/syncDone/:provider', Controller.syncDone)
 
 export default router
