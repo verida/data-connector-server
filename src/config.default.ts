@@ -1,6 +1,8 @@
 import { EnvironmentType } from '@verida/client-ts'
 
 export default {
+    serverUrl: 'http://localhost:5021',
+    logLevel: "debug", // trace, debug, info, warn, error, fatal
     verida: {
         environment: EnvironmentType.TESTNET,
         contextName: 'Verida: Data Connector',
@@ -20,8 +22,22 @@ export default {
         facebook: {
             appId: '',
             appSecret: '',
-            callbackUrl: ''
+            testing: {
+                accessToken: ''
+            }
+        },
+        twitter: {
+            apiKey: '',
+            apiSecret: '',
+            bearerToken: '',
+            testing: {
+                accessToken: '',
+                refreshToken: ''
+            }
         }
+    },
+    connectorDefaults: {
+        limitResults: true
     }
     
 
