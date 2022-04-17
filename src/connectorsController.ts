@@ -85,13 +85,12 @@ export default class ConnectorsController {
         const signerDid = await account.did()
 
         const query = req.query
-        const nonce = query.nonce.toString()
         const did = query.did.toString()
 
         const response: any = {}
 
         for (var schemaUri in data) {
-            const databaseName = EncryptionUtils.hash(`${did}-${schemaUri}-${nonce}`)
+            const databaseName = EncryptionUtils.hash(`${did}-${schemaUri}`)
 
             const datastore = await context.openDatastore(schemaUri, {
                 permissions: {
@@ -183,7 +182,6 @@ export default class ConnectorsController {
         const schemaUris = connector.schemaUris()
 
         const query = req.query
-        const nonce = query.nonce.toString()
         const did: string = query.did.toString()
 
         const { context } = await ConnectorsController.getNetwork()
@@ -191,7 +189,7 @@ export default class ConnectorsController {
         const clearedDatabases = []
         for (let i in schemaUris) {
             const schemaUri = schemaUris[i]
-            const databaseName = EncryptionUtils.hash(`${did}-${schemaUri}-${nonce}`)
+            const databaseName = EncryptionUtils.hash(`${did}-${schemaUri}`)
             const datastore = await context.openDatastore(schemaUri, {
                 permissions: {
                     read: ContextInterfaces.PermissionOptionsEnum.USERS,

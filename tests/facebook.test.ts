@@ -10,7 +10,6 @@ const creds = CONFIG.connectors[provider].testing
 
 describe(`${provider} Tests`, function() {
     this.timeout(100000)
-    const nonce = '1'
     let connection
 
     describe("Sync", () => {
@@ -18,7 +17,7 @@ describe(`${provider} Tests`, function() {
 
         it("Can sync", async () => {
             connection = await CommonUtils.getNetwork()
-            syncResult = await CommonUtils.syncConnector(provider, creds.accessToken, '', connection.did, nonce)
+            syncResult = await CommonUtils.syncConnector(provider, creds.accessToken, '', connection.did)
             await CommonTests.hasValidSyncResult(syncResult, connection)
         })
 
