@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "module": "commonjs",
+        "skipLibCheck": true,
         "esModuleInterop": true,
         "target": "es6",
         "noImplicitAny": true,
@@ -12,9 +13,9 @@
             "*": [
                 "node_modules/*"
             ]
-        }
+        },
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true
     },
-    "include": [
-        "src/**/*"
-    ]
+    "include": ["src/**/*"  ]
 }

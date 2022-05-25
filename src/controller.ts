@@ -5,8 +5,9 @@ import { AutoAccount } from '@verida/account-node'
 import EncryptionUtils from '@verida/encryption-utils'
 
 import CONFIG from "./config"
+import {strToEnvType} from "./config"
 
-const VERIDA_ENVIRONMENT = CONFIG.verida.environment
+const VERIDA_ENVIRONMENT = strToEnvType(CONFIG.verida.environment)
 const CONTEXT_NAME = CONFIG.verida.contextName
 const PRIVATE_KEY = CONFIG.verida.privateKey
 const DEFAULT_ENDPOINTS = CONFIG.verida.defaultEndpoints

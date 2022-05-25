@@ -1,7 +1,8 @@
 node_modules
 coverage
-.env.dev
+.env
+.env*
 dist/
 keys/
-src/config.ts
 v*/
+serverconfig.*.json
