@@ -14,8 +14,30 @@ const DEFAULT_ENDPOINTS = CONFIG.verida.defaultEndpoints
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 
+const DATA_CONNECTION_SCHEMA = 'https://vault.schemas.verida.io/data-connections/connection/v0.1.0/schema.json'
+const DATA_PROFILE_SCHEMA = 'https://vault.schemas.verida.io/data-connections/profile/v0.1.0/schema.json'
+
 import Providers from "./providers"
 
+/**
+ * Sign in process:
+ * 
+ * - Vault opens `connect` via safari
+ * - User signs in
+ * - Safari redirects to `callback`
+ * - `callback` saves profile information in a datastore (DATA_PROFILE_SCHEMA) owned by this server, but readable by the user
+ * - User is shown a deeplink which includes connection credentials (access, refresh token)
+ * - User clicks deeplink to open Vault
+ * - Vault fetches connection and profile information from the DATA_PROFILE_SCHEMA datastore
+ * 
+ * Data sync process:
+ * 
+ * - Vault triggers a sync (via user manually clicking or background process) and sets the data source status to "syncing"
+ * - `sync` endpoint sends a HTTP response immediately and continues processing in the background
+ * - `sync` endpoint fetches all the data from the data source and saves it into the datastores for the user
+ * - Vault loops through all data sources (every app open, plus every 1 minute) to identify those that 
+ * - Vault opens the datastores that have been updated by the connector server and pulls that data into the Vault
+ */
 export default class Controller {
 
     /**
@@ -35,6 +57,8 @@ export default class Controller {
     /**
      * Facilitate an auth callback for a given provider.
      * 
+     * Requires `did` in the query string
+     * 
      * @param req 
      * @param res 
      * @param next 
@@ -47,8 +71,42 @@ export default class Controller {
         // @todo: handle error and show error message
         const connectionToken = await provider.callback(req, res, next)
 
+        const query = req.query
+        const did = query.did.toString()
+
+        // save the user profile data
+        const { account, context } = await Controller.getNetwork()
+        const databaseName = EncryptionUtils.hash(`${did}-${DATA_PROFILE_SCHEMA}-${providerName}`)
+
+        // store provider metadata in a database for the user
+        const datastore = await context.openDatastore(DATA_PROFILE_SCHEMA, {
+            permissions: {
+                read: ContextInterfaces.PermissionOptionsEnum.USERS,
+                write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                readList: [did],
+                writeList: [did]
+            },
+            databaseName
+        })
+
+        const profileData = {
+            _id: connectionToken.provider.id,
+            ...connectionToken.provider.profile
+        }
+
+        const saveResult = await datastore.save(profileData)
+        // @todo: handle and log errors
+
+        const db = await datastore.getDb()
+        const info = await db.info()
+        const encryptionKey = Buffer.from(info.encryptionKey).toString('hex')
+
+        // Send the access token, refresh token and profile database name and encryption key
+        // so the user can pull their profile remotely and store their tokens securely
+        // This also avoids this server saving those credentials anywhere, they are only stored by the user
+        const redirectUrl = `https://vault.verida.io/inbox?page=provider-auth-complete&provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken}&profileDbName=${databaseName}&encryptionKey=${encryptionKey}`
+
         // @todo: Generate nice looking thank you page
-        const redirectUrl = `https://vault.verida.io/inbox?page=provider-auth-complete&provider=${providerName}&accessToken=${connectionToken.accessToken}`
         const output = `<html>
         <head></head>
         <body>
@@ -68,6 +126,11 @@ export default class Controller {
      * Once this is complete, the Vault will then sync the data over the Verida network and
      * call `syncDone`
      * 
+     * Requires the following query parameters:
+     * 
+     * - did
+     * - any other data required by the provider (ie: `accessToken`)
+     * 
      * @param req 
      * @param res 
      * @param next 
@@ -77,6 +140,7 @@ export default class Controller {
         const providerName = req.params.provider
         const provider = Providers(providerName)
 
+        // Fetch the necessary data from the provider
         const data = await provider.sync(req, res, next)
 
         const { account, context } = await Controller.getNetwork()
@@ -87,9 +151,12 @@ export default class Controller {
 
         const response: any = {}
 
+        // iterate through the data and save it into the appropriate datastore
+        // NOTE: database stores data for all providers, not just this one being processed
         for (var schemaUri in data) {
             const databaseName = EncryptionUtils.hash(`${did}-${schemaUri}`)
 
+            // open a datastore where the user has permission to access the datastores
             const datastore = await context.openDatastore(schemaUri, {
                 permissions: {
                     read: ContextInterfaces.PermissionOptionsEnum.USERS,
@@ -137,7 +204,7 @@ export default class Controller {
 
                 const encryptionKey = Buffer.from(info.encryptionKey).toString('hex')
 
-                // Return the databaseName and encryptionKey so the vault can connect
+                // Save the databaseName and encryptionKey so the vault can connect
                 // and decrypt the data
                 response[schemaUri] = {
                     databaseName,
