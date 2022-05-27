@@ -50,6 +50,12 @@ export default class Controller {
      */
     public static async connect(req: Request, res: Response, next: any) {
         const providerName = req.params.provider
+        const query = req.query
+        const did = query.did.toString()
+        const key = query.key.toString()
+
+        req.session.did = did
+
         const provider = Providers(providerName)
         return provider.connect(req, res, next)
     }
@@ -70,11 +76,11 @@ export default class Controller {
 
         // @todo: handle error and show error message
         const connectionToken = await provider.callback(req, res, next)
-
-        const query = req.query
-        const did = query.did.toString()
+        const did = req.session.did
+        //const key = req.session.key
 
         // save the user profile data
+        /*
         const { account, context } = await Controller.getNetwork()
         const databaseName = EncryptionUtils.hash(`${did}-${DATA_PROFILE_SCHEMA}-${providerName}`)
 
@@ -89,29 +95,39 @@ export default class Controller {
             databaseName
         })
 
+        const client = await context.getClient()
+        const schema = await client.getSchema(DATA_PROFILE_SCHEMA)
+        const json = await schema.getSpecification()
+        console.log(json)
+
+        console.log(connectionToken)
+        const profile = connectionToken.profile
+
         const profileData = {
-            _id: connectionToken.provider.id,
-            ...connectionToken.provider.profile
+            _id: profile.id,
+            name: profile.displayName,
+            username: profile.username,
+            gender: profile.gender,
+            profileUrl: profile.profileUrl,
+            avatar: ""
         }
 
-        const saveResult = await datastore.save(profileData)
-        // @todo: handle and log errors
+        console.log(profileData)
 
-        const db = await datastore.getDb()
-        const info = await db.info()
-        const encryptionKey = Buffer.from(info.encryptionKey).toString('hex')
+        const saveResult = await datastore.save(profileData)*/
+        // @todo: handle and log errors
 
         // Send the access token, refresh token and profile database name and encryption key
         // so the user can pull their profile remotely and store their tokens securely
         // This also avoids this server saving those credentials anywhere, they are only stored by the user
-        const redirectUrl = `https://vault.verida.io/inbox?page=provider-auth-complete&provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken}&profileDbName=${databaseName}&encryptionKey=${encryptionKey}`
+        const redirectUrl = `https://vault.verida.io/connection-success?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
 
         // @todo: Generate nice looking thank you page
         const output = `<html>
         <head></head>
         <body>
-        <a href="${redirectUrl}">Click me</a> (doesn't work as deep linking needs to be fixed)
-        Access token: ${connectionToken.accessToken}
+        <a href="${redirectUrl}">Complete Connection</a>
+        URL: ${redirectUrl}
         </body>
         </html>`
         
