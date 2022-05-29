@@ -19,10 +19,9 @@ const DATA_PROFILE_SCHEMA = 'https://vault.schemas.verida.io/data-connections/pr
 const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
 
 import Providers from "./providers"
-import { traceDeprecation } from 'process'
 
 const delay = async (ms: number) => {
-    await new Promise((resolve) => setTimeout(() => resolve(), ms))
+    await new Promise((resolve) => setTimeout(() => resolve(true), ms))
 }
 
 /**
@@ -84,6 +83,8 @@ export default class Controller {
 
         // @todo: handle error and show error message
         const connectionToken = await provider.callback(req, res, next)
+
+        // @ts-ignore
         const did = req.session.did
         //const key = req.session.key
 
@@ -201,7 +202,7 @@ export default class Controller {
         })
 
         // Fetch the necessary data from the provider
-        let data = {}
+        let data: any = {}
         try {
             data = await provider.sync(req, res, next)
         } catch (err) {
