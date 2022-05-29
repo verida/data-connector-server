@@ -16,8 +16,14 @@ const logger = log4js.getLogger()
 
 const DATA_CONNECTION_SCHEMA = 'https://vault.schemas.verida.io/data-connections/connection/v0.1.0/schema.json'
 const DATA_PROFILE_SCHEMA = 'https://vault.schemas.verida.io/data-connections/profile/v0.1.0/schema.json'
+const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
 
 import Providers from "./providers"
+import { traceDeprecation } from 'process'
+
+const delay = async (ms: number) => {
+    await new Promise((resolve) => setTimeout(() => resolve(), ms))
+}
 
 /**
  * Sign in process:
@@ -49,6 +55,7 @@ export default class Controller {
      * @returns 
      */
     public static async connect(req: Request, res: Response, next: any) {
+        logger.trace('connect()')
         const providerName = req.params.provider
         const query = req.query
         const did = query.did.toString()
@@ -71,6 +78,7 @@ export default class Controller {
      * @returns 
      */
     public static async callback(req: Request, res: Response, next: any) {
+        logger.trace('callback()')
         const providerName = req.params.provider
         const provider = Providers(providerName)
 
@@ -126,8 +134,9 @@ export default class Controller {
         const output = `<html>
         <head></head>
         <body>
-        <a href="${redirectUrl}">Complete Connection</a>
-        URL: ${redirectUrl}
+        <div style="margin: auto; font-size: 16px;">
+            <a href="${redirectUrl}">Complete Connection</a>
+        </div>
         </body>
         </html>`
         
@@ -156,16 +165,58 @@ export default class Controller {
         const providerName = req.params.provider
         const provider = Providers(providerName)
 
-        // Fetch the necessary data from the provider
-        const data = await provider.sync(req, res, next)
-
         const { account, context } = await Controller.getNetwork()
-        const signerDid = await account.did()
+        const serverDid = await account.did()
 
         const query = req.query
         const did = query.did.toString()
+        const encryptionKey = Buffer.from(query.key.toString(), 'hex')
+
+        // Generate a new sync request
+        const syncRequestDatabaseName = EncryptionUtils.hash(`${did}-${DATA_SYNC_REQUEST_SCHEMA}`)
+        const syncRequestDatastore = await context.openDatastore(DATA_SYNC_REQUEST_SCHEMA, {
+            permissions: {
+                read: ContextInterfaces.PermissionOptionsEnum.USERS,
+                write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                readList: [did],
+                writeList: [did]
+            },
+            databaseName: syncRequestDatabaseName,
+            encryptionKey
+        })
+        
+        const syncRequestResult = await syncRequestDatastore.save({
+            source: providerName,
+            requestStart: (new Date()).toISOString(),
+            status: 'requested'
+        })
+        const syncRequest = await syncRequestDatastore.get(syncRequestResult.id)
+
+        res.send({
+            did,
+            serverDid,
+            syncRequestId: syncRequest._id,
+            syncRequestDatabaseName,
+            contextName: CONTEXT_NAME
+        })
+
+        // Fetch the necessary data from the provider
+        let data = {}
+        try {
+            data = await provider.sync(req, res, next)
+        } catch (err) {
+            console.error(err)
+            syncRequestResult.status = 'error'
+            syncRequestResult.syncInfo = {
+                error: err.message
+            }
+
+            await syncRequestDatastore.save(syncRequestResult)
+            return
+        }
 
         const response: any = {}
+        const syncingDatabases = []
 
         // iterate through the data and save it into the appropriate datastore
         // NOTE: database stores data for all providers, not just this one being processed
@@ -185,7 +236,8 @@ export default class Controller {
 
             // Get database info so we can retreive the encryption key used
             const db = await datastore.getDb()
-            let info = await db.info()
+            const info = await db.info()
+            
             logger.info(`Inserting ${data[schemaUri].length} records into database: ${databaseName} (${info.databaseHash})`)
 
             try {
@@ -200,7 +252,9 @@ export default class Controller {
                             record.insertedAt = new Date().toISOString()
                         }
 
-                        const result = await datastore.save(record)
+                        const result = await datastore.save(record, {
+                            forceUpdate: false
+                        })
                         if (!result) {
                             // Validation errors, how to log? Should only happen in dev
                             console.log(datastore.errors)
@@ -230,18 +284,65 @@ export default class Controller {
                 logger.error(err.status, err.name)
             }
 
-            // close the local database so we don't use up all the disk space
-            await db.close()
+            syncingDatabases.push(db)
         }
 
-        // Return the signerDid and contextName so the Vault can locate the correct
-        // Storage node to access
-        return res.send({
-            did,
-            response,
-            signerDid,
-            contextName: CONTEXT_NAME
-        })
+        // There is a time delay from writing to local pouchdb to that syncing with
+        // the encrypted database.
+        //
+        // This code loops through all the databases that were written to and 
+        // checks the encrypted database has enough records written before flagging
+        // it as being fully sync'd
+        let count = 5
+        while (count > 0) {
+            let completeCount = 0
+            for (let i = 0; i < syncingDatabases.length; i++) {
+                const db = syncingDatabases[i]
+
+                const remote = await db.getRemoteEncrypted()
+                const local = await db.getDb()
+
+                const remoteInfo = await remote.info()
+                const localInfo = await local.info()
+
+                if (remoteInfo.doc_count >= localInfo.doc_count) {
+                    completeCount++
+                }
+
+                // note: sync status is pending, then active, then pending -- so can't use
+            }
+
+            if (completeCount == syncingDatabases.length) {
+                for (let i = 0; i < syncingDatabases.length; i++) {
+                    const db = syncingDatabases[i]
+                    // close the local database so we don't use up all the disk space
+                    await db.close()
+                }
+
+                // Update the sync request to say it has completed successfully
+                syncRequest.syncInfo = {
+                    schemas: response,
+                }
+        
+                syncRequest.status = "complete"
+                await syncRequestDatastore.save(syncRequest)
+                
+                logger.info(`Saved sync request indicating process is complete`)
+                return
+            }
+
+            await delay(2000)
+            count--
+        }
+
+        // After 5x2 second delays, we still don't have sync so assume it has failed
+        syncRequest.status = "error"
+        syncRequest.syncInfo = {
+            error: "Server timed out syncing encrypted database"
+        }
+        await syncRequestDatastore.save(syncRequest)
+        
+        logger.info(`Saved sync request indicating process has error`)
     }
 
     /**
@@ -258,6 +359,10 @@ export default class Controller {
      * @returns 
      */
     public static async syncDone(req: Request, res: Response, next: any) {
+        logger.trace(`syncDone()`)
+        return res.send({
+            success: true
+        })
         const providerName = req.params.provider
         const provider = Providers(providerName)
         const schemaUris = provider.schemaUris()
