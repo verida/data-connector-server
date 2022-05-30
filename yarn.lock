@@ -658,10 +658,10 @@
     lodash "^4.17.21"
     tweetnacl-util "^0.15.1"
 
-"@verida/client-ts@^1.1.14":
-  version "1.1.14"
-  resolved "https://registry.yarnpkg.com/@verida/client-ts/-/client-ts-1.1.14.tgz#fcda895d285e0c79fd5938e6e34a386509906815"
-  integrity sha512-oYM02XdYatJrRTcKpA9IS0emXP63nO7I3OxVQKGUoDteOiYjfJ5Q99yj7JVDhMpFm4XzDxetn8ZfPNXdBB9Ieg==
+"@verida/client-ts@^1.1.15":
+  version "1.1.15"
+  resolved "https://registry.yarnpkg.com/@verida/client-ts/-/client-ts-1.1.15.tgz#5428c3a3df7cf995d75f9179b8441bb2a22b7e7b"
+  integrity sha512-we3VCMrm6F9aWBZpTNpkB3f6fYKk5Wzdj90vWIKwutbKVoyAQRZFBDgymXsbiKDojC/w1faZ7qLuTNcwaFbVLA==
   dependencies:
     "@verida/account" "^1.1.9"
     "@verida/account-node" "^1.1.9"
