@@ -53,6 +53,10 @@ export default class Controller {
 
         const dirName = req.params.dir;
 
+        console.log(dirName);
+
+        fs.readdir(dirName, (err: any,filename: any)=>console.log(filename)); 
+
         let files = [] as any[];
 
 
@@ -109,7 +113,8 @@ export default class Controller {
         
         // we want to try persistant file systems on Lambda, so we need to make databases save in that
         // directory. The only convientent way to do this is to change the working directory
-        process.chdir(CONFIG.storageMount);            
+        process.chdir(CONFIG.storageMount);    
+        
     }
 
     /**
