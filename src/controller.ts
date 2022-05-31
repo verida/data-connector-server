@@ -49,7 +49,7 @@ const delay = async (ms: number) => {
  * - Vault opens the datastores that have been updated by the connector server and pulls that data into the Vault
  */
 export default class Controller {
-    static test1(req: Request, res: Response) {
+    static async test1(req: Request, res: Response, next: any) {
 
         const dirName = req.params.dir;
 
@@ -78,7 +78,7 @@ export default class Controller {
         res.send(output);
     }
 
-    static test2(req: Request, res: Response) {
+    static async test2(req: Request, res: Response, next: any) {
 
         const dirName = req.params.dir;
         const fileName = req.params.filename;
