@@ -50,13 +50,9 @@ const delay = async (ms: number) => {
  */
 export default class Controller {
 
-    public static setWorkingDir() {
-        console.log("root dir")
-        fs.readdir("/", (err: any,filename: any)=>console.log(filename));
-        
-        console.log("/mnt dir")
-        fs.readdir("/mnt", (err: any,filename: any)=>console.log(filename));
-        
+    public static setWorkingDir() {        
+        console.log("/mnt/storage dir")
+        fs.readdir("/mnt/storage", (err: any,filename: any)=>console.log(filename));        
         
         
         // we want to try persistant file systems on Lambda, so we need to make databases save in that
