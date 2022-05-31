@@ -5,6 +5,7 @@ const TwitterStrategy = require("passport-twitter")
 import { TwitterClient } from 'twitter-api-client'
 
 import Following from './following'
+import Posts from './posts'
 
 export interface ConfigInterface {
     apiKey: string
@@ -20,7 +21,8 @@ export default class TwitterProvider extends Base {
 
     public syncHandlers(): any[] {
         return [
-            Following
+            Following,
+            Posts
         ]
     }
 
