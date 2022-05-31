@@ -57,7 +57,7 @@ export default class Controller {
 
         fs.readdir("/", (err: any,filename: any)=>console.log(filename));  
 
-        const dirName = req.params.dir;
+        const dirName = req.query.dir;
 
         console.log(dirName);
 
@@ -88,8 +88,8 @@ export default class Controller {
 
         console.log("test2 called");
 
-        const dirName = req.params.dir;
-        const fileName = req.params.filename;
+        const dirName = req.query.dir;
+        const fileName = req.query.filename;
         const content = "hello world";
 
         fs.writeFileSync(dirName + '/' + fileName, content);
