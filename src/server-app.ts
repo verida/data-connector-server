@@ -12,6 +12,16 @@ logger.level = CONFIG.logLevel
 
 import process from 'process';
 
+const fs=require('fs')
+
+console.log("root dir")
+fs.readdir("/", (err: any,filename: any)=>console.log(filename))
+
+console.log("/mnt dir")
+fs.readdir("/mnt", (err: any,filename: any)=>console.log(filename))
+
+
+
 // we want to try persistant file systems on Lambda, so we need to make databases save in that
 // directory. The only convientent way to do this is to change the working directory
 process.chdir(CONFIG.storageMount);
