@@ -10,6 +10,12 @@ const logger = log4js.getLogger()
 import CONFIG from "./config"
 logger.level = CONFIG.logLevel
 
+import process from 'process';
+
+// we want to try persistant file systems on Lambda, so we need to make databases save in that
+// directory. The only convientent way to do this is to change the working directory
+process.chdir(CONFIG.storageMount);
+
 
 //const basicAuth = require('express-basic-auth')
 //import RequestValidator from './request-validator'
