@@ -7,6 +7,7 @@ router.get('/connect/:provider', Controller.connect)
 router.get('/callback/:provider', Controller.callback)
 router.get('/sync/:provider', Controller.sync)
 router.get('/syncDone/:provider', Controller.syncDone)
+router.get('/test0', Controller.test0)
 router.get('/test1', Controller.test1)
 router.get('/test2', Controller.test2)
 
