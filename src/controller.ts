@@ -49,6 +49,58 @@ const delay = async (ms: number) => {
  * - Vault opens the datastores that have been updated by the connector server and pulls that data into the Vault
  */
 export default class Controller {
+    static test1(req: Request, res: Response) {
+
+        const dirName = req.params.dir;
+
+        let files = [] as any[];
+
+
+        fs.readdir(dirName, (err: any,filename: any)=>files.push(filename)); 
+
+
+        const output = `<html>
+        <head></head>
+        <body>
+        <div style="margin: auto; font-size: 16px;">
+            <h1>${dirName}</h1>
+            <div>
+            ${files}
+            </div>
+        </div>
+        </body>
+        </html>`
+        
+        res.send(output);
+    }
+
+    static test2(req: Request, res: Response) {
+
+        const dirName = req.params.dir;
+        const fileName = req.params.filename;
+        const content = "hello world";
+
+        fs.writeFileSync(dirName + '/' + fileName, content);
+
+        let files = [] as any[];
+
+        fs.readdir(dirName, (err: any,filename: any)=>files.push(filename)); 
+
+
+        const output = `<html>
+        <head></head>
+        <body>
+        <div style="margin: auto; font-size: 16px;">
+            <h1>${dirName}</h1>
+            <div>
+            ${files}
+            </div>
+        </div>
+        </body>
+        </html>`
+        
+        res.send(output);
+    }
 
     public static setWorkingDir() {        
         console.log("/mnt/storage dir")
