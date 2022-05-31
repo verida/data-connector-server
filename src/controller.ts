@@ -21,6 +21,10 @@ const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connectio
 
 import Providers from "./providers"
 
+import process from 'process';
+
+const fs=require('fs')
+
 const delay = async (ms: number) => {
     await new Promise((resolve) => setTimeout(() => resolve(true), ms))
 }
@@ -46,6 +50,20 @@ const delay = async (ms: number) => {
  */
 export default class Controller {
 
+    public static setWorkingDir() {
+        console.log("root dir")
+        fs.readdir("/", (err: any,filename: any)=>console.log(filename));
+        
+        console.log("/mnt dir")
+        fs.readdir("/mnt", (err: any,filename: any)=>console.log(filename));
+        
+        
+        
+        // we want to try persistant file systems on Lambda, so we need to make databases save in that
+        // directory. The only convientent way to do this is to change the working directory
+        process.chdir(CONFIG.storageMount);            
+    }
+
     /**
      * Initiate an auth connection for a given provider.
      * 
@@ -63,6 +81,8 @@ export default class Controller {
 
         req.session.did = did
 
+        Controller.setWorkingDir();
+
         const provider = Providers(providerName)
         return provider.connect(req, res, next)
     }
@@ -79,6 +99,9 @@ export default class Controller {
      */
     public static async callback(req: Request, res: Response, next: any) {
         logger.trace('callback()')
+
+        Controller.setWorkingDir();
+
         const providerName = req.params.provider
         const provider = Providers(providerName)
 
@@ -164,6 +187,9 @@ export default class Controller {
      * @returns 
      */
     public static async sync(req: Request, res: Response, next: any) {
+
+        Controller.setWorkingDir();        
+
         const providerName = req.params.provider
         const provider = Providers(providerName)
 
@@ -362,6 +388,9 @@ export default class Controller {
      */
     public static async syncDone(req: Request, res: Response, next: any) {
         logger.trace(`syncDone()`)
+
+        Controller.setWorkingDir();        
+
         return res.send({
             success: true
         })
@@ -410,6 +439,8 @@ export default class Controller {
      * @returns 
      */
     public static async getNetwork(): Promise<any> {
+        Controller.setWorkingDir();
+
         const network = new Client({
             environment: VERIDA_ENVIRONMENT
         })
