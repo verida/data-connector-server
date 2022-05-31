@@ -51,6 +51,12 @@ const delay = async (ms: number) => {
 export default class Controller {
     static async test1(req: Request, res: Response, next: any) {
 
+        console.log("test1 called");
+
+        console.log("root dir");
+
+        fs.readdir("/", (err: any,filename: any)=>console.log(filename));  
+
         const dirName = req.params.dir;
 
         console.log(dirName);
@@ -79,6 +85,8 @@ export default class Controller {
     }
 
     static async test2(req: Request, res: Response, next: any) {
+
+        console.log("test2 called");
 
         const dirName = req.params.dir;
         const fileName = req.params.filename;
