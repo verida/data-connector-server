@@ -17,7 +17,6 @@ describe(`${providerName} Tests`, function() {
     this.timeout(100000)
 
     describe("Fetch API data", () => {
-        //let syncResult
         const provider = Providers(providerName)
 
         it("Can fetch Post data", async () => {

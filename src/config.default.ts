@@ -18,10 +18,15 @@ export default {
             },
         },
     },
+    testing: {
+        encryptionKey: ''
+    },
     providers: {
         facebook: {
             appId: '',
             appSecret: '',
+            followingLimit: 20,
+            postLimit: 20,
             testing: {
                 accessToken: ''
             }
@@ -30,6 +35,8 @@ export default {
             apiKey: '',
             apiSecret: '',
             bearerToken: '',
+            followingLimit: 20,
+            postLimit: 20,
             testing: {
                 accessToken: '',
                 refreshToken: ''
@@ -39,6 +46,4 @@ export default {
     providerDefaults: {
         limitResults: true
     }
-    
-
 }
