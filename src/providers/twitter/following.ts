@@ -18,18 +18,12 @@ export default class Following extends BaseSyncHandler {
      * @param api 
      */
     public async sync(api: any): Promise<any> {
-        // note this can return 5000 ids at a time
-        const data = await api.accountsAndUsers.friendsIds()
-
-        // for now, just fetch 10
-        const ids = data.ids.slice(0, 20)
-
-        // note: this method only supports 100 at a time
-        const users = await api.accountsAndUsers.usersLookup({
-            user_id: ids.join(',')
+        const result = await api.accountsAndUsers.friendsList({
+            include_user_entities: false
         })
 
-        logger.debug(`Found ${users.length} twitter users`)
+        const users = result.users.slice(0, this.config.followingLimit)
+
         const results = []
         for (let u in users) {
             const user: any = users[u]
