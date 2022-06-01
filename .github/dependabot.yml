@@ -1,0 +1,10 @@
+version: 2
+updates:
+
+  # Maintain dependencies for verida only
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    allow: 
+      - dependency-name: "@verida/*"

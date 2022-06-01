@@ -1,0 +1,32 @@
+name: build-app
+on:
+  pull_request:
+    branches:    
+      - 'develop'
+
+  push:
+    branches:
+      - 'feature/*'
+
+  workflow_dispatch:
+jobs:
+  build-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: nvmrc
+        uses: browniebroke/read-nvmrc-action@v1
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '${{ steps.nvmrc.outputs.node_version }}'
+          cache: 'yarn'
+      - run: yarn install
+      - run: yarn build
+      # - run: yarn tests-report-json
+      # - name: Test Report
+      #   uses: dorny/test-reporter@v1
+      #   if: success() || failure()    # run this step even if previous step failed
+      #   with:
+      #     name: Unit Tests            # Name of the check run which will be created
+      #     path: test-results.json    # Path to test results
+      #     reporter: mocha-json        # Format of test results

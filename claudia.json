@@ -1,0 +1,10 @@
+{
+  "lambda": {
+    "role": "verida_data-connector-executor",
+    "name": "verida_data-connector",
+    "region": "us-east-1"
+  },
+  "api": {
+    "id": "1ad2vnlmeh"
+  }
+}
