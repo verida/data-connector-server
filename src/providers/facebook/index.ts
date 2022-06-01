@@ -5,8 +5,8 @@ const FacebookStrategy = require("passport-facebook")
 
 const {Facebook, FacebookApiException} = require('fb')
 
-
 import Following from './following'
+import Post from './post'
 
 export interface ConfigInterface {
     appId: string
@@ -21,7 +21,8 @@ export default class FacebookProvider extends Base {
 
     public syncHandlers(): any[] {
         return [
-            Following
+            Following,
+            Post
         ]
     }
 

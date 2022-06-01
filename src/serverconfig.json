@@ -13,14 +13,18 @@
             "defaultMessageServer": {
                 "type": "VeridaMessage",
                 "endpointUri": "https://db.testnet.verida.io:5002/"
-            },
-        },
+            }
+        }
+    },
+    "testing": {
+        "encryptionKey": ""
     },
     "providers": {
         "facebook": {
             "appId": "",
             "appSecret": "",
-            "likeLimit": 5, 
+            "followingLimit": 20,
+            "postLimit": 20,
             "testing": {
                 "accessToken": ""
             }
@@ -29,6 +33,8 @@
             "apiKey": "",
             "apiSecret": "",
             "bearerToken": "",
+            "followingLimit": 20,
+            "postLimit": 20,
             "testing": {
                 "accessToken": "",
                 "refreshToken": ""

@@ -49,8 +49,8 @@ export default class CommonUtils {
         }
     }
 
-    static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string): Promise<any> => {
-        return await axios.get(`${SERVER_URL}/sync/${provider}?accessToken=${accessToken}&refreshToken=${refreshToken}&did=${did}`)
+    static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string): Promise<any> => {
+        return await axios.get(`${SERVER_URL}/sync/${provider}?accessToken=${accessToken}&refreshToken=${refreshToken}&did=${did}&key=${encryptionKey}`)
     }
 
     static openSchema = async (context: Context, contextName: string, schemaName: string, databaseName: string, encryptionKey: string, externalDid: string, did: string): Promise<any> => {

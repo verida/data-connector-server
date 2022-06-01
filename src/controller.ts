@@ -205,7 +205,7 @@ export default class Controller {
         // Fetch the necessary data from the provider
         let data: any = {}
         try {
-            data = await provider.sync(req, res, next)
+            data = await provider.syncFromRequest(req, res, next)
         } catch (err) {
             console.error(err)
             syncRequestResult.status = 'error'

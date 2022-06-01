@@ -17,17 +17,26 @@ export default class BaseProvider {
         throw new Error('Not implemented')
     }
 
-    public async sync(req: Request, res: Response, next: any): Promise<any> {
+    public async syncFromRequest(req: Request, res: Response, next: any): Promise<any> {
         const query = req.query
         const accessToken = query.accessToken ? query.accessToken.toString() : ''
         const refreshToken = query.refreshToken ? query.refreshToken.toString() : ''
 
+        return this.sync(accessToken, refreshToken)
+    }
+
+    public async sync(accessToken: string, refreshToken: string, schemaUri?: string): Promise<any> {
         const api = await this.getApi(accessToken, refreshToken)
         const results = []
 
         const handlers = this.syncHandlers()
         for (let h in handlers) {
             const handler = handlers[h]
+
+            if (schemaUri && handler.getSchemaUri() != schemaUri) {
+                continue
+            }
+            
             const handlerInstance = new handler(this.config)
             const handlerResults = await handlerInstance.sync(api)
             results[handler.getSchemaUri()] = handlerResults
