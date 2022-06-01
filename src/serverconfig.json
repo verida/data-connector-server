@@ -13,11 +13,11 @@
             "defaultMessageServer": {
                 "type": "VeridaMessage",
                 "endpointUri": "https://db.testnet.verida.io:5002/"
-            },
-        },
+            }
+        }
     },
     "testing": {
-        "encryptionKey": ''
+        "encryptionKey": ""
     },
     "providers": {
         "facebook": {
