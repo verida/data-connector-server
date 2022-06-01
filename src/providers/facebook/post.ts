@@ -37,7 +37,7 @@ export default class Posts extends BaseSyncHandler {
             const sourceData = post
 
             // Strip new lines from the name
-            const name = post.message.replace(/\n/g, ' ').substring(0,100)
+            const name = post.message.replace(/\n\r|\r|\n/g, ' ').substring(0,100)
 
             results.push({
                 _id: `facebook-${post.id}`,

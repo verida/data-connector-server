@@ -45,7 +45,7 @@ export default class Posts extends BaseSyncHandler {
             }
 
             // Strip new lines from the name
-            const name = tweet.text.replace(/\n/g, ' ').substring(0,100)
+            const name = tweet.text.replace(/\r\n|\r|\n/g, ' ').substring(0,100)
 
             results.push({
                 _id: `twitter-${tweet.id_str}`,

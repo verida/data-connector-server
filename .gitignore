@@ -6,3 +6,4 @@ dist/
 keys/
 v*/
 serverconfig.*.json
+.DS_Store
