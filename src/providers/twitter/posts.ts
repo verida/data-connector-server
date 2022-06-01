@@ -1,6 +1,5 @@
 import BaseSyncHandler from "../baseSyncHandler"
 
-import url from 'url'
 import dayjs from 'dayjs'
 const _ = require('lodash')
 
@@ -22,24 +21,19 @@ export default class Posts extends BaseSyncHandler {
         const accountSettings = await api.accountsAndUsers.accountSettings()
         const screenName = accountSettings.screen_name
 
-        // Maximum is 200 at a time, includes retweets
-        const tweets = await api.tweets.statusesUserTimeline({
+        // Maximum is 200 at a time.
+        // May not return a full 200 as retweets and replies are counted in the total, but not returnred!
+        const tweetsReturned = await api.tweets.statusesUserTimeline({
             screen_name: screenName,
-            count: 10
+            exclude_replies: true,
+            include_rts: false,
         })
-        //logger.debug(`Found ${statuses.length} twitter users`)
-        //return []
+
+        const tweets = tweetsReturned.slice(0,this.config.postLimit)
+
         const results = []
         for (let t in tweets) {
             const tweet: any = tweets[t]
-            if (tweet.in_reply_to_status_id) {
-                // skip tweets that are replies (these are more like comments)
-                continue
-            }
-            if (tweet.retweeted) {
-                // skip retweets
-                continue
-            }
             
             const createdAt = dayjs(tweet.created_at).toISOString()
             const icon = tweet.user.profile_image_url_https
