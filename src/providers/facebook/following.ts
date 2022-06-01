@@ -43,7 +43,7 @@ export default class Following extends BaseSyncHandler {
      */
      public async getAllPages(Fb: any, apiEndpoint: string, nextUrl: string = null, results: object[] = []): Promise<object[]> {
         if (!nextUrl) {
-            nextUrl = `${apiEndpoint}?limit=${this.config.likeLimit}`
+            nextUrl = `${apiEndpoint}?limit=${this.config.followingLimit}`
         }
 
         const pageResults = await Fb.api(nextUrl)
