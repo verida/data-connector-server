@@ -62,6 +62,7 @@ export default class Controller {
         const did = query.did.toString()
         const key = query.key.toString()
 
+        // @ts-ignore Session is injected as middleware
         req.session.did = did
 
         const provider = Providers(providerName)
