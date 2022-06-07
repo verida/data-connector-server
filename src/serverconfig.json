@@ -1,5 +1,6 @@
 {
     "serverUrl": "http://localhost:5021",
+    "assetsUrl": "http://localhost:5021/assets",
     "logLevel": "debug", 
     "verida": {
         "environment": "testnet",
@@ -21,6 +22,7 @@
     },
     "providers": {
         "facebook": {
+            "label": "Facebook",
             "appId": "",
             "appSecret": "",
             "followingLimit": 20,
@@ -30,6 +32,7 @@
             }
         },
         "twitter": {
+            "label": "Twitter",
             "apiKey": "",
             "apiSecret": "",
             "bearerToken": "",

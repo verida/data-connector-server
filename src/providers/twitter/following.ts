@@ -1,4 +1,4 @@
-import BaseSyncHandler from "../baseSyncHandler"
+import BaseSyncHandler from "../BaseSyncHandler"
 
 import url from 'url'
 import dayjs from 'dayjs'

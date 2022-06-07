@@ -1,4 +1,4 @@
-import BaseSyncHandler from "../baseSyncHandler"
+import BaseSyncHandler from "../BaseSyncHandler"
 const { Facebook } = require('fb')
 
 import url from 'url'

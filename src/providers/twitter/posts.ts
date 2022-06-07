@@ -1,4 +1,4 @@
-import BaseSyncHandler from "../baseSyncHandler"
+import BaseSyncHandler from "../BaseSyncHandler"
 
 import dayjs from 'dayjs'
 const _ = require('lodash')
