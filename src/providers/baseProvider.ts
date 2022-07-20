@@ -1,12 +1,17 @@
 import { Request, Response } from 'express'
-import BaseSyncHandler from './baseSyncHandler'
+import BaseProviderConfig from './BaseProviderConfig'
 
 export default class BaseProvider {
 
-    protected config: object
+    protected icon?: string
+    protected config: BaseProviderConfig
 
-    public constructor(config: object) {
+    public constructor(config: BaseProviderConfig) {
         this.config = config
+    }
+
+    public getLabel() {
+        return this.config.label
     }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {

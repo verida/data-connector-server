@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
-import Base from "../baseProvider"
+import Base from "../BaseProvider"
+import BaseProviderConfig from '../BaseProviderConfig'
+
 const passport = require("passport")
 const TwitterStrategy = require("passport-twitter")
 import { TwitterClient } from 'twitter-api-client'
@@ -7,7 +9,7 @@ import { TwitterClient } from 'twitter-api-client'
 import Following from './following'
 import Posts from './posts'
 
-export interface ConfigInterface {
+export interface TwitterProviderConfig extends BaseProviderConfig {
     apiKey: string
     apiSecret: string
     bearerToken: string
@@ -17,7 +19,7 @@ export interface ConfigInterface {
 
 export default class TwitterProvider extends Base {
 
-    protected config: ConfigInterface
+    protected config: TwitterProviderConfig
 
     public syncHandlers(): any[] {
         return [

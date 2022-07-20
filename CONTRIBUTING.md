@@ -1,34 +1,54 @@
 
 # Contributing
 
-## Why contribute?
+We welcome PR's that resolve any oustanding Github issue. You will be eligible for a Verida NFT and potentially a USDC rewards (see [Rewards](./REWARDS.md) for details).
 
-1. Earn USDC **and** rights to future Verida tokens for implementing a new provider or improving an existing one
-2. Pull your personal data into your Verida Vault
-3. Help user's pull data from an important API to then import into your own decentralized application built on the Verida network
+There are specific guidelines that must be adhered to when making a contribution.
 
-## Rewards for contributing
+## New Data Source Provider
 
-Browse the project github for issues with one of the `reward` tags.
+We actively encourage the development of any new data source providers that expand the available API's users can connect to pull their personal data.
 
-- `reward-1` 100 USDC + 1,000 Verida tokens
-- `reward-2` 200 USDC + 2,000 Verida tokens
-- `reward-5` 500 USDC + 5,000 Verida tokens
-- `reward-10` 1000 USDC + 10,000 Verida tokens
-- `reward-20` 2000 USDC + 20,000 Verida tokens
+Each data source provider must contain the following:
 
-These rewards are assigned by the project maintainers.
+1. `src/providers/<provider-name>/README.md` containing:
+   1. Instructions on how to obtain any necessary API keys for the server
+   2. Instructions on how to configure the provider
+   3. Any limitations of the provider (ie: Only fetches maximum of 1,000 records)
+   4. Any issues where the data provided doesn't exactly match the schema
+   5. Details of any new schemas created to support this API connector or modifications to existing schemas (including a link to a PR that contains the proposed schema changes in the [@verida/schemas-common](https://github.com/verida/schemas-common) repo)
+   6. Details of any future improvements or features that could be considered
+   7. Details of any performance considerations
+   8. Details of any known issues with the data source API being used
+2. `src/providers/<provider-name>/index.ts` extending [BaseProvider](./src/providers/BaseProvider.ts)
+3. `assets/<provider-name>/icon.png` with the official icon for the data source. Must be 256x256 pixels.
+4. An exported Typescript interface called `ConfigInterface` that defines the configuration options available for the API
+5. An entry in [src/serverconfig.json](src/serverconfig.json) for the provider that provides the default configuration for the data source
+6. `/test/<provider-name>.ts` file that contains appropriate unit tests that demonstrates succesful fetching of data and succesful handling of API errors
 
-Larger rewards typically relate to the creation of new providers, whereas smaller rewards typically reward to improvements to existing providers.
+Other considerations:
 
-Rewards are issued at the discretion of Verida Pte Ltd and are subject to change.
+1. The authentication must use `passport-js` if an existing authentication module exists
+2. The official npm package of the API in question must be used if it exists
+3. There should be no console output, instead use `log4js` with sensible logging (`trace`, `debug`, `info`, `error`)
+4. Use appropriate data schemas if they exist
+5. Do NOT commit a PR with any API keys, accessTokens or other secrets
 
-## Receiving rewards
+The data source connector must populate the appopriate schema with relant fields sourced from the API. While the fields may vary, at a minimum the connector must populate the following fields:
 
-Anyone can receive a reward if they complete a Github issue with matching PR that is merged into `develop` branch, where the Github issue has one of the `reward` tags.
+- `name` - A human readable name that best represents the record
+- `sourceApplication` - URL of the application the data was sourced from. Remove any `www` prefix. Use `https` if available.
+- `sourceId` - Unique ID of the record sourced from the API
+- `sourceData` - Full, unaltered JSON of the data retreived from the API. This allows a future upgrade path to add more data into the schema from the original data.
+- `insertedAt` - Date/time the data was inserted. If not available in the API, use another date/time that is an approximation, or worst case scenario use the current date/time.
 
-Include your ETH address in the PR and payment will be made within 7 days.
+Some common optional fields include:
 
-## Suggesting a new provider
+- `uri` - A URL to view the pi
+- `icon` - A small icon representing the data
+- `summary` - A brief summary of the recrod
+- `uri` - A public link to the unique record in the application (ie: Tweet URL)
 
-Simply create a new Github issue using the `New provider` template.
+## Existing Data Source Provider
+
+When extending an existing data source provider, ensure the same standards for a new data source provider are adhered to.

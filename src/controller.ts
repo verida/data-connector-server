@@ -1,8 +1,9 @@
 import { Request, Response } from 'express'
 
-import { Client, EnvironmentType, ContextInterfaces } from '@verida/client-ts'
+import { Client, ContextInterfaces } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 import EncryptionUtils from '@verida/encryption-utils'
+import fs from 'fs'
 
 import CONFIG from "./config"
 import {strToEnvType} from "./config"
@@ -15,8 +16,8 @@ const DEFAULT_ENDPOINTS = CONFIG.verida.defaultEndpoints
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 
-const DATA_CONNECTION_SCHEMA = 'https://vault.schemas.verida.io/data-connections/connection/v0.1.0/schema.json'
-const DATA_PROFILE_SCHEMA = 'https://vault.schemas.verida.io/data-connections/profile/v0.1.0/schema.json'
+//const DATA_CONNECTION_SCHEMA = 'https://vault.schemas.verida.io/data-connections/connection/v0.1.0/schema.json'
+//const DATA_PROFILE_SCHEMA = 'https://vault.schemas.verida.io/data-connections/profile/v0.1.0/schema.json'
 const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
 
 import Providers from "./providers"
@@ -61,6 +62,7 @@ export default class Controller {
         const did = query.did.toString()
         const key = query.key.toString()
 
+        // @ts-ignore Session is injected as middleware
         req.session.did = did
 
         const provider = Providers(providerName)
@@ -425,6 +427,38 @@ export default class Controller {
             context,
             account
         }
+    }
+
+    /**
+     * Get a list of all the supported providers
+     */
+    public static async getProviders(): Promise<any> {
+        // Build a list of data source providers from the providers directory
+        const providerDirectory = fs.readdirSync('./src/providers')
+        const providers = []
+        for (let i in providerDirectory) {
+            const providerEntry = providerDirectory[i]
+            if (providerEntry.match('\\.')) {
+                // ignore files (indicated by having a `.` in the name)
+                continue
+            }
+
+            providers.push(providerEntry)
+        }
+
+        // Build up a list of providers
+        const providerList = []
+        for (let p in providers) {
+            const providerName = providers[p]
+            const provider = Providers(providerName)
+            providerList.push({
+                name: providerName, 
+                label: provider.getLabel(),
+                icon: provider.icon ? provider.icon : `${CONFIG.assetsUrl}/${providerName}/icon.png`
+            })
+        }
+
+        return providerList
     }
 
 }

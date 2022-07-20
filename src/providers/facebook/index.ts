@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
-import Base from "../baseProvider"
+import Base from "../BaseProvider"
+import BaseProviderConfig from '../BaseProviderConfig'
+
 const passport = require("passport")
 const FacebookStrategy = require("passport-facebook")
 
@@ -8,7 +10,7 @@ const {Facebook, FacebookApiException} = require('fb')
 import Following from './following'
 import Post from './post'
 
-export interface ConfigInterface {
+export interface FacebookProviderConfig extends BaseProviderConfig {
     appId: string
     appSecret: string
     callbackUrl: string
@@ -17,7 +19,7 @@ export interface ConfigInterface {
 
 export default class FacebookProvider extends Base {
 
-    protected config: ConfigInterface
+    protected config: FacebookProviderConfig
 
     public syncHandlers(): any[] {
         return [
