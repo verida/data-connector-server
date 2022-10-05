@@ -1,5 +1,4 @@
 const assert = require("assert")
-import CONFIG from '../src/config'
 import Controller from '../src/controller'
 
 describe(`Controller Tests`, function() {

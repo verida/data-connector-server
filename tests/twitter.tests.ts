@@ -1,5 +1,5 @@
 const assert = require("assert")
-import CONFIG from '../src/config'
+import serverconfig from '../src/serverconfig.json'
 import Providers from '../src/providers'
 
 const SCHEMA_FOLLOWING = 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
@@ -7,10 +7,10 @@ const SCHEMA_POST = 'https://common.schemas.verida.io/social/post/v0.1.0/schema.
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
-logger.level = CONFIG.logLevel
+logger.level = serverconfig.logLevel
 
 const providerName = 'twitter'
-const providerConfig = CONFIG.providers[providerName]
+const providerConfig = serverconfig.providers[providerName]
 const creds = providerConfig.testing
 
 describe(`${providerName} Tests`, function() {

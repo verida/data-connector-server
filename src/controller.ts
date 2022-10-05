@@ -5,13 +5,13 @@ import { AutoAccount } from '@verida/account-node'
 import EncryptionUtils from '@verida/encryption-utils'
 import fs from 'fs'
 
-import CONFIG from "./config"
+import serverconfig from '../src/serverconfig.json'
 import {strToEnvType} from "./config"
 
-const VERIDA_ENVIRONMENT = strToEnvType(CONFIG.verida.environment)
-const CONTEXT_NAME = CONFIG.verida.contextName
-const PRIVATE_KEY = CONFIG.verida.privateKey
-const DEFAULT_ENDPOINTS = CONFIG.verida.defaultEndpoints
+const VERIDA_ENVIRONMENT = strToEnvType(serverconfig.verida.environment)
+const CONTEXT_NAME = serverconfig.verida.contextName
+const PRIVATE_KEY = serverconfig.verida.privateKey
+const DEFAULT_ENDPOINTS = serverconfig.verida.defaultEndpoints
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -454,7 +454,7 @@ export default class Controller {
             providerList.push({
                 name: providerName, 
                 label: provider.getLabel(),
-                icon: provider.icon ? provider.icon : `${CONFIG.assetsUrl}/${providerName}/icon.png`
+                icon: provider.icon ? provider.icon : `${serverconfig.assetsUrl}/${providerName}/icon.png`
             })
         }
 
