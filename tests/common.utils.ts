@@ -4,15 +4,15 @@ import Axios from 'axios'
 import { EnvironmentType, Context, Client, ContextInterfaces } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 
-import CONFIG from "../src/config"
+import serverconfig from '../src/serverconfig.json'
 import Datastore from '@verida/client-ts/dist/context/datastore'
 
-const SERVER_URL = CONFIG.serverUrl
-const TEST_VAULT_CONTEXT = 'Verida: Fake Vault'
-const TEST_VAULT_PRIVATE_KEY = '0x78d3b996ec98a9a536efdffbae40e5eaaf117765a587483c69195c9460165c37'
+const SERVER_URL = serverconfig.serverUrl
+const TEST_VAULT_CONTEXT = serverconfig.testing.contextName
+const TEST_VAULT_PRIVATE_KEY = serverconfig.testing.veridaPrivateKey
 
-const VERIDA_ENVIRONMENT = EnvironmentType.TESTNET
-const VERIDA_TESTNET_DEFAULT_SERVER = 'https://db.testnet.verida.io:5002/'
+const VERIDA_ENVIRONMENT = <EnvironmentType> serverconfig.verida.environment
+const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const axios = Axios.create()
 
@@ -23,18 +23,11 @@ export default class CommonUtils {
             environment: VERIDA_ENVIRONMENT
         })
 
-        const account = new AutoAccount({
-            defaultDatabaseServer: {
-                type: 'VeridaDatabase',
-                endpointUri: VERIDA_TESTNET_DEFAULT_SERVER
-            },
-            defaultMessageServer: {
-                type: 'VeridaMessage',
-                endpointUri: VERIDA_TESTNET_DEFAULT_SERVER
-            }
-        }, {
+        const account = new AutoAccount(serverconfig.verida.defaultEndpoints, {
             privateKey: TEST_VAULT_PRIVATE_KEY,
-            environment: VERIDA_ENVIRONMENT
+            environment: VERIDA_ENVIRONMENT,
+            // @ts-ignore
+            didClientConfig: DID_CLIENT_CONFIG
         })
 
         await network.connect(account);
@@ -73,7 +66,8 @@ export default class CommonUtils {
     }
 
     static closeDatastore = async (datastore: Datastore): Promise<any> => {
-        const db = await datastore.getDb()
-        await db._localDb.destroy()
+        await datastore.close({
+            clearLocal: true
+        })
     }
 }

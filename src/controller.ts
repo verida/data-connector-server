@@ -12,6 +12,7 @@ const VERIDA_ENVIRONMENT = strToEnvType(serverconfig.verida.environment)
 const CONTEXT_NAME = serverconfig.verida.contextName
 const PRIVATE_KEY = serverconfig.verida.privateKey
 const DEFAULT_ENDPOINTS = serverconfig.verida.defaultEndpoints
+const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -417,7 +418,9 @@ export default class Controller {
         })
         const account = new AutoAccount(DEFAULT_ENDPOINTS, {
             privateKey: PRIVATE_KEY,
-            environment: VERIDA_ENVIRONMENT
+            environment: VERIDA_ENVIRONMENT,
+            // @ts-ignore
+            didClientConfig: DID_CLIENT_CONFIG
         })
         await network.connect(account)
         const context = await network.openContext(CONTEXT_NAME)

@@ -9,15 +9,25 @@
         "defaultEndpoints": {
             "defaultDatabaseServer": {
                 "type": "VeridaDatabase",
-                "endpointUri": "https://db.testnet.verida.io:5002/"
+                "endpointUri": []
             },
             "defaultMessageServer": {
                 "type": "VeridaMessage",
-                "endpointUri": "https://db.testnet.verida.io:5002/"
+                "endpointUri": []
             }
+        },
+        "didClientConfig": {
+            "callType": "web3",
+            "network": "testnet",
+            "web3Config": {
+            },
+            "rpcUrl": "https://rpc-mumbai.maticvigil.com/",
+            "didEndpoints": []
         }
     },
     "testing": {
+        "contextName": "",
+        "veridaPrivateKey": "",
         "encryptionKey": ""
     },
     "providers": {
