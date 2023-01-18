@@ -18,5 +18,4 @@ export default class BaseSyncHandler {
     public async sync(api: any): Promise <any> {
         throw new Error('Not implemented')
     }
-
 }
