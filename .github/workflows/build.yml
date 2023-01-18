@@ -13,7 +13,7 @@ jobs:
   build-app:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: nvmrc
         uses: browniebroke/read-nvmrc-action@v1
       - uses: actions/setup-node@v2
@@ -21,6 +21,7 @@ jobs:
           node-version: '${{ steps.nvmrc.outputs.node_version }}'
           cache: 'yarn'
       - run: yarn install
+      - uses: mxschmitt/action-tmate@v3      
       - run: yarn build
       # - run: yarn tests-report-json
       # - name: Test Report
