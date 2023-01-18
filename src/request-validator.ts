@@ -34,8 +34,9 @@ export default class RequestValidator {
 
                 if (!didDocument) {
                     if (!didClient) {
-                        const { DID_SERVER_URL }  = process.env
-                        didClient = new DIDClient(DID_SERVER_URL)
+                        didClient = new DIDClient({
+                            network: 'testnet'
+                        })
                     }
 
                     didDocument = await didClient.get(did)
