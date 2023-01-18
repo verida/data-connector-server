@@ -21,7 +21,7 @@ jobs:
           node-version: '${{ steps.nvmrc.outputs.node_version }}'
           cache: 'yarn'
       - run: yarn install
-      - uses: mxschmitt/action-tmate@v3      
+      # - uses: mxschmitt/action-tmate@v3      
       - run: yarn build
       # - run: yarn tests-report-json
       # - name: Test Report
