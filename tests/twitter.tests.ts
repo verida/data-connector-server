@@ -25,7 +25,7 @@ describe(`${providerName} Tests`, function() {
 
             assert.ok(syncData, 'Have data returned')
             assert.ok(SCHEMA_POST in syncData, 'Have Post data in the response')
-            assert.equal(syncData[SCHEMA_POST].length, providerConfig.postLimit, `Correct number of posts received`)
+            assert.equal(syncData[SCHEMA_POST].length, providerConfig.postLimit, `Correct number of posts received (${syncData[SCHEMA_POST].length} != ${providerConfig.postLimit})`)
         })
 
         it("Can fetch Following data", async () => {

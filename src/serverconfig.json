@@ -43,9 +43,8 @@
         },
         "twitter": {
             "label": "Twitter",
-            "apiKey": "",
-            "apiSecret": "",
-            "bearerToken": "",
+            "clientID": "",
+            "clientSecret": "",
             "followingLimit": 20,
             "postLimit": 20,
             "testing": {

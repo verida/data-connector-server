@@ -5,7 +5,7 @@ import { AutoAccount } from '@verida/account-node'
 import EncryptionUtils from '@verida/encryption-utils'
 import fs from 'fs'
 
-import serverconfig from '../src/serverconfig.json'
+import serverconfig from '../src/serverconfig.local.json'
 import {strToEnvType} from "./config"
 
 const VERIDA_ENVIRONMENT = strToEnvType(serverconfig.verida.environment)
@@ -169,6 +169,7 @@ export default class Controller {
     public static async sync(req: Request, res: Response, next: any) {
         const providerName = req.params.provider
         const provider = Providers(providerName)
+        console.log(`sync(${providerName})`)
 
         const { account, context } = await Controller.getNetwork()
         const serverDid = await account.did()
@@ -196,6 +197,9 @@ export default class Controller {
             status: 'requested'
         })
         const syncRequest = await syncRequestDatastore.get(syncRequestResult.id)
+        if (!syncRequest.syncInfo) {
+            syncRequest.syncInfo = {}
+        }
 
         res.send({
             did,
@@ -218,6 +222,11 @@ export default class Controller {
 
             await syncRequestDatastore.save(syncRequestResult)
             return
+        }
+
+        const newAuth = provider.getAccountAuth()
+        if (newAuth) {
+            syncRequest.syncInfo.newAuth = newAuth
         }
 
         const response: any = {}
@@ -325,9 +334,7 @@ export default class Controller {
                 }
 
                 // Update the sync request to say it has completed successfully
-                syncRequest.syncInfo = {
-                    schemas: response,
-                }
+                syncRequest.syncInfo.schemas = response
         
                 syncRequest.status = "complete"
                 await syncRequestDatastore.save(syncRequest)
@@ -342,9 +349,8 @@ export default class Controller {
 
         // After 5x2 second delays, we still don't have sync so assume it has failed
         syncRequest.status = "error"
-        syncRequest.syncInfo = {
-            error: "Server timed out syncing encrypted database"
-        }
+        syncRequest.syncInfo.error = "Server timed out syncing encrypted database"
+
         await syncRequestDatastore.save(syncRequest)
         
         logger.info(`Saved sync request indicating process has error`)

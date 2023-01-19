@@ -1,10 +1,16 @@
 import { Request, Response } from 'express'
 import BaseProviderConfig from './BaseProviderConfig'
 
+export interface AccountAuth {
+    accessToken: string,
+    refreshToken: string
+}
+
 export default class BaseProvider {
 
     protected icon?: string
     protected config: BaseProviderConfig
+    protected newAuth?: AccountAuth
 
     public constructor(config: BaseProviderConfig) {
         this.config = config
@@ -48,6 +54,18 @@ export default class BaseProvider {
         }
 
         return results
+    }
+
+    // Set new authentication credentials for this provider instance, if they changed
+    protected setAccountAuth(accessToken: string, refreshToken: string) {
+        this.newAuth = {
+            accessToken,
+            refreshToken
+        }
+    }
+
+    public getAccountAuth(): AccountAuth {
+        return this.newAuth
     }
 
     /**

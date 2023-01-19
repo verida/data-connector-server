@@ -48,9 +48,9 @@
     "nano": "^9.0.5",
     "passport": "^0.5.2",
     "passport-facebook": "^3.0.0",
-    "passport-twitter": "^1.0.4",
+    "passport-twitter-oauth2.0": "^1.1.0",
     "ts-mocha": "^9.0.2",
-    "twitter-api-client": "^1.5.2"
+    "twitter-api-v2": "^1.14.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
