@@ -5,7 +5,7 @@ import { AutoAccount } from '@verida/account-node'
 import EncryptionUtils from '@verida/encryption-utils'
 import fs from 'fs'
 
-import serverconfig from '../src/serverconfig.local.json'
+import serverconfig from '../src/serverconfig.json'
 import {strToEnvType} from "./config"
 
 const VERIDA_ENVIRONMENT = strToEnvType(serverconfig.verida.environment)
