@@ -18,45 +18,57 @@ export default class Posts extends BaseSyncHandler {
      */
     public async sync(api: any): Promise<any> {
         // Get the current user's screen name
-        const accountSettings = await api.accountsAndUsers.accountSettings()
-        const screenName = accountSettings.screen_name
+        const me = await api.v2.me()
 
-        // Maximum is 200 at a time.
-        // May not return a full 200 as retweets and replies are counted in the total, but not returnred!
-        const tweetsReturned = await api.tweets.statusesUserTimeline({
-            screen_name: screenName,
-            exclude_replies: true,
-            include_rts: false,
+        const timelinePaginator = await api.v2.userTimeline(me.data.id, {
+            max_results: this.config.postLimit,
+            exclude: ['replies', 'retweets']
         })
 
-        const tweets = tweetsReturned.slice(0,this.config.postLimit)
+        const timeline = timelinePaginator.tweets
+
+        const tweetIds = timeline.map((elm: any) => elm.id)
+        const tweetResponse = await api.v2.tweets(tweetIds, {
+            'expansions': ['author_id', 'geo.place_id'],
+            'tweet.fields': ['created_at'],
+            'user.fields': ['username', 'name', 'profile_image_url']
+        })
+
+        const tweets = tweetResponse.data
+        const users = tweetResponse.includes.users.reduce((result: any, value: any) => {
+            result[value.id] = value
+            return result
+        }, {})
 
         const results = []
         for (let t in tweets) {
             const tweet: any = tweets[t]
+            const author: any = users[tweet.author_id]
             
             const createdAt = dayjs(tweet.created_at).toISOString()
-            const icon = tweet.user.profile_image_url_https
+            const icon = author.profile_image_url
 
             const sourceData = tweet
             sourceData['user'] = {
-                id: tweet.user.id,
-                screen_name: tweet.user.screen_name
+                id: tweet.author_id,
+                screen_name: author.name,
+                avatar: author.profile_image_url,
+                url: `https://twitter.com/${author.name}/`
             }
 
             // Strip new lines from the name
             const name = tweet.text.replace(/\r\n|\r|\n/g, ' ').substring(0,100)
 
             results.push({
-                _id: `twitter-${tweet.id_str}`,
+                _id: `twitter-${tweet.id}`,
                 name: name,
                 content: tweet.text,
                 contentHtml: tweet.text,
                 icon,
                 summary: name,
-                uri: `https://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`,
+                uri: `https://twitter.com/${author.name}/status/${tweet.id}`,
                 sourceApplication: 'https://twitter.com/',
-                sourceId: tweet.id_str,
+                sourceId: tweet.id,
                 sourceData,
                 insertedAt: createdAt
             })

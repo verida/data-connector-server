@@ -18,11 +18,14 @@ export default class Following extends BaseSyncHandler {
      * @param api 
      */
     public async sync(api: any): Promise<any> {
-        const result = await api.accountsAndUsers.friendsList({
-            include_user_entities: false
+        const me = await api.v2.me()
+
+        const followingResult = await api.v2.following(me.data.id, {
+            'user.fields': ['created_at', 'profile_image_url', 'description'],
+            max_results: this.config.followingLimit
         })
 
-        const users = result.users.slice(0, this.config.followingLimit)
+        const users = followingResult.data
 
         const results = []
         for (let u in users) {
@@ -30,36 +33,16 @@ export default class Following extends BaseSyncHandler {
             const createdAt = dayjs(user.created_at).toISOString()
 
             results.push({
-                _id: `twitter-${user.id_str}`,
+                _id: `twitter-${user.id}`,
                 name: user.name,
-                icon: user.profile_image_url_https,
+                icon: user.profile_image_url,
                 summary: user.description.substring(0,100),
-                uri: `https://twitter.com/${user.screen_name}`,
+                uri: `https://twitter.com/${user.username}`,
                 sourceApplication: 'https://twitter.com/',
-                sourceId: user.id_str,
+                sourceId: user.id,
                 followedTimestamp: createdAt,
                 insertedAt: createdAt
             })
-        }
-
-        return results
-    }
-
-    /**
-     * Helper method to fetch all the pages of data for any Facebook API endpoint
-     */
-     public async getAllPages(Fb: any, apiEndpoint: string, nextUrl: string = null, results: object[] = []): Promise<object[]> {
-        if (!nextUrl) {
-            nextUrl = `${apiEndpoint}?limit=${this.config.likeLimit}`
-        }
-
-        const pageResults = await Fb.api(nextUrl)
-        results = results.concat(pageResults.data)
-
-        if (_.has(pageResults, 'paging.next') && !this.config.limitResults) {
-            const next = pageResults.paging.next
-            const urlParts = url.parse(next, true)
-            return await this.getAllPages(Fb, apiEndpoint, `${apiEndpoint}${urlParts.search}`, results)
         }
 
         return results

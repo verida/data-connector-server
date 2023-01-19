@@ -10,12 +10,8 @@ const logger = log4js.getLogger()
 import CONFIG from "./config"
 logger.level = CONFIG.logLevel
 
-
 //const basicAuth = require('express-basic-auth')
 //import RequestValidator from './request-validator'
-
-import dotenv from 'dotenv'
-dotenv.config();
 
 // Set up the express app
 const app = express();
@@ -26,7 +22,7 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
   // Enable this if HTTPS is enabled (ie: production)
-  // cookie: { secure: true }
+  // cookie: { secure: false }
 }))
 
 // Parse incoming requests data
