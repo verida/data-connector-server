@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
 import BaseProviderConfig from '../BaseProviderConfig'
+import TokenExpiredError from '../TokenExpiredError'
 
 const passport = require("passport")
 const FacebookStrategy = require("passport-facebook")
@@ -20,6 +21,10 @@ export interface FacebookProviderConfig extends BaseProviderConfig {
 export default class FacebookProvider extends Base {
 
     protected config: FacebookProviderConfig
+
+    public getProviderId() {
+        return 'facebook'
+    }
 
     public syncHandlers(): any[] {
         return [
@@ -51,7 +56,6 @@ export default class FacebookProvider extends Base {
                 } else {
                     const connectionToken = {
                         id: data.profile.id,
-                        provider: data.profile.provider,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
                         profile: data.profile
@@ -74,8 +78,25 @@ export default class FacebookProvider extends Base {
             appSecret: this.config.appSecret
         })
 
-        Fb.setAccessToken(accessToken)
-        return Fb
+        try {
+            Fb.setAccessToken(accessToken)
+
+            const me = await Fb.api('/me?fields=id,name,picture,link')
+            console.log(me)
+
+            this.profile = {
+                id: me.id,
+                name: me.name,
+                url: me.link,
+                avatarUrl: me.picture.data.url
+            }
+
+            return Fb
+        } catch (err: any) {
+            if (err.response && err.response.error.code == 190) {
+                throw new TokenExpiredError(err.response.error.message)
+            }
+        }
     }
 
     public init() {

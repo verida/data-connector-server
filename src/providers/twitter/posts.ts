@@ -1,6 +1,7 @@
 import BaseSyncHandler from "../BaseSyncHandler"
 
 import dayjs from 'dayjs'
+import { AccountProfile } from "../BaseProvider"
 const _ = require('lodash')
 
 const log4js = require("log4js")
@@ -17,10 +18,7 @@ export default class Posts extends BaseSyncHandler {
      * @param api 
      */
     public async sync(api: any): Promise<any> {
-        // Get the current user's screen name
-        const me = await api.v2.me()
-
-        const timelinePaginator = await api.v2.userTimeline(me.data.id, {
+        const timelinePaginator = await api.v2.userTimeline(this.profile.id, {
             max_results: this.config.postLimit,
             exclude: ['replies', 'retweets']
         })

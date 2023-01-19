@@ -1,3 +1,4 @@
+import { AutoAccount } from '@verida/account-node'
 import { Request, Response } from 'express'
 import BaseProviderConfig from './BaseProviderConfig'
 
@@ -6,14 +7,39 @@ export interface AccountAuth {
     refreshToken: string
 }
 
+export interface AccountProfile {
+    id: string,
+    name?: string
+    username?: string
+    description?: string
+    createdAt?: string
+    url?: string
+    avatarUrl?: string
+    proof?: string
+    proofSignature?: string
+}
+
 export default class BaseProvider {
+
+    protected signerContext: string
+    protected signerAccount?: AutoAccount
 
     protected icon?: string
     protected config: BaseProviderConfig
     protected newAuth?: AccountAuth
+    protected profile?: AccountProfile
 
-    public constructor(config: BaseProviderConfig) {
+    public constructor(config: BaseProviderConfig, signerContext: string) {
         this.config = config
+        this.signerContext = signerContext
+    }
+
+    public setSigner(signerAccount: AutoAccount) {
+        this.signerAccount = signerAccount
+    }
+
+    public getProviderId() {
+        throw new Error('Not implemented')
     }
 
     public getLabel() {
@@ -28,6 +54,18 @@ export default class BaseProvider {
         throw new Error('Not implemented')
     }
 
+    public async getProfile(): Promise<AccountProfile> {
+        if (this.profile && !this.profile.proof) {
+            const did = await this.signerAccount.did()
+            this.profile.proof = `${this.getProviderId()}-${this.profile.id}-${did.toLowerCase()}`
+
+            const keyring = await this.signerAccount.keyring(this.signerContext)
+            this.profile.proofSignature = await keyring.sign(this.profile.proof)
+        }
+
+        return this.profile
+    }
+
     public async syncFromRequest(req: Request, res: Response, next: any): Promise<any> {
         const query = req.query
         const accessToken = query.accessToken ? query.accessToken.toString() : ''
@@ -36,6 +74,15 @@ export default class BaseProvider {
         return this.sync(accessToken, refreshToken)
     }
 
+    /**
+     * 
+     * Must update `profile` or `newAuth` if they have changed
+     * 
+     * @param accessToken 
+     * @param refreshToken 
+     * @param schemaUri 
+     * @returns 
+     */
     public async sync(accessToken: string, refreshToken: string, schemaUri?: string): Promise<any> {
         const api = await this.getApi(accessToken, refreshToken)
         const results = []
@@ -48,7 +95,7 @@ export default class BaseProvider {
                 continue
             }
             
-            const handlerInstance = new handler(this.config)
+            const handlerInstance = new handler(this.config, this.profile)
             const handlerResults = await handlerInstance.sync(api)
             results[handler.getSchemaUri()] = handlerResults
         }
@@ -71,7 +118,9 @@ export default class BaseProvider {
     /**
      * Generate an api connection instance for communicating with this provider.
      * 
-     * Must be implemented for each provider
+     * Must be implemented for each provider.
+     * Must populate this.profile with the most up-to-date profile information for the account
+     * 
      * @param req 
      */
     public async getApi(accessToken?: string, refreshToken?: string): Promise<any> {

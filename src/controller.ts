@@ -22,6 +22,7 @@ const logger = log4js.getLogger()
 const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
 
 import Providers from "./providers"
+import TokenExpiredError from './providers/TokenExpiredError'
 
 const delay = async (ms: number) => {
     await new Promise((resolve) => setTimeout(() => resolve(true), ms))
@@ -90,45 +91,6 @@ export default class Controller {
 
         // @ts-ignore
         const did = req.session.did
-        //const key = req.session.key
-
-        // save the user profile data
-        /*
-        const { account, context } = await Controller.getNetwork()
-        const databaseName = EncryptionUtils.hash(`${did}-${DATA_PROFILE_SCHEMA}-${providerName}`)
-
-        // store provider metadata in a database for the user
-        const datastore = await context.openDatastore(DATA_PROFILE_SCHEMA, {
-            permissions: {
-                read: ContextInterfaces.PermissionOptionsEnum.USERS,
-                write: ContextInterfaces.PermissionOptionsEnum.USERS,
-                readList: [did],
-                writeList: [did]
-            },
-            databaseName
-        })
-
-        const client = await context.getClient()
-        const schema = await client.getSchema(DATA_PROFILE_SCHEMA)
-        const json = await schema.getSpecification()
-        console.log(json)
-
-        console.log(connectionToken)
-        const profile = connectionToken.profile
-
-        const profileData = {
-            _id: profile.id,
-            name: profile.displayName,
-            username: profile.username,
-            gender: profile.gender,
-            profileUrl: profile.profileUrl,
-            avatar: ""
-        }
-
-        console.log(profileData)
-
-        const saveResult = await datastore.save(profileData)*/
-        // @todo: handle and log errors
 
         // Send the access token, refresh token and profile database name and encryption key
         // so the user can pull their profile remotely and store their tokens securely
@@ -149,7 +111,7 @@ export default class Controller {
     }
 
     /**
-     * Syncronize data from a third party data source with a local collection of datatores.
+     * Synchronize data from a third party data source with a local collection of datatores.
      * 
      * Converts the third party into an appropriate Verida schema.
      * 
@@ -167,12 +129,12 @@ export default class Controller {
      * @returns 
      */
     public static async sync(req: Request, res: Response, next: any) {
-        const providerName = req.params.provider
-        const provider = Providers(providerName)
-        console.log(`sync(${providerName})`)
-
         const { account, context } = await Controller.getNetwork()
         const serverDid = await account.did()
+
+        const providerName = req.params.provider
+        const provider = Providers(providerName)
+        provider.setSigner(account)
 
         const query = req.query
         const did = query.did.toString()
@@ -213,21 +175,37 @@ export default class Controller {
         let data: any = {}
         try {
             data = await provider.syncFromRequest(req, res, next)
-        } catch (err) {
-            console.error(err)
-            syncRequestResult.status = 'error'
-            syncRequestResult.syncInfo = {
-                error: err.message
+        } catch (err: any) {
+            syncRequest.status = 'error'
+            if (err instanceof TokenExpiredError) {
+                syncRequest.syncInfo.error = `Token expired, please reconnect.`
+            }
+            else {
+                syncRequest.syncInfo.error = err.message
             }
 
-            await syncRequestDatastore.save(syncRequestResult)
+            await syncRequestDatastore.save(syncRequest)
+
+            // Add a delay so the sync request has time to sync
+            await delay(2000)
+
+            await context.close({
+                clearLocal: true
+            })
+
             return
         }
 
+        console.log('b')
+
+        // Add account auth info if it has changed
         const newAuth = provider.getAccountAuth()
         if (newAuth) {
             syncRequest.syncInfo.newAuth = newAuth
         }
+
+        // Add latest profile info
+        syncRequest.syncInfo.profile = await provider.getProfile()
 
         const response: any = {}
         const syncingDatabases = []
@@ -248,7 +226,7 @@ export default class Controller {
                 databaseName
             })
 
-            // Get database info so we can retreive the encryption key used
+            // Get database info so we can retrieve the encryption key used
             const db = await datastore.getDb()
             const info = await db.info()
             
@@ -322,8 +300,6 @@ export default class Controller {
                 if (remoteInfo.doc_count >= localInfo.doc_count) {
                     completeCount++
                 }
-
-                // note: sync status is pending, then active, then pending -- so can't use
             }
 
             if (completeCount == syncingDatabases.length) {
@@ -331,9 +307,15 @@ export default class Controller {
                 syncRequest.syncInfo.schemas = response
         
                 syncRequest.status = "complete"
-                await syncRequestDatastore.save(syncRequest)
+                const res = await syncRequestDatastore.save(syncRequest)
+                if (!res) {
+                    console.log(`Errors saving sync request`)
+                    console.log(syncRequestDatastore.errors)
+                }
                 
                 logger.info(`Saved sync request indicating process is complete`)
+                // Wait 3 seconds to be super sure sync response is saved to DB
+                await delay(3000)
 
                 await context.close({
                     clearLocal: true

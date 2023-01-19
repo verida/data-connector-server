@@ -5,9 +5,11 @@ import BaseProviderConfig from '../BaseProviderConfig'
 const passport = require("passport")
 const TwitterStrategy = require("passport-twitter-oauth2.0")
 import { TwitterApi as TwitterClient } from 'twitter-api-v2'
+import dayjs from 'dayjs'
 
 import Following from './following'
 import Posts from './posts'
+import TokenExpiredError from '../TokenExpiredError'
 
 export interface TwitterProviderConfig extends BaseProviderConfig {
     clientID: string
@@ -23,6 +25,10 @@ export default class TwitterProvider extends Base {
 
     protected config: TwitterProviderConfig
 
+    public getProviderId() {
+        return 'twitter'
+    }
+
     public syncHandlers(): any[] {
         return [
             Following,
@@ -32,7 +38,7 @@ export default class TwitterProvider extends Base {
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
         this.init()
-        const auth = await passport.authenticate('twitter')
+        const auth = await passport.authenticate(this.getProviderId())
         return auth(req, res, next)
     }
 
@@ -48,7 +54,7 @@ export default class TwitterProvider extends Base {
         this.init()
 
         const promise = new Promise((resolve, rejects) => {
-            const auth = passport.authenticate('twitter', {
+            const auth = passport.authenticate(this.getProviderId(), {
                 scope: SCOPE,
                 failureRedirect: '/failure/twitter',
                 failureMessage: true
@@ -56,15 +62,14 @@ export default class TwitterProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
-                    /*const connectionToken = {
+                    const connectionToken = {
                         id: data.profile.id,
-                        provider: data.profile.provider,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
                         profile: data.profile
-                    }*/
+                    }
     
-                    resolve(data)
+                    resolve(connectionToken)
                 }
             })
 
@@ -76,33 +81,58 @@ export default class TwitterProvider extends Base {
     }
 
     public async getApi(accessToken?: string, refreshToken?: string): Promise<any> {
+        let me, client
+
         try {
-            console.log(accessToken, refreshToken)
-            const client = new TwitterClient(accessToken)
+            client = new TwitterClient(accessToken)
 
             // check client works okay
-            await client.v2.me()
-            return client
+            me = await client.v2.me({
+                'user.fields': ['username', 'name', 'profile_image_url', 'created_at', 'url', 'description']
+            })
         } catch (err: any) {
             // Auth error, attempt to obtain new refresh token
             if (err.code && (err.code == 401 || err.code == 403)) {
-                const client = new TwitterClient({
-                    clientId: this.config.clientID,
-                    clientSecret: this.config.clientSecret
-                });
-    
-                const {
-                    client: refreshedClient,
-                    accessToken: newAccessToken,
-                    refreshToken: newRefreshToken
-                } = await client.refreshOAuth2Token(refreshToken);
+                try {
+                    client = new TwitterClient({
+                        clientId: this.config.clientID,
+                        clientSecret: this.config.clientSecret
+                    });
+        
+                    const {
+                        client: refreshedClient,
+                        accessToken: newAccessToken,
+                        refreshToken: newRefreshToken
+                    } = await client.refreshOAuth2Token(refreshToken);
 
-                this.setAccountAuth(newAccessToken, newRefreshToken)
-                return refreshedClient
+                    this.setAccountAuth(newAccessToken, newRefreshToken)
+                    client = refreshedClient
+
+                    me = await client.v2.me({
+                        'user.fields': ['username', 'name', 'profile_image_url', 'created_at', 'url', 'description']
+                    })
+                } catch (err) {
+                    // Unrecoverable auth error
+                    throw new TokenExpiredError(err.message)
+                }
+            } else {
+                throw err
             }
-
-            throw err
         }
+
+        const createdAt = dayjs(me.data.created_at).toISOString()
+
+        this.profile = {
+            id: me.data.id,
+            name: me.data.name,
+            username: me.data.username,
+            description: me.data.description,
+            url: me.data.url,
+            avatarUrl: me.data.profile_image_url,
+            createdAt
+        }
+
+        return client
     }
 
     public init() {

@@ -1,11 +1,14 @@
+import { AccountProfile } from "./BaseProvider"
 
 export default class BaseSyncHandler {
 
     protected static schemaUri: string
     protected config: any
+    protected profile: AccountProfile
 
-    constructor(config: any) {
+    constructor(config: any, profile: AccountProfile) {
         this.config = config
+        this.profile = profile
     }
 
     protected static getSchemaUri(): string {
