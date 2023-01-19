@@ -56,7 +56,6 @@ export default class TwitterProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
-                    console.log(data)
                     /*const connectionToken = {
                         id: data.profile.id,
                         provider: data.profile.provider,
@@ -78,6 +77,7 @@ export default class TwitterProvider extends Base {
 
     public async getApi(accessToken?: string, refreshToken?: string): Promise<any> {
         try {
+            console.log(accessToken, refreshToken)
             const client = new TwitterClient(accessToken)
 
             // check client works okay

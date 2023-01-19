@@ -327,12 +327,6 @@ export default class Controller {
             }
 
             if (completeCount == syncingDatabases.length) {
-                for (let i = 0; i < syncingDatabases.length; i++) {
-                    const db = syncingDatabases[i]
-                    // close the local database so we don't use up all the disk space
-                    await db.close()
-                }
-
                 // Update the sync request to say it has completed successfully
                 syncRequest.syncInfo.schemas = response
         
@@ -340,6 +334,11 @@ export default class Controller {
                 await syncRequestDatastore.save(syncRequest)
                 
                 logger.info(`Saved sync request indicating process is complete`)
+
+                await context.close({
+                    clearLocal: true
+                })
+
                 return
             }
 
@@ -354,10 +353,14 @@ export default class Controller {
         await syncRequestDatastore.save(syncRequest)
         
         logger.info(`Saved sync request indicating process has error`)
+
+        await context.close({
+            clearLocal: true
+        })
     }
 
     /**
-     * The Vault has completed syncronizing data over the Verida network.
+     * The Vault has completed synchronizing data over the Verida network.
      * 
      * This server can now destroy the local encrypted copy of data.
      * 
