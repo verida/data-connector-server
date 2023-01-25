@@ -770,11 +770,12 @@
     axios "1.2.0-alpha.1"
     lodash "^4.17.21"
 
-"@verida/web3@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@verida/web3/-/web3-2.0.0.tgz#4023ddda769bb13e36d8f48ea3480f25abe84a87"
-  integrity sha512-+AqqaSgpeFrr12iPCdUiqEqvWa0dlHkN5AmJzrXHGktiBb7vPQxPRKu1dV2mOOhcsTV/grdVKwuB2ZV5/X4lAg==
+"@verida/web3@^2.0.0", "@verida/web3@^2.0.2":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@verida/web3/-/web3-2.0.2.tgz#6c60134d4ef7f66631925dd6c19558ec9178c7c2"
+  integrity sha512-VjIvNlIgfsH1b4HmSpvEsUAEoaR0wJj6L4wyyaw5dTY3DyakZLgxud0r0PIS2Z3xKiTzUjOPpIHMMWyrTBw8LQ==
   dependencies:
+    axios "^1.2.3"
     ethers "^5.7.0"
 
 abbrev@1:
