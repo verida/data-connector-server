@@ -714,10 +714,10 @@
     ethers "^5.7.2"
     lodash "^4.17.21"
 
-"@verida/encryption-utils@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@verida/encryption-utils/-/encryption-utils-2.0.0.tgz#996740206f776d65314dd1351d318b971872bf77"
-  integrity sha512-w1LY3KJWqmeTWHjKlXGjAnF4ghpeMfXvRe7d1QUoqOLk9p0vgRMGkWwYgqYfhtvkGhu9e5+Nrit9XTGewjbNXg==
+"@verida/encryption-utils@^2.0.0", "@verida/encryption-utils@^2.1.1":
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/@verida/encryption-utils/-/encryption-utils-2.1.1.tgz#fe2427ea228fc833238642a96ca4af17b40271bb"
+  integrity sha512-qCkPD12ZpAf8bGMub7WPY8WwXwzIvRZieRd+7gCrj5Ip40wK8LEdoxU5n+5SoAxkiPWxvdJnddO3UXdfhXtCaw==
   dependencies:
     ethers "^5.5.1"
     json.sortify "^2.2.2"
