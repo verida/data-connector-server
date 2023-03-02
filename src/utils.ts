@@ -2,7 +2,6 @@ import { EnvironmentType } from '@verida/types'
 import { AutoAccount } from "@verida/account-node"
 import { Client, Context } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
-import { AccountProfile } from './providers/BaseProvider';
 import Providers from "./providers"
 import fs from 'fs'
 import serverconfig from '../src/serverconfig.json'
@@ -14,7 +13,15 @@ const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const REPUTATION_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/social/credential/reputation/v0.1.0/schema.json'
 
-export default class Utils {
+export {
+    CONTEXT_NAME,
+    PRIVATE_KEY,
+    DEFAULT_ENDPOINTS,
+    DID_CLIENT_CONFIG,
+    REPUTATION_CREDENTIAL_SCHEMA
+}
+
+export class Utils {
 
     /**
      * Get a network, context and account instance
@@ -99,5 +106,8 @@ export default class Utils {
             throw new Error("Invalid EnvironmentType value");
         }
     }
-
 }
+
+const VERIDA_ENVIRONMENT = Utils.strToEnvType(serverconfig.verida.environment)
+
+export { VERIDA_ENVIRONMENT }

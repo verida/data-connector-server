@@ -14,7 +14,7 @@ const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connectio
 
 import Providers from "./providers"
 import TokenExpiredError from './providers/TokenExpiredError'
-import Utils from './utils'
+import { Utils } from './utils'
 
 const delay = async (ms: number) => {
     await new Promise((resolve) => setTimeout(() => resolve(true), ms))

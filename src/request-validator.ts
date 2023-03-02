@@ -1,7 +1,6 @@
-const basicAuth = require('express-basic-auth')
 const mcache = require("memory-cache")
 import { DIDClient } from '@verida/did-client'
-import { sign } from 'crypto'
+import { VERIDA_ENVIRONMENT } from './utils'
 
 let didClient: DIDClient
 
@@ -35,7 +34,7 @@ export default class RequestValidator {
                 if (!didDocument) {
                     if (!didClient) {
                         didClient = new DIDClient({
-                            network: 'testnet'
+                            network: VERIDA_ENVIRONMENT
                         })
                     }
 

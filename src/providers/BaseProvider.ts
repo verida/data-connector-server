@@ -1,6 +1,6 @@
 import { Context } from '@verida/client-ts'
 import { Request, Response } from 'express'
-import Utils from '../utils'
+import { Utils } from '../utils'
 import BaseProviderConfig from './BaseProviderConfig'
 
 export interface AccountAuth {
