@@ -1,18 +1,9 @@
 import { Request, Response } from 'express'
-
-import { Client, ContextInterfaces } from '@verida/client-ts'
-import { AutoAccount } from '@verida/account-node'
+import { DatabasePermissionOptionsEnum } from '@verida/types'
 import EncryptionUtils from '@verida/encryption-utils'
-import fs from 'fs'
-
 import serverconfig from '../src/serverconfig.json'
-import {strToEnvType} from "./config"
 
-const VERIDA_ENVIRONMENT = strToEnvType(serverconfig.verida.environment)
 const CONTEXT_NAME = serverconfig.verida.contextName
-const PRIVATE_KEY = serverconfig.verida.privateKey
-const DEFAULT_ENDPOINTS = serverconfig.verida.defaultEndpoints
-const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -23,6 +14,7 @@ const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connectio
 
 import Providers from "./providers"
 import TokenExpiredError from './providers/TokenExpiredError'
+import Utils from './utils'
 
 const delay = async (ms: number) => {
     await new Promise((resolve) => setTimeout(() => resolve(true), ms))
@@ -129,12 +121,11 @@ export default class Controller {
      * @returns 
      */
     public static async sync(req: Request, res: Response, next: any) {
-        const { account, context } = await Controller.getNetwork()
+        const { account, context } = await Utils.getNetwork()
         const serverDid = await account.did()
 
         const providerName = req.params.provider
         const provider = Providers(providerName)
-        provider.setSigner(account)
 
         const query = req.query
         const did = query.did.toString()
@@ -144,8 +135,8 @@ export default class Controller {
         const syncRequestDatabaseName = EncryptionUtils.hash(`${did}-${DATA_SYNC_REQUEST_SCHEMA}`)
         const syncRequestDatastore = await context.openDatastore(DATA_SYNC_REQUEST_SCHEMA, {
             permissions: {
-                read: ContextInterfaces.PermissionOptionsEnum.USERS,
-                write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                read: DatabasePermissionOptionsEnum.USERS,
+                write: DatabasePermissionOptionsEnum.USERS,
                 readList: [did],
                 writeList: [did]
             },
@@ -196,8 +187,6 @@ export default class Controller {
             return
         }
 
-        console.log('b')
-
         // Add account auth info if it has changed
         const newAuth = provider.getAccountAuth()
         if (newAuth) {
@@ -205,7 +194,7 @@ export default class Controller {
         }
 
         // Add latest profile info
-        syncRequest.syncInfo.profile = await provider.getProfile()
+        syncRequest.syncInfo.profile = await provider.getProfile(did, context)
 
         const response: any = {}
         const syncingDatabases = []
@@ -218,8 +207,8 @@ export default class Controller {
             // open a datastore where the user has permission to access the datastores
             const datastore = await context.openDatastore(schemaUri, {
                 permissions: {
-                    read: ContextInterfaces.PermissionOptionsEnum.USERS,
-                    write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                    read: DatabasePermissionOptionsEnum.USERS,
+                    write: DatabasePermissionOptionsEnum.USERS,
                     readList: [did],
                     writeList: [did]
                 },
@@ -366,7 +355,7 @@ export default class Controller {
         const query = req.query
         const did: string = query.did.toString()
 
-        const { context } = await Controller.getNetwork()
+        const { context } = await Utils.getNetwork()
 
         const clearedDatabases = []
         for (let i in schemaUris) {
@@ -374,8 +363,8 @@ export default class Controller {
             const databaseName = EncryptionUtils.hash(`${did}-${schemaUri}`)
             const datastore = await context.openDatastore(schemaUri, {
                 permissions: {
-                    read: ContextInterfaces.PermissionOptionsEnum.USERS,
-                    write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                    read: DatabasePermissionOptionsEnum.USERS,
+                    write: DatabasePermissionOptionsEnum.USERS,
                     readList: [did],
                     writeList: [did]
                 },
@@ -396,63 +385,6 @@ export default class Controller {
         return res.send({
             clearedDatabases
         })
-    }
-
-    /**
-     * Get a network, context and account instance
-     * 
-     * @returns 
-     */
-    public static async getNetwork(): Promise<any> {
-        const network = new Client({
-            environment: VERIDA_ENVIRONMENT
-        })
-        const account = new AutoAccount(DEFAULT_ENDPOINTS, {
-            privateKey: PRIVATE_KEY,
-            environment: VERIDA_ENVIRONMENT,
-            // @ts-ignore
-            didClientConfig: DID_CLIENT_CONFIG
-        })
-        await network.connect(account)
-        const context = await network.openContext(CONTEXT_NAME)
-
-        return {
-            network,
-            context,
-            account
-        }
-    }
-
-    /**
-     * Get a list of all the supported providers
-     */
-    public static async getProviders(): Promise<any> {
-        // Build a list of data source providers from the providers directory
-        const providerDirectory = fs.readdirSync('./src/providers')
-        const providers = []
-        for (let i in providerDirectory) {
-            const providerEntry = providerDirectory[i]
-            if (providerEntry.match('\\.')) {
-                // ignore files (indicated by having a `.` in the name)
-                continue
-            }
-
-            providers.push(providerEntry)
-        }
-
-        // Build up a list of providers
-        const providerList = []
-        for (let p in providers) {
-            const providerName = providers[p]
-            const provider = Providers(providerName)
-            providerList.push({
-                name: providerName, 
-                label: provider.getLabel(),
-                icon: provider.icon ? provider.icon : `${serverconfig.assetsUrl}/${providerName}/icon.png`
-            })
-        }
-
-        return providerList
     }
 
 }

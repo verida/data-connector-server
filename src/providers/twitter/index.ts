@@ -29,6 +29,10 @@ export default class TwitterProvider extends Base {
         return 'twitter'
     }
 
+    public getProviderLabel() {
+        return 'Twitter'
+    }
+
     public syncHandlers(): any[] {
         return [
             Following,

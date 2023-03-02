@@ -1,5 +1,6 @@
-import { AutoAccount } from '@verida/account-node'
+import { Context } from '@verida/client-ts'
 import { Request, Response } from 'express'
+import Utils from '../utils'
 import BaseProviderConfig from './BaseProviderConfig'
 
 export interface AccountAuth {
@@ -15,30 +16,32 @@ export interface AccountProfile {
     createdAt?: string
     url?: string
     avatarUrl?: string
-    proof?: string
-    proofSignature?: string
+    credential?: string
 }
 
 export default class BaseProvider {
 
-    protected signerContext: string
-    protected signerAccount?: AutoAccount
+    protected signerContext: Context
 
     protected icon?: string
     protected config: BaseProviderConfig
     protected newAuth?: AccountAuth
     protected profile?: AccountProfile
 
-    public constructor(config: BaseProviderConfig, signerContext: string) {
+    public constructor(config: BaseProviderConfig, signerContext: Context) {
         this.config = config
         this.signerContext = signerContext
     }
 
-    public setSigner(signerAccount: AutoAccount) {
-        this.signerAccount = signerAccount
+    public getProviderId(): string {
+        throw new Error('Not implemented')
     }
 
-    public getProviderId() {
+    public getProviderImageUrl(): string {
+        return this.icon
+    }
+
+    public getProviderLabel(): string {
         throw new Error('Not implemented')
     }
 
@@ -54,13 +57,37 @@ export default class BaseProvider {
         throw new Error('Not implemented')
     }
 
-    public async getProfile(): Promise<AccountProfile> {
-        if (this.profile && !this.profile.proof) {
-            const did = await this.signerAccount.did()
-            this.profile.proof = `${this.getProviderId()}-${this.profile.id}-${did.toLowerCase()}`
+    public async getProfileData(did: string): Promise<Record<string, any>> {
+        const profileLabel = this.profile.name || this.profile.username || this.profile.id
 
-            const keyring = await this.signerAccount.keyring(this.signerContext)
-            this.profile.proofSignature = await keyring.sign(this.profile.proof)
+        const credentialData: Record<string, any> = {
+            did,
+            name: `${this.getProviderLabel()}: ${profileLabel}`,
+            origin: this.getProviderId(),
+            type: 'account',
+            image: this.getProviderImageUrl(),
+            description: `Proof ${did} controls ${this.getProviderLabel()} account ${profileLabel}${profileLabel == this.profile.id ? '' : '(' + this.profile.id+ ')'}`,
+            attributes: {
+                accountCreated: this.profile.createdAt
+            },
+            uniqueAttribute: this.profile.id,
+        }
+
+        if (this.profile.url) {
+            credentialData.external_url = this.profile.url
+        }
+
+        if (this.profile.avatarUrl) {
+            credentialData.attributes.avatarUrl = this.profile.avatarUrl
+        }
+
+        return credentialData
+    }
+
+    public async getProfile(did: string): Promise<AccountProfile> {
+        if (this.profile && !this.profile.credential) {
+            const credentialData = await this.getProfileData(did)
+            this.profile.credential = await Utils.buildCredential(credentialData, this.signerContext)
         }
 
         return this.profile

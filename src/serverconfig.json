@@ -1,55 +1,79 @@
 {
-    "serverUrl": "http://localhost:5021",
-    "assetsUrl": "http://localhost:5021/assets",
+    "serverUrl": "http://192.168.68.124:5021",
+    "assetsUrl": "http://192.168.68.124:5021/assets",
     "logLevel": "debug", 
     "verida": {
         "environment": "testnet",
         "contextName": "Verida: Data Connector",
-        "privateKey": "",
+        "privateKey": "0xccd3b996ec98a9a536efdffbae40e5eaaf117765a587483c69195c9460165c37",
         "defaultEndpoints": {
             "defaultDatabaseServer": {
                 "type": "VeridaDatabase",
-                "endpointUri": []
+                "endpointUri": ["https://node1-apse2.acacia.verida.tech/", "https://node1-use2.acacia.verida.tech/", "https://node3-apse2.acacia.verida.tech/"]
             },
             "defaultMessageServer": {
                 "type": "VeridaMessage",
-                "endpointUri": []
+                "endpointUri": ["https://node1-apse2.acacia.verida.tech/", "https://node1-use2.acacia.verida.tech/", "https://node3-apse2.acacia.verida.tech/"]
             }
         },
         "didClientConfig": {
-            "callType": "web3",
+            "callType": "gasless",
             "network": "testnet",
             "web3Config": {
+                "rpcUrl": "https://rpc-mumbai.maticvigil.com/",
+                "serverConfig": {
+                    "headers": {
+                        "context-name": "Verida: Vault"
+                    }
+                },
+                "postConfig": {
+                    "headers": {
+                        "user-agent": "Verida-Vault"
+                    }
+                },
+                "endpointUrl": "https://meta-tx-server1.tn.verida.tech"
             },
             "rpcUrl": "https://rpc-mumbai.maticvigil.com/",
-            "didEndpoints": []
+            "didEndpoints": ["https://node1-apse2.acacia.verida.tech/did/", "https://node1-use2.acacia.verida.tech/did/", "https://node3-apse2.acacia.verida.tech/did/"]
         }
     },
     "testing": {
-        "contextName": "",
-        "veridaPrivateKey": "",
-        "encryptionKey": ""
+        "contextName": "Verida Testing: Fake Vault",
+        "veridaPrivateKey": "0x00d3b996ec98a9a536efecfbae40e5eaaf117765a587483c69195c9460165d37",
+        "encryptionKey": "aa8898c013c239012cec066f5cbb0165"
     },
     "providers": {
         "facebook": {
             "label": "Facebook",
-            "appId": "",
-            "appSecret": "",
+            "appId": "1118636508992307",
+            "appSecret": "5a88987023c239012cec066f5c200175",
             "followingLimit": 20,
             "postLimit": 20,
             "testing": {
-                "accessToken": ""
+                "accessToken": "EAAP5ZANvAUzMBAPYqkvmGZCSk9WZBL2kMO34sTG2m0XXlLOEg83GZAvBvjDEZAKPOqYuMaE1OPXUTyDXHuBQ4zN01Vtdpp1jKA9z98JbZALSBMQKvssCL580n9QyWqOV8CTTOZCVqNVSr8wrZAr97mvfZAZAtGrL0W6vuiCi8coeN4rRIuTO33pJqK8Deo2rOpj1PgV5XXpjQU3aQJhabb5qw7pEeXjFlaHTJqreFa4K5eECIutyi3OLF8"
+            }
+        },
+        "twitter-verida": {
+            "label": "Twitter",
+            "apiKey": "oPPIdjDTQMCerrUqpIbW8sEzl",
+            "apiSecret": "fGEXBRkn2ISp7TFBtJisSAeyo0WONzV8TxGzPMlAcC3SjZ8z5M",
+            "bearerToken": "AAAAAAAAAAAAAAAAAAAAAJeLdAEAAAAAnwbWfKEUlhJvxYNUk%2F2xoqNH0Vs%3DKGopJYVV59gWCOfm0CovUjLI9w7mAyxVxXtokpDwIBApfLboDR",
+            "followingLimit": 20,
+            "postLimit": 20,
+            "testing": {
+                "accessToken": "1196640912450834433-DmjuIJ6kHXNQaqpENJK0v1pWf1OajD",
+                "refreshToken": "ZNwoOzEjsLs92IIYSeGilKZ1mUFDM8XeSYuMMqF7TZ9gM"
             }
         },
         "twitter": {
             "label": "Twitter",
-            "clientID": "",
-            "clientSecret": "",
+            "clientID": "RHAxQUZmLVVMbm9NN2puajluZmE6MTpjaQ",
+            "clientSecret": "G0oWBZkgxVG7KCy8_5r4eHvxh-tQ8GoLmQm4mvsJi4zxhlpvIr",
             "followingLimit": 20,
             "postLimit": 20,
             "testing": {
-                "accessToken": "",
-                "refreshToken": ""
+                "accessToken": "bUNON0JrQ2lRcHE5LUtnaElqX05yUUh6dHdpdzRlbkpDSGo0Nks3azBJeEtvOjE2NzQxMDU2MzMyNjI6MTowOmF0OjE",
+                "refreshToken": "X0g2ODZVLVNDYjU2NUtfZ1pFcUUyZ0xPMGtFNDlHTHNfNWpiNmZadUh3R1EyOjE2NzQxMDU2MzMyNjI6MTowOnJ0OjE"
             }
         }
     },
