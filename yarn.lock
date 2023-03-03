@@ -670,7 +670,7 @@
     binary-case "^1.0.0"
     type-is "^1.6.16"
 
-"@verida/account-node@^2.1.3":
+"@verida/account-node@^2.0.0", "@verida/account-node@^2.1.3":
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/@verida/account-node/-/account-node-2.1.3.tgz#4f4d10a1f9a5dbd9b4bfd19a2cbe191dbf1cc268"
   integrity sha512-/G3iHxNoP23l0iGjF5zMxgfkZSrkqnHjYuVbK+8EoKGnBIr4L4ibZIAi09plMoIZWSaFPpMjmJdddLDIYL3gtQ==
@@ -697,7 +697,7 @@
     lodash "^4.17.21"
     tweetnacl-util "^0.15.1"
 
-"@verida/client-ts@^2.1.3":
+"@verida/client-ts@^2.0.1":
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/@verida/client-ts/-/client-ts-2.1.3.tgz#7538083613829b1bcf6eedb5789640c77f342094"
   integrity sha512-7Vpg2Bef80NHr4CkD1RlApi6VAz2Bgig9IFDB8dlj1mlkWkTW5Ngzd7fIdDzsw/CB6Okhw5Aav2W8WXWKNsq/w==
@@ -725,7 +725,7 @@
     pouchdb-find "^7.2.2"
     uuid "^8.3.2"
 
-"@verida/did-client@^2.1.3":
+"@verida/did-client@^2.0.0", "@verida/did-client@^2.1.3":
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/@verida/did-client/-/did-client-2.1.3.tgz#cb5f9a1b99c2797d04578c585914fe57533efec2"
   integrity sha512-SfG3RfaGRvrFuFoGUzDq6BQUioiy3kjJ9wMSQrnErQCg+yJIshOnK1EWcrzsmKzUDiBRwp0kXj6/LpYQ9fP/6w==
@@ -753,7 +753,7 @@
     did-resolver "^4.0.1"
     lodash "^4.17.21"
 
-"@verida/encryption-utils@^2.1.3":
+"@verida/encryption-utils@^2.0.0", "@verida/encryption-utils@^2.1.3":
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/@verida/encryption-utils/-/encryption-utils-2.1.3.tgz#7e98ad6400d8e83875d5c8682b778e828c65ae15"
   integrity sha512-tFDxVNxIv1mFylm1CCeCNAT2F7hAKXcQeDJc0sJZqzzBZXeQMslAx9yVsD2Fh3tFstqc3E7ov2n3MjojlveuHQ==
@@ -868,7 +868,7 @@
     tweetnacl-util "^0.15.1"
     url "^0.11.0"
 
-"@verida/web3@^2.1.3":
+"@verida/web3@^2.0.0", "@verida/web3@^2.1.3":
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/@verida/web3/-/web3-2.1.3.tgz#4a021ab9adf5f9725635da27678b22649db2219c"
   integrity sha512-n5dgAcZtYVhLBFMD5p0hmYjlGWfXfQmqjzt96prCgUF9q+CtwrwW+qgb7k8NScAoeC5jGpi0mNhvsOsDUQyW0Q==
