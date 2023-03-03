@@ -16,13 +16,9 @@ export default class RequestValidator {
      * @param {*} req 
      */
     public authorize(did: string, signature: string, req: any, cb: any) {
-        console.log('authorize called')
         did = did.replace(/_/g, ":").toLowerCase()
         const storageContext = req.headers['context-name']
         const cacheKey = `${did}/${storageContext}`
-        console.log("did", did)
-        console.log('signature', signature)
-        console.log('storageContext', storageContext)
 
         const authCheck = async () => {
             try {
