@@ -3,6 +3,7 @@ const assert = require("assert")
 import serverconfig from '../src/serverconfig.json'
 import Providers from '../src/providers'
 import CommonUtils from './common.utils'
+import { Credentials } from '@verida/verifiable-credentials'
 
 const SCHEMA_FOLLOWING = 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
 
@@ -15,9 +16,6 @@ const providerConfig = serverconfig.providers[providerName]
 const creds = providerConfig.testing
 
 let connection, followingDatastore, encryptionKey, credential
-
-// NEXT STEP: GET UPDATED TWITTER REFRESH AND ACCESS TOKEN
-
 
 describe(`${providerName} Tests`, function() {
     this.timeout(100000)
@@ -35,22 +33,21 @@ describe(`${providerName} Tests`, function() {
             )
 
             const info = await (await followingDatastore.getDb()).info()
-            encryptionKey = info.encryptionKey
+            encryptionKey = Buffer.from(info.encryptionKey).toString('hex')
             await CommonUtils.closeDatastore(followingDatastore)
         })
 
         it('can sync without obtaining a VC', async() => {
-            // Todo: Make this use the server??
             const syncRequestResult = await CommonUtils.syncConnector(providerName, creds.accessToken, creds.refreshToken, connection.did, encryptionKey)
+            const { source, status, syncInfo } = await CommonUtils.getSyncResult(connection, syncRequestResult, encryptionKey)
+            console.log(syncInfo)
+            console.log(syncInfo.profile.credential)
 
-            console.log(syncRequestResult.data)
-            try {
-                const { serverDid, contextName, syncRequestId, syncRequestDatabaseName } = syncRequestResult.data
-                const syncData = await provider.sync(creds.accessToken, creds.refreshToken, SCHEMA_FOLLOWING)
-                console.log(syncData)
-            } catch (err) {
-                console.log(err)
-            }
+            const credentials = new Credentials()
+            const credentialData = syncInfo.profile.credential
+            const verifiedCredential = await credentials.verifyCredential(syncInfo.profile.credential.didJwtVc)
+            console.log('verifiedCredential')
+            console.log(verifiedCredential)
         })
 
         it('can sync and obtain a VC', async() => {
