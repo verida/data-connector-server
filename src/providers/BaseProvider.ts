@@ -21,16 +21,13 @@ export interface AccountProfile {
 
 export default class BaseProvider {
 
-    protected signerContext: Context
-
     protected icon?: string
     protected config: BaseProviderConfig
     protected newAuth?: AccountAuth
     protected profile?: AccountProfile
 
-    public constructor(config: BaseProviderConfig, signerContext: Context) {
+    public constructor(config: BaseProviderConfig) {
         this.config = config
-        this.signerContext = signerContext
     }
 
     public getProviderId(): string {
@@ -84,10 +81,10 @@ export default class BaseProvider {
         return credentialData
     }
 
-    public async getProfile(did: string): Promise<AccountProfile> {
+    public async getProfile(did: string, context: Context): Promise<AccountProfile> {
         if (this.profile && !this.profile.credential) {
             const credentialData = await this.getProfileData(did)
-            this.profile.credential = await Utils.buildCredential(credentialData, this.signerContext)
+            this.profile.credential = await Utils.buildCredential(credentialData, context)
         }
 
         return this.profile
