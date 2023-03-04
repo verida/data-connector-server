@@ -11,7 +11,7 @@ const PRIVATE_KEY = serverconfig.verida.privateKey
 const DEFAULT_ENDPOINTS = serverconfig.verida.defaultEndpoints
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
-const REPUTATION_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/social/credential/reputation/v0.1.0/schema.json'
+const REPUTATION_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/social/credential/v0.1.0/schema.json'
 
 export {
     CONTEXT_NAME,
