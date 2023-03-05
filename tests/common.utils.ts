@@ -96,6 +96,13 @@ export default class CommonUtils {
         }
     }
 
+    static mintSBT = async(credentialUri: string, mintAddress: string): Promise<any> => {
+        return await axios.post(`${SERVER_URL}/mintSbt`, {
+            credentialUri,
+            mintAddress
+        })
+    }
+
     static closeDatastore = async (datastore: Datastore) => {
         await datastore.close({
             clearLocal: true

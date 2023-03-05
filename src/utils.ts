@@ -10,15 +10,19 @@ const CONTEXT_NAME = serverconfig.verida.contextName
 const PRIVATE_KEY = serverconfig.verida.privateKey
 const DEFAULT_ENDPOINTS = serverconfig.verida.defaultEndpoints
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
+const VERIDA_URI_WRAPPER = serverconfig.verida.veridaUriWrapper
+const WHITELIST_SBT_ISSUERS = serverconfig.verida.whitelistSbtIssuers
 
-const REPUTATION_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/social/credential/v0.1.0/schema.json'
+const SBT_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/token/sbt/credential/v0.1.0/schema.json'
 
 export {
     CONTEXT_NAME,
     PRIVATE_KEY,
     DEFAULT_ENDPOINTS,
     DID_CLIENT_CONFIG,
-    REPUTATION_CREDENTIAL_SCHEMA
+    SBT_CREDENTIAL_SCHEMA,
+    VERIDA_URI_WRAPPER,
+    WHITELIST_SBT_ISSUERS
 }
 
 export class Utils {
@@ -91,7 +95,7 @@ export class Utils {
             context: context as any,
             data: credentialData,
             subjectId: credentialData.did,
-            schema: REPUTATION_CREDENTIAL_SCHEMA
+            schema: SBT_CREDENTIAL_SCHEMA
         }, credentialData.name, credentialData.description, credentialData.image)
     }
 

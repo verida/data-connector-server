@@ -1,7 +1,9 @@
 import { Context } from '@verida/client-ts'
+import { explodeDID } from '@verida/helpers'
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import BaseProviderConfig from './BaseProviderConfig'
+import serverconfig from '../serverconfig.json'
 
 export interface AccountAuth {
     accessToken: string,
@@ -28,6 +30,7 @@ export default class BaseProvider {
 
     public constructor(config: BaseProviderConfig) {
         this.config = config
+        this.icon = `${serverconfig.assetsUrl}/${this.getProviderId()}/icon.png`
     }
 
     public getProviderId(): string {
@@ -56,17 +59,19 @@ export default class BaseProvider {
 
     public async getProfileData(did: string): Promise<Record<string, any>> {
         const profileLabel = this.profile.name || this.profile.username || this.profile.id
+        const { address: didAddress } = explodeDID(did)
 
         const credentialData: Record<string, any> = {
             did,
+            didAddress,
             name: `${this.getProviderLabel()}: ${profileLabel}`,
-            origin: this.getProviderId(),
-            type: 'account',
+            type: `${this.getProviderId()}-account`,
             image: this.getProviderImageUrl(),
             description: `Proof ${did} controls ${this.getProviderLabel()} account ${profileLabel}${profileLabel == this.profile.id ? '' : '(' + this.profile.id+ ')'}`,
-            attributes: {
-                accountCreated: this.profile.createdAt
-            },
+            attributes: [{
+                trait_type: "accountCreated",
+                value: this.profile.createdAt
+            }],
             uniqueAttribute: this.profile.id,
         }
 
@@ -75,7 +80,10 @@ export default class BaseProvider {
         }
 
         if (this.profile.avatarUrl) {
-            credentialData.attributes.avatarUrl = this.profile.avatarUrl
+            credentialData.attributes.push({
+                trait_type: "avatarUrl",
+                value: this.profile.avatarUrl
+            })
         }
 
         return credentialData
