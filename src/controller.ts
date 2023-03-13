@@ -103,7 +103,43 @@ export default class Controller {
     }
 
     /**
-     * Synchronize data from a third party data source with a local collection of datatores.
+     * Deprecated
+     * 
+     * @param req 
+     * @param res 
+     * @param next 
+     */
+    public static async sync(req: Request, res: Response, next: any) {
+        const providerName = req.params.provider
+        const query = req.query
+        const did = query.did.toString()
+        const encryptionKey = Buffer.from(query.key.toString(), 'hex')
+        const accessToken = query.accessToken ? query.accessToken.toString() : ''
+        const refreshToken = query.refreshToken ? query.refreshToken.toString() : ''
+
+        return Controller._sync(providerName, did, encryptionKey, accessToken, refreshToken, res, {})
+    }
+
+    /**
+     * New way... supports `syncSchemas` via POST body
+     * @param req 
+     * @param res 
+     * @param next 
+     * @returns 
+     */
+    public static async syncStart(req: Request, res: Response, next: any) {
+        const providerName = req.params.provider
+        const encryptionKey = Buffer.from(req.body.key, 'hex')
+        const did = req.body.did
+        const accessToken = req.body.accessToken ? req.body.accessToken.toString() : ''
+        const refreshToken = req.body.refreshToken ? req.body.refreshToken.toString() : ''
+        const syncSchemas = req.body.syncSchemas
+
+        return Controller._sync(providerName, did, encryptionKey, accessToken, refreshToken, res, syncSchemas)
+    }
+
+    /**
+     * Synchronize data from a third party data source with a local collection of datastores.
      * 
      * Converts the third party into an appropriate Verida schema.
      * 
@@ -120,16 +156,10 @@ export default class Controller {
      * @param next 
      * @returns 
      */
-    public static async sync(req: Request, res: Response, next: any) {
+    public static async _sync(providerName: string, did: string, encryptionKey: Uint8Array, accessToken: string, refreshToken: string, res: Response, syncSchemas: Record<string, string> = {}) {
         const { account, context } = await Utils.getNetwork()
         const serverDid = await account.did()
-
-        const providerName = req.params.provider
         const provider = Providers(providerName)
-
-        const query = req.query
-        const did = query.did.toString()
-        const encryptionKey = Buffer.from(query.key.toString(), 'hex')
 
         // Generate a new sync request
         const syncRequestDatabaseName = EncryptionUtils.hash(`${did}-${DATA_SYNC_REQUEST_SCHEMA}`)
@@ -165,7 +195,7 @@ export default class Controller {
         // Fetch the necessary data from the provider
         let data: any = {}
         try {
-            data = await provider.syncFromRequest(req, res, next)
+            data = await provider.sync(accessToken, refreshToken, syncSchemas)
         } catch (err: any) {
             syncRequest.status = 'error'
             if (err instanceof TokenExpiredError) {
@@ -344,16 +374,12 @@ export default class Controller {
      * @returns 
      */
     public static async syncDone(req: Request, res: Response, next: any) {
-        logger.trace(`syncDone()`)
-        return res.send({
-            success: true
-        })
         const providerName = req.params.provider
         const provider = Providers(providerName)
         const schemaUris = provider.schemaUris()
 
         const query = req.query
-        const did: string = query.did.toString()
+        const did = query.did.toString()
 
         const { context } = await Utils.getNetwork()
 
@@ -375,7 +401,7 @@ export default class Controller {
 
             try {
                 // @todo: use `db.destroy()` once its released
-                await db._localDb.destroy()
+                await db.destroy()
                 clearedDatabases.push(schemaUri)
             } catch (err) {
                 logger.error(err.status, err.name)

@@ -18,6 +18,11 @@ const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connectio
 
 const axios = Axios.create()
 
+export interface SyncSchemaConfig {
+    limit?: number
+    sinceId?: string
+}
+
 export default class CommonUtils {
 
     static getNetwork = async (): Promise<any> => {
@@ -44,8 +49,22 @@ export default class CommonUtils {
         }
     }
 
-    static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string): Promise<any> => {
-        return await axios.get(`${SERVER_URL}/sync/${provider}?accessToken=${accessToken}&refreshToken=${refreshToken}&did=${did}&key=${encryptionKey}`)
+    static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string, syncSchemas: Record<string, SyncSchemaConfig>): Promise<any> => {
+        return await axios.post(`${SERVER_URL}/syncStart/${provider}`, {
+            accessToken,
+            refreshToken,
+            did,
+            key: encryptionKey,
+            syncSchemas
+        })
+    }
+
+    static syncDone = async (provider: string, did: string): Promise<any> => {
+        return await axios.get(`${SERVER_URL}/syncDone/${provider}`, {
+            params: {
+                did
+            }
+        })
     }
 
     static async openSchema(context: Context, contextName: string, schemaName: string, databaseName: string, encryptionKey: string, externalDid: string, did: string): Promise<any> {
@@ -81,9 +100,9 @@ export default class CommonUtils {
                     serverDid,
                     connection.did)
                 syncResult = await syncRequest.get(syncRequestId)
+                await CommonUtils.closeDatastore(syncRequest)
                 break
             } catch (err) {
-                console.log(err.message)
                 limit--
                 await CommonUtils.sleep(1000)
             }

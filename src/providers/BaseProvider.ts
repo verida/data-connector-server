@@ -21,6 +21,11 @@ export interface AccountProfile {
     credential?: string
 }
 
+export interface SyncSchemaConfig {
+    limit?: number
+    sinceId?: string
+}
+
 export default class BaseProvider {
 
     protected icon?: string
@@ -98,16 +103,7 @@ export default class BaseProvider {
         return this.profile
     }
 
-    public async syncFromRequest(req: Request, res: Response, next: any): Promise<any> {
-        const query = req.query
-        const accessToken = query.accessToken ? query.accessToken.toString() : ''
-        const refreshToken = query.refreshToken ? query.refreshToken.toString() : ''
-
-        return this.sync(accessToken, refreshToken)
-    }
-
     /**
-     * 
      * Must update `profile` or `newAuth` if they have changed
      * 
      * @param accessToken 
@@ -115,24 +111,30 @@ export default class BaseProvider {
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken: string, refreshToken: string, schemaUri?: string): Promise<any> {
-        const api = await this.getApi(accessToken, refreshToken)
-        const results = []
+    public async sync(accessToken: string, refreshToken: string, syncSchemas: Record<string, SyncSchemaConfig> = {}): Promise<any> {
+        try {
+            const api = await this.getApi(accessToken, refreshToken)
+            const results = []
 
-        const handlers = this.syncHandlers()
-        for (let h in handlers) {
-            const handler = handlers[h]
+            const handlers = this.syncHandlers()
+            const schemaList = Object.keys(syncSchemas)
+            for (let h in handlers) {
+                const handler = handlers[h]
 
-            if (schemaUri && handler.getSchemaUri() != schemaUri) {
-                continue
+                if (schemaList.length && schemaList.indexOf(handler.getSchemaUri()) === -1) {
+                    // Schema list exists, but not found
+                    continue
+                }
+                
+                const handlerInstance = new handler(this.config, this.profile)
+                const handlerResults = await handlerInstance.sync(api, syncSchemas[handler.getSchemaUri()])
+                results[handler.getSchemaUri()] = handlerResults
             }
-            
-            const handlerInstance = new handler(this.config, this.profile)
-            const handlerResults = await handlerInstance.sync(api)
-            results[handler.getSchemaUri()] = handlerResults
-        }
 
-        return results
+            return results
+        } catch (err) {
+            console.log(err)
+        }
     }
 
     // Set new authentication credentials for this provider instance, if they changed

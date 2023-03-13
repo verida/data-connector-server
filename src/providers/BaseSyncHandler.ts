@@ -1,4 +1,4 @@
-import { AccountProfile } from "./BaseProvider"
+import { AccountProfile, SyncSchemaConfig } from "./BaseProvider"
 
 export default class BaseSyncHandler {
 
@@ -18,7 +18,7 @@ export default class BaseSyncHandler {
     /**
      * Implement this sync method to generate data for the schemaUri of this sync handler
      */
-    public async sync(api: any): Promise <any> {
+    public async sync(api: any, syncConfig: SyncSchemaConfig): Promise <any> {
         throw new Error('Not implemented')
     }
 }
