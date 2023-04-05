@@ -304,60 +304,32 @@ export default class Controller {
         // This code loops through all the databases that were written to and 
         // checks the encrypted database has enough records written before flagging
         // it as being fully sync'd
-        let count = 5
-        while (count > 0) {
-            let completeCount = 0
-            for (let i = 0; i < syncingDatabases.length; i++) {
-                const db = syncingDatabases[i]
+        for (let i = 0; i < syncingDatabases.length; i++) {
+            const db = syncingDatabases[i]
 
-                const remote = await db.getRemoteEncrypted()
-                const local = await db.getDb()
+            await db.close({
+                clearLocal: true
+            })
 
-                const remoteInfo = await remote.info()
-                const localInfo = await local.info()
-
-                if (remoteInfo.doc_count >= localInfo.doc_count) {
-                    completeCount++
-                }
-            }
-
-            if (completeCount == syncingDatabases.length) {
-                // Update the sync request to say it has completed successfully
-                syncRequest.syncInfo.schemas = response
-        
-                syncRequest.status = "complete"
-                const res = await syncRequestDatastore.save(syncRequest)
-                if (!res) {
-                    console.log(`Errors saving sync request`)
-                    console.log(syncRequestDatastore.errors)
-                }
-                
-                logger.info(`Saved sync request indicating process is complete`)
-                // Wait 3 seconds to be super sure sync response is saved to DB
-                await delay(3000)
-
-                await context.close({
-                    clearLocal: true
-                })
-
-                return
-            }
-
-            await delay(2000)
-            count--
+            console.log('db closed...')
         }
 
-        // After 5x2 second delays, we still don't have sync so assume it has failed
-        syncRequest.status = "error"
-        syncRequest.syncInfo.error = "Server timed out syncing encrypted database"
+        // Wait 3 seconds to be super sure sync response is saved to DB
+        await delay(3000)
 
-        await syncRequestDatastore.save(syncRequest)
+        // Update the sync request to say it has completed successfully
+        syncRequest.syncInfo.schemas = response
         
-        logger.info(`Saved sync request indicating process has error`)
+        syncRequest.status = "complete"
+        await syncRequestDatastore.save(syncRequest)
+
+        await delay(3000)
 
         await context.close({
             clearLocal: true
         })
+
+        return
     }
 
     /**

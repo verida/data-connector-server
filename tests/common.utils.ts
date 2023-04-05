@@ -101,6 +101,10 @@ export default class CommonUtils {
                     connection.did)
                 syncResult = await syncRequest.get(syncRequestId)
                 await CommonUtils.closeDatastore(syncRequest)
+
+                if (syncResult.status == 'requested') {
+                    continue
+                }
                 break
             } catch (err) {
                 limit--
@@ -113,13 +117,6 @@ export default class CommonUtils {
         } else {
             return syncResult
         }
-    }
-
-    static mintSBT = async(credentialUri: string, mintAddress: string): Promise<any> => {
-        return await axios.post(`${SERVER_URL}/mintSbt`, {
-            credentialUri,
-            mintAddress
-        })
     }
 
     static closeDatastore = async (datastore: Datastore) => {
