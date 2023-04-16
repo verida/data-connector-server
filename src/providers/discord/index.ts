@@ -9,8 +9,7 @@ import { DiscordSnowflake } from '@sapphire/snowflake'
 import dayjs from 'dayjs'
 import axios from 'axios'
 
-//import Following from './following'
-//import Posts from './posts'
+import SBTs from './sbts'
 import TokenExpiredError from '../TokenExpiredError'
 
 export interface DiscordProviderConfig extends BaseProviderConfig {
@@ -21,7 +20,7 @@ export interface DiscordProviderConfig extends BaseProviderConfig {
 }
 
 // Note: If scopes change a user needs to disconnect and reconnect the app
-const SCOPE = [Scope.IDENTIFY, Scope.EMAIL, Scope.GUILDS, Scope.GUILDS_JOIN]
+const SCOPE = [Scope.IDENTIFY, Scope.EMAIL, Scope.GUILDS, 'guilds.members.read']
 
 export default class DiscordProvider extends Base {
 
@@ -36,15 +35,13 @@ export default class DiscordProvider extends Base {
     }
 
     public syncHandlers(): any[] {
-        /*return [
-            Following,
-            Posts
-        ]*/
+        return [
+            //SBTs
+        ]
         return []
     }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
-        console.log('connect')
         this.init()
         const auth = await passport.authenticate(this.getProviderId())
         return auth(req, res, next)

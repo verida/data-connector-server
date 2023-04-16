@@ -10,8 +10,6 @@ const CONTEXT_NAME = serverconfig.verida.contextName
 const PRIVATE_KEY = serverconfig.verida.privateKey
 const DEFAULT_ENDPOINTS = serverconfig.verida.defaultEndpoints
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
-const VERIDA_URI_WRAPPER = serverconfig.verida.veridaUriWrapper
-const WHITELIST_SBT_ISSUERS = serverconfig.verida.whitelistSbtIssuers
 
 const SBT_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/token/sbt/credential/v0.1.0/schema.json'
 
@@ -20,9 +18,7 @@ export {
     PRIVATE_KEY,
     DEFAULT_ENDPOINTS,
     DID_CLIENT_CONFIG,
-    SBT_CREDENTIAL_SCHEMA,
-    VERIDA_URI_WRAPPER,
-    WHITELIST_SBT_ISSUERS
+    SBT_CREDENTIAL_SCHEMA
 }
 
 export class Utils {

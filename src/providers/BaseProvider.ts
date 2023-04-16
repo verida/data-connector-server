@@ -68,11 +68,11 @@ export default class BaseProvider {
 
         const credentialData: Record<string, any> = {
             did,
-            didAddress,
+            didAddress: didAddress.toLowerCase(),
             name: `${this.getProviderLabel()}: ${profileLabel}`,
             type: `${this.getProviderId()}-account`,
             image: this.getProviderImageUrl(),
-            description: `Proof ${did} controls ${this.getProviderLabel()} account ${profileLabel}${profileLabel == this.profile.id ? '' : '(' + this.profile.id+ ')'}`,
+            description: `Proof of ${this.getProviderLabel()} account ownership ${profileLabel}${profileLabel == this.profile.id ? '' : ' (' + this.profile.id+ ')'}`,
             attributes: [{
                 trait_type: "accountCreated",
                 value: this.profile.createdAt
@@ -96,8 +96,8 @@ export default class BaseProvider {
 
     public async getProfile(did: string, context: Context): Promise<AccountProfile> {
         if (this.profile && !this.profile.credential) {
-            const credentialData = await this.getProfileData(did)
-            this.profile.credential = await Utils.buildCredential(credentialData, context)
+            const profileCredentialData = await this.getProfileData(did)
+            this.profile.credential = await Utils.buildCredential(profileCredentialData, context)
         }
 
         return this.profile
