@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { DatabasePermissionOptionsEnum } from '@verida/types'
 import EncryptionUtils from '@verida/encryption-utils'
 import serverconfig from '../src/serverconfig.json'
+import CONFIG from './config'
 
 const CONTEXT_NAME = serverconfig.verida.contextName
 
@@ -323,11 +324,15 @@ export default class Controller {
         syncRequest.status = "complete"
         await syncRequestDatastore.save(syncRequest)
 
+        console.log('sync request saved')
+
         await delay(3000)
 
         await context.close({
             clearLocal: true
         })
+
+        console.log('context closed')
 
         return
     }
@@ -383,6 +388,27 @@ export default class Controller {
         return res.send({
             clearedDatabases
         })
+    }
+
+    public static async providers(req: Request, res: Response) {
+        const providers = Object.keys(CONFIG.providers)
+
+        const results: any = {}
+        for (let p in providers) {
+            const providerName = providers[p]
+            try {
+                const provider = Providers(providerName)
+                results[providerName] = {
+                    name: providerName,
+                    label: provider.getProviderLabel(),
+                    icon: provider.getProviderImageUrl()
+                }
+            } catch (err) {
+                // skip broken providers
+            }
+        }
+
+        return res.send(results)
     }
 
 }

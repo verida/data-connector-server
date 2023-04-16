@@ -8,5 +8,6 @@ router.get('/callback/:provider', Controller.callback)
 router.get('/sync/:provider', Controller.sync)
 router.post('/syncStart/:provider', Controller.syncStart)
 router.get('/syncDone/:provider', Controller.syncDone)
+router.get('/providers', Controller.providers)
 
 export default router
