@@ -33,7 +33,7 @@ export class Utils {
         const network = new Client({
             environment: VERIDA_ENVIRONMENT
         })
-        const account = new AutoAccount(DEFAULT_ENDPOINTS, {
+        const account = new AutoAccount({
             privateKey: PRIVATE_KEY,
             environment: VERIDA_ENVIRONMENT,
             // @ts-ignore
