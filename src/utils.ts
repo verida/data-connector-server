@@ -73,7 +73,7 @@ export class Utils {
             const provider = Providers(providerName)
             providerList.push({
                 name: providerName, 
-                label: provider.getLabel(),
+                label: provider.getProviderLabel(),
                 icon: provider.icon ? provider.icon : `${serverconfig.assetsUrl}/${providerName}/icon.png`
             })
         }

@@ -28,14 +28,12 @@ export interface SyncSchemaConfig {
 
 export default class BaseProvider {
 
-    protected icon?: string
     protected config: BaseProviderConfig
     protected newAuth?: AccountAuth
     protected profile?: AccountProfile
 
     public constructor(config: BaseProviderConfig) {
         this.config = config
-        this.icon = `${serverconfig.assetsUrl}/${this.getProviderId()}/icon.png`
     }
 
     public getProviderId(): string {
@@ -43,15 +41,15 @@ export default class BaseProvider {
     }
 
     public getProviderImageUrl(): string {
-        return this.icon
+        return `${serverconfig.assetsUrl}/${this.getProviderId()}/icon.png`
     }
 
     public getProviderLabel(): string {
-        throw new Error('Not implemented')
+        return this.config.label
     }
 
-    public getLabel() {
-        return this.config.label
+    public getProviderSbtImage(): string {
+        return this.config.sbtImage
     }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
@@ -71,7 +69,7 @@ export default class BaseProvider {
             didAddress: didAddress.toLowerCase(),
             name: `${this.getProviderLabel()}: ${profileLabel}`,
             type: `${this.getProviderId()}-account`,
-            image: this.getProviderImageUrl(),
+            image: this.getProviderSbtImage(),
             description: `Proof of ${this.getProviderLabel()} account ownership ${profileLabel}${profileLabel == this.profile.id ? '' : ' (' + this.profile.id+ ')'}`,
             attributes: [{
                 trait_type: "accountCreated",
