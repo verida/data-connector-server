@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 
-import { Client, ContextInterfaces } from '@verida/client-ts'
+import { Client } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 import EncryptionUtils from '@verida/encryption-utils'
 import fs from 'fs'
@@ -23,6 +23,7 @@ const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connectio
 
 import Providers from "./providers"
 import TokenExpiredError from './providers/TokenExpiredError'
+import { DatabasePermissionOptionsEnum } from '@verida/types'
 
 const delay = async (ms: number) => {
     await new Promise((resolve) => setTimeout(() => resolve(true), ms))
@@ -144,8 +145,8 @@ export default class Controller {
         const syncRequestDatabaseName = EncryptionUtils.hash(`${did}-${DATA_SYNC_REQUEST_SCHEMA}`)
         const syncRequestDatastore = await context.openDatastore(DATA_SYNC_REQUEST_SCHEMA, {
             permissions: {
-                read: ContextInterfaces.PermissionOptionsEnum.USERS,
-                write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                read: DatabasePermissionOptionsEnum.USERS,
+                write: DatabasePermissionOptionsEnum.USERS,
                 readList: [did],
                 writeList: [did]
             },
@@ -218,8 +219,8 @@ export default class Controller {
             // open a datastore where the user has permission to access the datastores
             const datastore = await context.openDatastore(schemaUri, {
                 permissions: {
-                    read: ContextInterfaces.PermissionOptionsEnum.USERS,
-                    write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                    read: DatabasePermissionOptionsEnum.USERS,
+                    write: DatabasePermissionOptionsEnum.USERS,
                     readList: [did],
                     writeList: [did]
                 },
@@ -374,8 +375,8 @@ export default class Controller {
             const databaseName = EncryptionUtils.hash(`${did}-${schemaUri}`)
             const datastore = await context.openDatastore(schemaUri, {
                 permissions: {
-                    read: ContextInterfaces.PermissionOptionsEnum.USERS,
-                    write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                    read: DatabasePermissionOptionsEnum.USERS,
+                    write: DatabasePermissionOptionsEnum.USERS,
                     readList: [did],
                     writeList: [did]
                 },
@@ -407,7 +408,7 @@ export default class Controller {
         const network = new Client({
             environment: VERIDA_ENVIRONMENT
         })
-        const account = new AutoAccount(DEFAULT_ENDPOINTS, {
+        const account = new AutoAccount({
             privateKey: PRIVATE_KEY,
             environment: VERIDA_ENVIRONMENT,
             // @ts-ignore
