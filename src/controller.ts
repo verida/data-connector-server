@@ -80,27 +80,43 @@ export default class Controller {
         const provider = Providers(providerName)
 
         // @todo: handle error and show error message
-        const connectionToken = await provider.callback(req, res, next)
+        try {
+            const connectionToken = await provider.callback(req, res, next)
 
-        // @ts-ignore
-        const did = req.session.did
+            // @ts-ignore
+            const did = req.session.did
 
-        // Send the access token, refresh token and profile database name and encryption key
-        // so the user can pull their profile remotely and store their tokens securely
-        // This also avoids this server saving those credentials anywhere, they are only stored by the user
-        const redirectUrl = `https://vault.verida.io/connection-success?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
+            // Send the access token, refresh token and profile database name and encryption key
+            // so the user can pull their profile remotely and store their tokens securely
+            // This also avoids this server saving those credentials anywhere, they are only stored by the user
+            const redirectUrl = `https://vault.verida.io/connection-success?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
 
-        // @todo: Generate nice looking thank you page
-        const output = `<html>
-        <head></head>
-        <body>
-        <div style="margin: auto; font-size: 16px;">
-            <a href="${redirectUrl}">Complete Connection</a>
-        </div>
-        </body>
-        </html>`
-        
-        res.send(output)
+            // @todo: Generate nice looking thank you page
+            const output = `<html>
+            <head></head>
+            <body>
+                <div style="margin: auto; text-align: center;">
+                    <img src="/assets/${providerName}/icon.png" style="width: 50px; height: 50px;" />
+                    <button href="${redirectUrl}">Complete Connection</a>
+                </div>
+            </body>
+            </html>`
+            
+            res.send(output)
+        } catch (err: any) {
+            // @todo: Generate nice looking thank you page
+            const output = `<html>
+            <head></head>
+            <body>
+                <div style="margin: auto; text-align: center;">
+                    <h1>Error</h1>
+                    <p>${err.message}</p>
+                </div>
+            </body>
+            </html>`
+            
+            res.send(output)
+        }
     }
 
     /**
