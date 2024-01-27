@@ -4,12 +4,13 @@ import BaseProviderConfig from '../BaseProviderConfig'
 
 const passport = require("passport")
 import { Strategy as DiscordStrategy, Scope } from '@oauth-everything/passport-discord';
-import { REST } from 'discord.js'
+import { REST, Client, GatewayIntentBits } from 'discord.js'
 import { DiscordSnowflake } from '@sapphire/snowflake'
 import dayjs from 'dayjs'
 import axios from 'axios'
 
-import SBTs from './sbts'
+//import SBTs from './sbts'
+import Following from './following'
 import TokenExpiredError from '../TokenExpiredError'
 
 export interface DiscordProviderConfig extends BaseProviderConfig {
@@ -37,6 +38,7 @@ export default class DiscordProvider extends Base {
     public syncHandlers(): any[] {
         return [
             //SBTs
+            Following
         ]
         return []
     }
@@ -94,6 +96,7 @@ export default class DiscordProvider extends Base {
         } catch (err: any) {
             if (err.status && (err.status == 401 || err.status == 403)) {
                 console.log('token has expired, fetch a new one')
+                console.log('refreshToken', refreshToken)
 
                 try {
                     const requestData = {
@@ -102,7 +105,11 @@ export default class DiscordProvider extends Base {
                         grant_type: 'refresh_token',
                         refresh_token: refreshToken
                     }
-                    const newTokenResponse = await axios.post('https://discord.com/api/v10/oauth2/token', requestData, {
+                    const newTokenResponse = await axios.post('https://discord.com/api/v10/oauth2/token', new URLSearchParams(requestData).toString(), {
+                        auth: {
+                            username: this.config.clientID,
+                            password: this.config.clientSecret
+                        },
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded'
                         }
@@ -114,6 +121,7 @@ export default class DiscordProvider extends Base {
                     client = new REST({ version: '10', authPrefix: 'Bearer' }).setToken(access_token);
                     me = await client.get('/users/@me')
                 } catch (err) {
+                    console.log(err.response)
                     // Unrecoverable auth error
                     throw new TokenExpiredError(err.message)
                 }
