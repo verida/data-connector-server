@@ -93,24 +93,34 @@ export default class Controller {
 
             // @todo: Generate nice looking thank you page
             const output = `<html>
-            <head></head>
+            <head>
+                <style>
+                button {
+                    font-size: 30pt;
+                    margin-top: 50px;
+                }
+                </style>
+            </head>
             <body>
                 <div style="margin: auto; text-align: center;">
-                    <img src="/assets/${providerName}/icon.png" style="width: 50px; height: 50px;" />
-                    <button href="${redirectUrl}">Complete Connection</a>
+                    <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
+                </div>
+                <div style="margin: auto; text-align: center;">
+                    <button onclick="window.location.href='${redirectUrl}'">Complete Connection</a>
                 </div>
             </body>
             </html>`
             
             res.send(output)
         } catch (err: any) {
+            const message = err.message
             // @todo: Generate nice looking thank you page
             const output = `<html>
             <head></head>
             <body>
                 <div style="margin: auto; text-align: center;">
                     <h1>Error</h1>
-                    <p>${err.message}</p>
+                    <p>${message}</p>
                 </div>
             </body>
             </html>`
