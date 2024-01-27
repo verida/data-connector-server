@@ -1,6 +1,9 @@
-import { AutoAccount } from '@verida/account-node'
+import { Context } from '@verida/client-ts'
+import { explodeDID } from '@verida/helpers'
 import { Request, Response } from 'express'
+import { Utils } from '../utils'
 import BaseProviderConfig from './BaseProviderConfig'
+import serverconfig from '../serverconfig.json'
 
 export interface AccountAuth {
     accessToken: string,
@@ -15,35 +18,38 @@ export interface AccountProfile {
     createdAt?: string
     url?: string
     avatarUrl?: string
-    proof?: string
-    proofSignature?: string
+    credential?: string
+}
+
+export interface SyncSchemaConfig {
+    limit?: number
+    sinceId?: string
 }
 
 export default class BaseProvider {
 
-    protected signerContext: string
-    protected signerAccount?: AutoAccount
-
-    protected icon?: string
     protected config: BaseProviderConfig
     protected newAuth?: AccountAuth
     protected profile?: AccountProfile
 
-    public constructor(config: BaseProviderConfig, signerContext: string) {
+    public constructor(config: BaseProviderConfig) {
         this.config = config
-        this.signerContext = signerContext
     }
 
-    public setSigner(signerAccount: AutoAccount) {
-        this.signerAccount = signerAccount
-    }
-
-    public getProviderId() {
+    public getProviderId(): string {
         throw new Error('Not implemented')
     }
 
-    public getLabel() {
+    public getProviderImageUrl(): string {
+        return `${serverconfig.assetsUrl}/${this.getProviderId()}/icon.png`
+    }
+
+    public getProviderLabel(): string {
         return this.config.label
+    }
+
+    public getProviderSbtImage(): string {
+        return this.config.sbtImage
     }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
@@ -54,28 +60,48 @@ export default class BaseProvider {
         throw new Error('Not implemented')
     }
 
-    public async getProfile(): Promise<AccountProfile> {
-        if (this.profile && !this.profile.proof) {
-            const did = await this.signerAccount.did()
-            this.profile.proof = `${this.getProviderId()}-${this.profile.id}-${did.toLowerCase()}`
+    public async getProfileData(did: string): Promise<Record<string, any>> {
+        const profileLabel = this.profile.name || this.profile.username || this.profile.id
+        const { address: didAddress } = explodeDID(did)
 
-            const keyring = await this.signerAccount.keyring(this.signerContext)
-            this.profile.proofSignature = await keyring.sign(this.profile.proof)
+        const credentialData: Record<string, any> = {
+            did,
+            didAddress: didAddress.toLowerCase(),
+            name: `${this.getProviderLabel()}: ${profileLabel}`,
+            type: `${this.getProviderId()}-account`,
+            image: this.getProviderSbtImage(),
+            description: `Proof of ${this.getProviderLabel()} account ownership ${profileLabel}${profileLabel == this.profile.id ? '' : ' (' + this.profile.id+ ')'}`,
+            attributes: [{
+                trait_type: "accountCreated",
+                value: this.profile.createdAt
+            }],
+            uniqueAttribute: this.profile.id,
+        }
+
+        if (this.profile.url) {
+            credentialData.external_url = this.profile.url
+        }
+
+        if (this.profile.avatarUrl) {
+            credentialData.attributes.push({
+                trait_type: "avatarUrl",
+                value: this.profile.avatarUrl
+            })
+        }
+
+        return credentialData
+    }
+
+    public async getProfile(did: string, context: Context): Promise<AccountProfile> {
+        if (this.profile && !this.profile.credential) {
+            const profileCredentialData = await this.getProfileData(did)
+            this.profile.credential = await Utils.buildCredential(profileCredentialData, context)
         }
 
         return this.profile
     }
 
-    public async syncFromRequest(req: Request, res: Response, next: any): Promise<any> {
-        const query = req.query
-        const accessToken = query.accessToken ? query.accessToken.toString() : ''
-        const refreshToken = query.refreshToken ? query.refreshToken.toString() : ''
-
-        return this.sync(accessToken, refreshToken)
-    }
-
     /**
-     * 
      * Must update `profile` or `newAuth` if they have changed
      * 
      * @param accessToken 
@@ -83,20 +109,22 @@ export default class BaseProvider {
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken: string, refreshToken: string, schemaUri?: string): Promise<any> {
+    public async sync(accessToken: string, refreshToken: string, syncSchemas: Record<string, SyncSchemaConfig> = {}): Promise<any> {
         const api = await this.getApi(accessToken, refreshToken)
         const results = []
 
         const handlers = this.syncHandlers()
+        const schemaList = Object.keys(syncSchemas)
         for (let h in handlers) {
             const handler = handlers[h]
 
-            if (schemaUri && handler.getSchemaUri() != schemaUri) {
+            if (schemaList.length && schemaList.indexOf(handler.getSchemaUri()) === -1) {
+                // Schema list exists, but not found
                 continue
             }
             
             const handlerInstance = new handler(this.config, this.profile)
-            const handlerResults = await handlerInstance.sync(api)
+            const handlerResults = await handlerInstance.sync(api, syncSchemas[handler.getSchemaUri()])
             results[handler.getSchemaUri()] = handlerResults
         }
 

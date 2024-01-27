@@ -1,11 +1,11 @@
-
 const assert = require("assert")
 import Axios from 'axios'
-import { EnvironmentType, Context, Client, ContextInterfaces } from '@verida/client-ts'
+import { Context, Client } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 
 import serverconfig from '../src/serverconfig.json'
 import Datastore from '@verida/client-ts/dist/context/datastore'
+import { DatabasePermissionOptionsEnum, EnvironmentType } from '@verida/types'
 
 const SERVER_URL = serverconfig.serverUrl
 const TEST_VAULT_CONTEXT = serverconfig.testing.contextName
@@ -14,7 +14,14 @@ const TEST_VAULT_PRIVATE_KEY = serverconfig.testing.veridaPrivateKey
 const VERIDA_ENVIRONMENT = <EnvironmentType> serverconfig.verida.environment
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
+const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
+
 const axios = Axios.create()
+
+export interface SyncSchemaConfig {
+    limit?: number
+    sinceId?: string
+}
 
 export default class CommonUtils {
 
@@ -42,22 +49,34 @@ export default class CommonUtils {
         }
     }
 
-    static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string): Promise<any> => {
-        return await axios.get(`${SERVER_URL}/sync/${provider}?accessToken=${accessToken}&refreshToken=${refreshToken}&did=${did}&key=${encryptionKey}`)
+    static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string, syncSchemas: Record<string, SyncSchemaConfig>): Promise<any> => {
+        return await axios.post(`${SERVER_URL}/syncStart/${provider}`, {
+            accessToken,
+            refreshToken,
+            did,
+            key: encryptionKey,
+            syncSchemas
+        })
     }
 
-    static openSchema = async (context: Context, contextName: string, schemaName: string, databaseName: string, encryptionKey: string, externalDid: string, did: string): Promise<any> => {
-        const key = Buffer.from(encryptionKey, 'hex')
+    static syncDone = async (provider: string, did: string): Promise<any> => {
+        return await axios.get(`${SERVER_URL}/syncDone/${provider}`, {
+            params: {
+                did
+            }
+        })
+    }
 
+    static async openSchema(context: Context, contextName: string, schemaName: string, databaseName: string, encryptionKey: string, externalDid: string, did: string): Promise<any> {
         const externalDatastore = await context.openExternalDatastore(schemaName, externalDid, {
             permissions: {
-                read: ContextInterfaces.PermissionOptionsEnum.USERS,
-                write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                read: DatabasePermissionOptionsEnum.USERS,
+                write: DatabasePermissionOptionsEnum.USERS,
                 readList: [did],
                 writeList: [did]
             },
             // @ts-ignore
-            encryptionKey: key,
+            encryptionKey: Buffer.from(encryptionKey, 'hex'),
             databaseName,
             contextName
         })
@@ -65,9 +84,48 @@ export default class CommonUtils {
         return externalDatastore
     }
 
-    static closeDatastore = async (datastore: Datastore): Promise<any> => {
+    static getSyncResult = async (connection: any, syncRequestResult: any, encryptionKey: string) => {
+        const { serverDid, contextName, syncRequestId, syncRequestDatabaseName } = syncRequestResult.data
+            
+        let syncResult
+        let limit = 10
+        while (limit > 0) {
+            try {
+                const syncRequest = await CommonUtils.openSchema(
+                    connection.context,
+                    contextName,
+                    DATA_SYNC_REQUEST_SCHEMA,
+                    syncRequestDatabaseName,
+                    encryptionKey,
+                    serverDid,
+                    connection.did)
+                syncResult = await syncRequest.get(syncRequestId)
+                await CommonUtils.closeDatastore(syncRequest)
+
+                if (syncResult.status == 'requested') {
+                    continue
+                }
+                break
+            } catch (err) {
+                limit--
+                await CommonUtils.sleep(1000)
+            }
+        }
+
+        if (!syncResult) {
+            throw new Error(`No sync result after 10 seconds`)
+        } else {
+            return syncResult
+        }
+    }
+
+    static closeDatastore = async (datastore: Datastore) => {
         await datastore.close({
             clearLocal: true
         })
+    }
+
+    static sleep = async (ms) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }

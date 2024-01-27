@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "yarn build; nodemon src/server.js",
-    "build": "rm -rf dist && tsc",
+    "build": "rm -rf dist && tsc && rm -rf dist/assets && cp -R assets dist/",
     "prestart": "yarn build",
     "start": "node dist/server.js",
     "tests": "ts-mocha './tests/**/*.ts'",
@@ -24,19 +24,29 @@
   "bugs": {
     "url": "https://github.com/verida/server-template/issues"
   },
+  "engines": {
+    "node": ">=16.06"
+  },
   "homepage": "https://github.com/verida/server-template#readme",
   "dependencies": {
-    "@verida/account-node": "^2.3.4",
-    "@verida/client-ts": "^2.3.4",
-    "@verida/did-client": "^2.3.4",
-    "@verida/encryption-utils": "^2.2.1",
-    "@verida/types": "^2.3.1",
-    "@verida/web3": "^2.3.4",
+    "@oauth-everything/passport-discord": "^1.0.2",
+    "@sapphire/snowflake": "^3.4.2",
+    "@superfaceai/passport-twitter-oauth2": "^1.2.3",
+    "@verida/account-node": "^3.0.1",
+    "@verida/client-ts": "^3.0.2",
+    "@verida/did-client": "^3.0.1",
+    "@verida/encryption-utils": "^3.0.0",
+    "@verida/helpers": "^3.0.1",
+    "@verida/types": "^3.0.0",
+    "@verida/vda-sbt-client": "^3.0.2",
+    "@verida/verifiable-credentials": "^3.0.2",
+    "@verida/web3": "^3.0.1",
     "aws-serverless-express": "^3.4.0",
     "axios": "^1.2.3",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dayjs": "^1.11.1",
+    "discord.js": "^14.9.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-basic-auth": "git+https://github.com/Mozzler/express-basic-auth.git",
@@ -49,7 +59,6 @@
     "nano": "^9.0.5",
     "passport": "^0.5.2",
     "passport-facebook": "^3.0.0",
-    "passport-twitter-oauth2.0": "^1.1.0",
     "ts-mocha": "^9.0.2",
     "twitter-api-v2": "^1.14.0"
   },

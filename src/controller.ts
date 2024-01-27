@@ -1,18 +1,10 @@
 import { Request, Response } from 'express'
-
-import { Client } from '@verida/client-ts'
-import { AutoAccount } from '@verida/account-node'
+import { DatabasePermissionOptionsEnum } from '@verida/types'
 import EncryptionUtils from '@verida/encryption-utils'
-import fs from 'fs'
-
 import serverconfig from '../src/serverconfig.json'
-import {strToEnvType} from "./config"
+import CONFIG from './config'
 
-const VERIDA_ENVIRONMENT = strToEnvType(serverconfig.verida.environment)
 const CONTEXT_NAME = serverconfig.verida.contextName
-const PRIVATE_KEY = serverconfig.verida.privateKey
-const DEFAULT_ENDPOINTS = serverconfig.verida.defaultEndpoints
-const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -23,7 +15,7 @@ const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connectio
 
 import Providers from "./providers"
 import TokenExpiredError from './providers/TokenExpiredError'
-import { DatabasePermissionOptionsEnum } from '@verida/types'
+import { Utils } from './utils'
 
 const delay = async (ms: number) => {
     await new Promise((resolve) => setTimeout(() => resolve(true), ms))
@@ -88,31 +80,93 @@ export default class Controller {
         const provider = Providers(providerName)
 
         // @todo: handle error and show error message
-        const connectionToken = await provider.callback(req, res, next)
+        try {
+            const connectionToken = await provider.callback(req, res, next)
 
-        // @ts-ignore
-        const did = req.session.did
+            // @ts-ignore
+            const did = req.session.did
 
-        // Send the access token, refresh token and profile database name and encryption key
-        // so the user can pull their profile remotely and store their tokens securely
-        // This also avoids this server saving those credentials anywhere, they are only stored by the user
-        const redirectUrl = `https://vault.verida.io/connection-success?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
+            // Send the access token, refresh token and profile database name and encryption key
+            // so the user can pull their profile remotely and store their tokens securely
+            // This also avoids this server saving those credentials anywhere, they are only stored by the user
+            const redirectUrl = `https://vault.verida.io/connection-success?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
 
-        // @todo: Generate nice looking thank you page
-        const output = `<html>
-        <head></head>
-        <body>
-        <div style="margin: auto; font-size: 16px;">
-            <a href="${redirectUrl}">Complete Connection</a>
-        </div>
-        </body>
-        </html>`
-        
-        res.send(output)
+            // @todo: Generate nice looking thank you page
+            const output = `<html>
+            <head>
+                <style>
+                button {
+                    font-size: 30pt;
+                    margin-top: 50px;
+                }
+                </style>
+            </head>
+            <body>
+                <div style="margin: auto; text-align: center;">
+                    <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
+                </div>
+                <div style="margin: auto; text-align: center;">
+                    <button onclick="window.location.href='${redirectUrl}'">Complete Connection</a>
+                </div>
+            </body>
+            </html>`
+            
+            res.send(output)
+        } catch (err: any) {
+            const message = err.message
+            // @todo: Generate nice looking thank you page
+            const output = `<html>
+            <head></head>
+            <body>
+                <div style="margin: auto; text-align: center;">
+                    <h1>Error</h1>
+                    <p>${message}</p>
+                </div>
+            </body>
+            </html>`
+            
+            res.send(output)
+        }
     }
 
     /**
-     * Synchronize data from a third party data source with a local collection of datatores.
+     * Deprecated
+     * 
+     * @param req 
+     * @param res 
+     * @param next 
+     */
+    public static async sync(req: Request, res: Response, next: any) {
+        const providerName = req.params.provider
+        const query = req.query
+        const did = query.did.toString()
+        const encryptionKey = Buffer.from(query.key.toString(), 'hex')
+        const accessToken = query.accessToken ? query.accessToken.toString() : ''
+        const refreshToken = query.refreshToken ? query.refreshToken.toString() : ''
+
+        return Controller._sync(providerName, did, encryptionKey, accessToken, refreshToken, res, {})
+    }
+
+    /**
+     * New way... supports `syncSchemas` via POST body
+     * @param req 
+     * @param res 
+     * @param next 
+     * @returns 
+     */
+    public static async syncStart(req: Request, res: Response, next: any) {
+        const providerName = req.params.provider
+        const encryptionKey = Buffer.from(req.body.key, 'hex')
+        const did = req.body.did
+        const accessToken = req.body.accessToken ? req.body.accessToken.toString() : ''
+        const refreshToken = req.body.refreshToken ? req.body.refreshToken.toString() : ''
+        const syncSchemas = req.body.syncSchemas
+
+        return Controller._sync(providerName, did, encryptionKey, accessToken, refreshToken, res, syncSchemas)
+    }
+
+    /**
+     * Synchronize data from a third party data source with a local collection of datastores.
      * 
      * Converts the third party into an appropriate Verida schema.
      * 
@@ -129,17 +183,10 @@ export default class Controller {
      * @param next 
      * @returns 
      */
-    public static async sync(req: Request, res: Response, next: any) {
-        const { account, context } = await Controller.getNetwork()
+    public static async _sync(providerName: string, did: string, encryptionKey: Uint8Array, accessToken: string, refreshToken: string, res: Response, syncSchemas: Record<string, string> = {}) {
+        const { account, context } = await Utils.getNetwork()
         const serverDid = await account.did()
-
-        const providerName = req.params.provider
         const provider = Providers(providerName)
-        provider.setSigner(account)
-
-        const query = req.query
-        const did = query.did.toString()
-        const encryptionKey = Buffer.from(query.key.toString(), 'hex')
 
         // Generate a new sync request
         const syncRequestDatabaseName = EncryptionUtils.hash(`${did}-${DATA_SYNC_REQUEST_SCHEMA}`)
@@ -175,7 +222,7 @@ export default class Controller {
         // Fetch the necessary data from the provider
         let data: any = {}
         try {
-            data = await provider.syncFromRequest(req, res, next)
+            data = await provider.sync(accessToken, refreshToken, syncSchemas)
         } catch (err: any) {
             syncRequest.status = 'error'
             if (err instanceof TokenExpiredError) {
@@ -197,8 +244,6 @@ export default class Controller {
             return
         }
 
-        console.log('b')
-
         // Add account auth info if it has changed
         const newAuth = provider.getAccountAuth()
         if (newAuth) {
@@ -206,7 +251,7 @@ export default class Controller {
         }
 
         // Add latest profile info
-        syncRequest.syncInfo.profile = await provider.getProfile()
+        syncRequest.syncInfo.profile = await provider.getProfile(did, context)
 
         const response: any = {}
         const syncingDatabases = []
@@ -286,60 +331,36 @@ export default class Controller {
         // This code loops through all the databases that were written to and 
         // checks the encrypted database has enough records written before flagging
         // it as being fully sync'd
-        let count = 5
-        while (count > 0) {
-            let completeCount = 0
-            for (let i = 0; i < syncingDatabases.length; i++) {
-                const db = syncingDatabases[i]
+        for (let i = 0; i < syncingDatabases.length; i++) {
+            const db = syncingDatabases[i]
 
-                const remote = await db.getRemoteEncrypted()
-                const local = await db.getDb()
+            await db.close({
+                clearLocal: true
+            })
 
-                const remoteInfo = await remote.info()
-                const localInfo = await local.info()
-
-                if (remoteInfo.doc_count >= localInfo.doc_count) {
-                    completeCount++
-                }
-            }
-
-            if (completeCount == syncingDatabases.length) {
-                // Update the sync request to say it has completed successfully
-                syncRequest.syncInfo.schemas = response
-        
-                syncRequest.status = "complete"
-                const res = await syncRequestDatastore.save(syncRequest)
-                if (!res) {
-                    console.log(`Errors saving sync request`)
-                    console.log(syncRequestDatastore.errors)
-                }
-                
-                logger.info(`Saved sync request indicating process is complete`)
-                // Wait 3 seconds to be super sure sync response is saved to DB
-                await delay(3000)
-
-                await context.close({
-                    clearLocal: true
-                })
-
-                return
-            }
-
-            await delay(2000)
-            count--
+            console.log('db closed...')
         }
 
-        // After 5x2 second delays, we still don't have sync so assume it has failed
-        syncRequest.status = "error"
-        syncRequest.syncInfo.error = "Server timed out syncing encrypted database"
+        // Wait 3 seconds to be super sure sync response is saved to DB
+        await delay(3000)
 
-        await syncRequestDatastore.save(syncRequest)
+        // Update the sync request to say it has completed successfully
+        syncRequest.syncInfo.schemas = response
         
-        logger.info(`Saved sync request indicating process has error`)
+        syncRequest.status = "complete"
+        await syncRequestDatastore.save(syncRequest)
+
+        console.log('sync request saved')
+
+        await delay(3000)
 
         await context.close({
             clearLocal: true
         })
+
+        console.log('context closed')
+
+        return
     }
 
     /**
@@ -356,18 +377,14 @@ export default class Controller {
      * @returns 
      */
     public static async syncDone(req: Request, res: Response, next: any) {
-        logger.trace(`syncDone()`)
-        return res.send({
-            success: true
-        })
         const providerName = req.params.provider
         const provider = Providers(providerName)
         const schemaUris = provider.schemaUris()
 
         const query = req.query
-        const did: string = query.did.toString()
+        const did = query.did.toString()
 
-        const { context } = await Controller.getNetwork()
+        const { context } = await Utils.getNetwork()
 
         const clearedDatabases = []
         for (let i in schemaUris) {
@@ -387,7 +404,7 @@ export default class Controller {
 
             try {
                 // @todo: use `db.destroy()` once its released
-                await db._localDb.destroy()
+                await db.destroy()
                 clearedDatabases.push(schemaUri)
             } catch (err) {
                 logger.error(err.status, err.name)
@@ -399,61 +416,25 @@ export default class Controller {
         })
     }
 
-    /**
-     * Get a network, context and account instance
-     * 
-     * @returns 
-     */
-    public static async getNetwork(): Promise<any> {
-        const network = new Client({
-            environment: VERIDA_ENVIRONMENT
-        })
-        const account = new AutoAccount({
-            privateKey: PRIVATE_KEY,
-            environment: VERIDA_ENVIRONMENT,
-            // @ts-ignore
-            didClientConfig: DID_CLIENT_CONFIG
-        })
-        await network.connect(account)
-        const context = await network.openContext(CONTEXT_NAME)
+    public static async providers(req: Request, res: Response) {
+        const providers = Object.keys(CONFIG.providers)
 
-        return {
-            network,
-            context,
-            account
-        }
-    }
-
-    /**
-     * Get a list of all the supported providers
-     */
-    public static async getProviders(): Promise<any> {
-        // Build a list of data source providers from the providers directory
-        const providerDirectory = fs.readdirSync('./src/providers')
-        const providers = []
-        for (let i in providerDirectory) {
-            const providerEntry = providerDirectory[i]
-            if (providerEntry.match('\\.')) {
-                // ignore files (indicated by having a `.` in the name)
-                continue
-            }
-
-            providers.push(providerEntry)
-        }
-
-        // Build up a list of providers
-        const providerList = []
+        const results: any = {}
         for (let p in providers) {
             const providerName = providers[p]
-            const provider = Providers(providerName)
-            providerList.push({
-                name: providerName, 
-                label: provider.getLabel(),
-                icon: provider.icon ? provider.icon : `${serverconfig.assetsUrl}/${providerName}/icon.png`
-            })
+            try {
+                const provider = Providers(providerName)
+                results[providerName] = {
+                    name: providerName,
+                    label: provider.getProviderLabel(),
+                    icon: provider.getProviderImageUrl()
+                }
+            } catch (err) {
+                // skip broken providers
+            }
         }
 
-        return providerList
+        return res.send(results)
     }
 
 }

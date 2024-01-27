@@ -8,5 +8,5 @@ export default function (providerName: string): any {
     const providerConfig = _.merge(CONFIG.providerDefaults, CONFIG.providers[providerName])
     providerConfig.callbackUrl = `${CONFIG.serverUrl}/callback/${providerName}`
 
-    return new provider.default(providerConfig, CONFIG.verida.contextName)
+    return new provider.default(providerConfig)
 }
