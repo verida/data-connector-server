@@ -110,29 +110,25 @@ export default class BaseProvider {
      * @returns 
      */
     public async sync(accessToken: string, refreshToken: string, syncSchemas: Record<string, SyncSchemaConfig> = {}): Promise<any> {
-        try {
-            const api = await this.getApi(accessToken, refreshToken)
-            const results = []
+        const api = await this.getApi(accessToken, refreshToken)
+        const results = []
 
-            const handlers = this.syncHandlers()
-            const schemaList = Object.keys(syncSchemas)
-            for (let h in handlers) {
-                const handler = handlers[h]
+        const handlers = this.syncHandlers()
+        const schemaList = Object.keys(syncSchemas)
+        for (let h in handlers) {
+            const handler = handlers[h]
 
-                if (schemaList.length && schemaList.indexOf(handler.getSchemaUri()) === -1) {
-                    // Schema list exists, but not found
-                    continue
-                }
-                
-                const handlerInstance = new handler(this.config, this.profile)
-                const handlerResults = await handlerInstance.sync(api, syncSchemas[handler.getSchemaUri()])
-                results[handler.getSchemaUri()] = handlerResults
+            if (schemaList.length && schemaList.indexOf(handler.getSchemaUri()) === -1) {
+                // Schema list exists, but not found
+                continue
             }
-
-            return results
-        } catch (err) {
-            console.log(err)
+            
+            const handlerInstance = new handler(this.config, this.profile)
+            const handlerResults = await handlerInstance.sync(api, syncSchemas[handler.getSchemaUri()])
+            results[handler.getSchemaUri()] = handlerResults
         }
+
+        return results
     }
 
     // Set new authentication credentials for this provider instance, if they changed

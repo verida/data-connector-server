@@ -8,7 +8,6 @@ import serverconfig from '../src/serverconfig.json'
 
 const CONTEXT_NAME = serverconfig.verida.contextName
 const PRIVATE_KEY = serverconfig.verida.privateKey
-const DEFAULT_ENDPOINTS = serverconfig.verida.defaultEndpoints
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const SBT_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/token/sbt/credential/v0.1.0/schema.json'
@@ -16,7 +15,6 @@ const SBT_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/token/sbt/creden
 export {
     CONTEXT_NAME,
     PRIVATE_KEY,
-    DEFAULT_ENDPOINTS,
     DID_CLIENT_CONFIG,
     SBT_CREDENTIAL_SCHEMA
 }
