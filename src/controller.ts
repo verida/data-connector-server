@@ -55,10 +55,14 @@ export default class Controller {
         const providerName = req.params.provider
         const query = req.query
         const did = query.did.toString()
-        const key = query.key.toString()
+        const redirect = query.redirect ? query.redirect.toString() : 'deeplink'
+        //const key = query.key.toString()
 
         // @ts-ignore Session is injected as middleware
         req.session.did = did
+        req.session.redirect = redirect
+
+        console.log(req.session)
 
         const provider = Providers(providerName)
         return provider.connect(req, res, next)
@@ -79,17 +83,26 @@ export default class Controller {
         const providerName = req.params.provider
         const provider = Providers(providerName)
 
+        // Why isn't the session data being retained?
+        console.log(req.session)
+
         // @todo: handle error and show error message
         try {
             const connectionToken = await provider.callback(req, res, next)
 
             // @ts-ignore
             const did = req.session.did
+            const redirect = req.session.redirect
+
+            let redirectPath = 'https://vault.verida.io/connection-success'
+            if (redirect != 'deeplink') {
+                redirectPath = redirect
+            }
 
             // Send the access token, refresh token and profile database name and encryption key
             // so the user can pull their profile remotely and store their tokens securely
             // This also avoids this server saving those credentials anywhere, they are only stored by the user
-            const redirectUrl = `https://vault.verida.io/connection-success?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
+            const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
 
             // @todo: Generate nice looking thank you page
             const output = `<html>
