@@ -1,32 +1,44 @@
 {
-    "serverUrl": "http://localhost:5021",
-    "assetsUrl": "http://localhost:5021/assets",
+    "serverUrl": "http://192.168.68.128:5021",
+    "assetsUrl": "http://192.168.68.128:5021/assets",
     "logLevel": "debug", 
     "verida": {
         "environment": "testnet",
         "contextName": "Verida: Data Connector",
-        "privateKey": "",
+        "privateKey": "0xccd3b996ec98a9a536efdffbae40e5eaaf117765a587483c69195c9460165c37",
         "defaultEndpoints": {
             "defaultDatabaseServer": {
                 "type": "VeridaDatabase",
-                "endpointUri": []
+                "endpointUri": ["https://node1-apse2.acacia.verida.tech/", "https://node1-use2.acacia.verida.tech/", "https://node3-apse2.acacia.verida.tech/"]
             },
             "defaultMessageServer": {
                 "type": "VeridaMessage",
-                "endpointUri": []
+                "endpointUri": ["https://node1-apse2.acacia.verida.tech/", "https://node1-use2.acacia.verida.tech/", "https://node3-apse2.acacia.verida.tech/"]
             }
         },
         "didClientConfig": {
-            "callType": "web3",
+            "callType": "gasless",
             "network": "testnet",
             "web3Config": {
+                "rpcUrl": "https://rpc-mumbai.maticvigil.com/",
+                "serverConfig": {
+                    "headers": {
+                        "context-name": "Verida: Vault"
+                    }
+                },
+                "postConfig": {
+                    "headers": {
+                        "user-agent": "Verida-Vault"
+                    }
+                },
+                "endpointUrl": "https://meta-tx-server1.tn.verida.tech"
             },
             "rpcUrl": "https://rpc-mumbai.maticvigil.com/",
-            "didEndpoints": []
+            "didEndpoints": ["https://node1-apse2.acacia.verida.tech/did/", "https://node1-use2.acacia.verida.tech/did/", "https://node3-apse2.acacia.verida.tech/did/"]
         }
     },
     "testing": {
-        "contextName": "",
+        "contextName": "Verida Testing: Fake Vault",
         "veridaPrivateKey": "",
         "encryptionKey": ""
     },
@@ -35,22 +47,42 @@
             "label": "Facebook",
             "appId": "",
             "appSecret": "",
+            "sbtImage": "https://data.verida.network/ipfs/QmcCoAjMWQpz7FwJi1d7jSh9EJ1m3xY1FRGxPi9pu3Rit7/FacebookBadge.png",
             "followingLimit": 20,
             "postLimit": 20,
             "testing": {
                 "accessToken": ""
             }
         },
-        "twitter": {
+        "twitter-verida": {
             "label": "Twitter",
-            "clientID": "",
-            "clientSecret": "",
+            "apiKey": "",
+            "apiSecret": "",
+            "bearerToken": "",
             "followingLimit": 20,
             "postLimit": 20,
             "testing": {
                 "accessToken": "",
                 "refreshToken": ""
             }
+        },
+        "twitter": {
+            "label": "Twitter",
+            "clientID": "",
+            "clientSecret": "",
+            "sbtImage": "https://data.verida.network/ipfs/QmWpmaBusMENzxLJb5RJUzp951sXPm9GLQCy4pt5zC2XdU/TwitterBadge.png",
+            "followingLimit": 20,
+            "postLimit": 20,
+            "testing": {
+                "accessToken": "",
+                "refreshToken": ""
+            }
+        },
+        "discord": {
+            "label": "Discord",
+            "clientID": "",
+            "clientSecret": "",
+            "sbtImage": ""
         }
     },
     "providerDefaults": {

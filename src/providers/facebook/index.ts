@@ -26,6 +26,10 @@ export default class FacebookProvider extends Base {
         return 'facebook'
     }
 
+    public getProviderLabel() {
+        return 'Facebook'
+    }
+
     public syncHandlers(): any[] {
         return [
             Following,

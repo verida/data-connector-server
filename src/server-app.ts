@@ -10,6 +10,8 @@ const logger = log4js.getLogger()
 import CONFIG from "./config"
 logger.level = CONFIG.logLevel
 
+const path = require('path')
+
 //const basicAuth = require('express-basic-auth')
 //import RequestValidator from './request-validator'
 
@@ -17,6 +19,8 @@ logger.level = CONFIG.logLevel
 const app = express();
 //const validator = new RequestValidator()
 
+console.log(path.join(__dirname, 'assets'))
+app.use('/assets', express.static(path.join(__dirname, 'assets')))
 app.use(session({
   secret: 'c20n498n720489t729amx9 8es',
   resave: false,
@@ -42,7 +46,7 @@ app.use(router)
 module.exports=app
 
 /*
-//Example code to create HTTPS server
+//Example code to create HTTPS server (for facebook testing)
 
 const https = require("https")
 const fs = require("fs")

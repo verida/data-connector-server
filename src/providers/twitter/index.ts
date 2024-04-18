@@ -3,7 +3,7 @@ import Base from "../BaseProvider"
 import BaseProviderConfig from '../BaseProviderConfig'
 
 const passport = require("passport")
-const TwitterStrategy = require("passport-twitter-oauth2.0")
+import { Strategy as TwitterStrategy } from '@superfaceai/passport-twitter-oauth2'
 import { TwitterApi as TwitterClient } from 'twitter-api-v2'
 import dayjs from 'dayjs'
 
@@ -27,6 +27,10 @@ export default class TwitterProvider extends Base {
 
     public getProviderId() {
         return 'twitter'
+    }
+
+    public getProviderLabel() {
+        return 'Twitter'
     }
 
     public syncHandlers(): any[] {
@@ -141,10 +145,8 @@ export default class TwitterProvider extends Base {
             clientID: this.config.clientID,
             clientSecret: this.config.clientSecret,
             callbackURL: this.config.callbackUrl,
-            clientType: 'private',
+            clientType: 'confidential',
             scope: SCOPE,
-            pkce: true, // required,
-            state: true // required
           },
           function(accessToken: string, refreshToken: string, profile: any, cb: any) {
             // Simply return the raw data
