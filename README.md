@@ -34,3 +34,9 @@ User data is fetched on behalf of the user and processed. This processing involv
 - Deleting the data from disk
 
 This server only has access to data fetched from the third party API. It can not view the full set of data owned by the user for a given dataset. For example, if this API pulls a user's Twitter posts, it will not have access to any other posts stored in the user's Vault.
+
+# Development
+
+## Sessions
+
+Sessions are used to track `redirect` URLs in the connection request. Sessions **do not** work locally if you specify `localhost` for the hostname. Use an IP address instead.
