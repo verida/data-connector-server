@@ -5,7 +5,7 @@ import Following from "./following";
 import TokenExpiredError from "../TokenExpiredError";
 
 const passport = require("passport");
-const { OAuth2Strategy } = require("passport-google-oauth");
+const { Strategy: YoutubeV3Strategy } = require("passport-youtube-v3");
 
 export interface YouTubeProviderConfig extends BaseProviderConfig {
   clientID: string;
@@ -30,7 +30,7 @@ export default class YouTubeProvider extends Base {
 
   public init() {
     passport.use(
-      new OAuth2Strategy(
+      new YoutubeV3Strategy(
         {
           clientID: this.config.clientID,
           clientSecret: this.config.clientSecret,
