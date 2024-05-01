@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Base from "../BaseProvider";
 import BaseProviderConfig from "../BaseProviderConfig";
 import Following from "./following";
+import TokenExpiredError from "../TokenExpiredError";
 
 const passport = require("passport");
 const { OAuth2Strategy } = require("passport-google-oauth");
@@ -111,11 +112,9 @@ export default class YouTubeProvider extends Base {
           tokenResponse.tokens.access_token,
           tokenResponse.tokens.refresh_token || refreshToken
         );
-      } catch (refreshError) {
-        console.error("Failed to refresh the access token:", refreshError);
-        throw new Error(
-          "Authentication failed: Unable to refresh the access token."
-        );
+      } catch (err) {
+        console.error("Failed to refresh the access token:", err.message);
+        throw new TokenExpiredError(err.message);
       }
     }
 
