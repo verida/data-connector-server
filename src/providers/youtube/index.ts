@@ -83,23 +83,47 @@ export default class YouTubeProvider extends Base {
     accessToken: string,
     refreshToken?: string
   ): Promise<any> {
-    // Here, you would implement API requests to YouTube using the acquired accessToken.
-    // Depending on what you want to achieve, this could involve using Google's APIs Node.js client.
     const { google } = require("googleapis");
-    const youtube = google.youtube({
-      version: "v3",
-      auth: accessToken,
+
+    const oauth2Client = new google.auth.OAuth2(
+      this.config.clientID,
+      this.config.clientSecret
+    );
+
+    oauth2Client.setCredentials({
+      access_token: accessToken,
+      refresh_token: refreshToken,
     });
 
     try {
-      const response = await youtube.channels.list({
-        mine: true,
-        part: "snippet,contentDetails,statistics",
-      });
-      return response.data.items[0]; // This example assumes you want channel details
+      await oauth2Client.getAccessToken();
     } catch (error) {
-      console.error("The API returned an error: " + error);
-      throw error;
+      console.log("Access token has expired, attempting to refresh");
+
+      try {
+        const tokenResponse = await oauth2Client.refreshToken(refreshToken);
+        oauth2Client.setCredentials({
+          access_token: tokenResponse.tokens.access_token,
+          refresh_token: tokenResponse.tokens.refresh_token || refreshToken,
+        });
+
+        this.setAccountAuth(
+          tokenResponse.tokens.access_token,
+          tokenResponse.tokens.refresh_token || refreshToken
+        );
+      } catch (refreshError) {
+        console.error("Failed to refresh the access token:", refreshError);
+        throw new Error(
+          "Authentication failed: Unable to refresh the access token."
+        );
+      }
     }
+
+    const youtube = google.youtube({
+      version: "v3",
+      auth: oauth2Client,
+    });
+
+    return youtube;
   }
 }

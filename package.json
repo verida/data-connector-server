@@ -52,6 +52,7 @@
     "express-basic-auth": "git+https://github.com/Mozzler/express-basic-auth.git",
     "express-session": "^1.17.3",
     "fb": "^2.0.0",
+    "googleapis": "^135.0.0",
     "lodash": "^4.17.21",
     "log4js": "^6.4.1",
     "memory-cache": "^0.2.0",
@@ -59,6 +60,7 @@
     "nano": "^9.0.5",
     "passport": "^0.5.2",
     "passport-facebook": "^3.0.0",
+    "passport-google-oauth": "^2.0.0",
     "ts-mocha": "^9.0.2",
     "twitter-api-v2": "^1.14.0"
   },
