@@ -2,11 +2,12 @@ import { Request, Response } from "express";
 import Base from "../BaseProvider";
 import BaseProviderConfig from "../BaseProviderConfig";
 import Following from "./following";
+import Posts from "./posts";
 import TokenExpiredError from "../TokenExpiredError";
 
 const passport = require("passport");
 const { Strategy: YoutubeV3Strategy } = require("passport-youtube-v3");
-
+const { google } = require("googleapis");
 export interface YouTubeProviderConfig extends BaseProviderConfig {
   clientID: string;
   clientSecret: string;
@@ -25,7 +26,7 @@ export default class YouTubeProvider extends Base {
   }
 
   public syncHandlers(): any[] {
-    return [Following];
+    return [Following, Posts];
   }
 
   public init() {
@@ -50,9 +51,7 @@ export default class YouTubeProvider extends Base {
 
   public async connect(req: Request, res: Response, next: any): Promise<any> {
     this.init();
-    const auth = await passport.authenticate("google", {
-      scope: ["https://www.googleapis.com/auth/youtube.readonly"],
-    });
+    const auth = await passport.authenticate("youtube");
     return auth(req, res, next);
   }
 
@@ -60,7 +59,7 @@ export default class YouTubeProvider extends Base {
     this.init();
 
     const promise = new Promise((resolve, reject) => {
-      const auth = passport.authenticate("google", (err: any, data: any) => {
+      const auth = passport.authenticate("youtube", (err: any, data: any) => {
         if (err) {
           reject(err);
         } else {
@@ -84,8 +83,6 @@ export default class YouTubeProvider extends Base {
     accessToken: string,
     refreshToken?: string
   ): Promise<any> {
-    const { google } = require("googleapis");
-
     const oauth2Client = new google.auth.OAuth2(
       this.config.clientID,
       this.config.clientSecret

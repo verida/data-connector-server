@@ -1,6 +1,5 @@
 import BaseSyncHandler from "../BaseSyncHandler";
 import { SyncSchemaConfig } from "../BaseProvider";
-const { google } = require("googleapis");
 
 export default class Following extends BaseSyncHandler {
   protected static schemaUri: string =

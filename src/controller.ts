@@ -432,6 +432,7 @@ export default class Controller {
     public static async providers(req: Request, res: Response) {
         const providers = Object.keys(CONFIG.providers)
 
+        console.log(providers)
         const results: any = {}
         for (let p in providers) {
             const providerName = providers[p]
@@ -444,6 +445,7 @@ export default class Controller {
                 }
             } catch (err) {
                 // skip broken providers
+                console.log(err)
             }
         }
 
