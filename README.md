@@ -51,6 +51,14 @@ Update `src/serverconfig.json` to:
 1. Specify the details of each provider you want to run. You will need to obtain the necessary API keys for each provider.
 2. Specify the correct `serverUrl` and `assetsUrl` that point to the correct address of your server (don't use `localhost`)
 
+- ##### How to get clientId and clientSecret for Youtube
+1. Go to google cloud console dashboard.
+2. Create a new project.
+3. Create `OAuth client ID` credentials in the project credentials page.
+4. Add Javascript origins and Authorized redirect URIs
+5. Enable `Youtube Data API V3` in the `Enabled API & Services`.
+6. Download `clientId` and `clientSecret` in the credentials page.
+
 ### Starting the server
 
 ```
