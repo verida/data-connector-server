@@ -29,28 +29,7 @@
     "veridaPrivateKey": "",
     "encryptionKey": ""
   },
-  "providers": {
-    "discord": {
-      "label": "Discord",
-      "clientID": "1006255688319762593",
-      "clientSecret": "vhJcF9nEJWfZPFIwEKcMbG_9kBKOayOz",
-      "sbtImage": "https://data.verida.network/ipfs/QmQsghP7Y1dbZHgoo48hQz8SHdFk2mjmPikhkHg69HHhWb/Gen0/discord-account.png",
-      "testing": {
-        "accessToken": "FlyF2Uy0jnanMoRxERI4WJK915MqiZ",
-        "refreshToken": "6Y0FTq67Ornlh8ib0qpTdTy3gOMLlS"
-      }
-    },
-    "youtube": {
-      "label": "Youtube",
-      "clientID": "",
-      "clientSecret": "",
-      "sbtImage": "",
-      "testing": {
-        "clientID": "",
-        "clientSecret": ""
-      }
-    }
-  },
+  "providers": {},
   "providerDefaults": {
     "limitResults": true
   }
