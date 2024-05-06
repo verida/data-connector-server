@@ -111,7 +111,7 @@ export default class BaseProvider {
      */
     public async sync(accessToken: string, refreshToken: string, syncSchemas: Record<string, SyncSchemaConfig> = {}): Promise<any> {
         const api = await this.getApi(accessToken, refreshToken)
-        const results = []
+        const results:Record<string, any> = {}
 
         const handlers = this.syncHandlers()
         const schemaList = Object.keys(syncSchemas)
