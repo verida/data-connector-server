@@ -33,7 +33,7 @@ describe(`${providerName} Tests`, function () {
     });
 
     it("Can fetch Following data", async () => {
-      const syncData = await provider.sync(creds.accessToken, creds.refreshToken, SCHEMA_FOLLOWING);
+      const syncData = await provider.sync(creds.accessToken, creds.refreshToken, { [SCHEMA_FOLLOWING]: "" });
 
       assert.ok(syncData, "Have data returned");
       assert.ok(SCHEMA_FOLLOWING in syncData, "Have Following data in the response");

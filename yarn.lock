@@ -925,10 +925,10 @@
     "@stablelib/wipe" "^1.0.1"
     "@stablelib/xchacha20" "^1.0.1"
 
-"@superfaceai/passport-twitter-oauth2@^1.2.3":
-  version "1.2.3"
-  resolved "https://registry.yarnpkg.com/@superfaceai/passport-twitter-oauth2/-/passport-twitter-oauth2-1.2.3.tgz#ca870e7b03552c5893800626e3f60995e56c0c96"
-  integrity sha512-kbGptW8AM7l6jJKlgCaoWSHVVNgNgCZCTPO9IDo7Wg8vQqOu+tQhRmJERAdbqcB3B/doG7Nd90nvFuLDH1sFLA==
+"@superfaceai/passport-twitter-oauth2@1.2.4":
+  version "1.2.4"
+  resolved "https://registry.yarnpkg.com/@superfaceai/passport-twitter-oauth2/-/passport-twitter-oauth2-1.2.4.tgz#c3343bccd5730a36752714a6b1f1e4405ffb704a"
+  integrity sha512-f2P4X1HqBHJuAnQefINpgJvMGLHx+nT9APbfJzN/CCBcazvP9NOD9IiENHMZMXEgfcHU40V3KwKiIZTBH5Q4Wg==
   dependencies:
     passport-oauth2 "^1.6.1"
   optionalDependencies:
@@ -5049,10 +5049,10 @@ tweetnacl@^1.0.3:
   resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-1.0.3.tgz#ac0af71680458d8a6378d0d0d050ab1407d35596"
   integrity sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==
 
-twitter-api-v2@^1.14.0:
-  version "1.14.0"
-  resolved "https://registry.yarnpkg.com/twitter-api-v2/-/twitter-api-v2-1.14.0.tgz#2aa186087aae58083dcbbafef8727b42cb703483"
-  integrity sha512-kBc0X6hTl0qWYTSNH9Gp87S6d9wIM2qOxHg7jlWH054HnMPC8XMcttsrKyPwP8SVha28dt5DPQvlqhPxsWRC+Q==
+twitter-api-v2@1.16.3:
+  version "1.16.3"
+  resolved "https://registry.yarnpkg.com/twitter-api-v2/-/twitter-api-v2-1.16.3.tgz#6042c61b4dee35329dda3d153d9f08d2c6a348e3"
+  integrity sha512-T9Wbq1y3IrTshBvtVawpWp1GmL3mduF4RhieSfM1HsL10Qda0EeJMDUwr5C6IeelnSZ65tiiXzs0xUS8FHM9XA==
 
 type-detect@^4.0.8:
   version "4.0.8"
