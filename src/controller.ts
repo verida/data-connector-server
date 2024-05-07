@@ -432,7 +432,6 @@ export default class Controller {
     public static async providers(req: Request, res: Response) {
         const providers = Object.keys(CONFIG.providers)
 
-        console.log(providers)
         const results: any = {}
         for (let p in providers) {
             const providerName = providers[p]
@@ -452,4 +451,26 @@ export default class Controller {
         return res.send(results)
     }
 
+    public static async getProviders() {
+        const providers = Object.keys(CONFIG.providers)
+
+        const results: any = []
+        for (let p in providers) {
+            const providerName = providers[p]
+            try {
+                const provider = Providers(providerName)
+                results.push({
+                    name: providerName,
+                    label: provider.getProviderLabel(),
+                    icon: provider.getProviderImageUrl()
+                })
+            } catch (err) {
+                // skip broken providers
+                console.log(err)
+                return {}
+            }
+        }
+        
+        return results
+    }
 }

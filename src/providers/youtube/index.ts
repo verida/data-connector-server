@@ -79,21 +79,12 @@ export default class YouTubeProvider extends Base {
     return result;
   }
 
-  public async getApi(
-    accessToken: string,
-    refreshToken?: string
-  ): Promise<any> {
-    const oauth2Client = new google.auth.OAuth2(
-      this.config.clientID,
-      this.config.clientSecret
-    );
-
-    oauth2Client.setCredentials({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
+  public async getApi(accessToken: string, refreshToken?: string): Promise<any> {
+    let oauth2Client;
 
     try {
+      oauth2Client = new google.auth.OAuth2(this.config.clientID, this.config.clientSecret);
+      oauth2Client.setCredentials({ access_token: accessToken, refresh_token: refreshToken });
       await oauth2Client.getAccessToken();
     } catch (error) {
       console.log("Access token has expired, attempting to refresh");
@@ -105,10 +96,7 @@ export default class YouTubeProvider extends Base {
           refresh_token: tokenResponse.tokens.refresh_token || refreshToken,
         });
 
-        this.setAccountAuth(
-          tokenResponse.tokens.access_token,
-          tokenResponse.tokens.refresh_token || refreshToken
-        );
+        this.setAccountAuth(tokenResponse.tokens.access_token, tokenResponse.tokens.refresh_token || refreshToken);
       } catch (err) {
         console.error("Failed to refresh the access token:", err.message);
         throw new TokenExpiredError(err.message);

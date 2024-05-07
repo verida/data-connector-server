@@ -10,6 +10,7 @@ import dayjs from 'dayjs'
 import Following from './following'
 import Posts from './posts'
 import TokenExpiredError from '../TokenExpiredError'
+import { randomUUID } from 'crypto'
 
 export interface TwitterProviderConfig extends BaseProviderConfig {
     clientID: string
@@ -117,9 +118,11 @@ export default class TwitterProvider extends Base {
                     })
                 } catch (err) {
                     // Unrecoverable auth error
+                    console.log(err)
                     throw new TokenExpiredError(err.message)
                 }
             } else {
+                console.log('Error 1', err)
                 throw err
             }
         }

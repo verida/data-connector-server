@@ -22,7 +22,7 @@ describe(`${providerName} Tests`, function() {
 
         it("Can fetch Post data", async () => {
             const syncData = await provider.sync(creds.accessToken, creds.refreshToken, SCHEMA_POST)
-
+            
             assert.ok(syncData, 'Have data returned')
             assert.ok(SCHEMA_POST in syncData, 'Have Post data in the response')
             assert.equal(syncData[SCHEMA_POST].length, `Correct number of posts received (${syncData[SCHEMA_POST].length})`)

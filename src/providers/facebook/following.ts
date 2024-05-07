@@ -12,7 +12,7 @@ export default class Following extends BaseSyncHandler {
     public async sync(api: any): Promise<any> {
         const likes = await this.getAllPages(api, '/me/likes')
         /*const posts = await FacebookProvider.getAllPages(Fb, '/me/posts')*/
-
+        
         const results = []
         for (var l in likes) {
             const like: any = likes[l]
