@@ -3,25 +3,24 @@ import { SyncSchemaConfig } from "../BaseProvider";
 import dayjs from "dayjs";
 
 export default class Posts extends BaseSyncHandler {
-  protected static schemaUri: string =
-    "https://common.schemas.verida.io/social/post/v0.1.0/schema.json";
+  protected static schemaUri: string = "https://common.schemas.verida.io/social/post/v0.1.0/schema.json";
 
   /**
    * Syncs the YouTube subscriptions of the user.
    * @param api Authenticated YouTube API client
    * @param syncConfig Configuration for syncing
    */
-  public async sync(api: any, syncConfig: SyncSchemaConfig = {}): Promise<any> {
+  public async sync(api: any, syncConfig: SyncSchemaConfig = { limit: 20, sinceId: "" }): Promise<any> {
     const youtube = api;
     const posts: any[] = [];
 
     try {
-      let pageToken = "";
+      let pageToken = syncConfig.sinceId;
       do {
         const response = await youtube.search.list({
           part: "snippet",
           forMine: true,
-          maxResults: 50,
+          maxResults: Math.max(0, Math.min(20, syncConfig.limit - posts.length)),
           pageToken: pageToken,
           type: "video",
         });
@@ -44,10 +43,7 @@ export default class Posts extends BaseSyncHandler {
         }
 
         pageToken = response.data.nextPageToken || "";
-      } while (
-        pageToken &&
-        (!syncConfig.limit || posts.length < syncConfig.limit)
-      );
+      } while (pageToken && (!syncConfig.limit || posts.length < syncConfig.limit));
     } catch (error) {
       console.error("Failed to sync YouTube videos:", error);
       throw error;

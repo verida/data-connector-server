@@ -2,26 +2,25 @@ import BaseSyncHandler from "../BaseSyncHandler";
 import { SyncSchemaConfig } from "../BaseProvider";
 
 export default class Following extends BaseSyncHandler {
-  protected static schemaUri: string =
-    "https://common.schemas.verida.io/social/following/v0.1.0/schema.json";
+  protected static schemaUri: string = "https://common.schemas.verida.io/social/following/v0.1.0/schema.json";
 
   /**
    * Syncs the YouTube subscriptions of the user.
    * @param api Authenticated YouTube API client
    * @param syncConfig Configuration for syncing
    */
-  public async sync(api: any, syncConfig: SyncSchemaConfig = {}): Promise<any> {
+  public async sync(api: any, syncConfig: SyncSchemaConfig = { limit: 20, sinceId: "" }): Promise<any> {
     const youtube = api;
     const subscriptions: any[] = [];
     const now = new Date().toISOString();
 
     try {
-      let pageToken = "";
+      let pageToken = syncConfig.sinceId;
       do {
         const response = await youtube.subscriptions.list({
           part: "snippet",
           mine: true,
-          maxResults: 50,
+          maxResults: Math.max(0, Math.min(20, syncConfig.limit - subscriptions.length)),
           pageToken: pageToken,
         });
 
@@ -39,10 +38,7 @@ export default class Following extends BaseSyncHandler {
         }
 
         pageToken = response.data.nextPageToken || "";
-      } while (
-        pageToken &&
-        (!syncConfig.limit || subscriptions.length < syncConfig.limit)
-      );
+      } while (pageToken && (!syncConfig.limit || subscriptions.length < syncConfig.limit));
     } catch (error) {
       console.error("Failed to sync YouTube subscriptions:", error);
       throw error;
