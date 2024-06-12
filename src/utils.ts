@@ -1,6 +1,6 @@
 import { EnvironmentType, IContext } from '@verida/types'
-import { AutoAccount } from "@verida/account-node"
-import { Client, Context } from "@verida/client-ts"
+import { ContextAccount } from "@verida/account-node"
+import { Client, Network } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
 import fs from 'fs'
@@ -26,19 +26,24 @@ export class Utils {
      * 
      * @returns 
      */
-    public static async getNetwork(): Promise<any> {
+    public static async getNetwork(did: string, contextSignature: string): Promise<{
+        network: Network,
+        context: IContext,
+        account: ContextAccount
+    }> {
+        const VAULT_CONTEXT_NAME = 'Verida: Vault'
         const VERIDA_ENVIRONMENT = Utils.strToEnvType(serverconfig.verida.environment)
         const network = new Client({
             environment: VERIDA_ENVIRONMENT
         })
-        const account = new AutoAccount({
-            privateKey: PRIVATE_KEY,
+        const account = new ContextAccount({
+            privateKey: contextSignature,
             environment: VERIDA_ENVIRONMENT,
             // @ts-ignore
             didClientConfig: DID_CLIENT_CONFIG
-        })
+        }, did, VAULT_CONTEXT_NAME)
         await network.connect(account)
-        const context = await network.openContext(CONTEXT_NAME)
+        const context = await network.openContext(VAULT_CONTEXT_NAME)
 
         return {
             network,

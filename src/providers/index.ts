@@ -1,4 +1,4 @@
-import { Connection } from "src/interfaces"
+import { Connection } from "../interfaces"
 import CONFIG from "../config"
 const _ = require('lodash')
 

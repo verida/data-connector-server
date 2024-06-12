@@ -1,32 +1,10 @@
-import { Context } from '@verida/client-ts'
 import { explodeDID } from '@verida/helpers'
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import BaseProviderConfig from './BaseProviderConfig'
 import serverconfig from '../serverconfig.json'
-import { Connection } from '../interfaces'
+import { AccountAuth, AccountProfile, Connection, SyncSchemaConfig } from '../interfaces'
 import { IContext } from '@verida/types'
-
-export interface AccountAuth {
-    accessToken: string,
-    refreshToken: string
-}
-
-export interface AccountProfile {
-    id: string,
-    name?: string
-    username?: string
-    description?: string
-    createdAt?: string
-    url?: string
-    avatarUrl?: string
-    credential?: string
-}
-
-export interface SyncSchemaConfig {
-    limit?: number
-    sinceId?: string
-}
 
 export default class BaseProvider {
 

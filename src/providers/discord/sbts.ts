@@ -1,5 +1,5 @@
 import BaseSyncHandler from "../BaseSyncHandler"
-import { SyncSchemaConfig } from "../BaseProvider"
+import { SyncSchemaConfig } from "../../interfaces"
 import { REST } from 'discord.js'
 import DiscordProvider from "."
 const _ = require('lodash')

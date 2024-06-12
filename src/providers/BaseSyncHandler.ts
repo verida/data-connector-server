@@ -1,4 +1,4 @@
-import { AccountProfile, SyncSchemaConfig } from "./BaseProvider"
+import { SyncSchemaConfig, AccountProfile } from "../interfaces"
 
 export default class BaseSyncHandler {
 

@@ -1,6 +1,5 @@
+import { SyncSchemaConfig } from "../../interfaces"
 import BaseSyncHandler from "../BaseSyncHandler"
-import dayjs from 'dayjs'
-import { SyncSchemaConfig } from "../BaseProvider"
 const _ = require('lodash')
 
 const log4js = require("log4js")

@@ -1,10 +1,10 @@
 import CONFIG from './config'
-import { IContext } from "@verida/types";
+import { IContext, IDatastore } from "@verida/types";
 import Providers from "./providers"
-import { Connection } from './interfaces';
-import { Network } from '@verida/client-ts';
-import BaseProvider, { SyncSchemaConfig } from './providers/BaseProvider';
+import { Connection, DatastoreSaveResponse, SyncSchemaConfig } from './interfaces';
+import BaseProvider from './providers/BaseProvider';
 import TokenExpiredError from './providers/TokenExpiredError';
+import { Utils } from './utils';
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -23,6 +23,8 @@ export default class SyncManager {
     private did: string
     private seedPhrase: string
 
+    private connectionDatastore?: IDatastore
+
     public constructor(did: string, seedPhrase: string) {
         this.did = did
         this.seedPhrase = seedPhrase
@@ -30,31 +32,37 @@ export default class SyncManager {
 
     public async sync() {
         const vault = await this.getVault()
+
+        const providers = await this.getProviders(vault)
+        // @todo: Do these in parallel?
+        // May need a shared cache of datastore connections so we 
+        // don't try to open the same one multiple times
+        for (let p in providers) {
+            const provider = providers[p]
+            await this.syncProvider(vault, provider)
+        }
     }
 
     public async getVault(): Promise<IContext> {
         // @todo: How to open a single context from a keyring seed phrase?
         try {
-            const vault = await Network.connect()
+            const { context } = await Utils.getNetwork(this.did, this.seedPhrase)
+
+            return <IContext> context
         } catch (err) {
             console.log(err)
         }
-
-        return vault
     }
 
     public async getProviders(vault: IContext): Promise<BaseProvider[]> {
-        const datastore = await vault.openDatastore(
-            DATA_CONNECTION_SCHEMA
-        )
-
+        const datastore = await this.getConnectionDatastore(vault)
         const allProviders = Object.keys(CONFIG.providers)
         const userProviders = []
         for (let p in allProviders) {
             const providerName = allProviders[p]
             
             try {
-                const connection = <Connection> datastore.get(providerName, {})
+                const connection = <Connection> await datastore.get(providerName, {})
                 const provider = Providers(providerName, connection)
                 userProviders.push(provider)
                 
@@ -65,6 +73,18 @@ export default class SyncManager {
         }
 
         return userProviders
+    }
+
+    public async getConnectionDatastore(vault: IContext): Promise<IDatastore> {
+        if (this.connectionDatastore) {
+            return this.connectionDatastore
+        }
+
+        this.connectionDatastore = await vault.openDatastore(
+            DATA_CONNECTION_SCHEMA
+        )
+
+        return this.connectionDatastore
     }
 
     /**
@@ -96,7 +116,7 @@ export default class SyncManager {
         // Generate a new sync request
         const syncRequestDatastore = await vault.openDatastore(DATA_SYNC_REQUEST_SCHEMA)
         
-        const syncRequestResult = await syncRequestDatastore.save({
+        const syncRequestResult = <DatastoreSaveResponse> await syncRequestDatastore.save({
             source: provider.getProviderId(),
             requestStart: (new Date()).toISOString(),
             status: 'requested'
@@ -143,7 +163,8 @@ export default class SyncManager {
         // Add latest profile info
         connection.profile = await provider.getProfile(this.did, vault)
 
-        await connection.save()
+        const connectionDatastore = await this.getConnectionDatastore(vault)
+        await connectionDatastore.save(connection, {})
 
         const response: any = {}
         const syncingDatabases = []
@@ -154,7 +175,7 @@ export default class SyncManager {
             // open a datastore where the user has permission to access the datastores
             const datastore = await vault.openDatastore(schemaUri)
 
-            logger.info(`Inserting ${data[schemaUri].length} records into datastore: ${schemaUrl}`)
+            logger.info(`Inserting ${data[schemaUri].length} records into datastore: ${schemaUri}`)
 
             try {
                 for (var i in data[schemaUri]) {
