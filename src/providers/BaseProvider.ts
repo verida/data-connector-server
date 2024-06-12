@@ -4,6 +4,8 @@ import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import BaseProviderConfig from './BaseProviderConfig'
 import serverconfig from '../serverconfig.json'
+import { Connection } from '../interfaces'
+import { IContext } from '@verida/types'
 
 export interface AccountAuth {
     accessToken: string,
@@ -29,11 +31,17 @@ export interface SyncSchemaConfig {
 export default class BaseProvider {
 
     protected config: BaseProviderConfig
+    protected connection?: Connection
     protected newAuth?: AccountAuth
     protected profile?: AccountProfile
 
-    public constructor(config: BaseProviderConfig) {
+    public constructor(config: BaseProviderConfig, connection?: Connection) {
         this.config = config
+        this.connection = connection
+    }
+
+    public getConnection(): Connection {
+        return this.connection!
     }
 
     public getProviderId(): string {
@@ -92,7 +100,7 @@ export default class BaseProvider {
         return credentialData
     }
 
-    public async getProfile(did: string, context: Context): Promise<AccountProfile> {
+    public async getProfile(did: string, context: IContext): Promise<AccountProfile> {
         if (this.profile && !this.profile.credential) {
             const profileCredentialData = await this.getProfileData(did)
             this.profile.credential = await Utils.buildCredential(profileCredentialData, context)
@@ -109,7 +117,7 @@ export default class BaseProvider {
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken: string, refreshToken: string, syncSchemas: Record<string, SyncSchemaConfig> = {}): Promise<any> {
+    public async sync(accessToken: string, refreshToken: string, syncSchemas: Record<string, SyncSchemaConfig>): Promise<any> {
         const api = await this.getApi(accessToken, refreshToken)
         const results = []
 

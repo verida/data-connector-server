@@ -1,4 +1,4 @@
-import { EnvironmentType } from '@verida/types'
+import { EnvironmentType, IContext } from '@verida/types'
 import { AutoAccount } from "@verida/account-node"
 import { Client, Context } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
@@ -81,7 +81,7 @@ export class Utils {
 
     public static async buildCredential(
         credentialData: Record<string, string>,
-        context: Context,
+        context: IContext,
       ): Promise<any> {
         const credentials = new Credentials();
 
