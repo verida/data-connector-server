@@ -4,6 +4,7 @@
   "description": "Verida Data Connector",
   "main": "dist/server.js",
   "scripts": {
+    "cli": "node dist/cli/exec.js",
     "dev": "yarn build; nodemon src/server.js",
     "build": "rm -rf dist && tsc && rm -rf dist/assets && cp -R assets dist/",
     "prestart": "yarn build",
@@ -67,7 +68,9 @@
     "@types/express-session": "1.17.0",
     "@types/mocha": "^9.1.0",
     "claudia": "^5.14.1",
+    "command-line-interface": "^5.0.0",
     "nodemon": "^2.0.14",
+    "open": "^10.1.0",
     "typescript": "4.6.3"
   }
 }
