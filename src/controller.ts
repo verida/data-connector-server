@@ -1,5 +1,4 @@
 import { Request, Response } from 'express'
-import serverconfig from '../src/serverconfig.json'
 import CONFIG from './config'
 
 const log4js = require("log4js")
@@ -41,12 +40,10 @@ export default class Controller {
         logger.trace('connect()')
         const providerName = req.params.provider
         const query = req.query
-        const did = query.did.toString()
         const redirect = query.redirect ? query.redirect.toString() : 'deeplink'
         //const key = query.key.toString()
 
         // @ts-ignore Session is injected as middleware
-        req.session.did = did
         req.session.redirect = redirect
 
         console.log(req.session)
@@ -76,9 +73,6 @@ export default class Controller {
         // @todo: handle error and show error message
         try {
             const connectionToken = await provider.callback(req, res, next)
-
-            // @ts-ignore
-            const did = req.session.did
             const redirect = req.session.redirect
 
             let redirectPath = 'https://vault.verida.io/connection-success'
