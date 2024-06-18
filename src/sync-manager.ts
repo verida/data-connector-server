@@ -10,7 +10,7 @@ const log4js = require("log4js")
 const logger = log4js.getLogger()
 
 const DATA_CONNECTION_SCHEMA =
-    'https://vault.schemas.verida.io/data-connections/connection/v0.1.0/schema.json'
+    'https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json'
 const DATA_SYNC_REQUEST_SCHEMA =
     'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
 
@@ -20,6 +20,7 @@ const delay = async (ms: number) => {
 
 export default class SyncManager {
 
+    private vault?: IContext
     private did: string
     private seedPhrase: string
 
@@ -30,33 +31,37 @@ export default class SyncManager {
         this.seedPhrase = seedPhrase
     }
 
-    public async sync() {
+    public async sync(providerName?: string) {
         const vault = await this.getVault()
 
-        const providers = await this.getProviders(vault)
+        const providers = await this.getProviders(providerName)
         // @todo: Do these in parallel?
         // May need a shared cache of datastore connections so we 
         // don't try to open the same one multiple times
         for (let p in providers) {
             const provider = providers[p]
-            await this.syncProvider(vault, provider)
+            await this.syncProvider(provider)
         }
     }
 
     public async getVault(): Promise<IContext> {
-        // @todo: How to open a single context from a keyring seed phrase?
+        if (this.vault) {
+            return this.vault
+        }
+
         try {
             const { context } = await Utils.getNetwork(this.did, this.seedPhrase)
 
-            return <IContext> context
+            this.vault = <IContext> context
+            return this.vault
         } catch (err) {
             console.log(err)
         }
     }
 
-    public async getProviders(vault: IContext): Promise<BaseProvider[]> {
-        const datastore = await this.getConnectionDatastore(vault)
-        const allProviders = Object.keys(CONFIG.providers)
+    public async getProviders(providerName?: string): Promise<BaseProvider[]> {
+        const datastore = await this.getConnectionDatastore()
+        const allProviders = providerName ? [providerName] : Object.keys(CONFIG.providers)
         const userProviders = []
         for (let p in allProviders) {
             const providerName = allProviders[p]
@@ -75,7 +80,9 @@ export default class SyncManager {
         return userProviders
     }
 
-    public async getConnectionDatastore(vault: IContext): Promise<IDatastore> {
+    public async getConnectionDatastore(): Promise<IDatastore> {
+        const vault = await this.getVault()
+
         if (this.connectionDatastore) {
             return this.connectionDatastore
         }
@@ -105,7 +112,7 @@ export default class SyncManager {
      * @param next 
      * @returns 
      */
-    public async syncProvider(vault: IContext, provider: BaseProvider): Promise<void> {
+    public async syncProvider(provider: BaseProvider): Promise<void> {
         const connection = provider.getConnection()
         const accessToken = connection.accessToken
         const refreshToken = connection.refreshToken
@@ -114,6 +121,7 @@ export default class SyncManager {
         const syncSchemas: Record<string, SyncSchemaConfig> = {}
 
         // Generate a new sync request
+        const vault = await this.getVault()
         const syncRequestDatastore = await vault.openDatastore(DATA_SYNC_REQUEST_SCHEMA)
         
         const syncRequestResult = <DatastoreSaveResponse> await syncRequestDatastore.save({
@@ -163,7 +171,7 @@ export default class SyncManager {
         // Add latest profile info
         connection.profile = await provider.getProfile(this.did, vault)
 
-        const connectionDatastore = await this.getConnectionDatastore(vault)
+        const connectionDatastore = await this.getConnectionDatastore()
         await connectionDatastore.save(connection, {})
 
         const response: any = {}
@@ -221,6 +229,37 @@ export default class SyncManager {
         await syncRequestDatastore.save(syncRequest, {})
 
         logger.info(`sync request saved for ${provider.getProviderId()}`)
+    }
+
+    public async saveProvider(providerName: string, accessToken: string, refreshToken: string) {
+        const vault = await this.getVault()
+        const connectionDatastore = await this.getConnectionDatastore()
+
+        let providerRecord
+        try {
+            providerRecord = await connectionDatastore.get(providerName, {})
+        } catch (err) {
+            if (err.reason && err.reason == 'missing') {
+                providerRecord = {}
+            } else {
+                throw new Error(`Unknown error saving ${providerName} auth tokens: ${err.message}`)
+            }
+        }
+
+        providerRecord = {
+            ...providerRecord,
+            _id: providerName,
+            name: providerName,
+            accessToken,
+            refreshToken,
+            source: providerName,
+            syncFrequency: 'hour',
+            syncStatus: 'active'
+        }
+
+        await connectionDatastore.save(providerRecord, {})
+        // const connections = await connectionDatastore.getMany()
+        // console.log(connections)
     }
 
 }

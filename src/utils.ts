@@ -5,6 +5,7 @@ import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
 import fs from 'fs'
 import serverconfig from '../src/serverconfig.json'
+import { AutoAccount } from '@verida/account-node'
 
 const CONTEXT_NAME = serverconfig.verida.contextName
 const PRIVATE_KEY = serverconfig.verida.privateKey
@@ -29,19 +30,25 @@ export class Utils {
     public static async getNetwork(did: string, contextSignature: string): Promise<{
         network: Network,
         context: IContext,
-        account: ContextAccount
+        account: AutoAccount
+        //account: ContextAccount
     }> {
         const VAULT_CONTEXT_NAME = 'Verida: Vault'
         const VERIDA_ENVIRONMENT = Utils.strToEnvType(serverconfig.verida.environment)
         const network = new Client({
             environment: VERIDA_ENVIRONMENT
         })
-        const account = new ContextAccount({
+        console.log('privateKey', contextSignature)
+
+        // @todo: Switch to context account once context storage node issue fixed and deployed
+        //const account = new ContextAccount({
+        const account = new AutoAccount({
             privateKey: contextSignature,
             environment: VERIDA_ENVIRONMENT,
             // @ts-ignore
             didClientConfig: DID_CLIENT_CONFIG
-        }, did, VAULT_CONTEXT_NAME)
+        })
+        //}, did, VAULT_CONTEXT_NAME)
         await network.connect(account)
         const context = await network.openContext(VAULT_CONTEXT_NAME)
 

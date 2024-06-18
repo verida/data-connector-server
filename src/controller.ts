@@ -40,13 +40,19 @@ export default class Controller {
         logger.trace('connect()')
         const providerName = req.params.provider
         const query = req.query
-        const redirect = query.redirect ? query.redirect.toString() : 'deeplink'
-        //const key = query.key.toString()
+        let redirect = query.redirect ? query.redirect.toString() : 'deeplink'
+        const key = query.key ? query.key.toString() : undefined
+        const did = query.did ? query.did.toString() : undefined
 
+        if (key && did) {
+            redirect = 'save'
+        }
+
+        // Session data isn't retained if using localhost, so use 127.0.0.1
         // @ts-ignore Session is injected as middleware
         req.session.redirect = redirect
-
-        console.log(req.session)
+        req.session.key = key
+        req.session.did = did
 
         const provider = Providers(providerName)
         return provider.connect(req, res, next)
@@ -67,45 +73,75 @@ export default class Controller {
         const providerName = req.params.provider
         const provider = Providers(providerName)
 
-        // Why isn't the session data being retained?
-        console.log(req.session)
-
-        // @todo: handle error and show error message
         try {
             const connectionToken = await provider.callback(req, res, next)
-            const redirect = req.session.redirect
+            const did = req.session.did
+            const key = req.session.key
 
-            let redirectPath = 'https://vault.verida.io/connection-success'
-            if (redirect != 'deeplink') {
-                redirectPath = redirect
-            }
+            if (did && key) {
+                const syncManager = new SyncManager(did, key)
+                await syncManager.saveProvider(providerName, connectionToken.accessToken, connectionToken.refreshToken)
 
-            // Send the access token, refresh token and profile database name and encryption key
-            // so the user can pull their profile remotely and store their tokens securely
-            // This also avoids this server saving those credentials anywhere, they are only stored by the user
-            const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
+                const output = `<html>
+                    <head>
+                        <style>
+                        button {
+                            font-size: 30pt;
+                            margin-top: 50px;
+                        }
+                        </style>
+                    </head>
+                    <body>
+                        <div style="margin: auto; text-align: center;">
+                            <h2>Success!</h2>
+                        </div>
+                        <div style="margin: auto; text-align: center;">
+                            <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
+                        </div>
+                        <div style="margin: auto; text-align: center;">
+                            <p>You may close this window</p>
+                        </div>
+                    </body>
+                    </html>`
+                
+                res.send(output)
 
-            // @todo: Generate nice looking thank you page
-            const output = `<html>
-            <head>
-                <style>
-                button {
-                    font-size: 30pt;
-                    margin-top: 50px;
+                await syncManager.sync(providerName)
+            } else {
+                const redirect = req.session.redirect
+
+                let redirectPath = 'https://vault.verida.io/connection-success'
+                if (redirect != 'deeplink') {
+                    redirectPath = redirect
                 }
-                </style>
-            </head>
-            <body>
-                <div style="margin: auto; text-align: center;">
-                    <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
-                </div>
-                <div style="margin: auto; text-align: center;">
-                    <button onclick="window.location.href='${redirectUrl}'">Complete Connection</a>
-                </div>
-            </body>
-            </html>`
-            
-            res.send(output)
+
+                // Send the access token, refresh token and profile database name and encryption key
+                // so the user can pull their profile remotely and store their tokens securely
+                // This also avoids this server saving those credentials anywhere, they are only stored by the user
+                const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
+
+                // @todo: Generate nice looking thank you page
+                const output = `<html>
+                <head>
+                    <style>
+                    button {
+                        font-size: 30pt;
+                        margin-top: 50px;
+                    }
+                    </style>
+                </head>
+                <body>
+                    <div style="margin: auto; text-align: center;">
+                        <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
+                    </div>
+                    <div style="margin: auto; text-align: center;">
+                        <button onclick="window.location.href='${redirectUrl}'">Complete Connection</a>
+                    </div>
+                </body>
+                </html>`
+                
+                res.send(output)
+            }
         } catch (err: any) {
             const message = err.message
             // @todo: Generate nice looking thank you page

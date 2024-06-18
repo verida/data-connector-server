@@ -4,6 +4,11 @@ import { AutoAccount } from '@verida/account-node';
 import { EnvironmentType } from '@verida/types';
 import open from 'open'
 import CONFIG from '../../config'
+//import { ContextAccount } from '@verida/account-node';
+
+import serverconfig from '../../../src/serverconfig.json'
+
+const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 export const Connect: Command<ConnectProvider> = {
     name: 'Connect',
@@ -59,11 +64,38 @@ export const Connect: Command<ConnectProvider> = {
         }
       })
 
-      const did = await account.did()
+      const did = (await account.did()).toLowerCase()
       console.log(`Verida Account has DID: ${did}`)
 
-      open(`${CONFIG.serverUrl}/connect/${options.provider}`)
+      // @todo: Switch to context account once context storage node issue fixed and deployed
+      //const consentMessage = `Do you wish to unlock this storage context: "Verida: Vault"?\n\n${did}`
+      //const signature = await account.sign(consentMessage)
+      const signature = options.key
+      console.log(signature)
 
-      //const keyring = await account.keyring('Verida: Vault')
+      /*const keyring = await account.keyring('Verida: Vault')
+
+      const account2 = new ContextAccount({
+        privateKey: signature,
+        environment: EnvironmentType.MAINNET,
+        // @ts-ignore
+        didClientConfig: DID_CLIENT_CONFIG
+    }, did, 'Verida: Vault')
+      const keyring2 = await account2.keyring('Verida: Vault')
+      console.log(keyring)
+      console.log(keyring2)
+
+      const network = new Client({
+        environment: EnvironmentType.MAINNET
+      })
+      await network.connect(account2)
+      const context = await network.openContext('Verida: Vault')
+      const ds = await context.openDatastore('https://vault.schemas.verida.io/data-connections/connection/v0.1.0/schema.json')
+      const rows = await ds.getMany()
+      console.log(rows)*/
+
+      const openUrl = `${CONFIG.serverUrl}/connect/${options.provider}?did=${did}&key=${signature}`
+      console.log(openUrl)
+      open(openUrl)
     }
   };
