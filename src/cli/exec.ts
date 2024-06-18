@@ -1,5 +1,5 @@
 import { runCli } from 'command-line-interface'
-import { ConnectProviderCommand } from './commands/connect'
+import { Connect } from './commands/connect'
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 (async (): Promise<void> => {
@@ -17,7 +17,7 @@ import { ConnectProviderCommand } from './commands/connect'
             ));
         },
         subcommands: {
-            ConnectProviderCommand,
+          Connect,
         },
         handlers: {
           // @ts-ignore

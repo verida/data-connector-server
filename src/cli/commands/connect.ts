@@ -2,10 +2,11 @@ import { Command } from 'command-line-interface';
 import { ConnectProvider } from './interfaces';
 import { AutoAccount } from '@verida/account-node';
 import { EnvironmentType } from '@verida/types';
+import open from 'open'
 import CONFIG from '../../config'
 
-export const ConnectProviderCommand: Command<ConnectProvider> = {
-    name: 'ConnectProvider',
+export const Connect: Command<ConnectProvider> = {
+    name: 'Connect',
     description: `Connect to a third party data provider and save the credentials into the Verida: Vault context`,
     optionDefinitions: [
       {
@@ -19,7 +20,7 @@ export const ConnectProviderCommand: Command<ConnectProvider> = {
         name: 'key',
         description: 'Verida network private key (or seed phrase)',
         type: 'string',
-        defaultValue: process.env.privateVeridaKey,
+        defaultValue: CONFIG.verida.cliPrivateKey,
         alias: 'k'
       },
       {
@@ -38,6 +39,11 @@ export const ConnectProviderCommand: Command<ConnectProvider> = {
     ],
     async handle ({ options }) {
       console.log(`Connecting to ${options.provider} on network ${options.network}.`);
+
+      if (!options.key) {
+        console.log(`No key specified from command line or environment variable`)
+        return
+      }
 
       // Initialize Account
       const account = new AutoAccount({
