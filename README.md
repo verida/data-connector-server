@@ -49,7 +49,8 @@ Once data is stored in these applications, other third party decentralized apps 
 Update `src/serverconfig.json` to:
 
 1. Specify the details of each provider you want to run. You will need to obtain the necessary API keys for each provider.
-2. Specify the correct `serverUrl` and `assetsUrl` that point to the correct address of your server (don't use `localhost`)
+2. Specify the correct `serverUrl` and `assetsUrl` that point to the correct address of your server. Don't use `localhost` as it breaks sessions, use `127.0.0.1` instead.
+3. `testVeridaKey`: A Verida private key (or seedphrase) that controls a DID. This is used by the command line when connecting a provider, and also used by the unit tests to load providers and save test data.
 
 ### Starting the server
 
