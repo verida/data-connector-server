@@ -1,38 +1,55 @@
 const assert = require("assert")
 import CONFIG from '../src/config'
 import Providers from '../src/providers'
+import CommonUtils from './common.utils'
 
-const SCHEMA_FOLLOWING = 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
-const SCHEMA_POST = 'https://common.schemas.verida.io/social/post/v0.1.0/schema.json'
+const SCHEMA_FOLLOWING = CONFIG.verida.schemas.FOLLOWING
+const SCHEMA_POST = CONFIG.verida.schemas.POST
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 logger.level = CONFIG.logLevel
 
 const providerName = 'facebook'
-const providerConfig = CONFIG.providers[providerName]
-const creds = providerConfig.testing
 
 describe(`${providerName} Tests`, function() {
     this.timeout(100000)
+
+    const provider = Providers(providerName)
 
     describe("Fetch API data", () => {
         const provider = Providers(providerName)
 
         it("Can fetch Post data", async () => {
-            const syncData = await provider.sync(creds.accessToken, '', SCHEMA_POST)
+            const connection = await CommonUtils.getConnection(providerName)
+            const syncConfig = {
+                [SCHEMA_POST]: {
+                    limit: 20,
+                }
+            }
 
-            assert.ok(syncData, 'Have data returned')
-            assert.ok(SCHEMA_POST in syncData, 'Have Post data in the response')
-            assert.equal(syncData[SCHEMA_POST].length, providerConfig.postLimit, `Correct number of posts received`)
+            const syncData = await provider.sync(connection.accessToken, '', syncConfig)
+
+            assert.ok(SCHEMA_POST in syncData, 'Have correct schema in the response')
+            assert.ok(syncData[SCHEMA_POST].length > 0, `Have results`)
+            assert.ok(syncData[SCHEMA_POST].length <= syncConfig[SCHEMA_POST].limit, `Correct number of results received`)
         })
 
         it("Can fetch Following data", async () => {
-            const syncData = await provider.sync(creds.accessToken, '', SCHEMA_FOLLOWING)
+            const connection = await CommonUtils.getConnection(providerName)
+            const syncConfig = {
+                [SCHEMA_FOLLOWING]: {
+                    limit: 20,
+                }
+            }
 
-            assert.ok(syncData, 'Have data returned')
-            assert.ok(SCHEMA_FOLLOWING in syncData, 'Have Following data in the response')
-            assert.equal(syncData[SCHEMA_FOLLOWING].length, providerConfig.followingLimit, `Correct number of following records received`)
+            const syncData = await provider.sync(connection.accessToken, '', syncConfig)
+
+            console.log(syncData[SCHEMA_FOLLOWING])
+
+            assert.ok(SCHEMA_FOLLOWING in syncData, 'Have correct schema in the response')
+            assert.ok(syncData[SCHEMA_FOLLOWING].length > 0, `Have results`)
+            assert.ok(syncData[SCHEMA_FOLLOWING].length <= syncConfig[SCHEMA_FOLLOWING].limit, `Correct number of results received`)
         })
     })
 })

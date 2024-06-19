@@ -6,15 +6,14 @@ import { AutoAccount } from '@verida/account-node'
 import serverconfig from '../src/serverconfig.json'
 import Datastore from '@verida/client-ts/dist/context/datastore'
 import { DatabasePermissionOptionsEnum, EnvironmentType } from '@verida/types'
+import { Connection } from '../src/interfaces'
 
 const SERVER_URL = serverconfig.serverUrl
-const TEST_VAULT_CONTEXT = serverconfig.testing.contextName
-const TEST_VAULT_PRIVATE_KEY = serverconfig.testing.veridaPrivateKey
+const TEST_VAULT_PRIVATE_KEY = serverconfig.verida.testVeridaKey
+const SCHEMA_DATA_CONNECTION = serverconfig.verida.schemas.DATA_CONNECTIONS
 
 const VERIDA_ENVIRONMENT = <EnvironmentType> serverconfig.verida.environment
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
-
-const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
 
 const axios = Axios.create()
 
@@ -30,7 +29,7 @@ export default class CommonUtils {
             environment: VERIDA_ENVIRONMENT
         })
 
-        const account = new AutoAccount(serverconfig.verida.defaultEndpoints, {
+        const account = new AutoAccount({
             privateKey: TEST_VAULT_PRIVATE_KEY,
             environment: VERIDA_ENVIRONMENT,
             // @ts-ignore
@@ -38,7 +37,7 @@ export default class CommonUtils {
         })
 
         await network.connect(account);
-        const context = await network.openContext(TEST_VAULT_CONTEXT)
+        const context = await network.openContext('Verida: Vault')
         const did = await account.did()
 
         return {
@@ -47,6 +46,13 @@ export default class CommonUtils {
             context,
             account
         }
+    }
+
+    static getConnection = async(providerName: string): Promise<Connection> => {
+        const { context } = await CommonUtils.getNetwork()
+        const connectionsDs = await context.openDatastore(SCHEMA_DATA_CONNECTION)
+        const connection = await connectionsDs.get(providerName)
+        return connection
     }
 
     static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string, syncSchemas: Record<string, SyncSchemaConfig>): Promise<any> => {

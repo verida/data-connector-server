@@ -5,14 +5,13 @@ import { Connection, DatastoreSaveResponse, SyncSchemaConfig } from './interface
 import BaseProvider from './providers/BaseProvider';
 import TokenExpiredError from './providers/TokenExpiredError';
 import { Utils } from './utils';
+import serverconfig from './config';
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 
-const DATA_CONNECTION_SCHEMA =
-    'https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json'
-const DATA_SYNC_REQUEST_SCHEMA =
-    'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
+const DATA_CONNECTION_SCHEMA = serverconfig.verida.schemas.DATA_CONNECTIONS
+const DATA_SYNC_REQUEST_SCHEMA = serverconfig.verida.schemas.SYNC_REQUEST
 
 const delay = async (ms: number) => {
     await new Promise((resolve: any) => setTimeout(() => resolve(), ms))

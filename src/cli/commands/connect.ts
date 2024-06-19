@@ -25,7 +25,7 @@ export const Connect: Command<ConnectProvider> = {
         name: 'key',
         description: 'Verida network private key (or seed phrase)',
         type: 'string',
-        defaultValue: CONFIG.verida.cliPrivateKey,
+        defaultValue: CONFIG.verida.testVeridaKey,
         alias: 'k'
       },
       {
@@ -59,7 +59,7 @@ export const Connect: Command<ConnectProvider> = {
           web3Config: {
             // Set a dummy private key as we shouldn't need to create a DID automatically
             // The sending DID should already exist
-            privateKey: CONFIG.verida.testPrivateVeridaKey
+            privateKey: '0x0000000000000000000000000000000000000000000000000000000000000000'
           }
         }
       })

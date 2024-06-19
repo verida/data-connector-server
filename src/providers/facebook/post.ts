@@ -1,4 +1,5 @@
 import BaseSyncHandler from "../BaseSyncHandler"
+import CONFIG from '../../config'
 
 import dayjs from 'dayjs'
 const _ = require('lodash')
@@ -8,7 +9,7 @@ const logger = log4js.getLogger()
 
 export default class Posts extends BaseSyncHandler {
 
-    protected static schemaUri: string = 'https://common.schemas.verida.io/social/post/v0.1.0/schema.json'
+    protected static schemaUri: string = CONFIG.verida.schemas.POST
 
     /**
      * @todo: Support paging through all results
@@ -19,9 +20,8 @@ export default class Posts extends BaseSyncHandler {
     public async sync(api: any): Promise<any> {
         const me = await api.api('/me?fields=picture')
         const pictureUrl = me.picture.data.url
-        
+
         const responsePosts = await api.api('/me/posts?fields=id,created_time,message,type,permalink_url')
-        
         const posts = responsePosts.data
 
         const results = []

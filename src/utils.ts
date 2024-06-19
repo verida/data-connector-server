@@ -1,5 +1,4 @@
 import { EnvironmentType, IContext } from '@verida/types'
-import { ContextAccount } from "@verida/account-node"
 import { Client, Network } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
@@ -7,15 +6,11 @@ import fs from 'fs'
 import serverconfig from '../src/serverconfig.json'
 import { AutoAccount } from '@verida/account-node'
 
-const CONTEXT_NAME = serverconfig.verida.contextName
-const PRIVATE_KEY = serverconfig.verida.privateKey
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const SBT_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/token/sbt/credential/v0.1.0/schema.json'
 
 export {
-    CONTEXT_NAME,
-    PRIVATE_KEY,
     DID_CLIENT_CONFIG,
     SBT_CREDENTIAL_SCHEMA
 }
@@ -38,7 +33,6 @@ export class Utils {
         const network = new Client({
             environment: VERIDA_ENVIRONMENT
         })
-        console.log('privateKey', contextSignature)
 
         // @todo: Switch to context account once context storage node issue fixed and deployed
         //const account = new ContextAccount({
