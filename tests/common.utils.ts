@@ -1,16 +1,16 @@
 const assert = require("assert")
 import Axios from 'axios'
-import { Context, Client } from '@verida/client-ts'
+import { Context, Client, Datastore } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 
 import serverconfig from '../src/serverconfig.json'
-import Datastore from '@verida/client-ts/dist/context/datastore'
-import { DatabasePermissionOptionsEnum, EnvironmentType } from '@verida/types'
+import { DatabasePermissionOptionsEnum, EnvironmentType, IContext } from '@verida/types'
 import { Connection } from '../src/interfaces'
 
 const SERVER_URL = serverconfig.serverUrl
 const TEST_VAULT_PRIVATE_KEY = serverconfig.verida.testVeridaKey
 const SCHEMA_DATA_CONNECTION = serverconfig.verida.schemas.DATA_CONNECTIONS
+const DATA_SYNC_REQUEST_SCHEMA = serverconfig.verida.schemas.SYNC_REQUEST
 
 const VERIDA_ENVIRONMENT = <EnvironmentType> serverconfig.verida.environment
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
@@ -22,9 +22,22 @@ export interface SyncSchemaConfig {
     sinceId?: string
 }
 
+export interface NetworkInstance {
+    did: string,
+    network: Client,
+    context: IContext,
+    account: AutoAccount
+}
+
+let cachedNetworkInstance: NetworkInstance
+
 export default class CommonUtils {
 
-    static getNetwork = async (): Promise<any> => {
+    static getNetwork = async (): Promise<NetworkInstance> => {
+        if (cachedNetworkInstance) {
+            return cachedNetworkInstance
+        }
+
         const network = new Client({
             environment: VERIDA_ENVIRONMENT
         })
@@ -40,17 +53,24 @@ export default class CommonUtils {
         const context = await network.openContext('Verida: Vault')
         const did = await account.did()
 
-        return {
+        cachedNetworkInstance = {
             did,
             network,
             context,
             account
         }
+
+        return cachedNetworkInstance
     }
 
     static getConnection = async(providerName: string): Promise<Connection> => {
         const { context } = await CommonUtils.getNetwork()
         const connectionsDs = await context.openDatastore(SCHEMA_DATA_CONNECTION)
+        const data = await connectionsDs.getMany()
+        console.log(data)
+        const db = await connectionsDs.getDb()
+        const info = await db.info()
+        console.log(info)
         const connection = await connectionsDs.get(providerName)
         return connection
     }

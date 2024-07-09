@@ -1,7 +1,7 @@
 import CONFIG from './config'
 import { IContext, IDatastore } from "@verida/types";
 import Providers from "./providers"
-import { Connection, DatastoreSaveResponse, SyncSchemaConfig } from './interfaces';
+import { Connection, SyncStatus, DatastoreSaveResponse } from './interfaces';
 import BaseProvider from './providers/BaseProvider';
 import TokenExpiredError from './providers/TokenExpiredError';
 import { Utils } from './utils';
@@ -17,6 +17,9 @@ const delay = async (ms: number) => {
     await new Promise((resolve: any) => setTimeout(() => resolve(), ms))
 }
 
+/**
+ * Manage the syncronization of all the connections for a given DID
+ */
 export default class SyncManager {
 
     private vault?: IContext
@@ -24,10 +27,30 @@ export default class SyncManager {
     private seedPhrase: string
 
     private connectionDatastore?: IDatastore
+    private providers?: BaseProvider[]
+
+    private status: SyncStatus = SyncStatus.STOPPED
 
     public constructor(did: string, seedPhrase: string) {
         this.did = did
         this.seedPhrase = seedPhrase
+    }
+
+    /**
+     * Check-in to determine if processing is required
+     * 
+     * @returns boolean `true` if processing, `false` if nothing left to process
+     */
+    public async checkIn(): Promise<boolean> {
+        await this.init()
+
+        if (this.status == SyncStatus.STOPPED) {
+            await this.sync()
+        } else {
+            // @todo: We are actively syncing, so check the status of all provider sync's
+        }
+
+        return true
     }
 
     public async sync(providerName?: string) {
@@ -41,6 +64,12 @@ export default class SyncManager {
             const provider = providers[p]
             await this.syncProvider(provider)
         }
+    }
+
+    private async init(): Promise<void> {
+        // This initializes the vault and connection datastore
+        await this.getProviders()
+
     }
 
     public async getVault(): Promise<IContext> {
@@ -59,6 +88,12 @@ export default class SyncManager {
     }
 
     public async getProviders(providerName?: string): Promise<BaseProvider[]> {
+        if (this.providers) {
+            return this.providers
+        }
+
+        const vault = await this.getVault()
+
         const datastore = await this.getConnectionDatastore()
         const allProviders = providerName ? [providerName] : Object.keys(CONFIG.providers)
         const userProviders = []
@@ -67,7 +102,7 @@ export default class SyncManager {
             
             try {
                 const connection = <Connection> await datastore.get(providerName, {})
-                const provider = Providers(providerName, connection)
+                const provider = Providers(providerName, vault, connection)
                 userProviders.push(provider)
                 
             } catch (err) {
@@ -76,15 +111,16 @@ export default class SyncManager {
             }
         }
 
-        return userProviders
+        this.providers = userProviders
+        return this.providers
     }
 
     public async getConnectionDatastore(): Promise<IDatastore> {
-        const vault = await this.getVault()
-
         if (this.connectionDatastore) {
             return this.connectionDatastore
         }
+
+        const vault = await this.getVault()
 
         this.connectionDatastore = await vault.openDatastore(
             DATA_CONNECTION_SCHEMA
@@ -116,9 +152,6 @@ export default class SyncManager {
         const accessToken = connection.accessToken
         const refreshToken = connection.refreshToken
 
-        // @todo: Set properly from the vault datastore
-        const syncSchemas: Record<string, SyncSchemaConfig> = {}
-
         // Generate a new sync request
         const vault = await this.getVault()
         const syncRequestDatastore = await vault.openDatastore(DATA_SYNC_REQUEST_SCHEMA)
@@ -133,10 +166,15 @@ export default class SyncManager {
             syncRequest.syncInfo = {}
         }
 
+        // Fetch the latest data from the provider (if required)
+
+
+        // Backfill data from the provider (if required)
+
         // Fetch the necessary data from the provider
         let data: any = {}
         try {
-            data = await provider.sync(accessToken, refreshToken, syncSchemas)
+            data = await provider.sync(accessToken, refreshToken)
         } catch (err: any) {
             syncRequest.status = 'error'
             if (err instanceof TokenExpiredError) {

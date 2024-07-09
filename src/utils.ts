@@ -78,7 +78,7 @@ export class Utils {
             providerList.push({
                 name: providerName, 
                 label: provider.getProviderLabel(),
-                icon: provider.icon ? provider.icon : `${serverconfig.assetsUrl}/${providerName}/icon.png`
+                icon: provider.getProviderImageUrl()
             })
         }
 

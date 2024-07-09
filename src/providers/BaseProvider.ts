@@ -3,23 +3,30 @@ import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import BaseProviderConfig from './BaseProviderConfig'
 import serverconfig from '../serverconfig.json'
-import { AccountAuth, AccountProfile, Connection, SyncSchemaConfig } from '../interfaces'
+import { AccountAuth, AccountProfile, Connection, SyncHandlerMode, SyncPosition, SyncStatus } from '../interfaces'
 import { IContext } from '@verida/types'
+import BaseSyncHandler from './BaseSyncHandler'
 
 export default class BaseProvider {
 
     protected config: BaseProviderConfig
+    protected vault?: IContext
     protected connection?: Connection
     protected newAuth?: AccountAuth
     protected profile?: AccountProfile
-
-    public constructor(config: BaseProviderConfig, connection?: Connection) {
+    
+    public constructor(config: BaseProviderConfig, vault?: IContext, connection?: Connection) {
         this.config = config
         this.connection = connection
+        this.vault = vault
     }
 
     public getConnection(): Connection {
         return this.connection!
+    }
+
+    public getConfig(): BaseProviderConfig {
+        return this.config
     }
 
     public getProviderId(): string {
@@ -88,33 +95,55 @@ export default class BaseProvider {
     }
 
     /**
-     * Must update `profile` or `newAuth` if they have changed
+     * Syncronize all the latest data
      * 
      * @param accessToken 
      * @param refreshToken 
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken: string, refreshToken: string, syncSchemas: Record<string, SyncSchemaConfig>): Promise<any> {
+    public async sync(accessToken: string, refreshToken: string): Promise<void> {
+        const syncHandlers = await this.getSyncHandlers()
         const api = await this.getApi(accessToken, refreshToken)
-        const results = []
 
+        for (let h in syncHandlers) {
+            const handler = syncHandlers[h]
+            const schemaUri = handler.getSchemaUri()
+            const datastore = await this.vault.openDatastore(schemaUri)
+            const syncPosition = this.connection.syncPosition[schemaUri] ? this.connection.syncPosition[schemaUri] : {
+                _id: `${this.getProviderId()}/${schemaUri}`,
+                provider: this.getProviderId(),
+                schemaUri,
+                mode: SyncHandlerMode.SNAPSHOT,
+                status: SyncStatus.ACTIVE
+            }
+
+            await handler.sync(api, syncPosition, datastore)
+        }
+    }
+
+    public async getSyncHandler(handler: typeof BaseSyncHandler): Promise<BaseSyncHandler> {
+        return new handler(this.config, this.profile)
+    }
+
+    /**
+     * Get all the available sync handlers
+     * 
+     * @param syncSchemas 
+     * @param syncPositions 
+     * @returns 
+     */
+    public async getSyncHandlers(): Promise<BaseSyncHandler[]> {
         const handlers = this.syncHandlers()
-        const schemaList = Object.keys(syncSchemas)
+        const syncHandlers = []
         for (let h in handlers) {
             const handler = handlers[h]
-
-            if (schemaList.length && schemaList.indexOf(handler.getSchemaUri()) === -1) {
-                // Schema list exists, but not found
-                continue
-            }
             
             const handlerInstance = new handler(this.config, this.profile)
-            const handlerResults = await handlerInstance.sync(api, syncSchemas[handler.getSchemaUri()])
-            results[handler.getSchemaUri()] = handlerResults
+            syncHandlers.push(handlerInstance)
         }
 
-        return results
+        return syncHandlers
     }
 
     // Set new authentication credentials for this provider instance, if they changed
@@ -148,7 +177,7 @@ export default class BaseProvider {
      * 
      * @returns 
      */
-    public syncHandlers(): any[] {
+    public syncHandlers(): typeof BaseSyncHandler[] {
         return []
     }
 
@@ -156,8 +185,10 @@ export default class BaseProvider {
         const handlers = this.syncHandlers()
         const uris: string[] = []
         
-        handlers.forEach((handler: any) => {
-            uris.push(handler.getSchemaUri())
+        handlers.forEach((handler: typeof BaseSyncHandler) => {
+            // @ts-ignore
+            const instance = new handler({}, {})
+            uris.push(instance.getSchemaUri())
         })
 
         return uris
