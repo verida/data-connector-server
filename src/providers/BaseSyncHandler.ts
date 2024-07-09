@@ -1,4 +1,4 @@
-import { AccountProfile, SyncHandlerMode, SyncSchemaPosition, SyncStatus } from "../interfaces"
+import { AccountProfile, SyncHandlerMode, SyncResponse, SyncSchemaPosition, SyncStatus } from "../interfaces"
 import { IDatastore } from '@verida/types'
 
 export default class BaseSyncHandler {
@@ -11,6 +11,14 @@ export default class BaseSyncHandler {
     constructor(config: any, profile: AccountProfile) {
         this.config = config
         this.profile = profile
+    }
+
+    public getConfig(): any {
+        return this.config
+    }
+
+    public setConfig(config: any) {
+        this.config = config
     }
 
     public getSchemaUri(): string {
@@ -67,7 +75,7 @@ export default class BaseSyncHandler {
      * 
      * @returns object[] Array of results that need to be saved
      */
-    public async syncSnapshot(api: any, syncPosition: SyncSchemaPosition): Promise <object[]> {
+    public async syncSnapshot(api: any, syncPosition: SyncSchemaPosition): Promise <SyncResponse> {
         throw new Error('Not implemented')
     }
 
@@ -76,7 +84,7 @@ export default class BaseSyncHandler {
      * 
      * @returns object[] Array of results that need to be saved
      */
-    public async syncUpdate(api: any, syncPosition: SyncSchemaPosition): Promise <object[]> {
+    public async syncUpdate(api: any, syncPosition: SyncSchemaPosition): Promise <SyncResponse> {
         throw new Error('Not implemented')
     }
 }

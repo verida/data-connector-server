@@ -48,3 +48,8 @@ export interface SyncSchemaPosition {
     pos?: string
     next?: string
 }
+
+export interface SyncResponse {
+    results: object[]
+    position: SyncSchemaPosition
+}

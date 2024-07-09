@@ -5,6 +5,7 @@ import Providers from '../src/providers'
 import CommonUtils from './common.utils'
 
 import Following from '../src/providers/facebook/following'
+import { SchemaFollowing } from '../src/schemas'
 
 const SCHEMA_FOLLOWING = CONFIG.verida.schemas.FOLLOWING
 const SCHEMA_POST = CONFIG.verida.schemas.POST
@@ -39,14 +40,13 @@ describe(`${providerName} Tests`, function() {
             }
 
             const syncData = await provider.sync(connection.accessToken, '', syncConfig)
-            console.log('found ', syncData[SCHEMA_POST].length, ' posts')
 
             assert.ok(SCHEMA_POST in syncData, 'Have correct schema in the response')
             assert.ok(syncData[SCHEMA_POST].length > 0, `Have results`)
             assert.ok(syncData[SCHEMA_POST].length <= syncConfig[SCHEMA_POST].limit, `Correct number of results received`)
         })
 
-        it.only("Can fetch Following data", async () => {
+        it("Can fetch Following via snapshot and update", async () => {
             const connection = await CommonUtils.getConnection(providerName)
 
             const syncPosition: SyncSchemaPosition = {
@@ -58,14 +58,77 @@ describe(`${providerName} Tests`, function() {
             }
 
             const api = await provider.getApi(connection.accessToken, connection.refreshToken)
-            const followingHandler = await provider.getSyncHandler(Following)
-            const results = await followingHandler.syncSnapshot(api, syncPosition)
-            
-            console.log(results)
+            const followingHandler = <Following> await provider.getSyncHandler(Following)
+            followingHandler.setConfig({
+                followingLimit: 3
+            })
 
-            /*assert.ok(SCHEMA_FOLLOWING in syncData, 'Have correct schema in the response')
-            assert.ok(syncData[SCHEMA_FOLLOWING].length > 0, `Have results`)
-            assert.ok(syncData[SCHEMA_FOLLOWING].length <= syncConfig[SCHEMA_FOLLOWING].limit, `Correct number of results received`)*/
+
+            const response = await followingHandler.syncSnapshot(api, syncPosition)
+            const results = <SchemaFollowing[]> response.results
+            
+            assert.ok(results && results.length, 'Have results returned')
+            assert.ok(results && results.length == 3, 'Have correct number of results returned')
+            assert.ok(results[0].insertedAt > results[1].insertedAt, 'Results are most recent first')
+
+            assert.equal(response.position.mode, SyncHandlerMode.SNAPSHOT, 'Still in snapshot mode')
+            assert.equal(response.position.status, SyncStatus.ACTIVE, 'Still in snapshot mode')
+            assert.ok(response.position.next, 'Have a second page of results')
+
+            // Fetch the next page of results
+            const response2 = await followingHandler.syncSnapshot(api, syncPosition)
+            const results2 = <SchemaFollowing[]> response2.results
+
+            assert.ok(results2 && results2.length, 'Have results returned')
+            assert.ok(results2 && results2.length == 3, 'Have correct number of results returned')
+            assert.ok(results2[0].insertedAt > results2[1].insertedAt, 'Results are most recent first')
+
+            assert.ok(results2[0].insertedAt < results[2].insertedAt, 'First item on second page of results have earlier timestamp than last item on first page')
+
+            // Fetch the update set of results to confirm `position.pos` is correct
+            const position = response2.position
+            position.mode = SyncHandlerMode.UPDATE
+
+            const response3 = await followingHandler.syncUpdate(api, position)
+            assert.equal(response3.results.length, 0, 'No new results')
+
+            position.pos = undefined
+            const response4 = await followingHandler.syncUpdate(api, position)
+            const results4 = <SchemaFollowing[]> response4.results
+
+            assert.equal(results[0]._id, results4[0]._id, 'First results match')
+        })
+
+        it.only("Can fetch all Following via snapshot", async () => {
+            const connection = await CommonUtils.getConnection(providerName)
+
+            let syncPosition: SyncSchemaPosition = {
+                _id: `facebook-${SCHEMA_FOLLOWING}`,
+                provider: 'facebook',
+                schemaUri: SCHEMA_FOLLOWING,
+                mode: SyncHandlerMode.SNAPSHOT,
+                status: SyncStatus.ACTIVE
+            }
+
+            const api = await provider.getApi(connection.accessToken, connection.refreshToken)
+            const followingHandler = <Following> await provider.getSyncHandler(Following)
+            followingHandler.setConfig({
+                followingLimit: 100
+            })
+
+            let results: SchemaFollowing[] = []
+            while (true) {
+                const response = await followingHandler.syncSnapshot(api, syncPosition)
+                syncPosition = response.position
+
+                if (response.results.length == 0 || response.position.status == SyncStatus.STOPPED) {
+                    break
+                }
+
+                results = results.concat(<SchemaFollowing[]> response.results)
+            }
+
+            console.log(`Found ${results.length} records`)
         })
     })
 
@@ -74,6 +137,3 @@ describe(`${providerName} Tests`, function() {
         await context.close()
     })
 })
-
-// did: did:vda:0x58D76cbe26e6F7607A67E7B38eEd7700F660BF4B
-// accessToken: EAAP5ZANvAUzMBAI0ozmZB0cdNjgnZAR7ZBi0E1epB430J6gL3s9uhTQaqxWOwGbvZA3kouYTHSD2XCyycIngAraJAcQvqpDKZCu4E8HBzIHcGfpGN8tvS0fYsb9pi5Yx76aoqMKmvCulmsZA5u3f8FeuT0PNAVYIZCxdjutLXqOasZBlDPYXGmviKD2MZAyCdkZBByzRAAlrDKeftotD7ZAYuXERvvDvYJGVqRX6xDk7TEPgLu6rtWZCVwFpK

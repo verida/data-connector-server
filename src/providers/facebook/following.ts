@@ -2,8 +2,10 @@ import BaseSyncHandler from "../BaseSyncHandler"
 const { Facebook } = require('fb')
 
 import url from 'url'
+import { SyncHandlerMode, SyncResponse, SyncSchemaPosition, SyncStatus } from "../../interfaces"
+import { SchemaFollowing } from "../../schemas"
 import TokenExpiredError from "../TokenExpiredError"
-import { SyncHandlerMode, SyncSchemaPosition, SyncStatus } from "../../interfaces"
+
 const _ = require('lodash')
 
 export default class Following extends BaseSyncHandler {
@@ -12,23 +14,16 @@ export default class Following extends BaseSyncHandler {
         return 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
     }
 
-    public async syncSnapshot(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<object[]> {
-        console.log('syncSnapshot()')
+    public async syncSnapshot(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
         const apiEndpoint = '/me/likes'
 
         if (!syncPosition.next) {
-            console.log('dont have a next URI, so building it')
             syncPosition.next = `${apiEndpoint}?limit=${this.config.followingLimit}`
         }
 
         const pageResults = await Fb.api(syncPosition.next)
 
-        if (!syncPosition.pos && syncPosition.mode == SyncHandlerMode.SNAPSHOT) {
-            // Set the position of where the first set of updates should occur, once the snapshot is completed
-            syncPosition.pos = pageResults.paging.cursors.before
-        }
-
-        if (_.has(pageResults, 'paging.next') && !this.config.limitResults) {
+        if (_.has(pageResults, 'paging.next')) {
             // Have more results, so set the next page ready for the next request
             const next = pageResults.paging.next
             const urlParts = url.parse(next, true)
@@ -39,25 +34,51 @@ export default class Following extends BaseSyncHandler {
             syncPosition.next = undefined
         }
 
-        console.log(syncPosition)
-        return this.buildResults(pageResults.data)
+        const results = this.buildResults(pageResults.data)
+
+        if (!syncPosition.pos && syncPosition.mode == SyncHandlerMode.SNAPSHOT && results.length) {
+            // Set the position of where the first set of updates should occur, once the snapshot is completed
+            syncPosition.pos = pageResults.paging.cursors.before
+        }
+
+        return {
+            results,
+            position: syncPosition
+        }
     }
 
-    public async syncUpdate(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<object[]> {
-        console.log('syncUpdate()')
+    public async syncUpdate(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
         const apiEndpoint = '/me/likes'
 
-        const uri = `${apiEndpoint}?limit=${this.config.followingLimit}&before${syncPosition.pos}`
+        let uri = `${apiEndpoint}?limit=${this.config.followingLimit}`
+        if (syncPosition.pos) {
+            uri += `&before=${syncPosition.pos}`
+        }
+        
         const pageResults = await Fb.api(uri)
+
+        if (!pageResults || !pageResults.data.length) {
+            // No results
+            syncPosition.status = SyncStatus.STOPPED
+            return {
+                position: syncPosition,
+                results: []
+            }
+        }
 
         if (syncPosition.pos != pageResults.paging.cursors.before) {
             syncPosition.pos = pageResults.paging.cursors.before
         }
 
-        return this.buildResults(pageResults.data)
+        const results = this.buildResults(pageResults.data)
+
+        return {
+            results,
+            position: syncPosition
+        }
     }
 
-    protected buildResults(pageResults: any) {
+    protected buildResults(pageResults: any): SchemaFollowing[] {
         const results = []
         for (var r in pageResults) {
             const like = pageResults[r]
@@ -76,7 +97,6 @@ export default class Following extends BaseSyncHandler {
             })
         }
 
-        console.log('results: ', results.length)
         return results
     }
 

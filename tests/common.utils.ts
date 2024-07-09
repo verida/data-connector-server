@@ -67,10 +67,8 @@ export default class CommonUtils {
         const { context } = await CommonUtils.getNetwork()
         const connectionsDs = await context.openDatastore(SCHEMA_DATA_CONNECTION)
         const data = await connectionsDs.getMany()
-        console.log(data)
         const db = await connectionsDs.getDb()
         const info = await db.info()
-        console.log(info)
         const connection = await connectionsDs.get(providerName)
         return connection
     }
