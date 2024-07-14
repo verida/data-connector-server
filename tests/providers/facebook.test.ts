@@ -1,11 +1,11 @@
 const assert = require("assert")
-import CONFIG from '../src/config'
-import { SyncHandlerMode, SyncPosition, SyncSchemaPosition, SyncStatus } from '../src/interfaces'
-import Providers from '../src/providers'
-import CommonUtils from './common.utils'
+import CONFIG from '../../src/config'
+import { SyncHandlerMode, SyncSchemaPosition, SyncStatus } from '../../src/interfaces'
+import Providers from '../../src/providers'
+import CommonUtils from '../common.utils'
 
-import Following from '../src/providers/facebook/following'
-import { SchemaFollowing } from '../src/schemas'
+import Following from '../../src/providers/facebook/following'
+import { SchemaFollowing } from '../../src/schemas'
 
 const SCHEMA_FOLLOWING = CONFIG.verida.schemas.FOLLOWING
 const SCHEMA_POST = CONFIG.verida.schemas.POST
@@ -24,14 +24,14 @@ describe(`${providerName} Tests`, function() {
     describe("Fetch API data", () => {
         const provider = Providers(providerName)
 
-        it("check revision deletion", async() => {
+        it.skip("check revision deletion", async() => {
             const { context } = await CommonUtils.getNetwork()
             const ds = await context.openDatastore('https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json')
             //const rows = await ds.getMany()
             //console.log(rows)
         })
 
-        it("Can fetch Post data", async () => {
+        it.skip("Can fetch Post data", async () => {
             const connection = await CommonUtils.getConnection(providerName)
             const syncConfig = {
                 [SCHEMA_POST]: {
@@ -46,7 +46,7 @@ describe(`${providerName} Tests`, function() {
             assert.ok(syncData[SCHEMA_POST].length <= syncConfig[SCHEMA_POST].limit, `Correct number of results received`)
         })
 
-        it("Can fetch Following via snapshot and update", async () => {
+        it.skip("Can fetch Following via snapshot and update", async () => {
             const connection = await CommonUtils.getConnection(providerName)
 
             const syncPosition: SyncSchemaPosition = {
@@ -99,7 +99,7 @@ describe(`${providerName} Tests`, function() {
             assert.equal(results[0]._id, results4[0]._id, 'First results match')
         })
 
-        it.only("Can fetch all Following via snapshot", async () => {
+        it("Can fetch all Following via snapshot", async () => {
             const connection = await CommonUtils.getConnection(providerName)
 
             let syncPosition: SyncSchemaPosition = {
@@ -129,6 +129,7 @@ describe(`${providerName} Tests`, function() {
             }
 
             console.log(`Found ${results.length} records`)
+            console.log(results[0])
         })
     })
 

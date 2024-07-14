@@ -1,7 +1,7 @@
 const assert = require("assert")
-import serverconfig from '../src/serverconfig.json'
-import Providers from '../src/providers'
-import CommonUtils from './common.utils'
+import serverconfig from '../../src/serverconfig.json'
+import Providers from '../../src/providers'
+import CommonUtils from '../common.utils'
 
 const SCHEMA_FOLLOWING = serverconfig.verida.schemas.FOLLOWING
 const SCHEMA_POST = serverconfig.verida.schemas.POST
