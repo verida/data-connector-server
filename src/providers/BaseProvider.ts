@@ -3,7 +3,7 @@ import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import BaseProviderConfig from './BaseProviderConfig'
 import serverconfig from '../serverconfig.json'
-import { AccountAuth, AccountProfile, Connection, SyncHandlerMode, SyncPosition, SyncStatus } from '../interfaces'
+import { AccountAuth, AccountProfile, Connection, SyncHandlerMode, SyncSchemaPosition, SyncStatus } from '../interfaces'
 import { IContext } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 
@@ -110,7 +110,7 @@ export default class BaseProvider {
             const handler = syncHandlers[h]
             const schemaUri = handler.getSchemaUri()
             const datastore = await this.vault.openDatastore(schemaUri)
-            const syncPosition = this.connection.syncPosition[schemaUri] ? this.connection.syncPosition[schemaUri] : {
+            const syncPosition = this.connection.syncPositions[schemaUri] ? this.connection.syncPositions[schemaUri] : {
                 _id: `${this.getProviderId()}/${schemaUri}`,
                 provider: this.getProviderId(),
                 schemaUri,

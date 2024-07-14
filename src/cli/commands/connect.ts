@@ -71,7 +71,6 @@ export const Connect: Command<ConnectProvider> = {
       //const consentMessage = `Do you wish to unlock this storage context: "Verida: Vault"?\n\n${did}`
       //const signature = await account.sign(consentMessage)
       const signature = options.key
-      console.log(signature)
 
       /*const keyring = await account.keyring('Verida: Vault')
 
@@ -95,7 +94,6 @@ export const Connect: Command<ConnectProvider> = {
       console.log(rows)*/
 
       const openUrl = `${CONFIG.serverUrl}/connect/${options.provider}?did=${did}&key=${signature}`
-      console.log(openUrl)
       open(openUrl)
     }
   };

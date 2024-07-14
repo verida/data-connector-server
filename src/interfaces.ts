@@ -20,7 +20,7 @@ export interface Connection {
     accessToken: string
     refreshToken: string
     profile: AccountProfile
-    syncPosition: SyncPosition
+    syncPositions: Record<string, SyncSchemaPosition>
 }
 
 export interface DatastoreSaveResponse {
