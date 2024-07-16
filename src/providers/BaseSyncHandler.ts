@@ -37,38 +37,43 @@ export default class BaseSyncHandler {
      * @returns 
      */
     public async sync(api: any, syncPosition: SyncSchemaPosition, syncSchemaPositionDs: IDatastore): Promise<void> {
-        // @todo: check if snapshot is complete
+        const syncResponse = await this._sync(api, syncPosition)
 
-        if (syncPosition.mode == SyncHandlerMode.SNAPSHOT) {
-            const results = await this.syncSnapshot(api, syncPosition)
-            await syncSchemaPositionDs.save(syncPosition, {})
+        // @todo: save results
+        // @todo: sync again if required (check this.config.maxSyncLoops)
 
-            // @todo: save results
+        
 
-            if (syncPosition.status == SyncStatus.ACTIVE) {
-                // Sync is still active, so go again
-                return await this.sync(api, syncPosition, syncSchemaPositionDs)
-            } else {
-                // Sync has ended, so initiate an update
-                syncPosition.mode = SyncHandlerMode.UPDATE
-                await this.syncUpdate(api, syncPosition)
-                return
-            }
-        } else {
-            const results = await this.syncUpdate(api, syncPosition)
-            await syncSchemaPositionDs.save(syncPosition, {})
+        // if (syncPosition.mode == SyncHandlerMode.SNAPSHOT) {
+        //     const results = await this.syncSnapshot(api, syncPosition)
+        //     await syncSchemaPositionDs.save(syncPosition, {})
 
-            // @todo: save results
+        //     // @todo: save results
 
-            if (syncPosition.status == SyncStatus.ACTIVE) {
-                // Sync is still active, so go again
-                await this.syncUpdate(api, syncPosition)
-                return
-            } else {
-                // Sync has ended, so end
-                this.syncStatus = SyncStatus.STOPPED
-            }
-        }
+        //     if (syncPosition.status == SyncStatus.ACTIVE) {
+        //         // Sync is still active, so go again
+        //         return await this.sync(api, syncPosition, syncSchemaPositionDs)
+        //     } else {
+        //         // Sync has ended, so initiate an update
+        //         syncPosition.mode = SyncHandlerMode.UPDATE
+        //         await this.syncUpdate(api, syncPosition)
+        //         return
+        //     }
+        // } else {
+        //     const results = await this.syncUpdate(api, syncPosition)
+        //     await syncSchemaPositionDs.save(syncPosition, {})
+
+        //     // @todo: save results
+
+        //     if (syncPosition.status == SyncStatus.ACTIVE) {
+        //         // Sync is still active, so go again
+        //         await this.syncUpdate(api, syncPosition)
+        //         return
+        //     } else {
+        //         // Sync has ended, so end
+        //         this.syncStatus = SyncStatus.STOPPED
+        //     }
+        // }
     }
 
     /**
@@ -76,32 +81,23 @@ export default class BaseSyncHandler {
      * 
      * @returns object[] Array of results that need to be saved
      */
-    public async syncSnapshot(api: any, syncPosition: SyncSchemaPosition): Promise <SyncResponse> {
+    public async _sync(api: any, syncPosition: SyncSchemaPosition): Promise <SyncResponse> {
         throw new Error('Not implemented')
     }
 
-    /**
-     * Syncronize any new data since the last syncronization occurred
-     * 
-     * @returns object[] Array of results that need to be saved
-     */
-    public async syncUpdate(api: any, syncPosition: SyncSchemaPosition): Promise <SyncResponse> {
-        throw new Error('Not implemented')
-    }
+    // protected setPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+    //     if (syncPosition.mode == SyncHandlerMode.SNAPSHOT) {
+    //         return this.setSnapshotPosition(syncPosition, serverResponse)
+    //     } else if (syncPosition.mode == SyncHandlerMode.UPDATE) {
+    //         return this.setUpdatePosition(syncPosition, serverResponse)
+    //     }
+    // }
 
-    protected setPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
-        if (syncPosition.mode == SyncHandlerMode.SNAPSHOT) {
-            return this.setSnapshotPosition(syncPosition, serverResponse)
-        } else if (syncPosition.mode == SyncHandlerMode.UPDATE) {
-            return this.setUpdatePosition(syncPosition, serverResponse)
-        }
-    }
+    // protected setSnapshotPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+    //     throw new Error('Not implemented')
+    // }
 
-    protected setSnapshotPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
-        throw new Error('Not implemented')
-    }
-
-    protected setUpdatePosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
-        throw new Error('Not implemented')
-    }
+    // protected setUpdatePosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+    //     throw new Error('Not implemented')
+    // }
 }

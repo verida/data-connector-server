@@ -12,36 +12,40 @@ const _ = require('lodash')
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 
+export const enum PostSyncRefTypes {
+    Url = "Url",
+    Api = "Api"
+}
+
 export default class Posts extends BaseSyncHandler {
 
     protected static schemaUri: string = CONFIG.verida.schemas.POST
 
     /**
-     * @todo: Support paging through all results
-     * @todo: Correctly support `this.config.limitResults`
      * 
-     * @param api 
+     * @param Fb 
+     * @param syncPosition 
+     * @returns SyncResponse
      */
-    public async syncSnapshot(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
+    public async _sync(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
         const me = await Fb.api('/me?fields=picture')
         const pictureUrl = me.picture.data.url
 
         const apiEndpoint = '/me/posts'
-        let uri = `${apiEndpoint}?fields=id,created_time,message,type,permalink_url&limit=${this.config.postLimit}`
 
         let pageResults
-        if (syncPosition.next) {
-            uri = `${syncPosition.next}&limit=${this.config.postLimit}`
-            console.log('- Axios fetch')
-            const axiosResult = await Axios.get(uri)
+        if (syncPosition.thisRefType == PostSyncRefTypes.Url) {
+            const url = `${syncPosition.thisRef}&limit=${this.config.postLimit}`
+            const axiosResult = await Axios.get(url)
             pageResults = axiosResult.data
         } else {
-            console.log('- API fetch')
-            pageResults = await Fb.api(uri)
+            const url = `${apiEndpoint}?fields=id,created_time,message,type,permalink_url&limit=${this.config.postLimit}`
+            pageResults = await Fb.api(url)
         }
 
         if (!pageResults || !pageResults.data.length) {
-            syncPosition = this.resultsFinished(syncPosition, pageResults)
+            // No results found, so stop sync
+            syncPosition = this.stopSync(syncPosition, pageResults)
 
             return {
                 position: syncPosition,
@@ -49,12 +53,12 @@ export default class Posts extends BaseSyncHandler {
             }
         }
 
-        const results = this.buildResults(pageResults.data, pictureUrl, syncPosition.id ? syncPosition.id : undefined)
-        syncPosition = this.setPosition(syncPosition, pageResults)
+        const results = this.buildResults(pageResults.data, pictureUrl, syncPosition.breakId ? syncPosition.breakId : undefined)
+        syncPosition = this.setNextPosition(syncPosition, pageResults)
 
         if (results.length != this.config.postLimit) {
-            // Not a full page of results, so stop processing
-            syncPosition = this.resultsFinished(syncPosition, pageResults)
+            // Not a full page of results, so stop sync
+            syncPosition = this.stopSync(syncPosition, pageResults)
         }
 
         return {
@@ -63,50 +67,32 @@ export default class Posts extends BaseSyncHandler {
         }
     }
 
-    public async syncUpdate(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
-        return this.syncSnapshot(Fb, syncPosition)
-    }
-
-    protected resultsFinished(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
-        if (syncPosition.mode == SyncHandlerMode.UPDATE) {
-            // Set the next ID to be the placeholder position
-            syncPosition.id = syncPosition.pos
-            syncPosition.pos = undefined
+    protected stopSync(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+        if (syncPosition.futureBreakId) {
+            syncPosition.thisRef = undefined
+            syncPosition.breakId = syncPosition.futureBreakId
         }
 
-        // No results
+        syncPosition.thisRefType = PostSyncRefTypes.Api
         syncPosition.status = SyncStatus.STOPPED
-        syncPosition.mode = SyncHandlerMode.UPDATE
-
+        syncPosition.futureBreakId = undefined
         return syncPosition
     }
 
-    protected setSnapshotPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+    protected setNextPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
         if (serverResponse.paging.next) {
             // We have a next page of results, so set that for the next page
-            syncPosition.next = serverResponse.paging.next
+            syncPosition.thisRef = serverResponse.paging.next
+            syncPosition.thisRefType = PostSyncRefTypes.Url
         } else {
             // No next page of results, so clear the current value
-            syncPosition.next = undefined
+            syncPosition.thisRef = undefined
+            syncPosition.thisRefType = PostSyncRefTypes.Api
         }
 
-        if (!syncPosition.id && serverResponse.data.length) {
-            // No sync ID for updates, so set to the most recent
-            syncPosition.id = serverResponse.data[0].id
-        }
-
-        return syncPosition
-    }
-
-    protected setUpdatePosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
-        if (!syncPosition.id && serverResponse.data.length) {
-            // No sync ID for updates, so set to the most recent
-            syncPosition.id = serverResponse.data[0].id
-        }
-
-        if (!syncPosition.pos && serverResponse.data.length) {
-            // No next sync position, so set to the most recent
-            syncPosition.pos = serverResponse.data[0].id
+        if (!syncPosition.futureBreakId && serverResponse.data.length) {
+            // No future break ID for updates, so set to the most recent
+            syncPosition.futureBreakId = serverResponse.data[0].id
         }
 
         return syncPosition
@@ -117,7 +103,7 @@ export default class Posts extends BaseSyncHandler {
         for (let p in posts) {
             const post: any = posts[p]
 
-            if (`facebook-${post.id}` == breakId) {
+            if(post.id == breakId) {
                 // Break if the ID matches the record we are breaking on
                 break
             }
