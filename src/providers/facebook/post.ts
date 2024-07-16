@@ -3,7 +3,7 @@ import CONFIG from '../../config'
 const { Facebook } = require('fb')
 
 import dayjs from 'dayjs'
-import { SyncSchemaPosition, SyncResponse, SyncStatus, SyncHandlerMode } from "../../interfaces"
+import { SyncSchemaPosition, SyncResponse, SyncStatus } from "../../interfaces"
 import { SchemaPost } from "../../schemas"
 import { capitalizeFirstLetter } from "../../helpers"
 import Axios from "axios"
@@ -80,7 +80,7 @@ export default class Posts extends BaseSyncHandler {
     }
 
     protected setNextPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
-        if (serverResponse.paging.next) {
+        if (_.has(serverResponse, 'paging.next')) {
             // We have a next page of results, so set that for the next page
             syncPosition.thisRef = serverResponse.paging.next
             syncPosition.thisRefType = PostSyncRefTypes.Url

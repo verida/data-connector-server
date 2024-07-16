@@ -3,74 +3,43 @@ import CONFIG from '../../config'
 const { Facebook } = require('fb')
 
 import url from 'url'
-import { SyncHandlerMode, SyncResponse, SyncSchemaPosition, SyncStatus } from "../../interfaces"
+import { SyncResponse, SyncSchemaPosition, SyncStatus } from "../../interfaces"
 import { SchemaFollowing } from "../../schemas"
 
 const _ = require('lodash')
 
 export default class Following extends BaseSyncHandler {
 
+    protected apiEndpoint = '/me/likes'
+
     public getSchemaUri(): string {
         return CONFIG.verida.schemas.FOLLOWING
     }
 
-    public async syncSnapshot(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
-        const apiEndpoint = '/me/likes'
-
-        if (!syncPosition.next) {
-            syncPosition.next = `${apiEndpoint}?limit=${this.config.followingLimit}`
+    public async _sync(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
+        if (!syncPosition.thisRef) {
+            syncPosition.thisRef = `${this.apiEndpoint}?limit=${this.config.followingLimit}`
         }
 
-        const pageResults = await Fb.api(syncPosition.next)
-
-        if (_.has(pageResults, 'paging.next')) {
-            // Have more results, so set the next page ready for the next request
-            const next = pageResults.paging.next
-            const urlParts = url.parse(next, true)
-            syncPosition.next = `${apiEndpoint}${urlParts.search}`
-        } else {
-            syncPosition.status = SyncStatus.STOPPED
-            // @todo: configure so that the next update knows where to start from
-            syncPosition.next = undefined
-        }
-
-        const results = this.buildResults(pageResults.data)
-
-        if (!syncPosition.pos && syncPosition.mode == SyncHandlerMode.SNAPSHOT && results.length) {
-            // Set the position of where the first set of updates should occur, once the snapshot is completed
-            syncPosition.pos = pageResults.paging.cursors.before
-        }
-
-        return {
-            results,
-            position: syncPosition
-        }
-    }
-
-    public async syncUpdate(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
-        const apiEndpoint = '/me/likes'
-
-        let uri = `${apiEndpoint}?limit=${this.config.followingLimit}`
-        if (syncPosition.pos) {
-            uri += `&before=${syncPosition.pos}`
-        }
-        
-        const pageResults = await Fb.api(uri)
+        const pageResults = await Fb.api(syncPosition.thisRef)
 
         if (!pageResults || !pageResults.data.length) {
-            // No results
-            syncPosition.status = SyncStatus.STOPPED
+            // No results found, so stop sync
+            syncPosition = this.stopSync(syncPosition)
+
             return {
                 position: syncPosition,
                 results: []
             }
         }
 
-        if (syncPosition.pos != pageResults.paging.cursors.before) {
-            syncPosition.pos = pageResults.paging.cursors.before
-        }
+        const results = this.buildResults(pageResults.data, syncPosition.breakId)
+        syncPosition = this.setNextPosition(syncPosition, pageResults)
 
-        const results = this.buildResults(pageResults.data)
+        if (results.length != this.config.followingLimit) {
+            // Not a full page of results, so stop sync
+            syncPosition = this.stopSync(syncPosition)
+        }
 
         return {
             results,
@@ -78,10 +47,42 @@ export default class Following extends BaseSyncHandler {
         }
     }
 
-    protected buildResults(pageResults: any): SchemaFollowing[] {
+    protected stopSync(syncPosition: SyncSchemaPosition): SyncSchemaPosition {
+        syncPosition.status = SyncStatus.STOPPED
+        syncPosition.thisRef = undefined
+        syncPosition.breakId = syncPosition.futureBreakId
+        syncPosition.futureBreakId = undefined
+
+        return syncPosition
+    }
+
+    protected setNextPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+        if (!syncPosition.futureBreakId && serverResponse.data.length) {
+            syncPosition.futureBreakId = serverResponse.data[0].id
+        }
+
+        if (_.has(serverResponse, 'paging.next')) {
+            // Have more results, so set the next page ready for the next request
+            const next = serverResponse.paging.next
+            const urlParts = url.parse(next, true)
+            syncPosition.thisRef = `${this.apiEndpoint}${urlParts.search}`
+        } else {
+            syncPosition = this.stopSync(syncPosition)
+        }
+
+        return syncPosition
+    }
+
+    protected buildResults(pageResults: any, breakId: string): SchemaFollowing[] {
         const results = []
         for (var r in pageResults) {
             const like = pageResults[r]
+
+            if(like.id == breakId) {
+                // Break if the ID matches the record we are breaking on
+                break
+            }
+
             const uriName = like.name.replace(/ /g, '-')
             const followedTimestamp = like.created_time
 

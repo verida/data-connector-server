@@ -1,5 +1,4 @@
-import { SchemaRecord } from "src/schemas"
-import { AccountProfile, SyncHandlerMode, SyncResponse, SyncSchemaPosition, SyncStatus } from "../interfaces"
+import { AccountProfile, SyncResponse, SyncSchemaPosition, SyncStatus } from "../interfaces"
 import { IDatastore } from '@verida/types'
 
 export default class BaseSyncHandler {
@@ -36,8 +35,17 @@ export default class BaseSyncHandler {
      * @param syncSchemaPositionDs 
      * @returns 
      */
-    public async sync(api: any, syncPosition: SyncSchemaPosition, syncSchemaPositionDs: IDatastore): Promise<void> {
-        const syncResponse = await this._sync(api, syncPosition)
+    public async sync(api: any, syncPosition: SyncSchemaPosition, backfillPosition: SyncSchemaPosition, syncSchemaPositionDs: IDatastore): Promise<void> {
+        const promises = []
+        promises.push(this._sync(api, syncPosition))
+        promises.push(this._backfill(api, backfillPosition))
+
+        const promiseResults = await Promise.all(promises)
+        
+        for (let p in promiseResults) {
+            const result = promiseResults[p]
+            
+        }
 
         // @todo: save results
         // @todo: sync again if required (check this.config.maxSyncLoops)
@@ -77,27 +85,39 @@ export default class BaseSyncHandler {
     }
 
     /**
-     * Work backwards, syncronizing the most recent data to the oldest data
+     * Syncronize the most recent data to the oldest data.
      * 
-     * @returns object[] Array of results that need to be saved
+     * This must be implemented by the sync handler.
+     * 
+     * @returns SyncResponse Array of results that need to be saved and the updated syncPosition
      */
     public async _sync(api: any, syncPosition: SyncSchemaPosition): Promise <SyncResponse> {
         throw new Error('Not implemented')
     }
 
-    // protected setPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
-    //     if (syncPosition.mode == SyncHandlerMode.SNAPSHOT) {
-    //         return this.setSnapshotPosition(syncPosition, serverResponse)
-    //     } else if (syncPosition.mode == SyncHandlerMode.UPDATE) {
-    //         return this.setUpdatePosition(syncPosition, serverResponse)
-    //     }
-    // }
+    /**
+     * Backfill to add extra detail to 
+     * 
+     * This can be implemented by the sync handler.
+     * 
+     * @returns SyncResponse Array of results that need to be saved and the updated syncPosition
+     */
+    protected async _backfill(api: any, backfillPosition: SyncSchemaPosition): Promise<SyncResponse> {
+        return {
+            position: backfillPosition,
+            results: []
+        }
+    }
 
-    // protected setSnapshotPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
-    //     throw new Error('Not implemented')
-    // }
-
-    // protected setUpdatePosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
-    //     throw new Error('Not implemented')
-    // }
+    /**
+     * Update the `syncPosition` when the sync has stopped.
+     * 
+     * This can be implemented by the sync handler.
+     * 
+     * @param syncPosition 
+     * @param serverResponse 
+     */
+    protected stopSync(syncPosition: SyncSchemaPosition, serverResponse?: any): SyncSchemaPosition {
+        return syncPosition
+    }
 }

@@ -30,24 +30,24 @@ export enum SyncStatus {
     ACTIVE
 }
 
-export enum SyncHandlerMode {
-    SNAPSHOT,
-    UPDATE
-}
-
 export interface SyncSchemaPosition {
     // id = `${provider}/${schemaUri]}`
     _id: string
     provider: string
     schemaUri: string
-    mode: SyncHandlerMode
     status: SyncStatus
-    // ID of the record to stop at
-    id?: string
-    // Position to stop at (ie: A unique page number)
-    pos?: string
-    // Next result set (ie: URL of results page)
-    next?: string
+
+    // Reference point for the current sync
+    thisRef?: string
+
+    // Reference point type for this reference for the current sync
+    thisRefType?: string
+
+    // Record ID to break on, if hit
+    breakId?: string
+
+    // Future record ID to break on, for the next sync
+    futureBreakId?: string
 }
 
 export interface SyncResponse {
