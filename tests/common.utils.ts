@@ -39,18 +39,18 @@ export default class CommonUtils {
         }
 
         const network = new Client({
-            environment: VERIDA_ENVIRONMENT
+            network: VERIDA_ENVIRONMENT
         })
 
         const account = new AutoAccount({
             privateKey: TEST_VAULT_PRIVATE_KEY,
-            environment: VERIDA_ENVIRONMENT,
+            network: VERIDA_ENVIRONMENT,
             // @ts-ignore
             didClientConfig: DID_CLIENT_CONFIG
         })
 
         await network.connect(account);
-        const context = await network.openContext('Verida: Vault')
+        const context = <Context> await network.openContext('Verida: Vault')
         const did = await account.did()
 
         cachedNetworkInstance = {

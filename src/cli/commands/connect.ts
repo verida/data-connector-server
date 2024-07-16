@@ -1,7 +1,7 @@
 import { Command } from 'command-line-interface';
 import { ConnectProvider } from './interfaces';
 import { AutoAccount } from '@verida/account-node';
-import { EnvironmentType } from '@verida/types';
+import { Network } from '@verida/types';
 import open from 'open'
 import CONFIG from '../../config'
 //import { ContextAccount } from '@verida/account-node';
@@ -30,12 +30,12 @@ export const Connect: Command<ConnectProvider> = {
       },
       {
         name: 'network',
-        description: 'Verida network (testnet, mainnet)',
+        description: 'Verida network (banksia, myrtle)',
         type: 'string',
         alias: 'n',
         defaultValue: 'mainnet',
         validate(val: string) {
-          const valid = ['testnet', 'mainnet']
+          const valid = ['banksia', 'myrtle']
           if (valid.indexOf(val) === -1) {
             return false
           }
@@ -53,7 +53,7 @@ export const Connect: Command<ConnectProvider> = {
       // Initialize Account
       const account = new AutoAccount({
         privateKey: options.key,
-        environment: <EnvironmentType> options.network,
+        network: <Network> options.network,
         didClientConfig: {
           callType: 'web3',
           web3Config: {

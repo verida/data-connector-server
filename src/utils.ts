@@ -1,4 +1,4 @@
-import { EnvironmentType, IContext } from '@verida/types'
+import { Network as VeridaNetwork, IContext } from '@verida/types'
 import { Client, Network } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
@@ -29,16 +29,16 @@ export class Utils {
         //account: ContextAccount
     }> {
         const VAULT_CONTEXT_NAME = 'Verida: Vault'
-        const VERIDA_ENVIRONMENT = Utils.strToEnvType(serverconfig.verida.environment)
+        const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
         const network = new Client({
-            environment: VERIDA_ENVIRONMENT
+            network: VERIDA_ENVIRONMENT
         })
 
         // @todo: Switch to context account once context storage node issue fixed and deployed
         //const account = new ContextAccount({
         const account = new AutoAccount({
             privateKey: contextSignature,
-            environment: VERIDA_ENVIRONMENT,
+            network: VERIDA_ENVIRONMENT,
             // @ts-ignore
             didClientConfig: DID_CLIENT_CONFIG
         })
@@ -98,20 +98,8 @@ export class Utils {
             schema: SBT_CREDENTIAL_SCHEMA
         }, credentialData.name, credentialData.description, credentialData.image)
     }
-
-    public static strToEnvType(s: string) { 
-        if (s == EnvironmentType.LOCAL) {
-            return EnvironmentType.LOCAL;
-        } else if (s == EnvironmentType.TESTNET) {
-            return EnvironmentType.TESTNET;
-        } else if (s == EnvironmentType.MAINNET) {
-            return EnvironmentType.MAINNET;
-        } else {
-            throw new Error("Invalid EnvironmentType value");
-        }
-    }
 }
 
-const VERIDA_ENVIRONMENT = Utils.strToEnvType(serverconfig.verida.environment)
+const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
 
 export { VERIDA_ENVIRONMENT }
