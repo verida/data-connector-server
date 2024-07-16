@@ -1,3 +1,4 @@
+import { SchemaRecord } from "src/schemas"
 import { AccountProfile, SyncHandlerMode, SyncResponse, SyncSchemaPosition, SyncStatus } from "../interfaces"
 import { IDatastore } from '@verida/types'
 
@@ -85,6 +86,22 @@ export default class BaseSyncHandler {
      * @returns object[] Array of results that need to be saved
      */
     public async syncUpdate(api: any, syncPosition: SyncSchemaPosition): Promise <SyncResponse> {
+        throw new Error('Not implemented')
+    }
+
+    protected setPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+        if (syncPosition.mode == SyncHandlerMode.SNAPSHOT) {
+            return this.setSnapshotPosition(syncPosition, serverResponse)
+        } else if (syncPosition.mode == SyncHandlerMode.UPDATE) {
+            return this.setUpdatePosition(syncPosition, serverResponse)
+        }
+    }
+
+    protected setSnapshotPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+        throw new Error('Not implemented')
+    }
+
+    protected setUpdatePosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
         throw new Error('Not implemented')
     }
 }

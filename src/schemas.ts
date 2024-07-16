@@ -12,3 +12,10 @@ export interface SchemaRecord {
 export interface SchemaFollowing extends SchemaRecord {
     followedTimestamp?: string
 }
+
+export interface SchemaPost extends SchemaRecord {
+    type?: string
+    content?: string
+    contentHtml? :string
+    summary?: string
+}

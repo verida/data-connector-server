@@ -1,5 +1,3 @@
-import { IContext } from "@verida/types"
-
 export interface AccountAuth {
     accessToken: string,
     refreshToken: string
@@ -44,8 +42,11 @@ export interface SyncSchemaPosition {
     schemaUri: string
     mode: SyncHandlerMode
     status: SyncStatus
+    // ID of the record to stop at
     id?: string
+    // Position to stop at (ie: A unique page number)
     pos?: string
+    // Next result set (ie: URL of results page)
     next?: string
 }
 

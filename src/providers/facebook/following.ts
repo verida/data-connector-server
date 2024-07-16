@@ -1,17 +1,17 @@
 import BaseSyncHandler from "../BaseSyncHandler"
+import CONFIG from '../../config'
 const { Facebook } = require('fb')
 
 import url from 'url'
 import { SyncHandlerMode, SyncResponse, SyncSchemaPosition, SyncStatus } from "../../interfaces"
 import { SchemaFollowing } from "../../schemas"
-import TokenExpiredError from "../TokenExpiredError"
 
 const _ = require('lodash')
 
 export default class Following extends BaseSyncHandler {
 
     public getSchemaUri(): string {
-        return 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
+        return CONFIG.verida.schemas.FOLLOWING
     }
 
     public async syncSnapshot(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
@@ -92,6 +92,7 @@ export default class Following extends BaseSyncHandler {
                 uri: `https://facebook.com/${uriName}-${like.id}`,
                 sourceApplication: 'https://facebook.com/',
                 sourceId: like.id,
+                sourceData: like,
                 followedTimestamp,
                 insertedAt: followedTimestamp
             })
