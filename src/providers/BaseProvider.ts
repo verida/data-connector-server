@@ -3,9 +3,12 @@ import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import BaseProviderConfig from './BaseProviderConfig'
 import serverconfig from '../serverconfig.json'
-import { AccountAuth, AccountProfile, Connection, SyncHandlerMode, SyncSchemaPosition, SyncStatus } from '../interfaces'
-import { IContext } from '@verida/types'
+import { AccountAuth, AccountProfile, Connection, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogLevel, SyncSchemaPosition, SyncSchemaPositionType } from '../interfaces'
+import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
+
+const SCHEMA_SYNC_POSITIONS = serverconfig.verida.schemas.SYNC_POSITION
+const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
 
 export default class BaseProvider {
 
@@ -105,20 +108,52 @@ export default class BaseProvider {
     public async sync(accessToken: string, refreshToken: string): Promise<void> {
         const syncHandlers = await this.getSyncHandlers()
         const api = await this.getApi(accessToken, refreshToken)
+        const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
+        const syncLog = await this.vault.openDatastore(SCHEMA_SYNC_LOG)
 
         for (let h in syncHandlers) {
             const handler = syncHandlers[h]
             const schemaUri = handler.getSchemaUri()
             const datastore = await this.vault.openDatastore(schemaUri)
-            const syncPosition = this.connection.syncPositions[schemaUri] ? this.connection.syncPositions[schemaUri] : {
-                _id: `${this.getProviderId()}/${schemaUri}`,
-                provider: this.getProviderId(),
-                schemaUri,
-                mode: SyncHandlerMode.SNAPSHOT,
-                status: SyncStatus.ACTIVE
+
+            const syncPosition = await this.getSyncPosition(schemaUri, SyncSchemaPositionType.SYNC, syncPositionsDs)
+            syncPosition.status = SyncHandlerStatus.ACTIVE
+
+            const backfillPosition = await this.getSyncPosition(schemaUri, SyncSchemaPositionType.SYNC, syncPositionsDs)
+            backfillPosition.status = SyncHandlerStatus.ACTIVE
+
+            handler.on('error', (syncError: SyncProviderErrorEvent) => {
+                syncLog.save({
+                    ...syncError,
+                    provider: this.getProviderId(),
+                    schemaUri,
+                    level: SyncProviderLogLevel.ERROR
+                }, {})
+            })
+
+            await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
+        }
+    }
+
+    public async getSyncPosition(schemaUri: string, syncPositionType: SyncSchemaPositionType, syncPositionsDs: IDatastore): Promise<SyncSchemaPosition> {
+        try {
+            const id = Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, syncPositionType)
+            return await syncPositionsDs.get(id, {})
+
+        } catch (err) {
+            console.log(err)
+            if (err.message.match('missing')) {
+                // Schema position doesn't exist, so create new
+                return {
+                    _id: Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, syncPositionType),
+                    type: syncPositionType,
+                    provider: this.getProviderId(),
+                    schemaUri,
+                    status: SyncHandlerStatus.ACTIVE
+                }
             }
 
-            await handler.sync(api, syncPosition, datastore)
+            throw err
         }
     }
 

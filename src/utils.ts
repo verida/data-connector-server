@@ -5,6 +5,7 @@ import Providers from "./providers"
 import fs from 'fs'
 import serverconfig from '../src/serverconfig.json'
 import { AutoAccount } from '@verida/account-node'
+import { SyncSchemaPositionType } from './interfaces'
 
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
@@ -97,6 +98,20 @@ export class Utils {
             subjectId: credentialData.did,
             schema: SBT_CREDENTIAL_SCHEMA
         }, credentialData.name, credentialData.description, credentialData.image)
+    }
+
+    public static buildSyncHandlerId(providerId: string, schemaUri: string, type: SyncSchemaPositionType) {
+        return `${providerId}:${schemaUri}:${type}`
+    }
+
+    public static datastoreErorrsToString(errors: any): string {
+        let result = ''
+        for (let e in errors) {
+            const error = errors[e]
+            result += `${error.keyword}: ${error.message}`
+        }
+
+        return result
     }
 }
 

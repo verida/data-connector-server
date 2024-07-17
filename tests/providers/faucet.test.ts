@@ -59,7 +59,6 @@ describe(`${providerName} Tests`, function() {
             assert.equal(response.position.breakId, undefined, 'Break ID is undefined')
             assert.equal(results[0]._id.toString(), response.position.futureBreakId, 'Future break ID matches the first result ID')
 
-
             // Update: Page 1 (ensure 1 result only)
             // Fetch the update set of results to confirm `position.pos` is correct
             // Make sure we fetch the first post only, by setting the break to the second item
@@ -78,6 +77,23 @@ describe(`${providerName} Tests`, function() {
             assert.equal(response.position.thisRef, undefined, 'No next result set reference')
             assert.equal(response.position.breakId, results3[0]._id.toString(), 'Break ID is the first result')
             assert.equal(response.position.futureBreakId, undefined, 'Future break ID is undefined')
+
+            // Fetch the last page of results
+            position.thisRef = "9"
+            position.breakId = results[0]._id
+            position.futureBreakId = "1"
+            position.status = SyncHandlerStatus.ACTIVE
+
+            const response4 = await postHandler._sync(api, position)
+            const results4 = <SchemaPost[]> response4.results
+
+            assert.equal(1, results4.length, '1 result returned')
+            assert.equal("10", results4[0]._id, 'Correct ID returned')
+
+            assert.equal(response4.position.status, SyncHandlerStatus.STOPPED, 'Sync is stopped')
+            assert.equal(response4.position.thisRef, undefined, 'No next result set reference')
+            assert.equal(response4.position.breakId, results[0]._id, 'Break ID is the first item of the list')
+            assert.equal(response4.position.futureBreakId, undefined, 'Future break ID is undefined')
         })
     })
 })

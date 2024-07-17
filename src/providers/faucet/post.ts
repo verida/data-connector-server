@@ -85,7 +85,7 @@ export default class Posts extends BaseSyncHandler {
 
         if (pageResults[pageResults.length-1]._id != FAKE_RESPONSES[FAKE_RESPONSES.length-1]._id) {
             // Have more results, so set the next page ready for the next request
-            syncPosition.thisRef = (parseInt(pageResults[pageResults.length-1]._id) + 1).toString()
+            syncPosition.thisRef = pageResults[pageResults.length-1]._id
         } else {
             // No more results, so stop sync
             syncPosition = this.stopSync(syncPosition)
@@ -95,6 +95,10 @@ export default class Posts extends BaseSyncHandler {
     }
 
     protected stopSync(syncPosition: SyncSchemaPosition): SyncSchemaPosition {
+        if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+            return syncPosition
+        }
+
         syncPosition.status = SyncHandlerStatus.STOPPED
         syncPosition.thisRef = undefined
         syncPosition.breakId = syncPosition.futureBreakId
@@ -110,7 +114,10 @@ export default class Posts extends BaseSyncHandler {
                 break
             }
 
-            results.push(items[i])
+            results.push({
+                ...items[i],
+                insertedAt: new Date().toISOString()
+            })
         }
 
         return results

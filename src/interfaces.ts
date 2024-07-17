@@ -14,28 +14,51 @@ export interface AccountProfile {
     credential?: string
 }
 
+export enum SyncFrequency {
+    HOUR = "hour",
+    DAY = "day",
+    WEEK = "week"
+}
+
+export enum SyncStatus {
+    ACTIVE = "active",
+    ERROR = "error",
+    PAUSED = "paused",
+    SYNC_REQUESTED = "sync-requested",
+    SYNC_ACTIVE = "sync-active",
+    DISABLED = "disabled"
+}
+
 export interface Connection {
     accessToken: string
     refreshToken: string
     profile: AccountProfile
-    syncPositions: Record<string, SyncSchemaPosition>
+    source: string
+    syncFrequency: SyncFrequency
 }
 
 export interface DatastoreSaveResponse {
     id: string
 }
 
-export enum SyncStatus {
-    STOPPED,
-    ACTIVE
+export enum SyncHandlerStatus {
+    STOPPED = "stopped",
+    ACTIVE = "active"
+}
+
+export enum SyncSchemaPositionType {
+    SYNC = "sync",
+    BACKFILL = "backfill"
 }
 
 export interface SyncSchemaPosition {
-    // id = `${provider}/${schemaUri]}`
+    // id = `${provider}:${schemaUri]}:${status}`
     _id: string
+    _rev?: string
+    type: SyncSchemaPositionType
     provider: string
     schemaUri: string
-    status: SyncStatus
+    status: SyncHandlerStatus
 
     // Reference point for the current sync
     thisRef?: string
@@ -53,4 +76,23 @@ export interface SyncSchemaPosition {
 export interface SyncResponse {
     results: object[]
     position: SyncSchemaPosition
+}
+
+export interface SyncProviderLogEntry {
+    _id: string
+    provider: string
+    schemaUri: string
+    message: string
+    level: SyncProviderLogLevel
+}
+
+export enum SyncProviderLogLevel {
+    INFO = "info",
+    DEBUG = "debug",
+    ERROR = "error"
+}
+
+export interface SyncProviderErrorEvent {
+    level: SyncProviderLogLevel
+    message: string
 }

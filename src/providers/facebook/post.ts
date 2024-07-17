@@ -70,6 +70,10 @@ export default class Posts extends BaseSyncHandler {
     }
 
     protected stopSync(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+        if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+            return syncPosition
+        }
+        
         if (syncPosition.futureBreakId) {
             syncPosition.thisRef = undefined
             syncPosition.breakId = syncPosition.futureBreakId

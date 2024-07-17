@@ -1,7 +1,9 @@
 export interface SchemaRecord {
     _id: string
+    _rev?: string
     name: string
-    insertedAt: string
+    insertedAt?: string
+    modifiedAt?: string
     icon?: string
     uri?: string
     sourceApplication?: string

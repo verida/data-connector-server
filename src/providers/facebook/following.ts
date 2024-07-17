@@ -3,7 +3,7 @@ import CONFIG from '../../config'
 const { Facebook } = require('fb')
 
 import url from 'url'
-import { SyncResponse, SyncSchemaPosition, SyncStatus } from "../../interfaces"
+import { SyncResponse, SyncSchemaPosition, SyncHandlerStatus } from "../../interfaces"
 import { SchemaFollowing } from "../../schemas"
 
 const _ = require('lodash')
@@ -48,7 +48,11 @@ export default class Following extends BaseSyncHandler {
     }
 
     protected stopSync(syncPosition: SyncSchemaPosition): SyncSchemaPosition {
-        syncPosition.status = SyncStatus.STOPPED
+        if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+            return syncPosition
+        }
+        
+        syncPosition.status = SyncHandlerStatus.STOPPED
         syncPosition.thisRef = undefined
         syncPosition.breakId = syncPosition.futureBreakId
         syncPosition.futureBreakId = undefined

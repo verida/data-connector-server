@@ -33,6 +33,7 @@
     "@oauth-everything/passport-discord": "^1.0.2",
     "@sapphire/snowflake": "^3.4.2",
     "@superfaceai/passport-twitter-oauth2": "^1.2.3",
+    "@types/node": "^20.14.11",
     "@verida/account-node": "^4.0.0",
     "@verida/client-ts": "^4.0.0",
     "@verida/did-client": "^4.0.0",
