@@ -1,30 +1,51 @@
-import { SyncSchemaPosition, SyncStatus } from "../../interfaces";
+import { SyncSchemaPosition, SyncHandlerStatus } from "../../interfaces";
 import BaseSyncHandler from "../BaseSyncHandler";
 import { SyncResponse } from "../../interfaces";
+import CONFIG from '../../config'
+
+// Required fields in the post schema
+const FAKE_ITEM = {
+    name: 'Fake item',
+    uri: 'http://www.fake.com/'
+}
 
 const FAKE_RESPONSES = [{
-    _id: 0
+    ...FAKE_ITEM,
+    _id: "1"
 },{
-    _id: 1
+    ...FAKE_ITEM,
+    _id: "2"
 },{
-    _id: 2
+    ...FAKE_ITEM,
+    _id: "3"
 },{
-    _id: 3
+    ...FAKE_ITEM,
+    _id: "4"
 },{
-    _id: 4
+    ...FAKE_ITEM,
+    _id: "5"
 },{
-    _id: 5
+    ...FAKE_ITEM,
+    _id: "6"
 },{
-    _id: 6
+    ...FAKE_ITEM,
+    _id: "7"
 },{
-    _id: 7
+    ...FAKE_ITEM,
+    _id: "8"
 },{
-    _id: 8
+    ...FAKE_ITEM,
+    _id: "9"
 },{
-    _id: 9
-},]
+    ...FAKE_ITEM,
+    _id: "10"
+}]
 
 export default class Posts extends BaseSyncHandler {
+
+    public getSchemaUri(): string {
+        return CONFIG.verida.schemas.POST
+    }
 
     public async _sync(api: any, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
         if (!syncPosition.thisRef) {
@@ -59,12 +80,12 @@ export default class Posts extends BaseSyncHandler {
 
     protected setNextPosition(syncPosition: SyncSchemaPosition, pageResults: any): SyncSchemaPosition {
         if (!syncPosition.futureBreakId && pageResults.length) {
-            syncPosition.futureBreakId = pageResults[0]._id.toString()
+            syncPosition.futureBreakId = pageResults[0]._id
         }
 
         if (pageResults[pageResults.length-1]._id != FAKE_RESPONSES[FAKE_RESPONSES.length-1]._id) {
             // Have more results, so set the next page ready for the next request
-            syncPosition.thisRef = (pageResults[pageResults.length-1]._id + 1).toString()
+            syncPosition.thisRef = (parseInt(pageResults[pageResults.length-1]._id) + 1).toString()
         } else {
             // No more results, so stop sync
             syncPosition = this.stopSync(syncPosition)
@@ -74,7 +95,7 @@ export default class Posts extends BaseSyncHandler {
     }
 
     protected stopSync(syncPosition: SyncSchemaPosition): SyncSchemaPosition {
-        syncPosition.status = SyncStatus.STOPPED
+        syncPosition.status = SyncHandlerStatus.STOPPED
         syncPosition.thisRef = undefined
         syncPosition.breakId = syncPosition.futureBreakId
         syncPosition.futureBreakId = undefined

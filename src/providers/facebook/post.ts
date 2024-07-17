@@ -3,7 +3,7 @@ import CONFIG from '../../config'
 const { Facebook } = require('fb')
 
 import dayjs from 'dayjs'
-import { SyncSchemaPosition, SyncResponse, SyncStatus } from "../../interfaces"
+import { SyncSchemaPosition, SyncResponse, SyncHandlerStatus } from "../../interfaces"
 import { SchemaPost } from "../../schemas"
 import { capitalizeFirstLetter } from "../../helpers"
 import Axios from "axios"
@@ -19,7 +19,9 @@ export const enum PostSyncRefTypes {
 
 export default class Posts extends BaseSyncHandler {
 
-    protected static schemaUri: string = CONFIG.verida.schemas.POST
+    public getSchemaUri(): string {
+        return CONFIG.verida.schemas.POST
+    }
 
     /**
      * 
@@ -74,7 +76,7 @@ export default class Posts extends BaseSyncHandler {
         }
 
         syncPosition.thisRefType = PostSyncRefTypes.Api
-        syncPosition.status = SyncStatus.STOPPED
+        syncPosition.status = SyncHandlerStatus.STOPPED
         syncPosition.futureBreakId = undefined
         return syncPosition
     }

@@ -1,8 +1,7 @@
 const assert = require("assert")
 import CONFIG from '../../src/config'
-import { SyncSchemaPosition, SyncStatus } from '../../src/interfaces'
+import { SyncHandlerStatus, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../../src/interfaces'
 import Providers from '../../src/providers'
-import CommonUtils from '../common.utils'
 
 import Post from '../../src/providers/faucet/post'
 import { SchemaPost } from '../../src/schemas'
@@ -20,9 +19,10 @@ describe(`${providerName} Tests`, function() {
         it("Can fetch Posts", async () => {
             const syncPosition: SyncSchemaPosition = {
                 _id: `faucet-${SCHEMA_POST}`,
+                type: SyncSchemaPositionType.SYNC,
                 provider: 'faucet',
                 schemaUri: SCHEMA_POST,
-                status: SyncStatus.ACTIVE
+                status: SyncHandlerStatus.ACTIVE
             }
 
             const api = await provider.getApi('fake-access-token', 'fake-refresh-token')
@@ -37,6 +37,7 @@ describe(`${providerName} Tests`, function() {
             
             assert.ok(results && results.length, 'Have results returned')
             assert.ok(results && results.length == 3, 'Have correct number of results returned')
+            assert.equal(results[0]._id, "1", 'First result has expected _id')
             assert.ok(results[0]._id < results[1]._id, 'First page of results are most recent first')
 
             assert.equal(response.position.status, SyncStatus.ACTIVE, 'Sync is still active')
@@ -73,7 +74,7 @@ describe(`${providerName} Tests`, function() {
             assert.equal(1, results3.length, '1 result returned')
             assert.equal(results3[0]._id, results[0]._id, 'Correct ID returned')
 
-            assert.equal(response.position.status, SyncStatus.STOPPED, 'Sync is stopped')
+            assert.equal(response.position.status, SyncHandlerStatus.STOPPED, 'Sync is stopped')
             assert.equal(response.position.thisRef, undefined, 'No next result set reference')
             assert.equal(response.position.breakId, results3[0]._id.toString(), 'Break ID is the first result')
             assert.equal(response.position.futureBreakId, undefined, 'Future break ID is undefined')
