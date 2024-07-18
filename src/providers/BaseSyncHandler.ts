@@ -1,4 +1,4 @@
-import { AccountProfile, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncSchemaPosition } from "../interfaces"
+import { AccountProfile, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncSchemaPosition } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
@@ -39,7 +39,12 @@ export default class BaseSyncHandler extends EventEmitter {
      * @param syncSchemaPositionDs 
      * @returns 
      */
-    public async sync(api: any, syncPosition: SyncSchemaPosition, backfillPosition: SyncSchemaPosition, syncSchemaPositionDs: IDatastore, schemaDatastore: IDatastore): Promise<void> {
+    public async sync(
+        api: any,
+        syncPosition: SyncSchemaPosition,
+        backfillPosition: SyncSchemaPosition,
+        syncSchemaPositionDs: IDatastore,
+        schemaDatastore: IDatastore): Promise<SyncHandlerResponse> {
         const promises = []
         promises.push(this._sync(api, syncPosition))
         promises.push(this._backfill(api, backfillPosition))
@@ -48,56 +53,11 @@ export default class BaseSyncHandler extends EventEmitter {
         const syncResult = promiseResults[0]
         const backfillResult = promiseResults[1]
 
-        // handle sync result
-        if (syncResult.status == 'fulfilled') {
-            // save updated sync position
-            const position = syncResult.value.position
-
-            try {
-                // Ensure we always update, so delete any revision value
-                delete position['_rev']
-                await syncSchemaPositionDs.save(position, {
-                    // The position record may already exist, if so, force update
-                    forceUpdate: true
-                })
-            } catch (err: any) {
-                const message = `Unable to update sync position: ${err.message} (${JSON.stringify(position, null, 2)})`
-                    this.emit('error', {
-                        level: SyncProviderLogLevel.ERROR,
-                        message
-                    })
-            }
-
-            // save items
-            const items = <SchemaRecord[]> syncResult.value.results
-            for (let i in items) {
-                const item = items[i]
-                if (!item.insertedAt) {
-                    const message = `Unable to save item: insertedAt field is missing (${JSON.stringify(item, null, 2)})`
-                    this.emit('error', {
-                        level: SyncProviderLogLevel.ERROR,
-                        message
-                    })
-                    continue
-                }
-                try {
-                    const success = await schemaDatastore.save(item, {})
-                    if (!success) {
-                        const message = `Unable to save item: ${Utils.datastoreErorrsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
-
-                        this.emit('error', {
-                            level: SyncProviderLogLevel.ERROR,
-                            message
-                        })
-                    }
-                } catch (err: any) {
-                    const message = `Unable to save item: ${err.message} (${JSON.stringify(item, null, 2)})`
-                    this.emit('error', {
-                        level: SyncProviderLogLevel.ERROR,
-                        message
-                    })
-                }
-            }
+        let syncResults: SchemaRecord[] = []
+        let backfillResults: SchemaRecord[] = []
+        if (syncResult.status == 'fulfilled')  {
+            syncResults = <SchemaRecord[]> syncResult.value.results
+            await this.handleResults(syncResult.value.position, syncResults, syncSchemaPositionDs, schemaDatastore)
         } else {
             const message = `Unknown error with sync: ${syncResult.reason}`
             this.emit('error', {
@@ -106,17 +66,74 @@ export default class BaseSyncHandler extends EventEmitter {
             })
         }
 
-        // handle backfill result
-        // if (backfillResult.status == 'fulfilled') {
-        //     console.log('backfill result')
-        //     console.log(backfillResult.value)
-        // } else {
-        //     // @todo: handle error
-        //     throw Error(backfillResult.reason)
-        // }
-        
+        if (backfillResult.status == 'fulfilled')  {
+            backfillResults = <SchemaRecord[]> backfillResult.value.results
+            await this.handleResults(backfillResult.value.position, backfillResults, syncSchemaPositionDs, schemaDatastore)
+        } else {
+            const message = `Unknown error with sync: ${backfillResult.reason}`
+            this.emit('error', {
+                level: SyncProviderLogLevel.ERROR,
+                message
+            })
+        }
 
-        // @todo: sync again if required (check this.config.maxSyncLoops) -- provider should manage this?
+        return {
+            syncPosition,
+            backfillPosition,
+            syncResults,
+            backfillResults
+        }
+    }
+
+    protected async handleResults(
+        position: SyncSchemaPosition,
+        items: SchemaRecord[],
+        syncSchemaPositionDs: IDatastore,
+        schemaDatastore: IDatastore): Promise<void> {
+        try {
+            // Ensure we always update, so delete any revision value
+            delete position['_rev']
+            await syncSchemaPositionDs.save(position, {
+                // The position record may already exist, if so, force update
+                forceUpdate: true
+            })
+        } catch (err: any) {
+            const message = `Unable to update sync position: ${err.message} (${JSON.stringify(position, null, 2)})`
+                this.emit('error', {
+                    level: SyncProviderLogLevel.ERROR,
+                    message
+                })
+        }
+
+        // save items
+        for (let i in items) {
+            const item = items[i]
+            if (!item.insertedAt) {
+                const message = `Unable to save item: insertedAt field is missing (${JSON.stringify(item, null, 2)})`
+                this.emit('error', {
+                    level: SyncProviderLogLevel.ERROR,
+                    message
+                })
+                continue
+            }
+            try {
+                const success = await schemaDatastore.save(item, {})
+                if (!success) {
+                    const message = `Unable to save item: ${Utils.datastoreErorrsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
+
+                    this.emit('error', {
+                        level: SyncProviderLogLevel.ERROR,
+                        message
+                    })
+                }
+            } catch (err: any) {
+                const message = `Unable to save item: ${err.message} (${JSON.stringify(item, null, 2)})`
+                this.emit('error', {
+                    level: SyncProviderLogLevel.ERROR,
+                    message
+                })
+            }
+        }
     }
 
     /**
