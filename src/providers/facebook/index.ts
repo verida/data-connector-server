@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import BaseProviderConfig from '../BaseProviderConfig'
+import { BaseProviderConfig } from '../../interfaces'
 import TokenExpiredError from '../TokenExpiredError'
 
 const passport = require("passport")
