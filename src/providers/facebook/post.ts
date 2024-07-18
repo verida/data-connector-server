@@ -37,11 +37,11 @@ export default class Posts extends BaseSyncHandler {
 
         let pageResults
         if (syncPosition.thisRefType == PostSyncRefTypes.Url) {
-            const url = `${syncPosition.thisRef}&limit=${this.config.postLimit}`
+            const url = `${syncPosition.thisRef}&limit=${this.config.postBatchSize}`
             const axiosResult = await Axios.get(url)
             pageResults = axiosResult.data
         } else {
-            const url = `${apiEndpoint}?fields=id,created_time,message,type,permalink_url&limit=${this.config.postLimit}`
+            const url = `${apiEndpoint}?fields=id,created_time,message,type,permalink_url&limit=${this.config.postBatchSize}`
             pageResults = await Fb.api(url)
         }
 
@@ -58,7 +58,7 @@ export default class Posts extends BaseSyncHandler {
         const results = this.buildResults(pageResults.data, pictureUrl, syncPosition.breakId ? syncPosition.breakId : undefined)
         syncPosition = this.setNextPosition(syncPosition, pageResults)
 
-        if (results.length != this.config.postLimit) {
+        if (results.length != this.config.postBatchSize) {
             // Not a full page of results, so stop sync
             syncPosition = this.stopSync(syncPosition, pageResults)
         }
@@ -114,7 +114,7 @@ export default class Posts extends BaseSyncHandler {
                 break
             }
             
-            const createdAt = dayjs(post.created_time).toISOString()
+            const createdAt = post.created_time ? dayjs(post.created_time).toISOString() : new Date().toISOString()
             const icon = pictureUrl
 
             const sourceData = post

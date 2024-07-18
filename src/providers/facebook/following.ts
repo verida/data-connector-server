@@ -18,7 +18,7 @@ export default class Following extends BaseSyncHandler {
 
     public async _sync(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
         if (!syncPosition.thisRef) {
-            syncPosition.thisRef = `${this.apiEndpoint}?limit=${this.config.followingLimit}`
+            syncPosition.thisRef = `${this.apiEndpoint}?limit=${this.config.followingBatchSize}`
         }
 
         const pageResults = await Fb.api(syncPosition.thisRef)
@@ -36,7 +36,7 @@ export default class Following extends BaseSyncHandler {
         const results = this.buildResults(pageResults.data, syncPosition.breakId)
         syncPosition = this.setNextPosition(syncPosition, pageResults)
 
-        if (results.length != this.config.followingLimit) {
+        if (results.length != this.config.postBatchSize) {
             // Not a full page of results, so stop sync
             syncPosition = this.stopSync(syncPosition)
         }
@@ -71,6 +71,7 @@ export default class Following extends BaseSyncHandler {
             const urlParts = url.parse(next, true)
             syncPosition.thisRef = `${this.apiEndpoint}${urlParts.search}`
         } else {
+            console.log('following: stopping, no next page')
             syncPosition = this.stopSync(syncPosition)
         }
 
@@ -88,7 +89,7 @@ export default class Following extends BaseSyncHandler {
             }
 
             const uriName = like.name.replace(/ /g, '-')
-            const followedTimestamp = like.created_time
+            const followedTimestamp = like.created_time ? like.created_time : new Date().toISOString()
 
             results.push({
                 _id: `facebook-${like.id}`,
