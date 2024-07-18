@@ -4,7 +4,7 @@ import CONFIG from '../src/config'
 import { SyncHandlerStatus, SyncProviderErrorEvent, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../src/interfaces'
 import Providers from '../src/providers'
 
-import Post from '../src/providers/faucet/post'
+import Post from '../src/providers/mock/post'
 import { SchemaPost } from '../src/schemas'
 import CommonUtils from './common.utils'
 import { Utils } from '../src/utils'
@@ -12,7 +12,7 @@ import { Utils } from '../src/utils'
 const SCHEMA_POST = CONFIG.verida.schemas.POST
 const SCHEMA_SYNC_POSITIONS = CONFIG.verida.schemas.SYNC_POSITION
 
-const providerName = 'faucet'
+const providerName = 'mock'
 
 let syncPositionsDs: IDatastore
 let postsDs: IDatastore
@@ -25,7 +25,7 @@ let backfillPosition: SyncSchemaPosition
 describe(`Sync Handler Tests`, function() {
     this.timeout(100000)
 
-    describe("Sync using the test Faucet provider", () => {
+    describe("Sync using the test mock provider", () => {
         const provider = Providers(providerName)
 
         this.beforeAll(async function() {
@@ -42,17 +42,17 @@ describe(`Sync Handler Tests`, function() {
             })
 
             syncPosition = {
-                _id: Utils.buildSyncHandlerId('faucet', SCHEMA_POST, SyncSchemaPositionType.SYNC),
+                _id: Utils.buildSyncHandlerId('mock', SCHEMA_POST, SyncSchemaPositionType.SYNC),
                 type: SyncSchemaPositionType.SYNC,
-                provider: 'faucet',
+                provider: 'mock',
                 schemaUri: SCHEMA_POST,
                 status: SyncHandlerStatus.ACTIVE
             }
 
             backfillPosition = {
-                _id: Utils.buildSyncHandlerId('faucet', SCHEMA_POST, SyncSchemaPositionType.BACKFILL),
+                _id: Utils.buildSyncHandlerId('mock', SCHEMA_POST, SyncSchemaPositionType.BACKFILL),
                 type: SyncSchemaPositionType.BACKFILL,
-                provider: 'faucet',
+                provider: 'mock',
                 schemaUri: SCHEMA_POST,
                 status: SyncHandlerStatus.ACTIVE
             }
@@ -68,7 +68,7 @@ describe(`Sync Handler Tests`, function() {
             await postHandler.sync(api, syncPosition, backfillPosition, syncPositionsDs, postsDs)
 
             // Verify sync position is correct
-            const syncPos = await syncPositionsDs.get(`faucet:${SCHEMA_POST}:sync`, {})
+            const syncPos = await syncPositionsDs.get(`mock:${SCHEMA_POST}:sync`, {})
             assert.ok(syncPos, 'Have a sync position record')
             assert.equal(syncPos.status, SyncHandlerStatus.ACTIVE, 'Sync status is active')
             assert.equal(syncPos.thisRef, "3", 'Sync status has correct position reference')
@@ -90,7 +90,7 @@ describe(`Sync Handler Tests`, function() {
             await postHandler.sync(api, syncPosition, backfillPosition, syncPositionsDs, postsDs)
 
             // Verify sync position is correct
-            const syncPos = await syncPositionsDs.get(`faucet:${SCHEMA_POST}:sync`, {})
+            const syncPos = await syncPositionsDs.get(`mock:${SCHEMA_POST}:sync`, {})
             assert.ok(syncPos, 'Have a sync position record')
             assert.equal(syncPos.status, SyncHandlerStatus.ACTIVE, 'Sync status is active')
             assert.equal(syncPos.thisRef, "6", 'Sync status has correct position reference')
@@ -110,7 +110,7 @@ describe(`Sync Handler Tests`, function() {
             await postHandler.sync(api, syncPosition, backfillPosition, syncPositionsDs, postsDs)
 
             // Verify sync position is correct
-            const syncPos = await syncPositionsDs.get(`faucet:${SCHEMA_POST}:sync`, {})
+            const syncPos = await syncPositionsDs.get(`mock:${SCHEMA_POST}:sync`, {})
             assert.ok(syncPos, 'Have a sync position record')
             assert.equal(SyncHandlerStatus.ACTIVE, syncPos.status, 'Sync status is active')
             assert.equal("9", syncPos.thisRef, 'Sync status has correct position reference')
@@ -130,7 +130,7 @@ describe(`Sync Handler Tests`, function() {
             await postHandler.sync(api, syncPosition, backfillPosition, syncPositionsDs, postsDs)
 
             // Verify sync position is correct
-            const syncPos = await syncPositionsDs.get(`faucet:${SCHEMA_POST}:sync`, {})
+            const syncPos = await syncPositionsDs.get(`mock:${SCHEMA_POST}:sync`, {})
             assert.ok(syncPos, 'Have a sync position record')
             assert.equal(syncPos.status, SyncHandlerStatus.STOPPED, 'Sync status is stopped')
             assert.equal(syncPos.thisRef, undefined, 'Sync status has correct position reference')

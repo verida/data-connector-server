@@ -4,23 +4,23 @@ import BaseProviderConfig from '../BaseProviderConfig'
 
 import Post from './post'
 
-export interface FacetProviderConfig extends BaseProviderConfig {
+export interface MockProviderConfig extends BaseProviderConfig {
     limit: number
 }
 
 /**
  * A fake provider used for testing purposes
  */
-export default class FacetProvider extends Base {
+export default class MockProvider extends Base {
 
-    protected config: FacetProviderConfig
+    protected config: MockProviderConfig
 
     public getProviderId() {
-        return 'facet'
+        return 'mock'
     }
 
     public getProviderLabel() {
-        return 'Facet'
+        return 'Mock'
     }
 
     public syncHandlers(): any[] {

@@ -3,12 +3,12 @@ import CONFIG from '../../src/config'
 import { SyncHandlerStatus, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../../src/interfaces'
 import Providers from '../../src/providers'
 
-import Post from '../../src/providers/faucet/post'
+import Post from '../../src/providers/mock/post'
 import { SchemaPost } from '../../src/schemas'
 
 const SCHEMA_POST = CONFIG.verida.schemas.POST
 
-const providerName = 'faucet'
+const providerName = 'mock'
 
 describe(`${providerName} Tests`, function() {
     this.timeout(100000)
@@ -18,9 +18,9 @@ describe(`${providerName} Tests`, function() {
 
         it("Can fetch Posts", async () => {
             const syncPosition: SyncSchemaPosition = {
-                _id: `faucet-${SCHEMA_POST}`,
+                _id: `${providerName}-${SCHEMA_POST}`,
                 type: SyncSchemaPositionType.SYNC,
-                provider: 'faucet',
+                provider: providerName,
                 schemaUri: SCHEMA_POST,
                 status: SyncHandlerStatus.ACTIVE
             }
