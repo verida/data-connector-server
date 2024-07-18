@@ -1,8 +1,8 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import BaseProviderConfig from '../BaseProviderConfig'
 
 import Post from './post'
+import { BaseProviderConfig } from '../../interfaces'
 
 export interface MockProviderConfig extends BaseProviderConfig {
     limit: number
@@ -21,6 +21,10 @@ export default class MockProvider extends Base {
 
     public getProviderLabel() {
         return 'Mock'
+    }
+
+    public setConfig(config: MockProviderConfig) {
+        this.config = config
     }
 
     public syncHandlers(): any[] {

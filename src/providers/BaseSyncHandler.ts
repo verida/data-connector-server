@@ -59,7 +59,7 @@ export default class BaseSyncHandler extends EventEmitter {
             syncResults = <SchemaRecord[]> syncResult.value.results
             await this.handleResults(syncResult.value.position, syncResults, syncSchemaPositionDs, schemaDatastore)
         } else {
-            const message = `Unknown error with sync: ${syncResult.reason}`
+            const message = `Unknown error handling sync results: ${syncResult.reason}`
             this.emit('error', {
                 level: SyncProviderLogLevel.ERROR,
                 message
@@ -70,7 +70,7 @@ export default class BaseSyncHandler extends EventEmitter {
             backfillResults = <SchemaRecord[]> backfillResult.value.results
             await this.handleResults(backfillResult.value.position, backfillResults, syncSchemaPositionDs, schemaDatastore)
         } else {
-            const message = `Unknown error with sync: ${backfillResult.reason}`
+            const message = `Unknown error handling backfill results: ${backfillResult.reason}`
             this.emit('error', {
                 level: SyncProviderLogLevel.ERROR,
                 message
@@ -93,16 +93,16 @@ export default class BaseSyncHandler extends EventEmitter {
         try {
             // Ensure we always update, so delete any revision value
             delete position['_rev']
-            await syncSchemaPositionDs.save(position, {
+            const result = await syncSchemaPositionDs.save(position, {
                 // The position record may already exist, if so, force update
                 forceUpdate: true
             })
         } catch (err: any) {
             const message = `Unable to update sync position: ${err.message} (${JSON.stringify(position, null, 2)})`
-                this.emit('error', {
-                    level: SyncProviderLogLevel.ERROR,
-                    message
-                })
+            this.emit('error', {
+                level: SyncProviderLogLevel.ERROR,
+                message
+            })
         }
 
         // save items
@@ -148,13 +148,15 @@ export default class BaseSyncHandler extends EventEmitter {
     }
 
     /**
-     * Backfill to add extra detail to 
+     * Backfill to add extra detail to these records
      * 
      * This can be implemented by the sync handler.
      * 
      * @returns SyncResponse Array of results that need to be saved and the updated syncPosition
      */
     protected async _backfill(api: any, backfillPosition: SyncSchemaPosition): Promise<SyncResponse> {
+        backfillPosition.status = SyncHandlerStatus.STOPPED
+
         return {
             position: backfillPosition,
             results: []

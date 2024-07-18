@@ -1,3 +1,5 @@
+import { SchemaRecord } from "./schemas"
+
 export interface AccountAuth {
     accessToken: string,
     refreshToken: string
@@ -30,11 +32,19 @@ export enum SyncStatus {
 }
 
 export interface Connection {
+    _rev?: string
     accessToken: string
     refreshToken: string
     profile: AccountProfile
     source: string
+    syncStatus: SyncStatus
     syncFrequency: SyncFrequency
+}
+
+export interface BaseProviderConfig {
+    label: string
+    sbtImage: string
+    maxSyncLoops?: number
 }
 
 export interface DatastoreSaveResponse {
@@ -95,4 +105,11 @@ export enum SyncProviderLogLevel {
 export interface SyncProviderErrorEvent {
     level: SyncProviderLogLevel
     message: string
+}
+
+export interface SyncHandlerResponse {
+    syncPosition: SyncSchemaPosition
+    syncResults: SchemaRecord[]
+    backfillPosition: SyncSchemaPosition
+    backfillResults: SchemaRecord[]
 }

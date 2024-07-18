@@ -1,7 +1,7 @@
 import CONFIG from './config'
 import { IContext, IDatastore } from "@verida/types";
 import Providers from "./providers"
-import { Connection, SyncStatus, DatastoreSaveResponse } from './interfaces';
+import { Connection, SyncHandlerStatus, DatastoreSaveResponse, SyncStatus, SyncFrequency } from './interfaces';
 import BaseProvider from './providers/BaseProvider';
 import TokenExpiredError from './providers/TokenExpiredError';
 import { Utils } from './utils';
@@ -29,7 +29,7 @@ export default class SyncManager {
     private connectionDatastore?: IDatastore
     private providers?: BaseProvider[]
 
-    private status: SyncStatus = SyncStatus.STOPPED
+    private status: SyncStatus = SyncStatus.ACTIVE
 
     public constructor(did: string, seedPhrase: string) {
         this.did = did
@@ -44,13 +44,15 @@ export default class SyncManager {
     public async checkIn(): Promise<boolean> {
         await this.init()
 
-        if (this.status == SyncStatus.STOPPED) {
-            await this.sync()
-        } else {
-            // @todo: We are actively syncing, so check the status of all provider sync's
+        switch (this.status) {
+            case SyncStatus.ACTIVE:
+                // @todo: check if enough time has elapsed before syncing again
+                await this.sync()
+                return true
+            // @todo: Handle other cases
         }
 
-        return true
+        return false
     }
 
     public async sync(providerName?: string) {
@@ -269,14 +271,13 @@ export default class SyncManager {
     }
 
     public async saveProvider(providerName: string, accessToken: string, refreshToken: string) {
-        const vault = await this.getVault()
         const connectionDatastore = await this.getConnectionDatastore()
 
         let providerRecord
         try {
             providerRecord = await connectionDatastore.get(providerName, {})
-        } catch (err) {
-            if (err.reason && err.reason == 'missing') {
+        } catch (err: any) {
+            if (err.message.match('missing')) {
                 providerRecord = {}
             } else {
                 throw new Error(`Unknown error saving ${providerName} auth tokens: ${err.message}`)
@@ -290,8 +291,8 @@ export default class SyncManager {
             accessToken,
             refreshToken,
             source: providerName,
-            syncFrequency: 'hour',
-            syncStatus: 'active'
+            syncFrequency: SyncFrequency.HOUR,
+            syncStatus: SyncStatus.ACTIVE
         }
 
         await connectionDatastore.save(providerRecord, {})
