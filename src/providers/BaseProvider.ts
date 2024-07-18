@@ -200,15 +200,16 @@ export default class BaseProvider {
         const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
         const providerInstance = this
 
-        let syncCount = 0
         let totalSyncItems = 0
         let totalBackfillItems = 0
         for (let h in syncHandlers) {
+            let syncCount = 0
             const handler = syncHandlers[h]
             const schemaUri = handler.getSchemaUri()
             const datastore = await this.vault.openDatastore(schemaUri)
 
             const syncPosition = await this.getSyncPosition(schemaUri, SyncSchemaPositionType.SYNC, syncPositionsDs)
+            syncPosition.status = SyncHandlerStatus.ACTIVE
             const backfillPosition = await this.getSyncPosition(schemaUri, SyncSchemaPositionType.BACKFILL, syncPositionsDs)
             backfillPosition.status = SyncHandlerStatus.ACTIVE
 

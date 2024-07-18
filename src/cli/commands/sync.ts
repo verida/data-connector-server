@@ -92,7 +92,6 @@ export const Sync: Command<SyncOptions> = {
     console.log('Syncing started')
     const connection = provider.getConnection()
     await provider.sync(connection.accessToken, connection.refreshToken)
-    //await syncManager.sync(options.provider)
     console.log('Syncing done')
 
     await logs.close()
