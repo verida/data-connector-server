@@ -1,5 +1,8 @@
 import { runCli } from 'command-line-interface'
 import { Connect } from './commands/connect'
+import { Sync } from './commands/sync'
+import { Data } from './commands/data'
+import { ResetProvider } from './commands/resetProvider'
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 (async (): Promise<void> => {
@@ -18,6 +21,9 @@ import { Connect } from './commands/connect'
         },
         subcommands: {
           Connect,
+          Sync,
+          Data,
+          ResetProvider
         },
         handlers: {
           // @ts-ignore

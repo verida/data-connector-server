@@ -1,5 +1,5 @@
 import { Command } from 'command-line-interface';
-import { ConnectProvider } from './interfaces';
+import { ConnectProviderOptions } from './interfaces';
 import { AutoAccount } from '@verida/account-node';
 import { Network } from '@verida/types';
 import open from 'open'
@@ -10,7 +10,7 @@ import serverconfig from '../../../src/serverconfig.json'
 
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
-export const Connect: Command<ConnectProvider> = {
+export const Connect: Command<ConnectProviderOptions> = {
     name: 'Connect',
     description: `Connect to a third party data provider and save the credentials into the Verida: Vault context`,
     optionDefinitions: [
