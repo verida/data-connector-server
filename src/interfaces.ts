@@ -89,9 +89,10 @@ export interface SyncResponse {
 }
 
 export interface SyncProviderLogEntry {
-    _id: string
+    _id?: string
+    insertedAt?: string
     provider: string
-    schemaUri: string
+    schemaUri?: string
     message: string
     level: SyncProviderLogLevel
 }
