@@ -30,6 +30,10 @@ export default class FacebookProvider extends Base {
         return 'Facebook'
     }
 
+    public getProviderApplicationUrl() {
+        return 'https://facebook.com/'
+    }
+
     public syncHandlers(): any[] {
         return [
             Following,

@@ -35,6 +35,10 @@ export default class DiscordProvider extends Base {
         return 'Discord'
     }
 
+    public getProviderApplicationUrl() {
+        return 'https://discord.com/'
+    }
+
     public syncHandlers(): any[] {
         return [
             //SBTs

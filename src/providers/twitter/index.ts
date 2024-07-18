@@ -33,6 +33,10 @@ export default class TwitterProvider extends Base {
         return 'Twitter'
     }
 
+    public getProviderApplicationUrl() {
+        return 'https://twitter.com/'
+    }
+
     public syncHandlers(): any[] {
         return [
             Following,
