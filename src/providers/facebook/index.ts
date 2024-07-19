@@ -1,7 +1,8 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import { BaseProviderConfig } from '../../interfaces'
+import { BaseProviderConfig, SyncProviderLogLevel } from '../../interfaces'
 import TokenExpiredError from '../TokenExpiredError'
+import RequestLimitReachedError from '../RequestLimitReachedError'
 
 const passport = require("passport")
 const FacebookStrategy = require("passport-facebook")
@@ -101,8 +102,14 @@ export default class FacebookProvider extends Base {
             return Fb
         } catch (err: any) {
             if (err.response && err.response.error.code == 190) {
+                this.logMessage(SyncProviderLogLevel.INFO, 'Facebook token expired')
                 throw new TokenExpiredError(err.response.error.message)
+            } else if (err.message.match('request limit reached')) {
+                this.logMessage(SyncProviderLogLevel.INFO, 'Facebook request limit reached')
+                throw new RequestLimitReachedError(err.response.error.message)
             }
+
+            throw err
         }
     }
 
