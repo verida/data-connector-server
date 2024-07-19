@@ -2,7 +2,7 @@ import { explodeDID } from '@verida/helpers'
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import serverconfig from '../serverconfig.json'
-import { AccountAuth, AccountProfile, BaseProviderConfig, Connection, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../interfaces'
+import { AccountAuth, BaseProviderConfig, Connection, ConnectionProfile, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../interfaces'
 import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 import { SchemaRecord } from '../schemas'
@@ -17,7 +17,6 @@ export default class BaseProvider {
     protected connection?: Connection
     protected connectionDs?: IDatastore
     protected newAuth?: AccountAuth
-    protected profile?: AccountProfile
     
     public constructor(config: BaseProviderConfig, vault?: IContext, connection?: Connection) {
         this.config = config
@@ -65,45 +64,49 @@ export default class BaseProvider {
         throw new Error('Not implemented')
     }
 
-    public async getProfileData(did: string): Promise<Record<string, any>> {
-        const profileLabel = this.profile.name || this.profile.username || this.profile.id
-        const { address: didAddress } = explodeDID(did)
+    // public async getProfileData(did: string): Promise<Record<string, any>> {
+    //     const profileLabel = this.profile.name || this.profile.username || this.profile.id
+    //     const { address: didAddress } = explodeDID(did)
 
-        const credentialData: Record<string, any> = {
-            did,
-            didAddress: didAddress.toLowerCase(),
-            name: `${this.getProviderLabel()}: ${profileLabel}`,
-            type: `${this.getProviderId()}-account`,
-            image: this.getProviderSbtImage(),
-            description: `Proof of ${this.getProviderLabel()} account ownership ${profileLabel}${profileLabel == this.profile.id ? '' : ' (' + this.profile.id+ ')'}`,
-            attributes: [{
-                trait_type: "accountCreated",
-                value: this.profile.createdAt
-            }],
-            uniqueAttribute: this.profile.id,
-        }
+    //     const credentialData: Record<string, any> = {
+    //         did,
+    //         didAddress: didAddress.toLowerCase(),
+    //         name: `${this.getProviderLabel()}: ${profileLabel}`,
+    //         type: `${this.getProviderId()}-account`,
+    //         image: this.getProviderSbtImage(),
+    //         description: `Proof of ${this.getProviderLabel()} account ownership ${profileLabel}${profileLabel == this.profile.id ? '' : ' (' + this.profile.id+ ')'}`,
+    //         attributes: [{
+    //             trait_type: "accountCreated",
+    //             value: this.profile.createdAt
+    //         }],
+    //         uniqueAttribute: this.profile.id,
+    //     }
 
-        if (this.profile.url) {
-            credentialData.external_url = this.profile.url
-        }
+    //     if (this.profile.url) {
+    //         credentialData.external_url = this.profile.url
+    //     }
 
-        if (this.profile.avatarUrl) {
-            credentialData.attributes.push({
-                trait_type: "avatarUrl",
-                value: this.profile.avatarUrl
-            })
-        }
+    //     if (this.profile.avatarUrl) {
+    //         credentialData.attributes.push({
+    //             trait_type: "avatarUrl",
+    //             value: this.profile.avatarUrl
+    //         })
+    //     }
 
-        return credentialData
-    }
+    //     return credentialData
+    // }
 
-    public async getProfile(did: string, context: IContext): Promise<AccountProfile> {
-        if (this.profile && !this.profile.credential) {
-            const profileCredentialData = await this.getProfileData(did)
-            this.profile.credential = await Utils.buildCredential(profileCredentialData, context)
-        }
+    // public async getProfile(did: string, context: IContext): Promise<AccountProfile> {
+    //     if (this.profile && !this.profile.credential) {
+    //         const profileCredentialData = await this.getProfileData(did)
+    //         this.profile.credential = await Utils.buildCredential(profileCredentialData, context)
+    //     }
 
-        return this.profile
+    //     return this.profile
+    // }
+    
+    public getProfile(): ConnectionProfile | undefined {
+        return this.connection.profile
     }
 
     protected async logMessage(level: SyncProviderLogLevel, message: string, schemaUri?: string): Promise<void> {
@@ -281,7 +284,7 @@ export default class BaseProvider {
     }
 
     public async getSyncHandler(handler: typeof BaseSyncHandler): Promise<BaseSyncHandler> {
-        return new handler(this.config, this.profile)
+        return new handler(this.config, this.getProfile())
     }
 
     /**
@@ -297,7 +300,7 @@ export default class BaseProvider {
         for (let h in handlers) {
             const handler = handlers[h]
             
-            const handlerInstance = new handler(this.config, this.profile)
+            const handlerInstance = new handler(this.config, this.getProfile())
             syncHandlers.push(handlerInstance)
         }
 

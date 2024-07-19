@@ -140,7 +140,8 @@ export default class DiscordProvider extends Base {
         const createdAt = dayjs(createdTimestamp).toISOString()
 
         // Note: Discord doesn't have the concept of a profile `url` or `description`
-        this.profile = {
+        this.connection.profile = {
+            ...this.connection.profile,
             id: me.id,
             name: me.display_name ? me.display_name : me.username,
             username: me.username,

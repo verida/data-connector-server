@@ -92,8 +92,6 @@ export default class GoogleProvider extends Base {
             callbackURL: this.config.callbackUrl
           },
           function(accessToken: string, refreshToken: string, profile: any, cb: any) {
-            console.log('received!')
-            console.log(accessToken, refreshToken, profile)
             // Simply return the raw data
             return cb(null, {
                 accessToken,

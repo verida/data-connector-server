@@ -74,13 +74,14 @@ export default class Controller {
         const provider = Providers(providerName)
 
         try {
-            const connectionToken = await provider.callback(req, res, next)
+            const connectionResponse = await provider.callback(req, res, next)
+    
             const did = req.session.did
             const key = req.session.key
 
             if (did && key) {
                 const syncManager = new SyncManager(did, key)
-                await syncManager.saveProvider(providerName, connectionToken.accessToken, connectionToken.refreshToken)
+                await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
                 const output = `<html>
                     <head>
@@ -106,7 +107,8 @@ export default class Controller {
                 
                 res.send(output)
 
-                await syncManager.sync(providerName)
+                // dont sync for now
+                //await syncManager.sync(providerName)
             } else {
                 const redirect = req.session.redirect
 
@@ -118,7 +120,7 @@ export default class Controller {
                 // Send the access token, refresh token and profile database name and encryption key
                 // so the user can pull their profile remotely and store their tokens securely
                 // This also avoids this server saving those credentials anywhere, they are only stored by the user
-                const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionToken.accessToken}&refreshToken=${connectionToken.refreshToken ? connectionToken.refreshToken : ''}`
+                const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionResponse.accessToken}&refreshToken=${connectionResponse.refreshToken ? connectionResponse.refreshToken : ''}`
 
                 // @todo: Generate nice looking thank you page
                 const output = `<html>
@@ -157,6 +159,8 @@ export default class Controller {
             
             res.send(output)
         }
+
+        // @todo: close context. syncManager.close() or utils.closeContext()?
     }
 
     /**
