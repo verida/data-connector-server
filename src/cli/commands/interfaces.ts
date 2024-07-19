@@ -9,6 +9,7 @@ export interface SyncOptions {
     provider: string
     key: string
     network?: string
+    force?: boolean
 }
 
 export interface ResetProviderOptions {

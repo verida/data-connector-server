@@ -30,6 +30,13 @@ export const Sync: Command<SyncOptions> = {
       alias: "k",
     },
     {
+      name: "force",
+      description: "Force sync to start",
+      type: "boolean",
+      defaultValue: false,
+      alias: "f",
+    },
+    {
       name: "network",
       description: "Verida network (banksia, myrtle)",
       type: "string",
@@ -91,7 +98,7 @@ export const Sync: Command<SyncOptions> = {
 
     console.log('Syncing started')
     const connection = provider.getConnection()
-    await provider.sync(connection.accessToken, connection.refreshToken)
+    await provider.sync(connection.accessToken, connection.refreshToken, options.force)
     console.log('Syncing done')
 
     await logs.close()
