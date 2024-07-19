@@ -181,15 +181,20 @@ export default class BaseProvider {
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken: string, refreshToken: string): Promise<void> {
+    public async sync(accessToken: string, refreshToken: string, force: boolean = false): Promise<void> {
         this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
 
         if (this.connection.syncStatus != SyncStatus.ACTIVE) {
-            // Sync isn't active, so don't sync
-            // @todo: handle retries if status = error
-            // @todo: handle time delays for syncing
-            this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active (${this.connection.syncStatus}), so stopping`)
-            return
+            if (!force) {
+                // Sync isn't active, so don't sync
+                // @todo: handle retries if status = error
+                // @todo: handle time delays for syncing
+                this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active (${this.connection.syncStatus}), so stopping`)
+                return
+            } else {
+                this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active, but forcing as requested`)
+                this.connection.syncStatus = SyncStatus.ACTIVE
+            }
         }
 
         this.connection.syncStatus = SyncStatus.SYNC_ACTIVE
