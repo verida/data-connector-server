@@ -1,5 +1,5 @@
 import BaseSyncHandler from "../BaseSyncHandler"
-import { SyncSchemaConfig } from "../BaseProvider"
+import { SyncSchemaPosition } from "../../interfaces"
 import { REST } from 'discord.js'
 import DiscordProvider from "."
 const _ = require('lodash')
@@ -17,7 +17,7 @@ export default class SBTs extends BaseSyncHandler {
      * 
      * @param api 
      */
-    public async sync(api: REST, syncConfig: SyncSchemaConfig = {}): Promise<any> {
+    public async sync(api: REST, syncPosition: SyncSchemaPosition): Promise<any> {
         console.log('fetching sbt credentials to sync')
 
         const guildResponse: any = await api.get('/users/@me/guilds')

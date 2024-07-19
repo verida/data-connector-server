@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import BaseProviderConfig from '../BaseProviderConfig'
+import { BaseProviderConfig } from '../../interfaces'
 
 const passport = require("passport")
 import { Strategy as DiscordStrategy, Scope } from '@oauth-everything/passport-discord';
@@ -33,6 +33,10 @@ export default class DiscordProvider extends Base {
 
     public getProviderLabel() {
         return 'Discord'
+    }
+
+    public getProviderApplicationUrl() {
+        return 'https://discord.com/'
     }
 
     public syncHandlers(): any[] {

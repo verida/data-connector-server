@@ -1,20 +1,17 @@
-import { EnvironmentType } from '@verida/types'
-import { AutoAccount } from "@verida/account-node"
-import { Client, Context } from "@verida/client-ts"
+import { Network as VeridaNetwork, IContext } from '@verida/types'
+import { Client, Network } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
 import fs from 'fs'
 import serverconfig from '../src/serverconfig.json'
+import { AutoAccount } from '@verida/account-node'
+import { SyncSchemaPositionType } from './interfaces'
 
-const CONTEXT_NAME = serverconfig.verida.contextName
-const PRIVATE_KEY = serverconfig.verida.privateKey
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const SBT_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/token/sbt/credential/v0.1.0/schema.json'
 
 export {
-    CONTEXT_NAME,
-    PRIVATE_KEY,
     DID_CLIENT_CONFIG,
     SBT_CREDENTIAL_SCHEMA
 }
@@ -26,19 +23,29 @@ export class Utils {
      * 
      * @returns 
      */
-    public static async getNetwork(): Promise<any> {
-        const VERIDA_ENVIRONMENT = Utils.strToEnvType(serverconfig.verida.environment)
+    public static async getNetwork(did: string, contextSignature: string): Promise<{
+        network: Network,
+        context: IContext,
+        account: AutoAccount
+        //account: ContextAccount
+    }> {
+        const VAULT_CONTEXT_NAME = 'Verida: Vault'
+        const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
         const network = new Client({
-            environment: VERIDA_ENVIRONMENT
+            network: VERIDA_ENVIRONMENT
         })
+
+        // @todo: Switch to context account once context storage node issue fixed and deployed
+        //const account = new ContextAccount({
         const account = new AutoAccount({
-            privateKey: PRIVATE_KEY,
-            environment: VERIDA_ENVIRONMENT,
+            privateKey: contextSignature,
+            network: VERIDA_ENVIRONMENT,
             // @ts-ignore
             didClientConfig: DID_CLIENT_CONFIG
         })
+        //}, did, VAULT_CONTEXT_NAME)
         await network.connect(account)
-        const context = await network.openContext(CONTEXT_NAME)
+        const context = await network.openContext(VAULT_CONTEXT_NAME)
 
         return {
             network,
@@ -72,7 +79,7 @@ export class Utils {
             providerList.push({
                 name: providerName, 
                 label: provider.getProviderLabel(),
-                icon: provider.icon ? provider.icon : `${serverconfig.assetsUrl}/${providerName}/icon.png`
+                icon: provider.getProviderImageUrl()
             })
         }
 
@@ -81,7 +88,7 @@ export class Utils {
 
     public static async buildCredential(
         credentialData: Record<string, string>,
-        context: Context,
+        context: IContext,
       ): Promise<any> {
         const credentials = new Credentials();
 
@@ -93,19 +100,21 @@ export class Utils {
         }, credentialData.name, credentialData.description, credentialData.image)
     }
 
-    public static strToEnvType(s: string) { 
-        if (s == EnvironmentType.LOCAL) {
-            return EnvironmentType.LOCAL;
-        } else if (s == EnvironmentType.TESTNET) {
-            return EnvironmentType.TESTNET;
-        } else if (s == EnvironmentType.MAINNET) {
-            return EnvironmentType.MAINNET;
-        } else {
-            throw new Error("Invalid EnvironmentType value");
+    public static buildSyncHandlerId(providerId: string, schemaUri: string, type: SyncSchemaPositionType) {
+        return `${providerId}:${schemaUri}:${type}`
+    }
+
+    public static datastoreErorrsToString(errors: any): string {
+        let result = ''
+        for (let e in errors) {
+            const error = errors[e]
+            result += `${error.keyword}: ${error.message}`
         }
+
+        return result
     }
 }
 
-const VERIDA_ENVIRONMENT = Utils.strToEnvType(serverconfig.verida.environment)
+const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
 
 export { VERIDA_ENVIRONMENT }

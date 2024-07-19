@@ -1,6 +1,5 @@
+import { SyncSchemaPosition } from "../../interfaces"
 import BaseSyncHandler from "../BaseSyncHandler"
-import dayjs from 'dayjs'
-import { SyncSchemaConfig } from "../BaseProvider"
 const _ = require('lodash')
 
 const log4js = require("log4js")
@@ -18,9 +17,9 @@ export default class Following extends BaseSyncHandler {
      * 
      * @param api 
      */
-    public async sync(api: any, syncConfig: SyncSchemaConfig = {}): Promise<any> {
+    public async sync(api: any, syncPosition: SyncSchemaPosition): Promise<any> {
         const guildResponse: any = await api.get('/users/@me/guilds')
-        console.log(syncConfig)
+        console.log(syncPosition)
 
         const now = (new Date()).toISOString()
         const guilds: any = []

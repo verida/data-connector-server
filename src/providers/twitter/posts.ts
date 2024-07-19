@@ -1,7 +1,7 @@
 import BaseSyncHandler from "../BaseSyncHandler"
 
 import dayjs from 'dayjs'
-import { AccountProfile } from "../BaseProvider"
+import { AccountProfile } from "../../interfaces"
 const _ = require('lodash')
 
 const log4js = require("log4js")

@@ -1,38 +1,39 @@
-import { Context } from '@verida/client-ts'
 import { explodeDID } from '@verida/helpers'
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
-import BaseProviderConfig from './BaseProviderConfig'
 import serverconfig from '../serverconfig.json'
+import { AccountAuth, AccountProfile, BaseProviderConfig, Connection, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../interfaces'
+import { IContext, IDatastore } from '@verida/types'
+import BaseSyncHandler from './BaseSyncHandler'
+import { SchemaRecord } from '../schemas'
 
-export interface AccountAuth {
-    accessToken: string,
-    refreshToken: string
-}
-
-export interface AccountProfile {
-    id: string,
-    name?: string
-    username?: string
-    description?: string
-    createdAt?: string
-    url?: string
-    avatarUrl?: string
-    credential?: string
-}
-
-export interface SyncSchemaConfig {
-    limit?: number
-    sinceId?: string
-}
+const SCHEMA_SYNC_POSITIONS = serverconfig.verida.schemas.SYNC_POSITION
+const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
 
 export default class BaseProvider {
 
     protected config: BaseProviderConfig
+    protected vault?: IContext
+    protected connection?: Connection
+    protected connectionDs?: IDatastore
     protected newAuth?: AccountAuth
     protected profile?: AccountProfile
+    
+    public constructor(config: BaseProviderConfig, vault?: IContext, connection?: Connection) {
+        this.config = config
+        this.connection = connection
+        this.vault = vault
+    }
 
-    public constructor(config: BaseProviderConfig) {
+    public getConnection(): Connection {
+        return this.connection!
+    }
+
+    public getConfig(): BaseProviderConfig {
+        return this.config
+    }
+
+    public setConfig(config: BaseProviderConfig) {
         this.config = config
     }
 
@@ -50,6 +51,10 @@ export default class BaseProvider {
 
     public getProviderSbtImage(): string {
         return this.config.sbtImage
+    }
+
+    public getProviderApplicationUrl() {
+        throw new Error('Not implemented')
     }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
@@ -92,7 +97,7 @@ export default class BaseProvider {
         return credentialData
     }
 
-    public async getProfile(did: string, context: Context): Promise<AccountProfile> {
+    public async getProfile(did: string, context: IContext): Promise<AccountProfile> {
         if (this.profile && !this.profile.credential) {
             const profileCredentialData = await this.getProfileData(did)
             this.profile.credential = await Utils.buildCredential(profileCredentialData, context)
@@ -101,34 +106,202 @@ export default class BaseProvider {
         return this.profile
     }
 
+    protected async logMessage(level: SyncProviderLogLevel, message: string, schemaUri?: string): Promise<void> {
+        const syncLog = await this.vault.openDatastore(SCHEMA_SYNC_LOG)
+        const logEntry: SyncProviderLogEntry = {
+            message,
+            level,
+            provider: this.getProviderId(),
+            schemaUri
+        }
+
+        console.log(logEntry)
+        
+        await syncLog.save(logEntry, {})
+    }
+
     /**
-     * Must update `profile` or `newAuth` if they have changed
+     * Reset this provider by deleting all position information and data
+     */
+    public async reset(clearTokens: boolean = false): Promise<number> {
+        const syncHandlers = await this.getSyncHandlers()
+
+        let deletedRowCount = 0
+        for (let h in syncHandlers) {
+            const handler = syncHandlers[h]
+            const schemaUri = handler.getSchemaUri()
+
+            // delete positions
+            const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
+            try {
+                const syncPositionId = Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, SyncSchemaPositionType.SYNC)
+                await syncPositionsDs.delete(syncPositionId)
+            } catch (err: any) {
+                // deleted already
+            }
+            try {
+                const syncBackfillId = Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, SyncSchemaPositionType.BACKFILL)
+                await syncPositionsDs.delete(syncBackfillId)
+            } catch (err: any) {
+                // deleted already
+            }
+            
+            // delete data
+            const datastore = await this.vault.openDatastore(schemaUri)
+            while (true) {
+                const rows = <SchemaRecord[]> await datastore.getMany({
+                    sourceApplication: this.getProviderApplicationUrl()
+                })
+
+                if (rows.length == 0) {
+                    break
+                }
+
+                for (let r in rows) {
+                    await datastore.delete(rows[r]._id)
+                    deletedRowCount++
+                }
+            }
+        }
+
+        // clear tokens?
+        if (clearTokens && this.connection) {
+            this.connection.accessToken = undefined
+            this.connection.refreshToken = undefined
+        }
+
+        return deletedRowCount
+    }
+
+    /**
+     * Syncronize all the latest data
      * 
      * @param accessToken 
      * @param refreshToken 
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken: string, refreshToken: string, syncSchemas: Record<string, SyncSchemaConfig> = {}): Promise<any> {
-        const api = await this.getApi(accessToken, refreshToken)
-        const results = []
+    public async sync(accessToken: string, refreshToken: string, force: boolean = false): Promise<void> {
+        this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
 
-        const handlers = this.syncHandlers()
-        const schemaList = Object.keys(syncSchemas)
-        for (let h in handlers) {
-            const handler = handlers[h]
-
-            if (schemaList.length && schemaList.indexOf(handler.getSchemaUri()) === -1) {
-                // Schema list exists, but not found
-                continue
+        if (this.connection.syncStatus != SyncStatus.ACTIVE) {
+            if (!force) {
+                // Sync isn't active, so don't sync
+                // @todo: handle retries if status = error
+                // @todo: handle time delays for syncing
+                this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active (${this.connection.syncStatus}), so stopping`)
+                return
+            } else {
+                this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active, but forcing as requested`)
+                this.connection.syncStatus = SyncStatus.ACTIVE
             }
-            
-            const handlerInstance = new handler(this.config, this.profile)
-            const handlerResults = await handlerInstance.sync(api, syncSchemas[handler.getSchemaUri()])
-            results[handler.getSchemaUri()] = handlerResults
         }
 
-        return results
+        this.connection.syncStatus = SyncStatus.SYNC_ACTIVE
+        await this.updateConnection()
+
+        const syncHandlers = await this.getSyncHandlers()
+        const api = await this.getApi(accessToken, refreshToken)
+        const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
+        const providerInstance = this
+
+        let totalSyncItems = 0
+        let totalBackfillItems = 0
+        for (let h in syncHandlers) {
+            let syncCount = 0
+            const handler = syncHandlers[h]
+            const schemaUri = handler.getSchemaUri()
+            const datastore = await this.vault.openDatastore(schemaUri)
+
+            const syncPosition = await this.getSyncPosition(schemaUri, SyncSchemaPositionType.SYNC, syncPositionsDs)
+            syncPosition.status = SyncHandlerStatus.ACTIVE
+            const backfillPosition = await this.getSyncPosition(schemaUri, SyncSchemaPositionType.BACKFILL, syncPositionsDs)
+            backfillPosition.status = SyncHandlerStatus.ACTIVE
+
+            handler.on('error', (syncError: SyncProviderErrorEvent) => {
+                providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncError.message, schemaUri)
+            })
+
+            this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${schemaUri}`, schemaUri)
+            let syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
+            totalSyncItems += syncResults.syncResults.length
+            totalBackfillItems += syncResults.backfillResults.length
+            this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, schemaUri)
+            syncCount++
+
+            while (!this.config.maxSyncLoops || syncCount < this.config.maxSyncLoops) {
+                if (syncResults.syncPosition.status == SyncHandlerStatus.ACTIVE || syncResults.backfillPosition.status == SyncHandlerStatus.ACTIVE) {
+                    // sync again
+                    this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${schemaUri}`, schemaUri)
+                    syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
+                    totalSyncItems += syncResults.syncResults.length
+                    totalBackfillItems += syncResults.backfillResults.length
+                    this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, schemaUri)
+                }
+
+                syncCount++
+            }
+        }
+
+        this.connection.syncStatus = SyncStatus.ACTIVE
+        await this.updateConnection()
+        this.logMessage(SyncProviderLogLevel.INFO, `Sync complete (${totalSyncItems} sync items, ${totalBackfillItems} backfill items)`)
+    }
+
+    protected async updateConnection(): Promise<void> {
+        if (!this.connectionDs) {
+            this.connectionDs = await this.vault.openDatastore(serverconfig.verida.schemas.DATA_CONNECTIONS)
+        }
+
+        delete this.connection['_rev']
+        await this.connectionDs.save(this.connection, {
+            forceUpdate: true
+        })
+    }
+
+    public async getSyncPosition(schemaUri: string, syncPositionType: SyncSchemaPositionType, syncPositionsDs: IDatastore): Promise<SyncSchemaPosition> {
+        try {
+            const id = Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, syncPositionType)
+            return await syncPositionsDs.get(id, {})
+
+        } catch (err: any) {
+            if (err.message.match('missing')) {
+                // Schema position doesn't exist, so create new
+                return {
+                    _id: Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, syncPositionType),
+                    type: syncPositionType,
+                    provider: this.getProviderId(),
+                    schemaUri,
+                    status: SyncHandlerStatus.ACTIVE
+                }
+            }
+
+            throw err
+        }
+    }
+
+    public async getSyncHandler(handler: typeof BaseSyncHandler): Promise<BaseSyncHandler> {
+        return new handler(this.config, this.profile)
+    }
+
+    /**
+     * Get all the available sync handlers
+     * 
+     * @param syncSchemas 
+     * @param syncPositions 
+     * @returns 
+     */
+    public async getSyncHandlers(): Promise<BaseSyncHandler[]> {
+        const handlers = this.syncHandlers()
+        const syncHandlers = []
+        for (let h in handlers) {
+            const handler = handlers[h]
+            
+            const handlerInstance = new handler(this.config, this.profile)
+            syncHandlers.push(handlerInstance)
+        }
+
+        return syncHandlers
     }
 
     // Set new authentication credentials for this provider instance, if they changed
@@ -162,7 +335,7 @@ export default class BaseProvider {
      * 
      * @returns 
      */
-    public syncHandlers(): any[] {
+    public syncHandlers(): typeof BaseSyncHandler[] {
         return []
     }
 
@@ -170,8 +343,10 @@ export default class BaseProvider {
         const handlers = this.syncHandlers()
         const uris: string[] = []
         
-        handlers.forEach((handler: any) => {
-            uris.push(handler.getSchemaUri())
+        handlers.forEach((handler: typeof BaseSyncHandler) => {
+            // @ts-ignore
+            const instance = new handler({}, {})
+            uris.push(instance.getSchemaUri())
         })
 
         return uris

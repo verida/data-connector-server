@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import BaseProviderConfig from '../BaseProviderConfig'
+import { BaseProviderConfig } from '../../interfaces'
 
 const passport = require("passport")
 import { Strategy as TwitterStrategy } from '@superfaceai/passport-twitter-oauth2'
@@ -31,6 +31,10 @@ export default class TwitterProvider extends Base {
 
     public getProviderLabel() {
         return 'Twitter'
+    }
+
+    public getProviderApplicationUrl() {
+        return 'https://twitter.com/'
     }
 
     public syncHandlers(): any[] {
