@@ -1,7 +1,7 @@
 import CONFIG from './config'
 import { IContext, IDatastore } from "@verida/types";
 import Providers from "./providers"
-import { Connection, SyncHandlerStatus, DatastoreSaveResponse, SyncStatus, SyncFrequency } from './interfaces';
+import { Connection, DatastoreSaveResponse, SyncStatus, SyncFrequency, ConnectionProfile } from './interfaces';
 import BaseProvider from './providers/BaseProvider';
 import TokenExpiredError from './providers/TokenExpiredError';
 import { Utils } from './utils';
@@ -208,7 +208,7 @@ export default class SyncManager {
         }
 
         // Add latest profile info
-        connection.profile = await provider.getProfile(this.did, vault)
+        connection.profile = await provider.getProfile()
 
         const connectionDatastore = await this.getConnectionDatastore()
         await connectionDatastore.save(connection, {})
@@ -270,7 +270,7 @@ export default class SyncManager {
         logger.info(`sync request saved for ${provider.getProviderId()}`)
     }
 
-    public async saveProvider(providerName: string, accessToken: string, refreshToken: string) {
+    public async saveProvider(providerName: string, accessToken: string, refreshToken: string, profile: any) {
         const connectionDatastore = await this.getConnectionDatastore()
 
         let providerRecord
@@ -284,6 +284,17 @@ export default class SyncManager {
             }
         }
 
+        const connectionProfile: ConnectionProfile = {
+            id: profile.id,
+            name: profile.displayName,
+            avatarUrl: profile.photos && profile.photos.length ? profile.photos[0].value : undefined,
+            //uri: 
+            givenName: profile.name.givenName,
+            familyName: profile.name.familyName,
+            email: profile.emails && profile.emails.length ? profile.emails[0].value : undefined,
+            emailVerified: profile.emails && profile.emails.length ? profile.emails[0].verified : undefined,
+        }
+
         providerRecord = {
             ...providerRecord,
             _id: providerName,
@@ -292,12 +303,15 @@ export default class SyncManager {
             refreshToken,
             source: providerName,
             syncFrequency: SyncFrequency.HOUR,
-            syncStatus: SyncStatus.ACTIVE
+            syncStatus: SyncStatus.ACTIVE,
+            profile: connectionProfile
         }
 
-        await connectionDatastore.save(providerRecord, {})
-        // const connections = await connectionDatastore.getMany()
-        // console.log(connections)
+        const result = await connectionDatastore.save(providerRecord, {})
+
+        if (!result) {
+            throw new Error(`Unable to save connection: ${JSON.stringify(connectionDatastore.errors, null, 2)}`)
+        }
     }
 
 }
