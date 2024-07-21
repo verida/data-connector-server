@@ -1,6 +1,7 @@
 export interface SchemaRecord {
     _id: string
     _rev?: string
+    schema?: string
     name: string
     insertedAt?: string
     modifiedAt?: string

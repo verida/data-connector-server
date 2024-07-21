@@ -13,7 +13,7 @@ const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
 export default class BaseProvider {
 
     protected config: BaseProviderConfig
-    protected vault?: IContext
+    protected vault: IContext
     protected connection?: Connection
     protected connectionDs?: IDatastore
     protected newAuth?: AccountAuth
@@ -63,50 +63,13 @@ export default class BaseProvider {
     public async callback(req: Request, res: Response, next: any): Promise<any> {
         throw new Error('Not implemented')
     }
-
-    // public async getProfileData(did: string): Promise<Record<string, any>> {
-    //     const profileLabel = this.profile.name || this.profile.username || this.profile.id
-    //     const { address: didAddress } = explodeDID(did)
-
-    //     const credentialData: Record<string, any> = {
-    //         did,
-    //         didAddress: didAddress.toLowerCase(),
-    //         name: `${this.getProviderLabel()}: ${profileLabel}`,
-    //         type: `${this.getProviderId()}-account`,
-    //         image: this.getProviderSbtImage(),
-    //         description: `Proof of ${this.getProviderLabel()} account ownership ${profileLabel}${profileLabel == this.profile.id ? '' : ' (' + this.profile.id+ ')'}`,
-    //         attributes: [{
-    //             trait_type: "accountCreated",
-    //             value: this.profile.createdAt
-    //         }],
-    //         uniqueAttribute: this.profile.id,
-    //     }
-
-    //     if (this.profile.url) {
-    //         credentialData.external_url = this.profile.url
-    //     }
-
-    //     if (this.profile.avatarUrl) {
-    //         credentialData.attributes.push({
-    //             trait_type: "avatarUrl",
-    //             value: this.profile.avatarUrl
-    //         })
-    //     }
-
-    //     return credentialData
-    // }
-
-    // public async getProfile(did: string, context: IContext): Promise<AccountProfile> {
-    //     if (this.profile && !this.profile.credential) {
-    //         const profileCredentialData = await this.getProfileData(did)
-    //         this.profile.credential = await Utils.buildCredential(profileCredentialData, context)
-    //     }
-
-    //     return this.profile
-    // }
     
     public getProfile(): ConnectionProfile | undefined {
         return this.connection.profile
+    }
+
+    public async getDatastore(schemaUrl: string): Promise<IDatastore> {
+        return this.vault.openDatastore(schemaUrl)
     }
 
     protected async logMessage(level: SyncProviderLogLevel, message: string, schemaUri?: string): Promise<void> {
@@ -284,7 +247,7 @@ export default class BaseProvider {
     }
 
     public async getSyncHandler(handler: typeof BaseSyncHandler): Promise<BaseSyncHandler> {
-        return new handler(this.config, this.connection)
+        return new handler(this.config, this.connection, this)
     }
 
     /**
@@ -300,7 +263,7 @@ export default class BaseProvider {
         for (let h in handlers) {
             const handler = handlers[h]
             
-            const handlerInstance = new handler(this.config, this.connection)
+            const handlerInstance = new handler(this.config, this.connection, this)
             syncHandlers.push(handlerInstance)
         }
 
