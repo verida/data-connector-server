@@ -13,6 +13,7 @@ export interface SchemaRecord {
 
 export interface SchemaFollowing extends SchemaRecord {
     followedTimestamp?: string
+    insertedAt: string
 }
 
 export interface SchemaPost extends SchemaRecord {
@@ -20,4 +21,30 @@ export interface SchemaPost extends SchemaRecord {
     content?: string
     contentHtml? :string
     summary?: string
+    insertedAt: string
+}
+
+export interface SchemaEmailAttachment {
+    filename: string
+    id: string
+    data?: string
+    textContent?: string
+    uri?: string
+}
+
+export enum SchemaEmailType {
+    SEND = "send",
+    RECEIVE = "receive"
+}
+
+export interface SchemaEmail extends SchemaRecord {
+    type: SchemaEmailType
+    fromName: string
+    fromEmail: string
+    toEmail: string
+    messageText: string
+    messageHTML: string
+    attachments?: SchemaEmailAttachment[]
+    sentAt: string
+    threadId?: string
 }
