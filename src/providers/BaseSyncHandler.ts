@@ -1,4 +1,4 @@
-import { ConnectionProfile, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncSchemaPosition } from "../interfaces"
+import { Connection, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncSchemaPosition } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
@@ -7,14 +7,14 @@ import { SchemaRecord } from "../schemas"
 export default class BaseSyncHandler extends EventEmitter {
 
     protected config: any
-    protected profile: ConnectionProfile
+    protected connection: Connection
 
     protected syncStatus: SyncHandlerStatus
 
-    constructor(config: any, profile: ConnectionProfile) {
+    constructor(config: any, connection: Connection) {
         super()
         this.config = config
-        this.profile = profile
+        this.connection = connection
     }
 
     public getConfig(): any {

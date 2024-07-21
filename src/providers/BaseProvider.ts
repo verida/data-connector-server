@@ -284,7 +284,7 @@ export default class BaseProvider {
     }
 
     public async getSyncHandler(handler: typeof BaseSyncHandler): Promise<BaseSyncHandler> {
-        return new handler(this.config, this.getProfile())
+        return new handler(this.config, this.connection)
     }
 
     /**
@@ -300,7 +300,7 @@ export default class BaseProvider {
         for (let h in handlers) {
             const handler = handlers[h]
             
-            const handlerInstance = new handler(this.config, this.getProfile())
+            const handlerInstance = new handler(this.config, this.connection)
             syncHandlers.push(handlerInstance)
         }
 
