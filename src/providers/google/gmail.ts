@@ -15,6 +15,14 @@ import { GmailHelpers } from "./helpers";
 
 const _ = require("lodash");
 
+export interface GmailSyncSchemaPositionMetadata {
+  breakTimestamp?: string;
+}
+
+export interface GmailSyncSchemaPosition extends SyncSchemaPosition {
+  metadata?: GmailSyncSchemaPositionMetadata;
+}
+
 export default class Gmail extends BaseSyncHandler {
   public getSchemaUri(): string {
     return CONFIG.verida.schemas.EMAIL;
@@ -44,7 +52,7 @@ export default class Gmail extends BaseSyncHandler {
 
   public async _sync(
     api: any,
-    syncPosition: SyncSchemaPosition
+    syncPosition: GmailSyncSchemaPosition
   ): Promise<SyncResponse> {
     const gmail = this.getGmail();
 
@@ -60,8 +68,7 @@ export default class Gmail extends BaseSyncHandler {
     const serverResponse = await gmail.users.messages.list(query);
 
     if (
-      !serverResponse ||
-      !serverResponse.data.messages ||
+      !_.has(serverResponse, "data.messages") ||
       !serverResponse.data.messages.length
     ) {
       // No results found, so stop sync
@@ -77,7 +84,10 @@ export default class Gmail extends BaseSyncHandler {
       gmail,
       serverResponse,
       syncPosition.breakId,
-      SchemaEmailType.RECEIVE
+      SchemaEmailType.RECEIVE,
+      _.has(syncPosition, "metadata.breakTimestamp")
+        ? syncPosition.metadata.breakTimestamp
+        : undefined
     );
 
     syncPosition = this.setNextPosition(syncPosition, serverResponse);
@@ -128,7 +138,8 @@ export default class Gmail extends BaseSyncHandler {
     gmail: gmail_v1.Gmail,
     serverResponse: GaxiosResponse<gmail_v1.Schema$ListMessagesResponse>,
     breakId: string,
-    messageType: SchemaEmailType
+    messageType: SchemaEmailType,
+    breakTimestamp?: string
   ): Promise<SchemaEmail[]> {
     const results: SchemaEmail[] = [];
     for (const message of serverResponse.data.messages) {
@@ -139,6 +150,14 @@ export default class Gmail extends BaseSyncHandler {
       }
 
       const msg = await GmailHelpers.getMessage(gmail, message.id);
+      const internalDate = msg.internalDate
+        ? new Date(parseInt(msg.internalDate)).toISOString()
+        : "Unknown";
+
+      if (breakTimestamp && internalDate < breakTimestamp) {
+        break;
+      }
+
       const text = GmailHelpers.getTextContent(msg.payload);
       const html = GmailHelpers.getHtmlContent(msg.payload);
       const subject = GmailHelpers.getHeader(msg.payload?.headers, "Subject");
@@ -148,9 +167,6 @@ export default class Gmail extends BaseSyncHandler {
       const to = GmailHelpers.parseEmail(
         GmailHelpers.getHeader(msg.payload?.headers, "To")
       );
-      const internalDate = msg.internalDate
-        ? new Date(parseInt(msg.internalDate)).toISOString()
-        : "Unknown";
       const threadId = msg.threadId || "Unknown";
       const attachments = await GmailHelpers.getAttachments(gmail, msg);
 

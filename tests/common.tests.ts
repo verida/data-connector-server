@@ -1,6 +1,7 @@
 import {
   BaseProviderConfig,
   SyncHandlerStatus,
+  SyncResponse,
   SyncSchemaPosition,
   SyncSchemaPositionType,
   SyncStatus,
@@ -22,13 +23,34 @@ export interface GenericTestConfig {
 }
 
 export class CommonTests {
-  static async runGenericTests(
+  static async runSyncTest(
     providerName: string,
     handlerType: typeof BaseSyncHandler,
     testConfig: GenericTestConfig = {
       timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     },
+    syncPositionConfig: Omit<SyncSchemaPosition, "_id" | "schemaUri">,
+    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
+  ): Promise<SyncResponse> {
+    const { api, handler, schemaUri } = await this.buildTestObjects(
+      providerName,
+      handlerType,
+      providerConfig
+    );
+
+    const syncPosition: SyncSchemaPosition = {
+      _id: `${providerName}-${schemaUri}`,
+      schemaUri,
+      ...syncPositionConfig,
+    };
+
+    return handler._sync(api, syncPosition);
+  }
+
+  static async buildTestObjects(
+    providerName: string,
+    handlerType: typeof BaseSyncHandler,
     providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
   ) {
     const network = await CommonUtils.getNetwork();
@@ -37,6 +59,43 @@ export class CommonTests {
 
     const handler = await provider.getSyncHandler(handlerType);
     const schemaUri = handler.getSchemaUri();
+
+    const api = await provider.getApi(
+      connection.accessToken,
+      connection.refreshToken
+    );
+
+    const handlerConfig = {
+      ...serverconfig.providers[providerName],
+      ...providerConfig,
+    };
+    handler.setConfig(handlerConfig);
+
+    return {
+      api,
+      handler,
+      schemaUri,
+    };
+  }
+
+  static async runGenericTests(
+    providerName: string,
+    handlerType: typeof BaseSyncHandler,
+    testConfig: GenericTestConfig = {
+      timeOrderAttribute: "insertedAt",
+      batchSizeLimitAttribute: "batchSize",
+    },
+    providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {}
+  ) {
+    // Set result limit to 3 results so page tests can work correctly
+    providerConfig[testConfig.batchSizeLimitAttribute] = 3;
+
+    const { api, handler, schemaUri } = await this.buildTestObjects(
+      providerName,
+      handlerType,
+      providerConfig
+    );
+
     const idPrefix = testConfig.idPrefix ? testConfig.idPrefix : providerName;
 
     const syncPosition: SyncSchemaPosition = {
@@ -46,23 +105,6 @@ export class CommonTests {
       schemaUri,
       status: SyncHandlerStatus.ACTIVE,
     };
-
-    // const api = await provider.getApi(connection.accessToken, connection.refreshToken)
-    const handlerConfig = {
-      ...serverconfig.providers[providerName],
-      ...providerConfig,
-    };
-
-    if (testConfig) {
-      handlerConfig[testConfig.batchSizeLimitAttribute] = 3;
-      handler.setConfig(handlerConfig);
-    }
-
-    const api = await provider.getApi(
-      connection.accessToken,
-      connection.refreshToken
-    );
-
     // Snapshot: Page 1
     const response = await handler._sync(api, syncPosition);
 
