@@ -17,8 +17,7 @@ import { GmailHelpers } from "./helpers";
 
 const _ = require("lodash");
 
-export default class Email extends BaseSyncHandler {
-  protected apiEndpoint = "/me/likes";
+export default class Gmail extends BaseSyncHandler {
 
   public getSchemaUri(): string {
     return CONFIG.verida.schemas.EMAIL;

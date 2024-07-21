@@ -1,13 +1,13 @@
 const assert = require("assert")
-import CONFIG from '../../src/config'
-import { Connection, SyncHandlerStatus, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../../src/interfaces'
-import Providers from '../../src/providers'
-import CommonUtils, { NetworkInstance } from '../common.utils'
+import CONFIG from '../../../src/config'
+import { Connection, SyncHandlerStatus, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../../../src/interfaces'
+import Providers from '../../../src/providers'
+import CommonUtils, { NetworkInstance } from '../../common.utils'
 
-import Email from '../../src/providers/google/email'
-import { SchemaEmail } from '../../src/schemas'
-import serverconfig from '../../src/serverconfig.json'
-import BaseProvider from '../../src/providers/BaseProvider'
+import Gmail from '../../../src/providers/google/gmail'
+import { SchemaEmail } from '../../../src/schemas'
+import serverconfig from '../../../src/serverconfig.json'
+import BaseProvider from '../../../src/providers/BaseProvider'
 
 const SCHEMA_EMAIL = CONFIG.verida.schemas.EMAIL
 
@@ -36,10 +36,8 @@ describe(`${providerName} Tests`, function() {
                 status: SyncHandlerStatus.ACTIVE
             }
 
-            console.log(connection)
-
             // const api = await provider.getApi(connection.accessToken, connection.refreshToken)
-            const handler = <Email> await provider.getSyncHandler(Email)
+            const handler = <Gmail> await provider.getSyncHandler(Gmail)
             handler.setConfig({
                 ...serverconfig.providers.google,
                 batchSize: 3

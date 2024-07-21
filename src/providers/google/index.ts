@@ -7,7 +7,7 @@ import RequestLimitReachedError from '../RequestLimitReachedError'
 const passport = require("passport")
 const GoogleStrategy = require('passport-google-oauth20')
 
-import Email from './email'
+import Gmail from './gmail'
 
 export interface GoogleProviderConfig extends BaseProviderConfig {
     clientId: string
@@ -33,7 +33,7 @@ export default class GoogleProvider extends Base {
 
     public syncHandlers(): any[] {
         return [
-            Email
+            Gmail
         ]
     }
 
