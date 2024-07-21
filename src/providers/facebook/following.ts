@@ -36,7 +36,7 @@ export default class Following extends BaseSyncHandler {
         const results = this.buildResults(pageResults.data, syncPosition.breakId)
         syncPosition = this.setNextPosition(syncPosition, pageResults)
 
-        if (results.length != this.config.postBatchSize) {
+        if (results.length != this.config.followingBatchSize) {
             // Not a full page of results, so stop sync
             syncPosition = this.stopSync(syncPosition)
         }

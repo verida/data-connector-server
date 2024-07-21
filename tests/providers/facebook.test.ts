@@ -39,7 +39,7 @@ describe(`${providerName} Tests`, function() {
             const api = await provider.getApi(connection.accessToken, connection.refreshToken)
             const postHandler = <Post> await provider.getSyncHandler(Post)
             postHandler.setConfig({
-                postLimit: 3
+                postBatchSize: 3
             })
 
             // Snapshot: Page 1
@@ -49,7 +49,6 @@ describe(`${providerName} Tests`, function() {
             assert.ok(results && results.length, 'Have results returned')
             assert.ok(results && results.length == 3, 'Have correct number of results returned')
             assert.ok(results[0].insertedAt > results[1].insertedAt, 'Results are most recent first')
-            console.log(results[0]._id, response.position)
 
             assert.equal(response.position.status, SyncStatus.ACTIVE, 'Sync is still active')
             assert.ok(response.position.thisRef, 'Have a next page reference')
@@ -108,7 +107,7 @@ describe(`${providerName} Tests`, function() {
             const api = await provider.getApi(connection.accessToken, connection.refreshToken)
             const followHandler = <Following> await provider.getSyncHandler(Following)
             followHandler.setConfig({
-                followingLimit: 3
+                followingBatchSize: 3
             })
 
             // Page 1
