@@ -4,7 +4,7 @@ import { Context, Client, Datastore } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 
 import serverconfig from '../src/serverconfig.json'
-import { DatabasePermissionOptionsEnum, EnvironmentType, IContext } from '@verida/types'
+import { DatabasePermissionOptionsEnum, Network, IContext } from '@verida/types'
 import { Connection } from '../src/interfaces'
 
 const SERVER_URL = serverconfig.serverUrl
@@ -12,7 +12,7 @@ const TEST_VAULT_PRIVATE_KEY = serverconfig.verida.testVeridaKey
 const SCHEMA_DATA_CONNECTION = serverconfig.verida.schemas.DATA_CONNECTIONS
 const DATA_SYNC_REQUEST_SCHEMA = serverconfig.verida.schemas.SYNC_REQUEST
 
-const VERIDA_ENVIRONMENT = <EnvironmentType> serverconfig.verida.environment
+const VERIDA_ENVIRONMENT = <Network> serverconfig.verida.environment
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const axios = Axios.create()
@@ -69,7 +69,7 @@ export default class CommonUtils {
         const data = await connectionsDs.getMany()
         const db = await connectionsDs.getDb()
         const info = await db.info()
-        const connection = await connectionsDs.get(providerName)
+        const connection = await connectionsDs.get(providerName, {})
         return connection
     }
 
