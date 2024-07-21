@@ -1,5 +1,5 @@
 import { gmail_v1 } from "googleapis";
-import pdf from 'pdf-parse';
+import pdf from "pdf-parse";
 
 export class GmailHelpers {
   static async getMessage(
@@ -84,7 +84,6 @@ export class GmailHelpers {
     gmail: gmail_v1.Gmail,
     message: gmail_v1.Schema$Message
   ): Promise<{ filename: string; id: string; textContent: string }[]> {
-    console.log('getAttachments()')
     const attachments: {
       filename: string;
       id: string;
@@ -103,18 +102,19 @@ export class GmailHelpers {
             message.id || "",
             part.body.attachmentId
           );
-          
+
           // @todo: convert .txt, .pdf to text
-          let textContent = ''
-          if (part.filename.endsWith('.pdf')) {
-            textContent = await GmailHelpers.parsePdfAttachment(attachment.data);
+          let textContent = "";
+          if (part.filename.endsWith(".pdf")) {
+            textContent = await GmailHelpers.parsePdfAttachment(
+              attachment.data
+            );
           }
 
-          console.log('adding', part.filename)
           attachments.push({
             filename: part.filename,
             id: part.body.attachmentId,
-            textContent
+            textContent,
             // data: attachment.data,
           });
         }
@@ -132,14 +132,14 @@ export class GmailHelpers {
 
   static async parsePdfAttachment(base64Data: string): Promise<string> {
     try {
-        const pdfBuffer = Buffer.from(base64Data, 'base64');
-        const pdfData = await pdf(pdfBuffer);
-        return pdfData.text;
+      const pdfBuffer = Buffer.from(base64Data, "base64");
+      const pdfData = await pdf(pdfBuffer);
+      return pdfData.text;
     } catch (error) {
-        console.error('Error parsing PDF:', error);
-        return '';
+      console.error("Error parsing PDF:", error);
+      return "";
     }
-}
+  }
 
   static getHeader(
     headers: gmail_v1.Schema$MessagePartHeader[] | undefined,

@@ -1,11 +1,9 @@
 import BaseSyncHandler from "../BaseSyncHandler";
-import { createXOAuth2Generator } from "xoauth2";
 import CONFIG from "../../config";
 // import Imap from 'node-imap'
 // import { simpleParser } from 'mailparser'
 import { google, gmail_v1 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
-import { OAuth2Client } from "google-auth-library";
 
 import {
   SyncResponse,
@@ -18,7 +16,6 @@ import { GmailHelpers } from "./helpers";
 const _ = require("lodash");
 
 export default class Gmail extends BaseSyncHandler {
-
   public getSchemaUri(): string {
     return CONFIG.verida.schemas.EMAIL;
   }
@@ -40,7 +37,7 @@ export default class Gmail extends BaseSyncHandler {
     );
 
     oAuth2Client.setCredentials(TOKEN);
-    
+
     const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
     return gmail;
   }
@@ -51,10 +48,30 @@ export default class Gmail extends BaseSyncHandler {
   ): Promise<SyncResponse> {
     const gmail = this.getGmail();
 
-    const serverResponse = await gmail.users.messages.list({
+    const query: gmail_v1.Params$Resource$Users$Messages$List = {
       userId: "me",
-      maxResults: this.config.batchSize,
-    });
+      maxResults: this.config.batchSize, // Google Docs: default = 100, max = 500
+    };
+
+    if (syncPosition.thisRef) {
+      query.pageToken = syncPosition.thisRef;
+    }
+
+    const serverResponse = await gmail.users.messages.list(query);
+
+    if (
+      !serverResponse ||
+      !serverResponse.data.messages ||
+      !serverResponse.data.messages.length
+    ) {
+      // No results found, so stop sync
+      syncPosition = this.stopSync(syncPosition);
+
+      return {
+        position: syncPosition,
+        results: [],
+      };
+    }
 
     const results = await this.buildResults(
       gmail,
@@ -63,34 +80,12 @@ export default class Gmail extends BaseSyncHandler {
       SchemaEmailType.RECEIVE
     );
 
-    // syncPosition.status = SyncHandlerStatus.STOPPED
-    // return {
-    //     results: [],
-    //     position: syncPosition
-    // }
-    // if (!syncPosition.thisRef) {
-    //     syncPosition.thisRef = `${this.apiEndpoint}?limit=${this.config.followingBatchSize}`
-    // }
+    syncPosition = this.setNextPosition(syncPosition, serverResponse);
 
-    // const pageResults = await Fb.api(syncPosition.thisRef)
-
-    // if (!pageResults || !pageResults.data.length) {
-    //     // No results found, so stop sync
-    //     syncPosition = this.stopSync(syncPosition)
-
-    //     return {
-    //         position: syncPosition,
-    //         results: []
-    //     }
-    // }
-
-    // const results = this.buildResults(pageResults.data, syncPosition.breakId)
-    // syncPosition = this.setNextPosition(syncPosition, pageResults)
-
-    // if (results.length != this.config.postBatchSize) {
-    //     // Not a full page of results, so stop sync
-    //     syncPosition = this.stopSync(syncPosition)
-    // }
+    if (results.length != this.config.batchSize) {
+      // Not a full page of results, so stop sync
+      syncPosition = this.stopSync(syncPosition);
+    }
 
     return {
       results,
@@ -99,39 +94,34 @@ export default class Gmail extends BaseSyncHandler {
   }
 
   protected stopSync(syncPosition: SyncSchemaPosition): SyncSchemaPosition {
+    if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+      return syncPosition;
+    }
+
+    syncPosition.status = SyncHandlerStatus.STOPPED;
+    syncPosition.thisRef = undefined;
+    syncPosition.breakId = syncPosition.futureBreakId;
+    syncPosition.futureBreakId = undefined;
+
     return syncPosition;
-    // if (syncPosition.status == SyncHandlerStatus.STOPPED) {
-    //     return syncPosition
-    // }
-
-    // syncPosition.status = SyncHandlerStatus.STOPPED
-    // syncPosition.thisRef = undefined
-    // syncPosition.breakId = syncPosition.futureBreakId
-    // syncPosition.futureBreakId = undefined
-
-    // return syncPosition
   }
 
   protected setNextPosition(
     syncPosition: SyncSchemaPosition,
-    serverResponse: any
+    serverResponse: GaxiosResponse<gmail_v1.Schema$ListMessagesResponse>
   ): SyncSchemaPosition {
+    if (!syncPosition.futureBreakId && serverResponse.data.messages.length) {
+      syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.messages[0].id}`;
+    }
+
+    if (_.has(serverResponse, "data.nextPageToken")) {
+      // Have more results, so set the next page ready for the next request
+      syncPosition.thisRef = serverResponse.data.nextPageToken;
+    } else {
+      syncPosition = this.stopSync(syncPosition);
+    }
+
     return syncPosition;
-    // if (!syncPosition.futureBreakId && serverResponse.data.length) {
-    //     syncPosition.futureBreakId = serverResponse.data[0].id
-    // }
-
-    // if (_.has(serverResponse, 'paging.next')) {
-    //     // Have more results, so set the next page ready for the next request
-    //     const next = serverResponse.paging.next
-    //     const urlParts = url.parse(next, true)
-    //     syncPosition.thisRef = `${this.apiEndpoint}${urlParts.search}`
-    // } else {
-    //     console.log('following: stopping, no next page')
-    //     syncPosition = this.stopSync(syncPosition)
-    // }
-
-    // return syncPosition
   }
 
   protected async buildResults(
@@ -142,7 +132,9 @@ export default class Gmail extends BaseSyncHandler {
   ): Promise<SchemaEmail[]> {
     const results: SchemaEmail[] = [];
     for (const message of serverResponse.data.messages) {
-      if (message.id == breakId) {
+      const messageId = `${this.connection.profile.id}-${message.id}`;
+
+      if (messageId == breakId) {
         break;
       }
 
@@ -163,7 +155,7 @@ export default class Gmail extends BaseSyncHandler {
       const attachments = await GmailHelpers.getAttachments(gmail, msg);
 
       results.push({
-        _id: `gmail-${this.connection.profile.id}-${message.id}`,
+        _id: `gmail-${messageId}`,
         type: messageType,
         name: subject,
         sourceApplication: "https://gmail.com/",

@@ -45,7 +45,7 @@ export interface SchemaEmail extends SchemaRecord {
     toEmail: string
     messageText: string
     messageHTML: string
-    attachments?: SchemaEmailAttachment[]
     sentAt: string
+    attachments?: SchemaEmailAttachment[]
     threadId?: string
 }
