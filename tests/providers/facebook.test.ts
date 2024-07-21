@@ -1,6 +1,6 @@
 const assert = require("assert")
 import CONFIG from '../../src/config'
-import { SyncSchemaPosition, SyncStatus } from '../../src/interfaces'
+import { SyncHandlerStatus, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../../src/interfaces'
 import Providers from '../../src/providers'
 import CommonUtils from '../common.utils'
 
@@ -30,9 +30,10 @@ describe(`${providerName} Tests`, function() {
 
             const syncPosition: SyncSchemaPosition = {
                 _id: `facebook-${SCHEMA_POST}`,
+                type: SyncSchemaPositionType.SYNC,
                 provider: 'facebook',
                 schemaUri: SCHEMA_POST,
-                status: SyncStatus.ACTIVE
+                status: SyncHandlerStatus.ACTIVE
             }
 
             const api = await provider.getApi(connection.accessToken, connection.refreshToken)
@@ -86,7 +87,7 @@ describe(`${providerName} Tests`, function() {
             assert.equal(results3.length, 1, '1 result returned')
             assert.equal(results3[0]._id, results[0]._id, 'Correct ID returned')
 
-            assert.equal(response.position.status, SyncStatus.STOPPED, 'Sync is stopped')
+            assert.equal(response.position.status, SyncHandlerStatus.STOPPED, 'Sync is stopped')
             assert.equal(response.position.thisRef, undefined, 'No next page reference')
             assert.equal(PostSyncRefTypes.Api, response.position.thisRefType, 'This position reference type is API fetch')
             assert.equal(response.position.breakId, results3[0]._id.replace('facebook-', ''), 'Break ID is the first result')
@@ -98,9 +99,10 @@ describe(`${providerName} Tests`, function() {
 
             const syncPosition: SyncSchemaPosition = {
                 _id: `facebook-${SCHEMA_FOLLOWING}`,
+                type: SyncSchemaPositionType.SYNC,
                 provider: 'facebook',
                 schemaUri: SCHEMA_FOLLOWING,
-                status: SyncStatus.ACTIVE
+                status: SyncHandlerStatus.ACTIVE
             }
 
             const api = await provider.getApi(connection.accessToken, connection.refreshToken)
@@ -149,7 +151,7 @@ describe(`${providerName} Tests`, function() {
             assert.equal(results3.length, 1, '1 result returned')
             assert.equal(results3[0]._id, results[0]._id, 'Correct ID returned')
 
-            assert.equal(response.position.status, SyncStatus.STOPPED, 'Sync is stopped')
+            assert.equal(response.position.status, SyncHandlerStatus.STOPPED, 'Sync is stopped')
             assert.equal(response.position.thisRef, undefined, 'No next page reference')
             assert.equal(response.position.breakId, results3[0]._id.replace('facebook-', ''), 'Break ID is the first result')
             assert.equal(response.position.futureBreakId, undefined, 'Future break ID is undefined')
