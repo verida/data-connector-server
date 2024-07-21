@@ -5,17 +5,6 @@ export interface AccountAuth {
     refreshToken: string
 }
 
-// export interface AccountProfile {
-//     id: string,
-//     name?: string
-//     username?: string
-//     description?: string
-//     createdAt?: string
-//     url?: string
-//     avatarUrl?: string
-//     credential?: string
-// }
-
 export interface ConnectionProfile {
     id: string
     name: string
@@ -58,6 +47,7 @@ export interface Connection {
 export interface BaseProviderConfig {
     label: string
     sbtImage: string
+    batchSize?: number
     maxSyncLoops?: number
 }
 
@@ -95,6 +85,9 @@ export interface SyncSchemaPosition {
 
     // Future record ID to break on, for the next sync
     futureBreakId?: string
+
+    // Other metadata useful to configure for the handler
+    metadata?: object
 }
 
 export interface SyncResponse {
