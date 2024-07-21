@@ -51,10 +51,6 @@ export const Sync: Command<SyncOptions> = {
     },
   ],
   async handle({ options }) {
-    console.log(
-      `Connecting to ${options.provider} on network ${options.network}.`
-    );
-
     if (!options.key) {
       console.log(`No key specified from command line or environment variable`);
       return;
@@ -76,7 +72,9 @@ export const Sync: Command<SyncOptions> = {
     });
 
     const did = (await account.did()).toLowerCase();
-    console.log(`Verida Account has DID: ${did}`);
+    console.log(
+      `Syncing data from${options.provider} on to ${did} network ${options.network}.`
+    );
 
     const networkInstance = await Utils.getNetwork(did, options.key);
     const vault = networkInstance.context
