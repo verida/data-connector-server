@@ -123,7 +123,9 @@ export default class BaseSyncHandler extends EventEmitter {
             const schemaDatastore = await this.provider.getDatastore(this.getSchemaUri())
 
             try {
-                const success = await schemaDatastore.save(item, {})
+                const success = await schemaDatastore.save(item, {
+                    forceUpdate: true
+                })
                 if (!success) {
                     // @ts-ignore
                     const message = `Unable to save item: ${Utils.datastoreErorrsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
