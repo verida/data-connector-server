@@ -32,6 +32,13 @@ export const ResetProvider: Command<ResetProviderOptions> = {
         defaultValue: false,
         alias: "t",
       },
+      {
+        name: "deleteData",
+        description: "Delete all data from schemas associated with this provider",
+        type: "boolean",
+        defaultValue: false,
+        alias: "d",
+      },
     {
       name: "network",
       description: "Verida network (banksia, myrtle)",
@@ -48,7 +55,7 @@ export const ResetProvider: Command<ResetProviderOptions> = {
   ],
   async handle({ options }) {
     console.log(
-      `Connecting to ${options.provider} on network ${options.network}.`
+      `Reseting ${options.provider} on network ${options.network}. (resetPositions=true, deleteData=${options.deleteData}, clearTokens=${options.clearTokens})`
     );
 
     if (!options.key) {
@@ -82,13 +89,11 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       serverconfig.verida.testVeridaKey
     )
 
-    /////
-
     const providers = await syncManager.getProviders(options.provider)
     const provider = providers[0]
 
     console.log('Reset started')
-    const deleteCount = await provider.reset(options.clearTokens)
+    const deleteCount = await provider.reset(options.deleteData, options.clearTokens)
     console.log(`Reset complete, deleted ${deleteCount} items`)
 
     await vault.close()

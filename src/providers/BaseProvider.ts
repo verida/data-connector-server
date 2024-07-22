@@ -89,7 +89,7 @@ export default class BaseProvider {
     /**
      * Reset this provider by deleting all position information and data
      */
-    public async reset(clearTokens: boolean = false): Promise<number> {
+    public async reset(deleteData: boolean = true, clearTokens: boolean = false): Promise<number> {
         const syncHandlers = await this.getSyncHandlers()
 
         let deletedRowCount = 0
@@ -113,19 +113,21 @@ export default class BaseProvider {
             }
             
             // delete data
-            const datastore = await this.vault.openDatastore(schemaUri)
-            while (true) {
-                const rows = <SchemaRecord[]> await datastore.getMany({
-                    sourceApplication: this.getProviderApplicationUrl()
-                })
+            if (deleteData) {
+                const datastore = await this.vault.openDatastore(schemaUri)
+                while (true) {
+                    const rows = <SchemaRecord[]> await datastore.getMany({
+                        sourceApplication: this.getProviderApplicationUrl()
+                    })
 
-                if (rows.length == 0) {
-                    break
-                }
+                    if (rows.length == 0) {
+                        break
+                    }
 
-                for (let r in rows) {
-                    await datastore.delete(rows[r]._id)
-                    deletedRowCount++
+                    for (let r in rows) {
+                        await datastore.delete(rows[r]._id)
+                        deletedRowCount++
+                    }
                 }
             }
         }
