@@ -4,6 +4,7 @@ import { AutoAccount } from "@verida/account-node";
 import { Network } from "@verida/types";
 import CONFIG from "../../config";
 import { Utils } from "../../utils";
+import { SchemaRecord } from "../../schemas";
 
 export const Data: Command<DataOptions> = {
   name: "Data",
@@ -22,6 +23,17 @@ export const Data: Command<DataOptions> = {
       type: "string",
       defaultValue: CONFIG.verida.testVeridaKey,
       alias: "k",
+    },
+    {
+      name: "sortField",
+      description: "Default sort field",
+      type: "string",
+      defaultValue: 'insertedAt',
+    },
+    {
+      name: "attributes",
+      description: "Comma separated list of attributes to output (ie: _id,name)",
+      type: "string",
     },
     {
       name: "network",
@@ -72,23 +84,45 @@ export const Data: Command<DataOptions> = {
     const dataPouchDb = await dataDb.getDb()
     const dataPouchInfo = await dataPouchDb.info()
 
-    const first5Items = await dataDs.getMany({}, {
-        sort: [{'insertedAt': 'desc'}],
+    const sort: Record<string,string> = {}
+    sort[options.sortField] = 'desc'
+    const first5Items = <SchemaRecord[]> await dataDs.getMany({}, {
+        sort: [sort],
         limit: 5
     })
 
-    const last5Items = await dataDs.getMany({}, {
-        sort: [{'insertedAt': 'asc'}],
+    sort[options.sortField] = 'asc'
+    const last5Items = <SchemaRecord[]> await dataDs.getMany({}, {
+        sort: [sort],
         limit: 5
     })
+
+    const attributes = options.attributes ? options.attributes.split(',') : []
 
     console.log('-- First five items')
-    console.log(first5Items)
+    printItems(first5Items, attributes)
     console.log('-- Last five items')
-    console.log(last5Items)
+    printItems(last5Items, attributes)
 
     console.log(`-- Total rows: ${dataPouchInfo.doc_count}`)
 
     await vault.close()
   },
 };
+
+function printItems(items: SchemaRecord[], attributes: string[] = []) {
+  for (let item of items) {
+    console.log('-')
+    if (attributes.length) {
+      for (let att of attributes) {
+        // @ts-ignore
+        if (item[att]) {
+          // @ts-ignore
+          console.log(`${att}: ${item[att]}`)
+        }
+      }
+    } else {
+      console.log(item)
+    }
+  }
+}
