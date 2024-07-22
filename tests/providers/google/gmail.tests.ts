@@ -55,13 +55,13 @@ describe(`${providerName} Tests`, function () {
       const syncPosition: Omit<SyncSchemaPosition, "_id" | "schemaUri"> = {
         type: SyncSchemaPositionType.SYNC,
         provider: providerName,
-        metadata: {
-          breakTimestamp: lastRecordTimestamp,
-        },
         status: SyncHandlerStatus.ACTIVE,
       };
 
       providerConfig.batchSize = 10;
+      providerConfig.metadata = {
+        breakTimestamp: lastRecordTimestamp,
+      }
 
       const syncResponse = await CommonTests.runSyncTest(
         providerName,

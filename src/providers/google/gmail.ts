@@ -85,8 +85,8 @@ export default class Gmail extends BaseSyncHandler {
       serverResponse,
       syncPosition.breakId,
       SchemaEmailType.RECEIVE,
-      _.has(syncPosition, "metadata.breakTimestamp")
-        ? syncPosition.metadata.breakTimestamp
+      _.has(this.config, "metadata.breakTimestamp")
+        ? this.config.metadata.breakTimestamp
         : undefined
     );
 
