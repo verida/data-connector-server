@@ -80,22 +80,28 @@ export const Data: Command<DataOptions> = {
     const networkInstance = await Utils.getNetwork(did, options.key);
     const vault = networkInstance.context
     const dataDs = await vault.openDatastore(options.schemaUri)
+    console.time('Database load')
     const dataDb = await dataDs.getDb()
     const dataPouchDb = await dataDb.getDb()
     const dataPouchInfo = await dataPouchDb.info()
+    console.timeEnd('Database load')
 
     const sort: Record<string,string> = {}
     sort[options.sortField] = 'desc'
+    console.time('Get first 5 items')
     const first5Items = <SchemaRecord[]> await dataDs.getMany({}, {
         sort: [sort],
         limit: 5
     })
+    console.timeEnd('Get first 5 items')
 
     sort[options.sortField] = 'asc'
+    console.time('Get last 5 items')
     const last5Items = <SchemaRecord[]> await dataDs.getMany({}, {
         sort: [sort],
         limit: 5
     })
+    console.timeEnd('Get last 5 items')
 
     const attributes = options.attributes ? options.attributes.split(',') : []
 

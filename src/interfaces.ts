@@ -49,6 +49,8 @@ export interface BaseProviderConfig {
     sbtImage: string
     batchSize?: number
     maxSyncLoops?: number
+    // Other metadata useful to configure for the handler
+    metadata?: object
 }
 
 export interface DatastoreSaveResponse {
@@ -85,9 +87,6 @@ export interface SyncSchemaPosition {
 
     // Future record ID to break on, for the next sync
     futureBreakId?: string
-
-    // Other metadata useful to configure for the handler
-    metadata?: object
 }
 
 export interface SyncResponse {
