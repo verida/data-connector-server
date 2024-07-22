@@ -8,9 +8,8 @@
         "didClientConfig": {
             "callType": "web3",
             "network": "banksia",
-            "web3Config": {
-                
-            },
+            "web3Config": {   
+            }
         },
         "schemas": {
             "DATA_CONNECTIONS": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
@@ -18,7 +17,8 @@
             "SYNC_REQUEST": "https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json",
             "SYNC_LOG": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
             "FOLLOWING": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
-            "POST": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json"
+            "POST": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
+            "EMAIL": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json"
         }
     },
     "providers": {
@@ -50,6 +50,10 @@
             "clientSecret": "",
             "botToken": "",
             "sbtImage": "https://data.verida.network/ipfs/QmQsghP7Y1dbZHgoo48hQz8SHdFk2mjmPikhkHg69HHhWb/Gen0/discord-account.png"
+        },
+        "google": {
+            "clientId": "",
+            "clientSecret": ""
         }
     },
     "providerDefaults": {

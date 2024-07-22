@@ -1,31 +1,210 @@
-const assert = require("assert")
-import CommonUtils from "./common.utils"
+import {
+  BaseProviderConfig,
+  SyncHandlerStatus,
+  SyncResponse,
+  SyncSchemaPosition,
+  SyncSchemaPositionType,
+  SyncStatus,
+} from "../src/interfaces";
+import providers from "../src/providers";
+import BaseSyncHandler from "../src/providers/BaseSyncHandler";
+import { SchemaRecord } from "../src/schemas";
+import serverconfig from "../src/serverconfig.json";
+import CommonUtils from "./common.utils";
+const assert = require("assert");
 
-export default class CommonTests {
+export interface GenericTestConfig {
+  // Attribute in the results that is used for time ordering (ie: insertedAt)
+  timeOrderAttribute: string;
+  // Attribute used to limit the batch size (ie: batchLimit)
+  batchSizeLimitAttribute: string;
+  // Prefix used for record ID's (override default which is providerName)
+  idPrefix?: string;
+}
 
-    static async syncHasValidSchemaData(syncResult: any, connection: any, schemaUri: string, minCount: 5) {
-        // Fetch and verify we have schema data
-        const { response, signerDid, contextName } = syncResult.data
-        assert.ok(response[schemaUri], 'Have valid response data')
+export class CommonTests {
+  static async runSyncTest(
+    providerName: string,
+    handlerType: typeof BaseSyncHandler,
+    testConfig: GenericTestConfig = {
+      timeOrderAttribute: "insertedAt",
+      batchSizeLimitAttribute: "batchSize",
+    },
+    syncPositionConfig: Omit<SyncSchemaPosition, "_id" | "schemaUri">,
+    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
+  ): Promise<SyncResponse> {
+    const { api, handler, schemaUri } = await this.buildTestObjects(
+      providerName,
+      handlerType,
+      providerConfig
+    );
 
-        // Open external datastore
-        const { databaseName, encryptionKey } = response[schemaUri]
-        const externalDatastore = await CommonUtils.openSchema(connection.context, contextName, schemaUri, databaseName, encryptionKey, signerDid, connection.did)
+    const syncPosition: SyncSchemaPosition = {
+      _id: `${providerName}-${schemaUri}`,
+      schemaUri,
+      ...syncPositionConfig,
+    };
 
-        // Verify results
-        const results = await externalDatastore.getMany()
-        assert.equal(results.length >= minCount, true, 'Have expected number of results')
+    return handler._sync(api, syncPosition);
+  }
 
-        // destroy local database to cleanup disk space
-        const db = await externalDatastore.getDb()
-        await db._localDbEncrypted.destroy()
-    }
+  static async buildTestObjects(
+    providerName: string,
+    handlerType: typeof BaseSyncHandler,
+    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
+  ) {
+    const network = await CommonUtils.getNetwork();
+    const connection = await CommonUtils.getConnection(providerName);
+    const provider = providers(providerName, network.context, connection);
 
-    static async hasValidSyncResult(syncResult: any, connection: any) {
-        assert.ok(syncResult, 'Have a sync result')
-        assert.ok(syncResult.data, 'Have sync result data')
-        assert.equal(syncResult.data.did, connection.did, 'Expected DID returned')
-        assert.equal(syncResult.data.contextName, 'Verida: Data Connector', 'Have expected context name')
-    }
+    const handler = await provider.getSyncHandler(handlerType);
+    const schemaUri = handler.getSchemaUri();
 
+    const api = await provider.getApi(
+      connection.accessToken,
+      connection.refreshToken
+    );
+
+    const handlerConfig = {
+      ...serverconfig.providers[providerName],
+      ...providerConfig,
+    };
+    handler.setConfig(handlerConfig);
+
+    return {
+      api,
+      handler,
+      schemaUri,
+    };
+  }
+
+  static async runGenericTests(
+    providerName: string,
+    handlerType: typeof BaseSyncHandler,
+    testConfig: GenericTestConfig = {
+      timeOrderAttribute: "insertedAt",
+      batchSizeLimitAttribute: "batchSize",
+    },
+    providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {}
+  ) {
+    // Set result limit to 3 results so page tests can work correctly
+    providerConfig[testConfig.batchSizeLimitAttribute] = 3;
+
+    const { api, handler, schemaUri } = await this.buildTestObjects(
+      providerName,
+      handlerType,
+      providerConfig
+    );
+
+    const idPrefix = testConfig.idPrefix ? testConfig.idPrefix : providerName;
+
+    const syncPosition: SyncSchemaPosition = {
+      _id: `${providerName}-${schemaUri}`,
+      type: SyncSchemaPositionType.SYNC,
+      provider: providerName,
+      schemaUri,
+      status: SyncHandlerStatus.ACTIVE,
+    };
+    // Snapshot: Page 1
+    const response = await handler._sync(api, syncPosition);
+
+    const results = <SchemaRecord[]>response.results;
+
+    assert.ok(results && results.length, "Have results returned");
+    assert.ok(
+      results && results.length == 3,
+      "Have correct number of results returned"
+    );
+    assert.ok(
+      results[0][testConfig.timeOrderAttribute] >
+        results[1][testConfig.timeOrderAttribute],
+      "Results are most recent first"
+    );
+
+    assert.equal(
+      SyncStatus.ACTIVE,
+      response.position.status,
+      "Sync is still active"
+    );
+    assert.ok(response.position.thisRef, "Have a next page reference");
+    assert.equal(response.position.breakId, undefined, "Break ID is undefined");
+    assert.equal(
+      `${idPrefix}-${response.position.futureBreakId}`,
+      results[0]._id,
+      "Future break ID matches the first result ID"
+    );
+
+    // Snapshot: Page 2
+    const response2 = await handler._sync(api, syncPosition);
+    const results2 = <SchemaRecord[]>response2.results;
+
+    assert.ok(
+      results2 && results2.length,
+      "Have second page of results returned"
+    );
+    assert.ok(
+      results2 && results2.length == 3,
+      "Have correct number of results returned in second page"
+    );
+    assert.ok(
+      results2[0][testConfig.timeOrderAttribute] >
+        results2[1][testConfig.timeOrderAttribute],
+      "Results are most recent first"
+    );
+    assert.ok(
+      results2[0][testConfig.timeOrderAttribute] <
+        results[2][testConfig.timeOrderAttribute],
+      "First item on second page of results have earlier timestamp than last item on first page"
+    );
+
+    assert.equal(
+      response.position.status,
+      SyncStatus.ACTIVE,
+      "Sync is still active"
+    );
+    assert.ok(response.position.thisRef, "Have a next page reference");
+    // assert.equal(PostSyncRefTypes.Url, response.position.thisRefType, 'This position reference type is URL fetch')
+    assert.equal(response.position.breakId, undefined, "Break ID is undefined");
+    assert.equal(
+      results[0]._id,
+      `${idPrefix}-${response.position.futureBreakId}`,
+      "Future break ID matches the first result ID"
+    );
+
+    // Update: Page 1 (ensure 1 result only)
+    // Fetch the update set of results to confirm `position.pos` is correct
+    // Make sure we fetch the first post only, by setting the break to the second item
+    const position = response2.position;
+    position.thisRef = undefined;
+    // position.thisRefType = PostSyncRefTypes.Api
+    position.breakId = results[1]._id.replace(`${idPrefix}-`, "");
+    position.futureBreakId = undefined;
+
+    const response3 = await handler._sync(api, position);
+    const results3 = <SchemaRecord[]>response3.results;
+    assert.equal(results3.length, 1, "1 result returned");
+    assert.equal(results3[0]._id, results[0]._id, "Correct ID returned");
+
+    assert.equal(
+      response.position.status,
+      SyncHandlerStatus.STOPPED,
+      "Sync is stopped"
+    );
+    assert.equal(
+      response.position.thisRef,
+      undefined,
+      "No next page reference"
+    );
+    // assert.equal(PostSyncRefTypes.Api, response.position.thisRefType, 'This position reference type is API fetch')
+    assert.equal(
+      response.position.breakId,
+      results3[0]._id.replace(`${idPrefix}-`, ""),
+      "Break ID is the first result"
+    );
+    assert.equal(
+      response.position.futureBreakId,
+      undefined,
+      "Future break ID is undefined"
+    );
+  }
 }

@@ -54,15 +54,22 @@
     "express-basic-auth": "git+https://github.com/Mozzler/express-basic-auth.git",
     "express-session": "^1.17.3",
     "fb": "^2.0.0",
+    "gaxios": "^6.7.0",
+    "googleapis": "^140.0.1",
     "lodash": "^4.17.21",
     "log4js": "^6.4.1",
+    "mailparser": "^3.7.1",
     "memory-cache": "^0.2.0",
     "mocha": "^9.2.1",
     "nano": "^9.0.5",
+    "node-imap": "^0.9.6",
     "passport": "^0.5.2",
     "passport-facebook": "^3.0.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pdf-parse": "^1.1.1",
     "ts-mocha": "^9.0.2",
-    "twitter-api-v2": "^1.14.0"
+    "twitter-api-v2": "^1.14.0",
+    "xoauth2": "^1.2.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",

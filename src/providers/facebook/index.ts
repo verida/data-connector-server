@@ -88,15 +88,18 @@ export default class FacebookProvider extends Base {
         })
 
         try {
-            Fb.setAccessToken(accessToken)
+            Fb.setAccessToken(accessToken ? accessToken : this.connection.accessToken)
 
             const me = await Fb.api('/me?fields=id,name,picture,link')
 
-            this.profile = {
-                id: me.id,
-                name: me.name,
-                url: me.link,
-                avatarUrl: me.picture.data.url
+            if (this.connection) {
+                this.connection.profile = {
+                    ...(this.connection.profile ? this.connection.profile : {}),
+                    id: me.id,
+                    name: me.name,
+                    link: me.link,
+                    avatarUrl: me.picture.data.url
+                }
             }
 
             return Fb

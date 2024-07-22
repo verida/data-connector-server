@@ -130,12 +130,13 @@ export default class TwitterProvider extends Base {
 
         const createdAt = dayjs(me.data.created_at).toISOString()
 
-        this.profile = {
+        this.connection.profile = {
+            ...this.connection.profile,
             id: me.data.id,
             name: me.data.name,
             username: me.data.username,
             description: me.data.description,
-            url: me.data.url,
+            link: me.data.url,
             avatarUrl: me.data.profile_image_url,
             createdAt
         }

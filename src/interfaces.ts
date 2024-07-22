@@ -5,15 +5,18 @@ export interface AccountAuth {
     refreshToken: string
 }
 
-export interface AccountProfile {
-    id: string,
-    name?: string
+export interface ConnectionProfile {
+    id: string
+    name: string
+    avatarUrl?: string
+    link?: string
+    givenName?: string
+    familyName?: string
+    email?: string
+    emailVerified?: boolean
     username?: string
     description?: string
     createdAt?: string
-    url?: string
-    avatarUrl?: string
-    credential?: string
 }
 
 export enum SyncFrequency {
@@ -35,7 +38,7 @@ export interface Connection {
     _rev?: string
     accessToken: string
     refreshToken: string
-    profile: AccountProfile
+    profile: ConnectionProfile
     source: string
     syncStatus: SyncStatus
     syncFrequency: SyncFrequency
@@ -44,7 +47,10 @@ export interface Connection {
 export interface BaseProviderConfig {
     label: string
     sbtImage: string
+    batchSize?: number
     maxSyncLoops?: number
+    // Other metadata useful to configure for the handler
+    metadata?: object
 }
 
 export interface DatastoreSaveResponse {

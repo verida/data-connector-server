@@ -17,10 +17,13 @@ export interface ResetProviderOptions {
     key: string
     network?: string
     clearTokens?: boolean
+    deleteData?: boolean
 }
 
 export interface DataOptions {
     schemaUri: string
     key: string
+    attributes: string
+    sortField: string
     network?: string
 }

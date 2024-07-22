@@ -1,6 +1,6 @@
 const assert = require("assert")
 import CONFIG from '../../src/config'
-import { SyncSchemaPosition, SyncStatus } from '../../src/interfaces'
+import { SyncHandlerStatus, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../../src/interfaces'
 import Providers from '../../src/providers'
 import CommonUtils from '../common.utils'
 
@@ -30,15 +30,16 @@ describe(`${providerName} Tests`, function() {
 
             const syncPosition: SyncSchemaPosition = {
                 _id: `facebook-${SCHEMA_POST}`,
+                type: SyncSchemaPositionType.SYNC,
                 provider: 'facebook',
                 schemaUri: SCHEMA_POST,
-                status: SyncStatus.ACTIVE
+                status: SyncHandlerStatus.ACTIVE
             }
 
             const api = await provider.getApi(connection.accessToken, connection.refreshToken)
             const postHandler = <Post> await provider.getSyncHandler(Post)
             postHandler.setConfig({
-                postLimit: 3
+                postBatchSize: 3
             })
 
             // Snapshot: Page 1
@@ -48,7 +49,6 @@ describe(`${providerName} Tests`, function() {
             assert.ok(results && results.length, 'Have results returned')
             assert.ok(results && results.length == 3, 'Have correct number of results returned')
             assert.ok(results[0].insertedAt > results[1].insertedAt, 'Results are most recent first')
-            console.log(results[0]._id, response.position)
 
             assert.equal(response.position.status, SyncStatus.ACTIVE, 'Sync is still active')
             assert.ok(response.position.thisRef, 'Have a next page reference')
@@ -86,7 +86,7 @@ describe(`${providerName} Tests`, function() {
             assert.equal(results3.length, 1, '1 result returned')
             assert.equal(results3[0]._id, results[0]._id, 'Correct ID returned')
 
-            assert.equal(response.position.status, SyncStatus.STOPPED, 'Sync is stopped')
+            assert.equal(response.position.status, SyncHandlerStatus.STOPPED, 'Sync is stopped')
             assert.equal(response.position.thisRef, undefined, 'No next page reference')
             assert.equal(PostSyncRefTypes.Api, response.position.thisRefType, 'This position reference type is API fetch')
             assert.equal(response.position.breakId, results3[0]._id.replace('facebook-', ''), 'Break ID is the first result')
@@ -98,15 +98,16 @@ describe(`${providerName} Tests`, function() {
 
             const syncPosition: SyncSchemaPosition = {
                 _id: `facebook-${SCHEMA_FOLLOWING}`,
+                type: SyncSchemaPositionType.SYNC,
                 provider: 'facebook',
                 schemaUri: SCHEMA_FOLLOWING,
-                status: SyncStatus.ACTIVE
+                status: SyncHandlerStatus.ACTIVE
             }
 
             const api = await provider.getApi(connection.accessToken, connection.refreshToken)
             const followHandler = <Following> await provider.getSyncHandler(Following)
             followHandler.setConfig({
-                followingLimit: 3
+                followingBatchSize: 3
             })
 
             // Page 1
@@ -149,7 +150,7 @@ describe(`${providerName} Tests`, function() {
             assert.equal(results3.length, 1, '1 result returned')
             assert.equal(results3[0]._id, results[0]._id, 'Correct ID returned')
 
-            assert.equal(response.position.status, SyncStatus.STOPPED, 'Sync is stopped')
+            assert.equal(response.position.status, SyncHandlerStatus.STOPPED, 'Sync is stopped')
             assert.equal(response.position.thisRef, undefined, 'No next page reference')
             assert.equal(response.position.breakId, results3[0]._id.replace('facebook-', ''), 'Break ID is the first result')
             assert.equal(response.position.futureBreakId, undefined, 'Future break ID is undefined')

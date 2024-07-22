@@ -1,20 +1,23 @@
-import { AccountProfile, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncSchemaPosition } from "../interfaces"
+import { Connection, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncSchemaPosition } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
 import { SchemaRecord } from "../schemas"
+import BaseProvider from "./BaseProvider"
 
 export default class BaseSyncHandler extends EventEmitter {
 
+    protected provider: BaseProvider
     protected config: any
-    protected profile: AccountProfile
+    protected connection: Connection
 
     protected syncStatus: SyncHandlerStatus
 
-    constructor(config: any, profile: AccountProfile) {
+    constructor(config: any, connection: Connection, provider: BaseProvider) {
         super()
         this.config = config
-        this.profile = profile
+        this.connection = connection
+        this.provider = provider
     }
 
     public getConfig(): any {
@@ -57,7 +60,7 @@ export default class BaseSyncHandler extends EventEmitter {
         let backfillResults: SchemaRecord[] = []
         if (syncResult.status == 'fulfilled')  {
             syncResults = <SchemaRecord[]> syncResult.value.results
-            await this.handleResults(syncResult.value.position, syncResults, syncSchemaPositionDs, schemaDatastore)
+            await this.handleResults(syncResult.value.position, syncResults, syncSchemaPositionDs)
         } else {
             const message = `Unknown error handling sync results: ${syncResult.reason}`
             this.emit('error', {
@@ -68,7 +71,7 @@ export default class BaseSyncHandler extends EventEmitter {
 
         if (backfillResult.status == 'fulfilled')  {
             backfillResults = <SchemaRecord[]> backfillResult.value.results
-            await this.handleResults(backfillResult.value.position, backfillResults, syncSchemaPositionDs, schemaDatastore)
+            await this.handleResults(backfillResult.value.position, backfillResults, syncSchemaPositionDs)
         } else {
             const message = `Unknown error handling backfill results: ${backfillResult.reason}`
             this.emit('error', {
@@ -88,8 +91,8 @@ export default class BaseSyncHandler extends EventEmitter {
     protected async handleResults(
         position: SyncSchemaPosition,
         items: SchemaRecord[],
-        syncSchemaPositionDs: IDatastore,
-        schemaDatastore: IDatastore): Promise<void> {
+        syncSchemaPositionDs: IDatastore
+        ): Promise<void> {
         try {
             // Ensure we always update, so delete any revision value
             delete position['_rev']
@@ -116,9 +119,15 @@ export default class BaseSyncHandler extends EventEmitter {
                 })
                 continue
             }
+
+            const schemaDatastore = await this.provider.getDatastore(this.getSchemaUri())
+
             try {
-                const success = await schemaDatastore.save(item, {})
+                const success = await schemaDatastore.save(item, {
+                    forceUpdate: true
+                })
                 if (!success) {
+                    // @ts-ignore
                     const message = `Unable to save item: ${Utils.datastoreErorrsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
 
                     this.emit('error', {
