@@ -22,5 +22,7 @@ export interface ResetProviderOptions {
 export interface DataOptions {
     schemaUri: string
     key: string
+    attributes: string
+    sortField: string
     network?: string
 }

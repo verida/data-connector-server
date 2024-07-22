@@ -73,7 +73,7 @@ export const Sync: Command<SyncOptions> = {
 
     const did = (await account.did()).toLowerCase();
     console.log(
-      `Syncing data from${options.provider} on to ${did} network ${options.network}.`
+      `Syncing data from ${options.provider} on to ${did} network ${options.network}.`
     );
 
     const networkInstance = await Utils.getNetwork(did, options.key);
