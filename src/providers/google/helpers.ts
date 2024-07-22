@@ -156,6 +156,9 @@ export class GmailHelpers {
     name: string;
     email: string;
   } {
+    if (!emailHeader) {
+      return { name: "", email: "" };
+    }
     const emailRegex = /^(.*?)(?: <(.*?)>)?$/;
     const match = emailHeader.match(emailRegex);
     if (match) {
