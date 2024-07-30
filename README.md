@@ -2,7 +2,7 @@
 
 ## Overview
 
-This server enables a user to authenticate with a third party service to take ownership of their personal data stored with the third party.
+This server enables a user to authenticate with third party services to take ownership of their personal data stored with the third party.
 
 The `Verida Vault` utilizes this server, redirecting a user to connect to an API. Once connected, the `Verida Vault` makes regular `sync` requests to the API in order to keep up-to-date with the user's latest data in that third party service.
 
@@ -20,27 +20,23 @@ In an ideal world, a user could connect directly to a third party service and pu
 
 An end user could register their own application and obtain their own API key, however in reality that is an awful user experience and beyond the capabilities of the vast majority. Instead, it's necessary to have a centralized application (this Verida Data Connector Server) to maintain the secret API key and facilitate interactions with each third party API.
 
-All that being said, this server is open source, and eventually it should become possible for advanced users to run their own Verida Data Connector Server and configure their `Verida Vault` to use it, for a complete end-to-end privacy preserving data syncronization solution.
+All that being said, this server is open source, and this server will be designed to operate within a secure enclave ensuring user data is never seen by anyone, not even the Verida team.
+
+Where possible, API authentication requests are for read only access to data, not write access. (ie: Access to read gmail, but not send emails)
 
 ### User Privacy
 
-This server receives `accessToken` and `refreshToken` values from the user for each sync request. These credentials are not stored on the server.
+This server currently receives the Verida account private key via headers, in the future the server will instead receive `accessToken` and `refreshToken` values from the user for each sync request.
 
 User data is fetched on behalf of the user and processed. This processing involves:
 
 - Fetching from third party API
 - Temporarily storing the data on disk
 - Encrypting the data on disk
-- Sending the encrypted data to a CouchDB server where this server and the user has `read` / `write` access
+- Sending the encrypted data to the Verida network
 - Deleting the data from disk
 
 This server only has access to data fetched from the third party API. It can not view the full set of data owned by the user for a given dataset. For example, if this API pulls a user's Twitter posts, it will not have access to any other posts stored in the user's Vault.
-
-### Application Support
-
-The `Verida Wallet` mobile application and the `Verida Web Vault` web application support integrating with the Data Connector Server, enabling users to claim ownership of their personal data.
-
-Once data is stored in these applications, other third party decentralized apps can use the Verida SDK to request access to the user's data with consent.
 
 ## Running the Server
 
