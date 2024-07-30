@@ -1,4 +1,4 @@
-import { Connection, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncSchemaPosition } from "../interfaces"
+import { Connection, HandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncSchemaPosition } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
@@ -22,6 +22,16 @@ export default class BaseSyncHandler extends EventEmitter {
 
     public getConfig(): any {
         return this.config
+    }
+
+    public getOptions(): HandlerOption[] {
+        return [{
+            name: 'backdate',
+            label: 'Backdate history',
+            type: 'enum',
+            enumOptions: ['1 month', '3 months', '6 months', '12 months'],
+            defaultValue: '3 months'
+        }]
     }
 
     public setConfig(config: any) {

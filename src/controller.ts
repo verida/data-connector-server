@@ -195,7 +195,9 @@ export default class Controller {
                 results[providerName] = {
                     name: providerName,
                     label: provider.getProviderLabel(),
-                    icon: provider.getProviderImageUrl()
+                    icon: provider.getProviderImageUrl(),
+                    description: provider.getDescription(),
+                    options: provider.getOptions()
                 }
             } catch (err) {
                 // skip broken providers

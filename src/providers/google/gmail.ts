@@ -9,6 +9,8 @@ import {
   SyncResponse,
   SyncSchemaPosition,
   SyncHandlerStatus,
+  ConnectionOption,
+  HandlerOption,
 } from "../../interfaces";
 import { SchemaEmail, SchemaEmailType } from "../../schemas";
 import { GmailHelpers } from "./helpers";
@@ -48,6 +50,16 @@ export default class Gmail extends BaseSyncHandler {
 
     const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
     return gmail;
+  }
+  
+  public getOptions(): HandlerOption[] {
+    return [{
+      "name": "backdate",
+      "label": "Backdate history",
+      "type": "enum",
+      "enumOptions": ["1 month", "3 months", "6 months", "12 months"],
+      "defaultValue": "3 months"
+  }]
   }
 
   public async _sync(

@@ -5,6 +5,16 @@ export interface AccountAuth {
     refreshToken: string
 }
 
+export interface ConnectionOption {
+    name: string
+    label: string
+    type: 'enum' | 'boolean'
+    enumOptions?: string[]
+    defaultValue: string | boolean
+}
+
+export interface HandlerOption extends ConnectionOption {}
+
 export interface ConnectionProfile {
     id: string
     name: string

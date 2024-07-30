@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import Base from "../BaseProvider";
-import { BaseProviderConfig, SyncProviderLogLevel } from "../../interfaces";
+import { BaseProviderConfig } from "../../interfaces";
 import TokenExpiredError from "../TokenExpiredError";
 import RequestLimitReachedError from "../RequestLimitReachedError";
 

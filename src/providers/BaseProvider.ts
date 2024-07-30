@@ -2,7 +2,7 @@ import { explodeDID } from '@verida/helpers'
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import serverconfig from '../serverconfig.json'
-import { AccountAuth, BaseProviderConfig, Connection, ConnectionProfile, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../interfaces'
+import { AccountAuth, BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../interfaces'
 import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 import { SchemaRecord } from '../schemas'
@@ -54,6 +54,14 @@ export default class BaseProvider {
 
     public getProviderApplicationUrl() {
         throw new Error('Not implemented')
+    }
+
+    public getDescription(): string {
+        return ''
+    }
+
+    public getOptions(): ConnectionOption[] {
+        return []
     }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
