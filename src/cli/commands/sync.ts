@@ -11,6 +11,10 @@ import { SyncProviderLogEntry } from "../../interfaces";
 
 const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
 
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export const Sync: Command<SyncOptions> = {
   name: "Sync",
   description: `Sync to a third party data provider and save the credentials into the Verida: Vault context`,
@@ -79,25 +83,30 @@ export const Sync: Command<SyncOptions> = {
     const networkInstance = await Utils.getNetwork(did, options.key);
     const vault = networkInstance.context
     const logs = await vault.openDatastore(SCHEMA_SYNC_LOG)
-    logs.changes(function(log: SyncProviderLogEntry) {
-        console.log(`${log.level.toUpperCase()}: ${log.message} (${log.insertedAt})`)
+    logs.changes(async function(changeInfo: any) {
+        const log = <SyncProviderLogEntry> await logs.get(changeInfo.id, {})
+        console.log(`${log.level.toUpperCase()}: ${log.message} (${log.insertedAt})${log.schemaUri ? '-' + log.schemaUri : ''}`)
     }, {})
 
 
     const syncManager = new SyncManager(
       await networkInstance.account.did(),
-      serverconfig.verida.testVeridaKey
+      options.key
     )
 
     const providers = await syncManager.getProviders(options.provider)
     const provider = providers[0]
 
-    console.log('Syncing started')
+    // console.log('Syncing started')
     const connection = provider.getConnection()
     await provider.sync(connection.accessToken, connection.refreshToken, options.force)
-    console.log('Syncing done')
+    // console.log('Syncing done')
+
+    // Sleep for 5 seconds so sync can complete
+    await sleep(5000)
 
     await logs.close()
     await vault.close()
+    console.log("Ended")
   },
 };

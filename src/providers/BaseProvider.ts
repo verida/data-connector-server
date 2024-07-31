@@ -86,12 +86,15 @@ export default class BaseProvider {
             message,
             level,
             provider: this.getProviderId(),
-            schemaUri
+            schemaUri,
+            insertedAt: (new Date()).toISOString()
         }
-
-        console.log(logEntry)
         
-        await syncLog.save(logEntry, {})
+        const result = await syncLog.save(logEntry, {})
+        if (!result) {
+            console.log('sync log save error!!')
+            console.log(syncLog.errors)
+        }
     }
 
     /**
