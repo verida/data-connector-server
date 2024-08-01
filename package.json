@@ -5,6 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "cli": "node dist/cli/exec.js",
+    "core-cli": "node node_modules/@verida/cli-tools/dist/exec.js",
     "dev": "yarn build; nodemon src/server.js",
     "build": "rm -rf dist && tsc && rm -rf dist/assets && cp -R assets dist/",
     "prestart": "yarn build",
@@ -75,6 +76,7 @@
     "@types/express": "^4.17.13",
     "@types/express-session": "1.17.0",
     "@types/mocha": "^9.1.0",
+    "@verida/cli-tools": "^4.1.1",
     "claudia": "^5.14.1",
     "command-line-interface": "^5.0.0",
     "nodemon": "^2.0.14",
