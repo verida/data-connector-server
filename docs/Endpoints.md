@@ -41,8 +41,8 @@ Establish a connection to a provider. The connection credentials (ie: `access_to
 
 Query parameters:
 
-1. `key` Seed phrase (or private key) that controls the DID (ie :`0x...` or `work house ...`)
-2. `did` DID of the identity to sync (ie: `did:vda:polamoy:0x....`)
+1. `key` (required)  Seed phrase (or private key) that controls the DID (ie :`0x...` or `work house ...`)
+2. `did` (required)  DID of the identity to sync (ie: `did:vda:polamoy:0x....`)
 
 Example request:
 
@@ -52,14 +52,15 @@ http://127.0.01:5021/connect/facebook?key=0x..&did=0x..
 
 _Note: The `Connect` [command line tool](./CLI.md) will open this URL in a new browser window to initialize a new connection._
 
-## GET `/sync?did=<did>&key=<seed>`
+## GET `/sync/:provider?did=<did>&key=<seed>`
 
 Start syncronizing data for all the connected providers (and their associated handlers). This will occur in the background on the server. The server will update the data connection activity log and all the user data stored in the Verida Vault.
 
 Query parameters:
 
-1. `did` DID of the identity to sync (ie: `did:vda:polamoy:0x....`)
-2. `key` Seed phrase (or private key) that controls the DID (ie :`0x...` or `work house ...`)
+1. `did` (required) DID of the identity to sync (ie: `did:vda:polamoy:0x....`)
+2. `key` (required) Seed phrase (or private key) that controls the DID (ie :`0x...` or `work house ...`)
+3. `provider` (optional) Sync a specific provider only
 
 Example response:
 
