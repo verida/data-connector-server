@@ -19,6 +19,10 @@ export const enum PostSyncRefTypes {
 
 export default class Posts extends BaseSyncHandler {
 
+    public getName(): string {
+        return 'post'
+    }
+
     public getSchemaUri(): string {
         return CONFIG.verida.schemas.POST
     }

@@ -11,6 +11,10 @@ const _ = require('lodash')
 export default class SBTs extends BaseSyncHandler {
     protected static schemaUri: string = 'https://common.schemas.verida.io/credential/base/v0.2.0/schema.json'
 
+    public getName(): string {
+        return 'sbts'
+    }
+
     /**
      * @todo: Support paging through all results
      * @todo: Correctly support `this.config.limitResults`

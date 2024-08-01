@@ -11,6 +11,10 @@ export default class Following extends BaseSyncHandler {
 
     protected static schemaUri: string = 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
 
+    public getName(): string {
+        return 'following'
+    }
+
     /**
      * @todo: Support paging through all results
      * @todo: Correctly support `this.config.limitResults`

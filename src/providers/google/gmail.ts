@@ -26,6 +26,10 @@ export interface GmailSyncSchemaPosition extends SyncSchemaPosition {
 }
 
 export default class Gmail extends BaseSyncHandler {
+  public getName(): string {
+    return 'gmail'
+}
+
   public getSchemaUri(): string {
     return CONFIG.verida.schemas.EMAIL;
   }
@@ -54,11 +58,11 @@ export default class Gmail extends BaseSyncHandler {
   
   public getOptions(): HandlerOption[] {
     return [{
-      "name": "backdate",
-      "label": "Backdate history",
-      "type": "enum",
-      "enumOptions": ["1 month", "3 months", "6 months", "12 months"],
-      "defaultValue": "3 months"
+      name: 'backdate',
+      label: 'Backdate history',
+      type: 'enum',
+      enumOptions: ['1 month', '3 months', '6 months', '12 months'],
+      defaultValue: '3 months'
   }]
   }
 

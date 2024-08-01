@@ -10,6 +10,10 @@ export default class Posts extends BaseSyncHandler {
 
     protected static schemaUri: string = 'https://common.schemas.verida.io/social/post/v0.1.0/schema.json'
 
+    public getName(): string {
+        return 'posts'
+    }
+
     /**
      * @todo: Support paging through all results
      * @todo: Correctly support `this.config.limitResults`

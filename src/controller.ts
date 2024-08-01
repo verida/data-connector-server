@@ -10,6 +10,7 @@ const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connectio
 
 import Providers from "./providers"
 import SyncManager from './sync-manager'
+import { HandlerOption } from './interfaces'
 
 /**
  * Sign in process:
@@ -190,14 +191,22 @@ export default class Controller {
         const results: any = {}
         for (let p in providers) {
             const providerName = providers[p]
+
             try {
                 const provider = Providers(providerName)
+                const syncHandlers = await provider.getSyncHandlers()
+                const handlers: Record<string, HandlerOption[]> = {}
+                for (const handler of syncHandlers) {
+                    handlers[handler.getName()] = handler.getOptions()
+                }
+
                 results[providerName] = {
                     name: providerName,
                     label: provider.getProviderLabel(),
                     icon: provider.getProviderImageUrl(),
                     description: provider.getDescription(),
-                    options: provider.getOptions()
+                    options: provider.getOptions(),
+                    handlers
                 }
             } catch (err) {
                 // skip broken providers

@@ -43,6 +43,10 @@ const FAKE_RESPONSES = [{
 
 export default class Posts extends BaseSyncHandler {
 
+    public getName(): string {
+        return 'post'
+    }
+
     public getSchemaUri(): string {
         return CONFIG.verida.schemas.POST
     }

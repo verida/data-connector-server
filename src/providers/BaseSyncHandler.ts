@@ -20,18 +20,16 @@ export default class BaseSyncHandler extends EventEmitter {
         this.provider = provider
     }
 
+    public getName(): string {
+        throw new Error('Not implemented')
+    }
+
     public getConfig(): any {
         return this.config
     }
 
     public getOptions(): HandlerOption[] {
-        return [{
-            name: 'backdate',
-            label: 'Backdate history',
-            type: 'enum',
-            enumOptions: ['1 month', '3 months', '6 months', '12 months'],
-            defaultValue: '3 months'
-        }]
+        return []
     }
 
     public setConfig(config: any) {

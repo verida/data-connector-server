@@ -12,6 +12,10 @@ export default class Following extends BaseSyncHandler {
 
     protected apiEndpoint = '/me/likes'
 
+    public getName(): string {
+        return 'following'
+    }
+
     public getSchemaUri(): string {
         return CONFIG.verida.schemas.FOLLOWING
     }
