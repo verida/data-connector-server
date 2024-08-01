@@ -1,9 +1,6 @@
+# API Endpoints
 
-# Documentation
-
-## API Endpoints
-
-### GET `/providers`
+## GET `/providers`
 
 Obtain a list of all providers.
 
@@ -38,7 +35,7 @@ Example response:
 
 The `handlers` object lists the configuration options available for each handler for a given provider. These options need to be presented to the user in the interface, so the user can choose their preferences for the handler syncronization.
 
-### GET `/connect/:provider?redirect=<redirect>&key=<key>&did=<did>`
+## GET `/connect/:provider?redirect=<redirect>&key=<key>&did=<did>`
 
 Establish a connection to a provider. The connection credentials (ie: `access_token`, `refresh_token` are saved into the identities `connection` datastore in the Verida Vault)
 
@@ -48,7 +45,7 @@ Query parameters:
 2. `did` DID of the identity to sync (ie: `did:vda:polamoy:0x....`)
 
 
-### GET `/sync?did=<did>&seed=<seed>`
+## GET `/sync?did=<did>&seed=<seed>`
 
 Query parameters:
 
