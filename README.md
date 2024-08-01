@@ -89,5 +89,6 @@ yarn run core-cli CreateAccount --help
 ## Learn more
 
 - [How to contribute](./docs/Contributing.md)
-- [API Endpoints](./docs/Endpoints.md)
-- [Implementation notes](./docs/Implementation.md)
+- [API Endpoints](./docs/Endpoints.md) to establish connections, sync data and get provider metadata
+- [Command Line Tools](./docs/CLI.md) to help establish provider connections, manually sync data and view data
+- [Implementation notes](./docs/Implementation.md) that explain the inner workings and design details
