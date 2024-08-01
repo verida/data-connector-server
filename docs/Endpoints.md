@@ -35,7 +35,7 @@ Example response:
 
 The `handlers` object lists the configuration options available for each handler for a given provider. These options need to be presented to the user in the interface, so the user can choose their preferences for the handler syncronization.
 
-## GET `/connect/:provider?redirect=<redirect>&key=<key>&did=<did>`
+## GET `/connect/:provider?key=<key>&did=<did>`
 
 Establish a connection to a provider. The connection credentials (ie: `access_token`, `refresh_token` are saved into the identities `connection` datastore in the Verida Vault)
 
@@ -44,18 +44,37 @@ Query parameters:
 1. `key` Seed phrase (or private key) that controls the DID (ie :`0x...` or `work house ...`)
 2. `did` DID of the identity to sync (ie: `did:vda:polamoy:0x....`)
 
+Example request:
 
-## GET `/sync?did=<did>&seed=<seed>`
+```
+http://127.0.01:5021/connect/facebook?key=0x..&did=0x..
+```
+
+_Note: The `Connect` [command line tool](./CLI.md) will open this URL in a new browser window to initialize a new connection._
+
+## GET `/sync?did=<did>&key=<seed>`
+
+Start syncronizing data for all the connected providers (and their associated handlers). This will occur in the background on the server. The server will update the data connection activity log and all the user data stored in the Verida Vault.
 
 Query parameters:
 
 1. `did` DID of the identity to sync (ie: `did:vda:polamoy:0x....`)
-2. `seed` Seed phrase (or private key) that controls the DID (ie :`0x...` or `work house ...`)
+2. `key` Seed phrase (or private key) that controls the DID (ie :`0x...` or `work house ...`)
 
 Example response:
 
-```
+```json
 {
     "success": true
 }
 ```
+
+_Note: The server should respond with success immeidately, indicating the sync was successfully started. This does not indicate all the data sync process completed, check the sync logs for specific insight into the success / failure / progress of each provider and sync handler._
+
+Example request:
+
+```
+http://127.0.01:5021/sync?key=0x..&did=0x..
+```
+
+_Note: The `Connect` [command line tool](./CLI.md) will open this URL in a new browser window to initialize a new connection._
