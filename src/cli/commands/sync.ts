@@ -4,7 +4,7 @@ import { AutoAccount } from "@verida/account-node";
 import { Network } from "@verida/types";
 import CONFIG from "../../config";
 
-import serverconfig from "../../../src/serverconfig.json";
+import serverconfig from "../../../src/config";
 import { Utils } from "../../utils";
 import SyncManager from "../../sync-manager";
 import { SyncProviderLogEntry } from "../../interfaces";

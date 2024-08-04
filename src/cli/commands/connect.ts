@@ -6,7 +6,7 @@ import open from 'open'
 import CONFIG from '../../config'
 //import { ContextAccount } from '@verida/account-node';
 
-import serverconfig from '../../../src/serverconfig.json'
+import serverconfig from '../../../src/config'
 import { COMMAND_PARAMS } from '../utils';
 
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig

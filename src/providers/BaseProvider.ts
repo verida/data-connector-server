@@ -1,7 +1,6 @@
-import { explodeDID } from '@verida/helpers'
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
-import serverconfig from '../serverconfig.json'
+import serverconfig from '../config'
 import { AccountAuth, BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../interfaces'
 import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
