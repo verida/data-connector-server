@@ -3,13 +3,11 @@ import { ConnectProviderOptions } from './interfaces';
 import { AutoAccount } from '@verida/account-node';
 import { Network } from '@verida/types';
 import open from 'open'
-import CONFIG from '../../config'
-//import { ContextAccount } from '@verida/account-node';
 
-import serverconfig from '../../../src/config'
+import serverconfig from '../../config'
 import { COMMAND_PARAMS } from '../utils';
 
-const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
+// const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 export const Connect: Command<ConnectProviderOptions> = {
     name: 'Connect',
@@ -70,7 +68,7 @@ export const Connect: Command<ConnectProviderOptions> = {
       const rows = await ds.getMany()
       console.log(rows)*/
 
-      const openUrl = `${CONFIG.serverUrl}/connect/${options.provider}?did=${did}&key=${signature}`
+      const openUrl = `${serverconfig.serverUrl}/connect/${options.provider}?did=${did}&key=${signature}`
       open(openUrl)
     }
   };

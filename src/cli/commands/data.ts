@@ -2,7 +2,6 @@ import { Command } from "command-line-interface";
 import { DataOptions } from "./interfaces";
 import { AutoAccount } from "@verida/account-node";
 import { Network } from "@verida/types";
-import CONFIG from "../../config";
 import { Utils } from "../../utils";
 import { SchemaRecord } from "../../schemas";
 import { COMMAND_PARAMS } from "../utils";

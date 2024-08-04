@@ -2,7 +2,7 @@ import { SyncSchemaPosition, SyncHandlerStatus } from "../../interfaces";
 import BaseSyncHandler from "../BaseSyncHandler";
 import { SyncResponse } from "../../interfaces";
 import CONFIG from '../../config'
-import { SchemaRecord } from "../../../src/schemas";
+import { SchemaRecord } from "../../schemas";
 
 // Required fields in the post schema
 const FAKE_ITEM = {
