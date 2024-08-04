@@ -63,13 +63,20 @@ export default class CommonUtils {
         return cachedNetworkInstance
     }
 
-    static getConnection = async(providerName: string): Promise<Connection> => {
+    static getConnection = async(providerName: string, providerId?: string): Promise<Connection> => {
         const { context } = await CommonUtils.getNetwork()
         const connectionsDs = await context.openDatastore(SCHEMA_DATA_CONNECTION)
-        const data = await connectionsDs.getMany()
-        const db = await connectionsDs.getDb()
-        const info = await db.info()
-        const connection = await connectionsDs.get(providerName, {})
+        
+        const filter = {
+            provider: providerName,
+            providerId
+        }
+        const connection = <Connection | undefined> await connectionsDs.getOne(filter, {})
+
+        if (!connection) {
+            throw new Error(`Unable to locate connection ${providerName} ${providerId}`)
+        }
+
         return connection
     }
 

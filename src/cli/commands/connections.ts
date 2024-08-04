@@ -2,7 +2,6 @@ import { Command } from "command-line-interface";
 import { ConnectionsOptions } from "./interfaces";
 import { AutoAccount } from "@verida/account-node";
 import { Network } from "@verida/types";
-import CONFIG from "../../config";
 import { Utils } from "../../utils";
 import { SchemaRecord } from "../../schemas";
 import { COMMAND_PARAMS } from "../utils";
@@ -19,6 +18,13 @@ export const Connections: Command<ConnectionsOptions> = {
         isRequired: false
     },
     COMMAND_PARAMS.providerId,
+    {
+      name: "showConnections",
+      description: "Show the full connection object (includes access and refresh tokens)",
+      type: "boolean",
+      defaultValue: false,
+      alias: "s",
+    },
   ],
   async handle({ options }) {
     console.log(`Fetching current connections`);
@@ -59,10 +65,16 @@ export const Connections: Command<ConnectionsOptions> = {
       options.providerId
     );
 
+    console.log(`Found ${providers.length} connections`)
+
     for (const provider of providers) {
         const connection = provider.getConnection()
         console.log(`Provider ${provider.getProviderName()} (${provider.getProviderId()})`)
-        console.log(JSON.stringify(connection.profile, null, 2))
+        if (options.showConnections) {
+          console.log(JSON.stringify(connection, null, 2))  
+        } else {
+          console.log(JSON.stringify(connection.profile, null, 2))
+        }
     }
 
     console.log('-COMPLETE-')

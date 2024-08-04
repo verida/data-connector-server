@@ -40,7 +40,7 @@ export const ResetProvider: Command<ResetProviderOptions> = {
   ],
   async handle({ options }) {
     console.log(
-      `Reseting ${options.provider} ${
+      `Resetting ${options.provider} ${
         options.providerId ? "(" + options.providerId + ")" : ""
       } on network ${options.network}. (resetPositions=true, deleteData=${
         options.deleteData

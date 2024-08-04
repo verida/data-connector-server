@@ -36,4 +36,5 @@ export interface ConnectionsOptions {
     providerId?: string
     key?: string
     network?: string
+    showConnections?: boolean
 }
