@@ -6,8 +6,9 @@
   "scripts": {
     "cli": "node dist/cli/exec.js",
     "core-cli": "node node_modules/@verida/cli-tools/dist/exec.js",
-    "dev": "yarn build; nodemon src/server.js",
-    "build": "rm -rf dist && tsc && rm -rf dist/assets && cp -R assets dist/",
+    "dev": "yarn build && yarn symlink-dashboard && nodemon src/server.js",
+    "symlink-dashboard": "rm -rf dist/dashboard && ln -s ../src/dashboard/public dist/dashboard",
+    "build": "rm -rf dist && tsc && rm -rf dist/assets && cp -R assets dist/ && cp -R src/dashboard/public dist/dashboard",
     "prestart": "yarn build",
     "start": "node dist/server.js",
     "tests": "ts-mocha './tests/**/*.ts'",
