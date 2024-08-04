@@ -31,6 +31,9 @@ export interface NetworkInstance {
 
 let cachedNetworkInstance: NetworkInstance
 
+const providerIdArg = process.argv.find(arg => arg.startsWith('--providerId='))
+const cliProviderId = providerIdArg ? providerIdArg.split('=')[1] : undefined
+
 export default class CommonUtils {
 
     static getNetwork = async (): Promise<NetworkInstance> => {
@@ -64,6 +67,10 @@ export default class CommonUtils {
     }
 
     static getConnection = async(providerName: string, providerId?: string): Promise<Connection> => {
+        if (!providerId) {
+            providerId = cliProviderId
+        }
+
         const { context } = await CommonUtils.getNetwork()
         const connectionsDs = await context.openDatastore(SCHEMA_DATA_CONNECTION)
         
@@ -71,6 +78,7 @@ export default class CommonUtils {
             provider: providerName,
             providerId
         }
+
         const connection = <Connection | undefined> await connectionsDs.getOne(filter, {})
 
         if (!connection) {

@@ -28,6 +28,7 @@ export interface DataOptions {
     attributes: string
     sortField: string
     network?: string
+    filter?: string
 }
 
 export interface ConnectionsOptions {

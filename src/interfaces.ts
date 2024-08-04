@@ -57,7 +57,7 @@ export interface Connection {
     provider: string
     providerId: string
     accessToken: string
-    refreshToken: string
+    refreshToken?: string
     profile: ConnectionProfile
     syncStatus: SyncStatus
     syncFrequency: SyncFrequency

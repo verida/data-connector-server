@@ -30,6 +30,13 @@ export const Data: Command<DataOptions> = {
         "Comma separated list of attributes to output (ie: _id,name)",
       type: "string",
     },
+    {
+      name: "filter",
+      description:
+        "Comma separated list of filters to apply to output (ie: provider=google,providerId=1234567890)",
+      type: "string",
+      alias: "f"
+    },
     COMMAND_PARAMS.key,
     COMMAND_PARAMS.network,
   ],
@@ -41,6 +48,10 @@ export const Data: Command<DataOptions> = {
     if (!options.key) {
       console.log(`No key specified from command line or environment variable`);
       return;
+    }
+
+    if (options.filter) {
+      console.log(`Filter: ${JSON.stringify(options.filter)}`)
     }
 
     // Initialize Account
@@ -73,6 +84,16 @@ export const Data: Command<DataOptions> = {
     const sort: Record<string, string> = {};
     sort[options.sortField] = "desc";
     console.time("Get first 5 items");
+
+    const filter: Record<string, string> = {}
+    if (options.filter) {
+      const filterAttributes = options.filter ? options.filter.split(",") : [];
+      for (const attribute of filterAttributes) {
+        const [key, value] = attribute.split('=')
+        filter[key] = value
+      }
+    }
+
     const first5Items = <SchemaRecord[]>await dataDs.getMany(
       {},
       {

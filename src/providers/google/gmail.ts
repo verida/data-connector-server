@@ -27,6 +27,10 @@ export default class Gmail extends BaseSyncHandler {
     return CONFIG.verida.schemas.EMAIL;
   }
 
+  public getProviderApplicationUrl() {
+    return 'https://gmail.com/'
+}
+
   public getGmail(): gmail_v1.Gmail {
     const TOKEN = {
       access_token: this.connection.accessToken,
@@ -183,7 +187,9 @@ export default class Gmail extends BaseSyncHandler {
         _id: `gmail-${messageId}`,
         type: messageType,
         name: subject ? subject : 'No email subject',
-        sourceApplication: "https://gmail.com/",
+        sourceAccountId: this.provider.getProviderId(),
+        sourceData: {},
+        sourceApplication: this.getProviderApplicationUrl(),
         sourceId: message.id,
         fromName: from.name,
         fromEmail: from.email,

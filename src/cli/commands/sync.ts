@@ -55,7 +55,7 @@ export const Sync: Command<SyncOptions> = {
 
     const did = (await account.did()).toLowerCase();
     console.log(
-      `Syncing data from ${options.provider} to ${did} on network ${options.network}.`
+      `Syncing data from (${options.provider}) (${options.providerId ? options.providerId : 'all connections'}) to ${did} on network ${options.network}.`
     );
 
     const networkInstance = await Utils.getNetwork(did, options.key);

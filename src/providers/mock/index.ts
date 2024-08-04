@@ -27,6 +27,10 @@ export default class MockProvider extends Base {
         return 'https://mock.com/'
     }
 
+    public getProviderId(): string {
+        return "1"
+    }
+
     public setConfig(config: MockProviderConfig) {
         this.config = config
     }

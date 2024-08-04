@@ -36,6 +36,10 @@ export default class BaseSyncHandler extends EventEmitter {
         this.config = config
     }
 
+    public getProviderApplicationUrl() {
+        return this.provider.getProviderApplicationUrl()
+    }
+
     public getSchemaUri(): string {
         throw new Error('Not implemented')
     }

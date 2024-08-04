@@ -2,6 +2,7 @@ import { SyncSchemaPosition, SyncHandlerStatus } from "../../interfaces";
 import BaseSyncHandler from "../BaseSyncHandler";
 import { SyncResponse } from "../../interfaces";
 import CONFIG from '../../config'
+import { SchemaRecord } from "../../../src/schemas";
 
 // Required fields in the post schema
 const FAKE_ITEM = {
@@ -57,7 +58,7 @@ export default class Posts extends BaseSyncHandler {
         }
 
         const pageResults = FAKE_RESPONSES.slice(parseInt(syncPosition.thisRef), parseInt(syncPosition.thisRef) + this.config.limit)
-        const results = this.buildResults(pageResults, syncPosition.breakId)
+        const results = this.buildResults(pageResults, syncPosition.breakId, (parseInt(syncPosition.thisRef) + 1).toString())
 
         if (!results) {
             // No results found, so stop sync
@@ -111,16 +112,35 @@ export default class Posts extends BaseSyncHandler {
         return syncPosition
     }
 
-    protected buildResults(items: any[], breakId: string): any[] {
+    protected buildResults(items: any[], breakId: string, startId: string): SchemaRecord[] {
         const results = []
+        const now = new Date()
+        let started = startId ? false : true
         for (let i in items) {
-            if (items[i]._id == breakId) {
+            const item = items[i]
+            if (item._id == breakId) {
                 break
             }
 
+            if (items[i]._id == startId) {
+                started = true
+            }
+
+            if (!started) {
+                continue
+            }
+
+            // Ensure items are most recent first
+            const insertedAt = (new Date(now.getTime() - (parseInt(item._id)*60) * 1000)).toISOString()
+
             results.push({
-                ...items[i],
-                insertedAt: new Date().toISOString()
+                ...item,
+                _id: `post-${item._id}`,
+                sourceApplication: this.getProviderApplicationUrl(),
+                sourceAccountId: this.provider.getProviderId(),
+                sourceId: i,
+                sourceData: {},
+                insertedAt
             })
         }
 
