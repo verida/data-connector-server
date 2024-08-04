@@ -10,11 +10,18 @@ The `Verida Vault` utilizes this server, redirecting a user to connect to an API
 
 ### Configuration
 
-Update `src/serverconfig.json` to:
+Create a local configuration file:
+
+```
+cp src/serverconfig.example.json src/serverconfig.local.json
+```
+
+ Update `src/serverconfig.local.json` to:
 
 1. Specify the details of each provider you want to run. You will need to obtain the necessary API keys for each provider.
 2. Specify the correct `serverUrl` and `assetsUrl` that point to the correct address of your server. Don't use `localhost` as it breaks sessions, use `127.0.0.1` instead (*).
 3. `testVeridaKey`: A Verida private key (or seedphrase) that controls a DID. This is used by the command line when connecting a provider, and also used by the unit tests to load providers and save test data.
+4. Update any connection credentials
 
 _(*) Sessions are used to track `redirect` URLs in the connection request. Sessions **do not** work locally if you specify `localhost` for the hostname. Use an IP address instead._
 
