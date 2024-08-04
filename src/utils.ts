@@ -3,7 +3,7 @@ import { Client, Network } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
 import fs from 'fs'
-import serverconfig from '../src/serverconfig.json'
+import serverconfig from '../src/config'
 import { AutoAccount } from '@verida/account-node'
 import { SyncSchemaPositionType } from './interfaces'
 

@@ -6,7 +6,8 @@ import open from 'open'
 import CONFIG from '../../config'
 //import { ContextAccount } from '@verida/account-node';
 
-import serverconfig from '../../../src/serverconfig.json'
+import serverconfig from '../../../src/config'
+import { COMMAND_PARAMS } from '../utils';
 
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
@@ -14,33 +15,9 @@ export const Connect: Command<ConnectProviderOptions> = {
     name: 'Connect',
     description: `Connect to a third party data provider and save the credentials into the Verida: Vault context`,
     optionDefinitions: [
-      {
-        name: 'provider',
-        description: 'Unique ID of the provider',
-        type: 'string',
-        alias: 'p',
-        isRequired: true
-      },
-      {
-        name: 'key',
-        description: 'Verida network private key (or seed phrase)',
-        type: 'string',
-        defaultValue: CONFIG.verida.testVeridaKey,
-        alias: 'k'
-      },
-      {
-        name: 'network',
-        description: 'Verida network (banksia, myrtle)',
-        type: 'string',
-        alias: 'n',
-        defaultValue: 'mainnet',
-        validate(val: string) {
-          const valid = ['banksia', 'myrtle']
-          if (valid.indexOf(val) === -1) {
-            return false
-          }
-        }
-      },
+      COMMAND_PARAMS.provider,
+      COMMAND_PARAMS.key,
+      COMMAND_PARAMS.network
     ],
     async handle ({ options }) {
       console.log(`Connecting to ${options.provider} on network ${options.network}.`);

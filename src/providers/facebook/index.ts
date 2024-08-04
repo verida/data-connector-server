@@ -23,7 +23,7 @@ export default class FacebookProvider extends Base {
 
     protected config: FacebookProviderConfig
 
-    public getProviderId() {
+    public getProviderName() {
         return 'facebook'
     }
 

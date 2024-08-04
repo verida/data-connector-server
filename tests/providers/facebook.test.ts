@@ -25,7 +25,7 @@ describe(`${providerName} Tests`, function() {
     describe("Fetch API data", () => {
         const provider = Providers(providerName)
 
-        it.skip("Can fetch Posts", async () => {
+        it("Can fetch Posts", async () => {
             const connection = await CommonUtils.getConnection(providerName)
 
             const syncPosition: SyncSchemaPosition = {
@@ -93,7 +93,7 @@ describe(`${providerName} Tests`, function() {
             assert.equal(response.position.futureBreakId, undefined, 'Future break ID is undefined')
         })
 
-        it.skip("Can fetch Following", async () => {
+        it("Can fetch Following", async () => {
             const connection = await CommonUtils.getConnection(providerName)
 
             const syncPosition: SyncSchemaPosition = {

@@ -3,6 +3,7 @@ import { Connect } from './commands/connect'
 import { Sync } from './commands/sync'
 import { Data } from './commands/data'
 import { ResetProvider } from './commands/resetProvider'
+import { Connections } from './commands/connections'
 
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 (async (): Promise<void> => {
@@ -23,12 +24,12 @@ import { ResetProvider } from './commands/resetProvider'
           Connect,
           Sync,
           Data,
-          ResetProvider
+          ResetProvider,
+          Connections
         },
         handlers: {
           // @ts-ignore
           commandUnknown ({ unknownCommandName, recommendedCommandName, ancestors }) {
-            console.log('!!')
             console.log(unknownCommandName, recommendedCommandName, ancestors)
           },
         }

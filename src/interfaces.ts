@@ -10,7 +10,7 @@ export interface ConnectionOption {
     label: string
     type: 'enum' | 'boolean'
     enumOptions?: string[]
-    defaultValue: string | boolean
+    defaultValue: string
 }
 
 export interface HandlerOption extends ConnectionOption {}
@@ -44,14 +44,27 @@ export enum SyncStatus {
     DISABLED = "disabled"
 }
 
+export interface ConnectionHandler {
+    name: string
+    enabled: boolean
+    config: Record<string, string>
+}
+
 export interface Connection {
+    _id?: string
     _rev?: string
+    name: string
+    provider: string
+    providerId: string
     accessToken: string
-    refreshToken: string
+    refreshToken?: string
     profile: ConnectionProfile
-    source: string
     syncStatus: SyncStatus
     syncFrequency: SyncFrequency
+    syncLast?: string
+    syncNext?: string
+    handlers: ConnectionHandler[]
+    config: Record<string, string>
 }
 
 export interface BaseProviderConfig {

@@ -8,6 +8,7 @@ export interface SchemaRecord {
     icon?: string
     uri?: string
     sourceApplication?: string
+    sourceAccountId?: string
     sourceId?: string
     sourceData?: object
 }

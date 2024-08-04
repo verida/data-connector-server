@@ -1,7 +1,7 @@
 import CONFIG from './config'
 import { IContext, IDatastore } from "@verida/types";
 import Providers from "./providers"
-import { Connection, DatastoreSaveResponse, SyncStatus, SyncFrequency, ConnectionProfile } from './interfaces';
+import { Connection, DatastoreSaveResponse, SyncStatus, SyncFrequency, ConnectionProfile, ConnectionHandler } from './interfaces';
 import BaseProvider from './providers/BaseProvider';
 import TokenExpiredError from './providers/TokenExpiredError';
 import { Utils } from './utils';
@@ -27,7 +27,7 @@ export default class SyncManager {
     private seedPhrase: string
 
     private connectionDatastore?: IDatastore
-    private providers?: BaseProvider[]
+    private connections?: BaseProvider[]
 
     private status: SyncStatus = SyncStatus.ACTIVE
 
@@ -55,10 +55,10 @@ export default class SyncManager {
         return false
     }
 
-    public async sync(providerName?: string) {
+    public async sync(providerName?: string, providerId?: string) {
         const vault = await this.getVault()
 
-        const providers = await this.getProviders(providerName)
+        const providers = await this.getProviders(providerName, providerId)
         // @todo: Do these in parallel?
         // May need a shared cache of datastore connections so we 
         // don't try to open the same one multiple times
@@ -89,23 +89,33 @@ export default class SyncManager {
         }
     }
 
-    public async getProviders(providerName?: string): Promise<BaseProvider[]> {
-        if (this.providers) {
-            return this.providers
+    public async getProviders(providerName?: string, providerId?: string): Promise<BaseProvider[]> {
+        if (this.connections) {
+            return this.connections
         }
 
         const vault = await this.getVault()
 
         const datastore = await this.getConnectionDatastore()
         const allProviders = providerName ? [providerName] : Object.keys(CONFIG.providers)
-        const userProviders = []
+        const userConnections = []
         for (let p in allProviders) {
             const providerName = allProviders[p]
             
             try {
-                const connection = <Connection> await datastore.get(providerName, {})
-                const provider = Providers(providerName, vault, connection)
-                userProviders.push(provider)
+                const filter: Record<string, string> = {
+                    provider: providerName
+                }
+
+                if (providerId) {
+                    filter.providerId = providerId
+                }
+
+                const connections = <Connection[]> await datastore.getMany(filter, {})
+                for (const connection of connections) {
+                    const provider = Providers(providerName, vault, connection)
+                    userConnections.push(provider)
+                }
                 
             } catch (err) {
                 console.log(err)
@@ -113,8 +123,13 @@ export default class SyncManager {
             }
         }
 
-        this.providers = userProviders
-        return this.providers
+        if (providerName) {
+            return userConnections
+        } else {
+            // Save the connections if we fetched all of them
+            this.connections = userConnections
+            return this.connections
+        }
     }
 
     public async getConnectionDatastore(): Promise<IDatastore> {
@@ -273,14 +288,14 @@ export default class SyncManager {
     public async saveProvider(providerName: string, accessToken: string, refreshToken: string, profile: any) {
         const connectionDatastore = await this.getConnectionDatastore()
 
-        let providerRecord
+        const providerId = `${providerName}:${profile.id}`
+
+        let providerConnection: Connection
         try {
-            providerRecord = await connectionDatastore.get(providerName, {})
+            providerConnection = await connectionDatastore.get(providerId, {})
         } catch (err: any) {
-            if (err.message.match('missing')) {
-                providerRecord = {}
-            } else {
-                throw new Error(`Unknown error saving ${providerName} auth tokens: ${err.message}`)
+            if (!err.message.match('missing')) {
+                throw new Error(`Unknown error saving ${providerName} (${providerId}) auth tokens: ${err.message}`)
             }
         }
 
@@ -295,19 +310,46 @@ export default class SyncManager {
             emailVerified: profile.emails && profile.emails.length ? profile.emails[0].verified : undefined,
         }
 
-        providerRecord = {
-            ...providerRecord,
-            _id: providerName,
-            name: providerName,
-            accessToken,
-            refreshToken,
-            source: providerName,
-            syncFrequency: SyncFrequency.HOUR,
-            syncStatus: SyncStatus.ACTIVE,
-            profile: connectionProfile
+        const provider = Providers(providerName)
+        const handlers = await provider.getSyncHandlers()
+        const connectionHandlers: ConnectionHandler[] = []
+
+        for (const handler of handlers) {
+            const handlerOptions = handler.getOptions()
+            const handlerConfig: Record<string, string> = {}
+
+            for (const handlerOption of handlerOptions) {
+                handlerConfig[handlerOption.name] = handlerOption.defaultValue
+            }
+
+            connectionHandlers.push({
+                name: handler.getName(),
+                enabled: true,
+                config: handlerConfig
+            })
         }
 
-        const result = await connectionDatastore.save(providerRecord, {})
+        const providerConfig: Record<string, string> = {}
+        for (const providerOption of provider.getOptions()) {
+            providerConfig[providerOption.name] = providerOption.defaultValue
+        }
+
+        providerConnection = {
+            ...(providerConnection ? providerConnection : {}),
+            _id: providerId,
+            name: providerId,
+            provider: providerName,
+            providerId: profile.id,
+            accessToken,
+            refreshToken,
+            profile: connectionProfile,
+            syncStatus: SyncStatus.ACTIVE,
+            syncFrequency: SyncFrequency.HOUR,
+            handlers: connectionHandlers,
+            config: providerConfig
+        }
+
+        const result = await connectionDatastore.save(providerConnection, {})
 
         if (!result) {
             throw new Error(`Unable to save connection: ${JSON.stringify(connectionDatastore.errors, null, 2)}`)

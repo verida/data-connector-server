@@ -1,5 +1,6 @@
 import {
   BaseProviderConfig,
+  Connection,
   SyncHandlerStatus,
   SyncResponse,
   SyncSchemaPosition,
@@ -7,6 +8,7 @@ import {
   SyncStatus,
 } from "../src/interfaces";
 import providers from "../src/providers";
+import BaseProvider from "../src/providers/BaseProvider";
 import BaseSyncHandler from "../src/providers/BaseSyncHandler";
 import { SchemaRecord } from "../src/schemas";
 import serverconfig from "../src/serverconfig.json";
@@ -21,6 +23,8 @@ export interface GenericTestConfig {
   // Prefix used for record ID's (override default which is providerName)
   idPrefix?: string;
 }
+
+let provider: BaseProvider, connection: Connection
 
 export class CommonTests {
   static async runSyncTest(
@@ -51,11 +55,15 @@ export class CommonTests {
   static async buildTestObjects(
     providerName: string,
     handlerType: typeof BaseSyncHandler,
-    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
+    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">,
+    connection?: Connection
   ) {
     const network = await CommonUtils.getNetwork();
-    const connection = await CommonUtils.getConnection(providerName);
-    const provider = providers(providerName, network.context, connection);
+    if (!connection) {
+      connection = await CommonUtils.getConnection(providerName);
+    }
+
+    provider = providers(providerName, network.context, connection);
 
     const handler = await provider.getSyncHandler(handlerType);
     const schemaUri = handler.getSchemaUri();
@@ -85,7 +93,8 @@ export class CommonTests {
       timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     },
-    providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {}
+    providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {},
+    connection?: Connection
   ) {
     // Set result limit to 3 results so page tests can work correctly
     providerConfig[testConfig.batchSizeLimitAttribute] = 3;
@@ -93,7 +102,8 @@ export class CommonTests {
     const { api, handler, schemaUri } = await this.buildTestObjects(
       providerName,
       handlerType,
-      providerConfig
+      providerConfig,
+      connection
     );
 
     const idPrefix = testConfig.idPrefix ? testConfig.idPrefix : providerName;
@@ -111,15 +121,20 @@ export class CommonTests {
     const results = <SchemaRecord[]>response.results;
 
     assert.ok(results && results.length, "Have results returned");
-    assert.ok(
-      results && results.length == 3,
-      "Have correct number of results returned"
+    assert.equal(3, results.length,
+      "Have correct number of results returned on page 1"
     );
+
     assert.ok(
       results[0][testConfig.timeOrderAttribute] >
         results[1][testConfig.timeOrderAttribute],
       "Results are most recent first"
     );
+
+    assert.equal(results[0].sourceApplication, handler.getProviderApplicationUrl(), "Items have correct source application")
+    assert.equal(results[0].sourceAccountId, provider.getProviderId(), "Items have correct source account / provider id")
+    assert.ok(results[0].sourceId, "Items have sourceId set")
+    assert.ok(results[0].sourceData, "Items have sourceData set")
 
     assert.equal(
       SyncStatus.ACTIVE,

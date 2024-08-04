@@ -1,42 +1,33 @@
 import { Command } from "command-line-interface";
-import { ResetProviderOptions } from "./interfaces";
+import { ConnectionsOptions } from "./interfaces";
 import { AutoAccount } from "@verida/account-node";
 import { Network } from "@verida/types";
 import { Utils } from "../../utils";
-import SyncManager from "../../sync-manager";
+import { SchemaRecord } from "../../schemas";
 import { COMMAND_PARAMS } from "../utils";
+import SyncManager from "../../sync-manager";
 
-export const ResetProvider: Command<ResetProviderOptions> = {
-  name: "ResetProvider",
-  description: `Clear all the data and reset sync positions for a provider`,
+export const Connections: Command<ConnectionsOptions> = {
+  name: "Connections",
+  description: `Show data for a given schema`,
   optionDefinitions: [
-    {
-      name: "deleteData",
-      description: "Delete all data from schemas associated with this provider",
-      type: "boolean",
-      defaultValue: false,
-      alias: "d",
-    },
-    {
-      name: "clearConnection",
-      description: "Clear the connection object",
-      type: "boolean",
-      defaultValue: false,
-      alias: "c",
-    },
-    COMMAND_PARAMS.provider,
-    COMMAND_PARAMS.providerId,
     COMMAND_PARAMS.key,
     COMMAND_PARAMS.network,
+    {
+        ...COMMAND_PARAMS.provider,
+        isRequired: false
+    },
+    COMMAND_PARAMS.providerId,
+    {
+      name: "showConnections",
+      description: "Show the full connection object (includes access and refresh tokens)",
+      type: "boolean",
+      defaultValue: false,
+      alias: "s",
+    },
   ],
   async handle({ options }) {
-    console.log(
-      `Resetting ${options.provider} ${
-        options.providerId ? "(" + options.providerId + ")" : ""
-      } on network ${options.network}. (resetPositions=true, deleteData=${
-        options.deleteData
-      }, clearConnection=${options.clearConnection})`
-    );
+    console.log(`Fetching current connections`);
 
     if (!options.key) {
       console.log(`No key specified from command line or environment variable`);
@@ -74,20 +65,36 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       options.providerId
     );
 
-    const connectionDs = await syncManager.getConnectionDatastore()
-    for (const provider of providers) {
-      console.log(
-        `Reset started for ${provider.getProviderName()} (${provider.getProviderId()})`
-      );
+    console.log(`Found ${providers.length} connections`)
 
-      const deleteCount = await provider.reset(
-        options.deleteData,
-        options.clearConnection
-      );
-      console.log(`Reset complete, deleted ${deleteCount} items`);
+    for (const provider of providers) {
+        const connection = provider.getConnection()
+        console.log(`Provider ${provider.getProviderName()} (${provider.getProviderId()})`)
+        if (options.showConnections) {
+          console.log(JSON.stringify(connection, null, 2))  
+        } else {
+          console.log(JSON.stringify(connection.profile, null, 2))
+        }
     }
 
     console.log('-COMPLETE-')
     await vault.close();
   },
 };
+
+function printItems(items: SchemaRecord[], attributes: string[] = []) {
+  for (let item of items) {
+    console.log("-");
+    if (attributes.length) {
+      for (let att of attributes) {
+        // @ts-ignore
+        if (item[att]) {
+          // @ts-ignore
+          console.log(`${att}: ${item[att]}`);
+        }
+      }
+    } else {
+      console.log(item);
+    }
+  }
+}

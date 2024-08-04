@@ -9,23 +9,16 @@ import {
   SyncResponse,
   SyncSchemaPosition,
   SyncHandlerStatus,
-  ConnectionOption,
   HandlerOption,
 } from "../../interfaces";
 import { SchemaEmail, SchemaEmailType } from "../../schemas";
 import { GmailHelpers } from "./helpers";
+import { GmailSyncSchemaPosition } from "./interfaces";
 
 const _ = require("lodash");
 
-export interface GmailSyncSchemaPositionMetadata {
-  breakTimestamp?: string;
-}
-
-export interface GmailSyncSchemaPosition extends SyncSchemaPosition {
-  metadata?: GmailSyncSchemaPositionMetadata;
-}
-
 export default class Gmail extends BaseSyncHandler {
+
   public getName(): string {
     return 'gmail'
 }
@@ -33,6 +26,10 @@ export default class Gmail extends BaseSyncHandler {
   public getSchemaUri(): string {
     return CONFIG.verida.schemas.EMAIL;
   }
+
+  public getProviderApplicationUrl() {
+    return 'https://gmail.com/'
+}
 
   public getGmail(): gmail_v1.Gmail {
     const TOKEN = {
@@ -190,7 +187,9 @@ export default class Gmail extends BaseSyncHandler {
         _id: `gmail-${messageId}`,
         type: messageType,
         name: subject ? subject : 'No email subject',
-        sourceApplication: "https://gmail.com/",
+        sourceAccountId: this.provider.getProviderId(),
+        sourceData: {},
+        sourceApplication: this.getProviderApplicationUrl(),
         sourceId: message.id,
         fromName: from.name,
         fromEmail: from.email,
