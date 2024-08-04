@@ -7,7 +7,7 @@
     "cli": "node dist/cli/exec.js",
     "core-cli": "node node_modules/@verida/cli-tools/dist/exec.js",
     "dev": "yarn build; nodemon src/server.js",
-    "build": "rm -rf dist && tsc && rm -rf dist/assets && cp -R assets dist/",
+    "build": "rm -rf dist && tsc && rm -rf dist/assets && cp -R assets dist/ && [ -f \"src/serverconfig.local.json\" ] && cp \"src/serverconfig.local.json\" dist/",
     "prestart": "yarn build",
     "start": "node dist/server.js",
     "tests": "ts-mocha './tests/**/*.ts'",
