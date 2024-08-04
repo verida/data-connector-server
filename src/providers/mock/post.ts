@@ -1,4 +1,4 @@
-import { SyncSchemaPosition, SyncHandlerStatus, SyncResponse } from "../../interfaces";
+import { SyncHandlerPosition, SyncHandlerStatus, SyncResponse } from "../../interfaces";
 import BaseSyncHandler from "../BaseSyncHandler";
 import CONFIG from '../../config'
 import { SchemaRecord } from "../../schemas";
@@ -51,7 +51,7 @@ export default class Posts extends BaseSyncHandler {
         return CONFIG.verida.schemas.POST
     }
 
-    public async _sync(api: any, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
+    public async _sync(api: any, syncPosition: SyncHandlerPosition): Promise<SyncResponse> {
         if (!syncPosition.thisRef) {
             syncPosition.thisRef = "0"
         }
@@ -82,7 +82,7 @@ export default class Posts extends BaseSyncHandler {
         }
     }
 
-    protected setNextPosition(syncPosition: SyncSchemaPosition, pageResults: any): SyncSchemaPosition {
+    protected setNextPosition(syncPosition: SyncHandlerPosition, pageResults: any): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && pageResults.length) {
             syncPosition.futureBreakId = pageResults[0]._id
         }
@@ -98,7 +98,7 @@ export default class Posts extends BaseSyncHandler {
         return syncPosition
     }
 
-    protected stopSync(syncPosition: SyncSchemaPosition): SyncSchemaPosition {
+    protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
         if (syncPosition.status == SyncHandlerStatus.STOPPED) {
             return syncPosition
         }

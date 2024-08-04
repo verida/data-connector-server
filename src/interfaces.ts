@@ -90,13 +90,14 @@ export enum SyncSchemaPositionType {
     BACKFILL = "backfill"
 }
 
-export interface SyncSchemaPosition {
-    // id = `${provider}:${schemaUri]}:${status}`
+export interface SyncHandlerPosition {
+    // id = `${providerName}:${handlerName]}:${status}`
     _id: string
     _rev?: string
     type: SyncSchemaPositionType
-    provider: string
-    schemaUri: string
+    providerName: string
+    providerId: string
+    handlerName: string
     status: SyncHandlerStatus
 
     // Reference point for the current sync
@@ -114,13 +115,15 @@ export interface SyncSchemaPosition {
 
 export interface SyncResponse {
     results: object[]
-    position: SyncSchemaPosition
+    position: SyncHandlerPosition
 }
 
 export interface SyncProviderLogEntry {
     _id?: string
     insertedAt?: string
-    provider: string
+    providerName: string
+    providerId?: string
+    handlerName?: string
     schemaUri?: string
     message: string
     level: SyncProviderLogLevel
@@ -138,8 +141,8 @@ export interface SyncProviderErrorEvent {
 }
 
 export interface SyncHandlerResponse {
-    syncPosition: SyncSchemaPosition
+    syncPosition: SyncHandlerPosition
     syncResults: SchemaRecord[]
-    backfillPosition: SyncSchemaPosition
+    backfillPosition: SyncHandlerPosition
     backfillResults: SchemaRecord[]
 }

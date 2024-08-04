@@ -100,8 +100,8 @@ export class Utils {
         }, credentialData.name, credentialData.description, credentialData.image)
     }
 
-    public static buildSyncHandlerId(providerId: string, schemaUri: string, type: SyncSchemaPositionType) {
-        return `${providerId}:${schemaUri}:${type}`
+    public static buildSyncHandlerId(providerName: string, providerId: string, handlerName: string, type: SyncSchemaPositionType) {
+        return `${providerName}:${providerId}:${handlerName}:${type}`
     }
 
     public static datastoreErorrsToString(errors: any): string {

@@ -1,4 +1,4 @@
-import { Connection, SyncSchemaPosition, ConnectionHandler, BaseProviderConfig } from "../../interfaces";
+import { Connection, SyncHandlerPosition, ConnectionHandler, BaseProviderConfig } from "../../interfaces";
 
 export interface GoogleProviderConfig extends BaseProviderConfig {
   clientId: string;
@@ -20,6 +20,6 @@ export interface GmailSyncSchemaPositionMetadata {
   breakTimestamp?: string;
 }
 
-export interface GmailSyncSchemaPosition extends SyncSchemaPosition {
+export interface GmailSyncSchemaPosition extends SyncHandlerPosition {
   metadata?: GmailSyncSchemaPositionMetadata;
 }

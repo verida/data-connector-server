@@ -3,7 +3,7 @@ import CONFIG from '../../config'
 const { Facebook } = require('fb')
 
 import url from 'url'
-import { SyncResponse, SyncSchemaPosition, SyncHandlerStatus } from "../../interfaces"
+import { SyncResponse, SyncHandlerPosition, SyncHandlerStatus } from "../../interfaces"
 import { SchemaFollowing } from "../../schemas"
 
 const _ = require('lodash')
@@ -20,7 +20,7 @@ export default class Following extends BaseSyncHandler {
         return CONFIG.verida.schemas.FOLLOWING
     }
 
-    public async _sync(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
+    public async _sync(Fb: typeof Facebook, syncPosition: SyncHandlerPosition): Promise<SyncResponse> {
         if (!syncPosition.thisRef) {
             syncPosition.thisRef = `${this.apiEndpoint}?limit=${this.config.followingBatchSize}`
         }
@@ -51,7 +51,7 @@ export default class Following extends BaseSyncHandler {
         }
     }
 
-    protected stopSync(syncPosition: SyncSchemaPosition): SyncSchemaPosition {
+    protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
         if (syncPosition.status == SyncHandlerStatus.STOPPED) {
             return syncPosition
         }
@@ -64,7 +64,7 @@ export default class Following extends BaseSyncHandler {
         return syncPosition
     }
 
-    protected setNextPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+    protected setNextPosition(syncPosition: SyncHandlerPosition, serverResponse: any): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && serverResponse.data.length) {
             syncPosition.futureBreakId = serverResponse.data[0].id
         }

@@ -7,7 +7,7 @@ import { GaxiosResponse } from "gaxios";
 
 import {
   SyncResponse,
-  SyncSchemaPosition,
+  SyncHandlerPosition,
   SyncHandlerStatus,
   HandlerOption,
 } from "../../interfaces";
@@ -116,7 +116,7 @@ export default class Gmail extends BaseSyncHandler {
     };
   }
 
-  protected stopSync(syncPosition: SyncSchemaPosition): SyncSchemaPosition {
+  protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
     if (syncPosition.status == SyncHandlerStatus.STOPPED) {
       return syncPosition;
     }
@@ -130,9 +130,9 @@ export default class Gmail extends BaseSyncHandler {
   }
 
   protected setNextPosition(
-    syncPosition: SyncSchemaPosition,
+    syncPosition: SyncHandlerPosition,
     serverResponse: GaxiosResponse<gmail_v1.Schema$ListMessagesResponse>
-  ): SyncSchemaPosition {
+  ): SyncHandlerPosition {
     if (!syncPosition.futureBreakId && serverResponse.data.messages.length) {
       syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.messages[0].id}`;
     }
