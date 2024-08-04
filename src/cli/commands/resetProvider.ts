@@ -26,6 +26,13 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       defaultValue: false,
       alias: "d",
     },
+    {
+      name: "clearConnection",
+      description: "Clear the connection object",
+      type: "boolean",
+      defaultValue: false,
+      alias: "c",
+    },
     COMMAND_PARAMS.provider,
     COMMAND_PARAMS.providerId,
     COMMAND_PARAMS.key,
@@ -68,7 +75,7 @@ export const ResetProvider: Command<ResetProviderOptions> = {
 
     const syncManager = new SyncManager(
       await networkInstance.account.did(),
-      serverconfig.verida.testVeridaKey
+      options.key
     );
 
     const providers = await syncManager.getProviders(
@@ -76,10 +83,18 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       options.providerId
     );
 
+    const connectionDs = await syncManager.getConnectionDatastore()
     for (const provider of providers) {
       console.log(
         `Reset started for ${provider.getProviderName()} (${provider.getProviderId()})`
       );
+
+      if (options.clearConnection) {
+        const connection = provider.getConnection()
+        await connectionDs.delete(connection._id)
+        console.log(`Deleted connection: ${connection._id}`)
+      }
+
       const deleteCount = await provider.reset(
         options.deleteData,
         options.clearTokens
@@ -87,6 +102,7 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       console.log(`Reset complete, deleted ${deleteCount} items`);
     }
 
+    console.log('-COMPLETE-')
     await vault.close();
   },
 };

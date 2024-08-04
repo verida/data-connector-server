@@ -93,6 +93,7 @@ export const Sync: Command<SyncOptions> = {
     // Sleep for 5 seconds so sync can complete
     await sleep(5000);
 
+    console.log('-COMPLETE-')
     await logs.close();
     await vault.close();
     console.log("Ended");

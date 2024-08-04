@@ -5,6 +5,7 @@
     "verida": {
         "environment": "banksia",
         "testVeridaKey": "0x...",
+        "testVeridaNetwork": "banksia",
         "didClientConfig": {
             "callType": "web3",
             "network": "banksia",

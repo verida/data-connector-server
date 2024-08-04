@@ -22,7 +22,20 @@ export const COMMAND_PARAMS = {
         description: "Verida network (banksia, myrtle)",
         type: "string" as CommandParamType,
         alias: "n",
-        defaultValue: "mainnet",
+        defaultValue: CONFIG.verida.testVeridaNetwork,
         validate: validateNetwork
+    },
+    provider: {
+      name: "provider",
+      description: "Provider name",
+      type: "string" as CommandParamType,
+      alias: "p",
+      isRequired: true,
+    },
+    providerId: {
+      name: "providerId",
+      description: "Provider Id",
+      type: "string" as CommandParamType,
+      alias: "i",
     },
 }
