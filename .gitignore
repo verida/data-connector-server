@@ -4,7 +4,7 @@ coverage
 .env*
 dist/
 keys/
-v*/
+/v*/
 src/serverconfig*.json
 !src/serverconfig.example.json
 .DS_Store

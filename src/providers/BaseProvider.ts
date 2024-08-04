@@ -61,7 +61,7 @@ export default class BaseProvider {
     }
 
     public getProviderImageUrl(): string {
-        return `${serverconfig.assetsUrl}/${this.getProviderId()}/icon.png`
+        return `${serverconfig.assetsUrl}/${this.getProviderName()}/icon.png`
     }
 
     public getProviderLabel(): string {

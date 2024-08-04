@@ -1,11 +1,11 @@
 import express from 'express'
-import Controller from './controller'
+import v1Routes from './api/v1/routes'
+import Controller from './api/v1/controller'
 
 const router = express.Router()
+router.use('/api/v1/', v1Routes)
 
-router.get('/connect/:provider', Controller.connect)
+// Add default callback handler for third party callbacks
 router.get('/callback/:provider', Controller.callback)
-router.get('/sync', Controller.sync)
-router.get('/providers', Controller.providers)
 
 export default router
