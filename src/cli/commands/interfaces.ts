@@ -8,12 +8,14 @@ export interface ConnectProviderOptions {
 export interface SyncOptions {
     provider: string
     key: string
+    providerId?: string
     network?: string
     force?: boolean
 }
 
 export interface ResetProviderOptions {
     provider: string
+    providerId?: string
     key: string
     network?: string
     clearTokens?: boolean

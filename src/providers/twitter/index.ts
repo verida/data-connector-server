@@ -25,7 +25,7 @@ export default class TwitterProvider extends Base {
 
     protected config: TwitterProviderConfig
 
-    public getProviderId() {
+    public getProviderName() {
         return 'twitter'
     }
 

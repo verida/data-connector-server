@@ -19,6 +19,12 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       isRequired: true,
     },
     {
+      name: "providerId",
+      description: "Provider Id",
+      type: "string",
+      alias: "i",
+    },
+    {
       name: "key",
       description: "Verida network private key (or seed phrase)",
       type: "string",
@@ -55,7 +61,7 @@ export const ResetProvider: Command<ResetProviderOptions> = {
   ],
   async handle({ options }) {
     console.log(
-      `Reseting ${options.provider} on network ${options.network}. (resetPositions=true, deleteData=${options.deleteData}, clearTokens=${options.clearTokens})`
+      `Reseting ${options.provider} ${options.providerId ? '('+options.providerId+')' : ''} on network ${options.network}. (resetPositions=true, deleteData=${options.deleteData}, clearTokens=${options.clearTokens})`
     );
 
     if (!options.key) {
@@ -89,12 +95,13 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       serverconfig.verida.testVeridaKey
     )
 
-    const providers = await syncManager.getProviders(options.provider)
-    const provider = providers[0]
+    const providers = await syncManager.getProviders(options.provider, options.providerId)
 
-    console.log('Reset started')
-    const deleteCount = await provider.reset(options.deleteData, options.clearTokens)
-    console.log(`Reset complete, deleted ${deleteCount} items`)
+    for (const provider of providers) {
+      console.log(`Reset started for ${provider.getProviderName()} (${provider.getProviderId()})`)
+      const deleteCount = await provider.reset(options.deleteData, options.clearTokens)
+      console.log(`Reset complete, deleted ${deleteCount} items`)
+    }
 
     await vault.close()
   },

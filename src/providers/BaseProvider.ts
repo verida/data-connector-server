@@ -36,8 +36,16 @@ export default class BaseProvider {
         this.config = config
     }
 
-    public getProviderId(): string {
+    public getProviderName(): string {
         throw new Error('Not implemented')
+    }
+
+    public getProviderId(): string {
+        if (!this.connection) {
+            throw new Error('Unable to locate ID, provider is not connected')
+        }
+
+        return this.connection.providerId
     }
 
     public getProviderImageUrl(): string {

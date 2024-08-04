@@ -9,23 +9,16 @@ import {
   SyncResponse,
   SyncSchemaPosition,
   SyncHandlerStatus,
-  ConnectionOption,
   HandlerOption,
 } from "../../interfaces";
 import { SchemaEmail, SchemaEmailType } from "../../schemas";
 import { GmailHelpers } from "./helpers";
+import { GmailSyncSchemaPosition } from "./interfaces";
 
 const _ = require("lodash");
 
-export interface GmailSyncSchemaPositionMetadata {
-  breakTimestamp?: string;
-}
-
-export interface GmailSyncSchemaPosition extends SyncSchemaPosition {
-  metadata?: GmailSyncSchemaPositionMetadata;
-}
-
 export default class Gmail extends BaseSyncHandler {
+
   public getName(): string {
     return 'gmail'
 }

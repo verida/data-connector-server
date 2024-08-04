@@ -27,6 +27,13 @@ export const Sync: Command<SyncOptions> = {
       isRequired: true,
     },
     {
+      name: "providerId",
+      description: "Unique ID of the connection for this provider",
+      type: "string",
+      alias: "i",
+      isRequired: false,
+    },
+    {
       name: "key",
       description: "Verida network private key (or seed phrase)",
       type: "string",
@@ -94,7 +101,7 @@ export const Sync: Command<SyncOptions> = {
       options.key
     )
 
-    const providers = await syncManager.getProviders(options.provider)
+    const providers = await syncManager.getProviders(options.provider, options.providerId)
     const provider = providers[0]
 
     // console.log('Syncing started')

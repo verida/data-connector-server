@@ -27,7 +27,7 @@ export default class DiscordProvider extends Base {
 
     protected config: DiscordProviderConfig
 
-    public getProviderId() {
+    public getProviderName() {
         return 'discord'
     }
 

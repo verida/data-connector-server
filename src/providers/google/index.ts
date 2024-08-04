@@ -1,24 +1,18 @@
 import { Request, Response } from "express";
 import Base from "../BaseProvider";
-import { BaseProviderConfig } from "../../interfaces";
-import TokenExpiredError from "../TokenExpiredError";
-import RequestLimitReachedError from "../RequestLimitReachedError";
+import Gmail from "./gmail";
+import { GoogleProviderConfig, GoogleProviderConnection } from "./interfaces";
 
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20");
 
-import Gmail from "./gmail";
 
-export interface GoogleProviderConfig extends BaseProviderConfig {
-  clientId: string;
-  clientSecret: string;
-  callbackUrl: string;
-}
 
 export default class GoogleProvider extends Base {
-  protected config: GoogleProviderConfig;
+  protected config: GoogleProviderConfig
+  protected connection: GoogleProviderConnection
 
-  public getProviderId() {
+  public getProviderName() {
     return "google";
   }
 

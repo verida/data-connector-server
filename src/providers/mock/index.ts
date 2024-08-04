@@ -15,7 +15,7 @@ export default class MockProvider extends Base {
 
     protected config: MockProviderConfig
 
-    public getProviderId() {
+    public getProviderName() {
         return 'mock'
     }
 
