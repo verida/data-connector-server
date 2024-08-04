@@ -1,6 +1,4 @@
-import { Connection, SyncSchemaPosition } from "../../interfaces";
-import { ConnectionHandler } from "../../interfaces";
-import { BaseProviderConfig } from "../../interfaces";
+import { Connection, SyncSchemaPosition, ConnectionHandler, BaseProviderConfig } from "../../interfaces";
 
 export interface GoogleProviderConfig extends BaseProviderConfig {
   clientId: string;

@@ -1,7 +1,7 @@
 import express from 'express'
 const cors = require('cors')
 import bodyParser from 'body-parser'
-import router from './routes'
+import router from './api/v1/routes'
 // @todo: See not in express-session about not using memory session
 const session = require('express-session')
 

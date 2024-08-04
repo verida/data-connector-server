@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import CONFIG from './config'
+import CONFIG from '../../config'
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -8,9 +8,9 @@ const logger = log4js.getLogger()
 //const DATA_PROFILE_SCHEMA = 'https://vault.schemas.verida.io/data-connections/profile/v0.1.0/schema.json'
 const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
 
-import Providers from "./providers"
-import SyncManager from './sync-manager'
-import { HandlerOption } from './interfaces'
+import Providers from "../../providers"
+import SyncManager from '../../sync-manager'
+import { HandlerOption } from '../../interfaces'
 
 /**
  * Sign in process:

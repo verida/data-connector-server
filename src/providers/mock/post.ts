@@ -1,6 +1,5 @@
-import { SyncSchemaPosition, SyncHandlerStatus } from "../../interfaces";
+import { SyncSchemaPosition, SyncHandlerStatus, SyncResponse } from "../../interfaces";
 import BaseSyncHandler from "../BaseSyncHandler";
-import { SyncResponse } from "../../interfaces";
 import CONFIG from '../../config'
 import { SchemaRecord } from "../../schemas";
 
