@@ -2,23 +2,14 @@ import { Command } from "command-line-interface";
 import { ResetProviderOptions } from "./interfaces";
 import { AutoAccount } from "@verida/account-node";
 import { Network } from "@verida/types";
-import CONFIG from "../../config";
 import { Utils } from "../../utils";
 import SyncManager from "../../sync-manager";
-import serverconfig from "../../../src/serverconfig.json";
 import { COMMAND_PARAMS } from "../utils";
 
 export const ResetProvider: Command<ResetProviderOptions> = {
   name: "ResetProvider",
   description: `Clear all the data and reset sync positions for a provider`,
   optionDefinitions: [
-    {
-      name: "clearTokens",
-      description: "Clear access and refresh tokens",
-      type: "boolean",
-      defaultValue: false,
-      alias: "t",
-    },
     {
       name: "deleteData",
       description: "Delete all data from schemas associated with this provider",
@@ -44,7 +35,7 @@ export const ResetProvider: Command<ResetProviderOptions> = {
         options.providerId ? "(" + options.providerId + ")" : ""
       } on network ${options.network}. (resetPositions=true, deleteData=${
         options.deleteData
-      }, clearTokens=${options.clearTokens})`
+      }, clearConnection=${options.clearConnection})`
     );
 
     if (!options.key) {
@@ -89,15 +80,9 @@ export const ResetProvider: Command<ResetProviderOptions> = {
         `Reset started for ${provider.getProviderName()} (${provider.getProviderId()})`
       );
 
-      if (options.clearConnection) {
-        const connection = provider.getConnection()
-        await connectionDs.delete(connection._id)
-        console.log(`Deleted connection: ${connection._id}`)
-      }
-
       const deleteCount = await provider.reset(
         options.deleteData,
-        options.clearTokens
+        options.clearConnection
       );
       console.log(`Reset complete, deleted ${deleteCount} items`);
     }

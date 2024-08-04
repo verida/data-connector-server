@@ -9,6 +9,7 @@ import { SchemaRecord } from '../schemas'
 
 const SCHEMA_SYNC_POSITIONS = serverconfig.verida.schemas.SYNC_POSITION
 const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
+const SCHEMA_CONNECTION = serverconfig.verida.schemas.DATA_CONNECTIONS
 
 export default class BaseProvider {
 
@@ -26,6 +27,18 @@ export default class BaseProvider {
 
     public getConnection(): Connection {
         return this.connection!
+    }
+
+    public async saveConnection(): Promise<void> {
+        if (!this.connection) {
+            throw new Error('Unable to save connection, no connection object loaded')
+        }
+
+        const connectionDs = await this.vault.openDatastore(SCHEMA_CONNECTION)
+        const saveResult = await connectionDs.save(this.connection, {})
+        if (!saveResult) {
+            throw new Error(`Unable to save connection: ${JSON.stringify(connectionDs.errors, null, 2)}`)
+        }
     }
 
     public getConfig(): BaseProviderConfig {
@@ -108,7 +121,7 @@ export default class BaseProvider {
     /**
      * Reset this provider by deleting all position information and data
      */
-    public async reset(deleteData: boolean = true, clearTokens: boolean = false): Promise<number> {
+    public async reset(deleteData: boolean = true, deleteConnection: boolean = false): Promise<number> {
         const syncHandlers = await this.getSyncHandlers()
 
         let deletedRowCount = 0
@@ -152,9 +165,10 @@ export default class BaseProvider {
         }
 
         // clear tokens?
-        if (clearTokens && this.connection) {
-            this.connection.accessToken = undefined
-            this.connection.refreshToken = undefined
+        if (deleteConnection) {
+            const connection = this.getConnection()
+            const connectionDs = await this.vault.openDatastore(SCHEMA_CONNECTION)
+            await connectionDs.delete(connection._id)
         }
 
         return deletedRowCount

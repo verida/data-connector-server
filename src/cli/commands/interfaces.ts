@@ -19,7 +19,6 @@ export interface ResetProviderOptions {
     key?: string
     network?: string
     clearConnection?: boolean
-    clearTokens?: boolean
     deleteData?: boolean
 }
 
