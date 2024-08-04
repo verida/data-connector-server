@@ -20,20 +20,10 @@ export const Sync: Command<SyncOptions> = {
   name: "Sync",
   description: `Sync to a third party data provider and save the credentials into the Verida: Vault context`,
   optionDefinitions: [
-    {
-      name: "provider",
-      description: "Unique ID of the provider",
-      type: "string",
-      alias: "p",
-      isRequired: true,
-    },
-    {
-      name: "providerId",
-      description: "Unique ID of the connection for this provider",
-      type: "string",
-      alias: "i",
-      isRequired: false,
-    },
+    COMMAND_PARAMS.provider,
+    COMMAND_PARAMS.providerId,
+    COMMAND_PARAMS.key,
+    COMMAND_PARAMS.network,
     {
       name: "force",
       description: "Force sync to start",
@@ -41,8 +31,6 @@ export const Sync: Command<SyncOptions> = {
       defaultValue: false,
       alias: "f",
     },
-    COMMAND_PARAMS.key,
-    COMMAND_PARAMS.network,
   ],
   async handle({ options }) {
     if (!options.key) {

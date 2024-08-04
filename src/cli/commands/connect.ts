@@ -15,13 +15,7 @@ export const Connect: Command<ConnectProviderOptions> = {
     name: 'Connect',
     description: `Connect to a third party data provider and save the credentials into the Verida: Vault context`,
     optionDefinitions: [
-      {
-        name: 'provider',
-        description: 'Unique ID of the provider',
-        type: 'string',
-        alias: 'p',
-        isRequired: true
-      },
+      COMMAND_PARAMS.provider,
       COMMAND_PARAMS.key,
       COMMAND_PARAMS.network
     ],

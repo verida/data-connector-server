@@ -13,19 +13,6 @@ export const ResetProvider: Command<ResetProviderOptions> = {
   description: `Clear all the data and reset sync positions for a provider`,
   optionDefinitions: [
     {
-      name: "provider",
-      description: "Provider name",
-      type: "string",
-      alias: "p",
-      isRequired: true,
-    },
-    {
-      name: "providerId",
-      description: "Provider Id",
-      type: "string",
-      alias: "i",
-    },
-    {
       name: "clearTokens",
       description: "Clear access and refresh tokens",
       type: "boolean",
@@ -39,6 +26,8 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       defaultValue: false,
       alias: "d",
     },
+    COMMAND_PARAMS.provider,
+    COMMAND_PARAMS.providerId,
     COMMAND_PARAMS.key,
     COMMAND_PARAMS.network,
   ],
