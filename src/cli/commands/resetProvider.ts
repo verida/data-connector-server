@@ -6,6 +6,7 @@ import CONFIG from "../../config";
 import { Utils } from "../../utils";
 import SyncManager from "../../sync-manager";
 import serverconfig from "../../../src/serverconfig.json";
+import { COMMAND_PARAMS } from "../utils";
 
 export const ResetProvider: Command<ResetProviderOptions> = {
   name: "ResetProvider",
@@ -25,43 +26,29 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       alias: "i",
     },
     {
-      name: "key",
-      description: "Verida network private key (or seed phrase)",
-      type: "string",
-      defaultValue: CONFIG.verida.testVeridaKey,
-      alias: "k",
+      name: "clearTokens",
+      description: "Clear access and refresh tokens",
+      type: "boolean",
+      defaultValue: false,
+      alias: "t",
     },
     {
-        name: "clearTokens",
-        description: "Clear access and refresh tokens",
-        type: "boolean",
-        defaultValue: false,
-        alias: "t",
-      },
-      {
-        name: "deleteData",
-        description: "Delete all data from schemas associated with this provider",
-        type: "boolean",
-        defaultValue: false,
-        alias: "d",
-      },
-    {
-      name: "network",
-      description: "Verida network (banksia, myrtle)",
-      type: "string",
-      alias: "n",
-      defaultValue: "mainnet",
-      validate(val: string) {
-        const valid = ["banksia", "myrtle"];
-        if (valid.indexOf(val) === -1) {
-          return false;
-        }
-      },
+      name: "deleteData",
+      description: "Delete all data from schemas associated with this provider",
+      type: "boolean",
+      defaultValue: false,
+      alias: "d",
     },
+    COMMAND_PARAMS.key,
+    COMMAND_PARAMS.network,
   ],
   async handle({ options }) {
     console.log(
-      `Reseting ${options.provider} ${options.providerId ? '('+options.providerId+')' : ''} on network ${options.network}. (resetPositions=true, deleteData=${options.deleteData}, clearTokens=${options.clearTokens})`
+      `Reseting ${options.provider} ${
+        options.providerId ? "(" + options.providerId + ")" : ""
+      } on network ${options.network}. (resetPositions=true, deleteData=${
+        options.deleteData
+      }, clearTokens=${options.clearTokens})`
     );
 
     if (!options.key) {
@@ -88,21 +75,29 @@ export const ResetProvider: Command<ResetProviderOptions> = {
     console.log(`Verida Account has DID: ${did}`);
 
     const networkInstance = await Utils.getNetwork(did, options.key);
-    const vault = networkInstance.context
+    const vault = networkInstance.context;
 
     const syncManager = new SyncManager(
       await networkInstance.account.did(),
       serverconfig.verida.testVeridaKey
-    )
+    );
 
-    const providers = await syncManager.getProviders(options.provider, options.providerId)
+    const providers = await syncManager.getProviders(
+      options.provider,
+      options.providerId
+    );
 
     for (const provider of providers) {
-      console.log(`Reset started for ${provider.getProviderName()} (${provider.getProviderId()})`)
-      const deleteCount = await provider.reset(options.deleteData, options.clearTokens)
-      console.log(`Reset complete, deleted ${deleteCount} items`)
+      console.log(
+        `Reset started for ${provider.getProviderName()} (${provider.getProviderId()})`
+      );
+      const deleteCount = await provider.reset(
+        options.deleteData,
+        options.clearTokens
+      );
+      console.log(`Reset complete, deleted ${deleteCount} items`);
     }
 
-    await vault.close()
+    await vault.close();
   },
 };
