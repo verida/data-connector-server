@@ -55,8 +55,10 @@ export default class SyncManager {
         return false
     }
 
-    public async sync(providerName?: string, providerId?: string) {
+    public async sync(providerName?: string, providerId?: string): Promise<Connection[]> {
         const vault = await this.getVault()
+
+        const connections: Connection[] = []
 
         const providers = await this.getProviders(providerName, providerId)
         // @todo: Do these in parallel?
@@ -64,8 +66,10 @@ export default class SyncManager {
         // don't try to open the same one multiple times
         for (let p in providers) {
             const provider = providers[p]
-            await provider.sync()
+            connections.push(await provider.sync())
         }
+
+        return connections
     }
 
     private async init(): Promise<void> {
@@ -91,6 +95,22 @@ export default class SyncManager {
 
     public async getProviders(providerName?: string, providerId?: string): Promise<BaseProvider[]> {
         if (this.connections) {
+            if (providerName) {
+                const connections = []
+
+                for (const connection of this.connections) {
+                    if (connection.getProviderName() != providerName) {
+                        continue
+                    }
+
+                    if (!providerId || connection.getProviderId() == providerId) {
+                        connections.push(connection)
+                    }
+                }
+
+                return connections
+            }
+
             return this.connections
         }
 
