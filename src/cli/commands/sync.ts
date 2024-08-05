@@ -78,16 +78,15 @@ export const Sync: Command<SyncOptions> = {
       options.provider,
       options.providerId
     );
-    const provider = providers[0];
+    
 
-    // console.log('Syncing started')
-    const connection = provider.getConnection();
-    await provider.sync(
-      connection.accessToken,
-      connection.refreshToken,
-      options.force
-    );
-    // console.log('Syncing done')
+    for (const provider of providers) {
+      await provider.sync(
+        undefined,
+        undefined,
+        options.force
+      )
+    }
 
     // Sleep for 5 seconds so sync can complete
     await sleep(5000);
