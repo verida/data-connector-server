@@ -71,7 +71,8 @@ $(document).ready(function() {
                         <td><ul>${handlers.map(handler => `<li>${handler.handlerName} (Status: ${handler.status})</li>`).join('')}</ul></td>
                         <td>
                             <button class="btn btn-success sync-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Sync Now</button>
-                            <button class="btn btn-secondary logs-btn" style="background-color: grey;" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Show Logs</button>
+                            <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Show Logs</button>
+                            <button class="btn btn-danger disconnect-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Disconnect</button>
                         </td>
                     </tr>
                 `);
@@ -82,6 +83,14 @@ $(document).ready(function() {
                 const provider = $(this).data('provider');
                 const providerId = $(this).data('provider-id');
                 window.open(`/dashboard/logs.html?provider=${provider}&providerId=${providerId}`, '_blank');
+            });
+
+            $('.disconnect-btn').click(function() {
+                const provider = $(this).data('provider');
+                const providerId = $(this).data('provider-id');
+                $.getJSON(`/api/v1/disconnect/${provider}?key=${veridaKey}&providerId=${providerId}`, function(response) {
+                    console.log(response.data)
+                })
             });
 
             $('.sync-btn').click(function() {
