@@ -9,6 +9,7 @@ import { SchemaRecord } from '../schemas'
 const SCHEMA_SYNC_POSITIONS = serverconfig.verida.schemas.SYNC_POSITION
 const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
 const SCHEMA_CONNECTION = serverconfig.verida.schemas.DATA_CONNECTIONS
+const SYNC_REQUEST = serverconfig.verida.schemas.SYNC_REQUEST
 
 export default class BaseProvider {
 
@@ -16,6 +17,7 @@ export default class BaseProvider {
     protected vault: IContext
     protected connection?: Connection
     protected connectionDs?: IDatastore
+    protected syncPositionsDs?: IDatastore
     protected newAuth?: AccountAuth
     
     public constructor(config: BaseProviderConfig, vault?: IContext, connection?: Connection) {
@@ -33,8 +35,12 @@ export default class BaseProvider {
             throw new Error('Unable to save connection, no connection object loaded')
         }
 
-        const connectionDs = await this.vault.openDatastore(SCHEMA_CONNECTION)
-        const saveResult = await connectionDs.save(this.connection, {})
+        delete this.connection['_rev']
+        const connectionDs = await this.getConnectionDs()
+        const saveResult = await connectionDs.save(this.connection, {
+            forceUpdate: true
+        })
+
         if (!saveResult) {
             throw new Error(`Unable to save connection: ${JSON.stringify(connectionDs.errors, null, 2)}`)
         }
@@ -122,7 +128,7 @@ export default class BaseProvider {
     /**
      * Reset this provider by deleting all position information and data
      */
-    public async reset(deleteData: boolean = true, deleteConnection: boolean = false): Promise<number> {
+    public async reset(deleteData: boolean = false, deleteConnection: boolean = false, deleteSyncPositions: boolean = false): Promise<number> {
         const syncHandlers = await this.getSyncHandlers()
 
         let deletedRowCount = 0
@@ -130,19 +136,21 @@ export default class BaseProvider {
             const handler = syncHandlers[h]
             const schemaUri = handler.getSchemaUri()
 
-            // delete positions
-            const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
-            try {
-                const syncPositionId = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handler.getName(), SyncSchemaPositionType.SYNC)
-                await syncPositionsDs.delete(syncPositionId)
-            } catch (err: any) {
-                // deleted already
-            }
-            try {
-                const syncBackfillId = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handler.getName(), SyncSchemaPositionType.SYNC)
-                await syncPositionsDs.delete(syncBackfillId)
-            } catch (err: any) {
-                // deleted already
+            // delete sync positions
+            if (deleteSyncPositions) {
+                const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
+                try {
+                    const syncPositionId = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handler.getName(), SyncSchemaPositionType.SYNC)
+                    await syncPositionsDs.delete(syncPositionId)
+                } catch (err: any) {
+                    // deleted already
+                }
+                try {
+                    const syncBackfillId = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handler.getName(), SyncSchemaPositionType.SYNC)
+                    await syncPositionsDs.delete(syncBackfillId)
+                } catch (err: any) {
+                    // deleted already
+                }
             }
             
             // delete data
@@ -165,7 +173,7 @@ export default class BaseProvider {
             }
         }
 
-        // clear tokens?
+        // delete the connection?
         if (deleteConnection) {
             const connection = this.getConnection()
             const connectionDs = await this.vault.openDatastore(SCHEMA_CONNECTION)
@@ -178,29 +186,38 @@ export default class BaseProvider {
     /**
      * Syncronize all the latest data
      * 
+     * @todo catch expired token error
+     * 
      * @param accessToken 
      * @param refreshToken 
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken: string, refreshToken: string, force: boolean = false): Promise<void> {
+    public async sync(accessToken?: string, refreshToken?: string, force: boolean = false): Promise<Connection> {
         this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
 
-        if (this.connection.syncStatus != SyncStatus.ACTIVE) {
+        if (!accessToken) {
+            const connection = this.getConnection()
+            accessToken = connection.accessToken
+            refreshToken = refreshToken ? refreshToken : connection.refreshToken
+        }
+
+        if (this.connection.syncStatus != SyncStatus.CONNECTED) {
             if (!force) {
                 // Sync isn't active, so don't sync
                 // @todo: handle retries if status = error
                 // @todo: handle time delays for syncing
                 this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active (${this.connection.syncStatus}), so stopping`)
-                return
+                return this.connection
             } else {
                 this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active, but forcing as requested`)
-                this.connection.syncStatus = SyncStatus.ACTIVE
+                this.connection.syncStatus = SyncStatus.CONNECTED
             }
         }
 
         this.connection.syncStatus = SyncStatus.SYNC_ACTIVE
-        await this.updateConnection()
+        this.connection.syncStart = Utils.nowTimestamp()
+        await this.saveConnection()
 
         const syncHandlers = await this.getSyncHandlers()
         const api = await this.getApi(accessToken, refreshToken)
@@ -245,23 +262,45 @@ export default class BaseProvider {
             }
         }
 
-        this.connection.syncStatus = SyncStatus.ACTIVE
-        await this.updateConnection()
-        this.logMessage(SyncProviderLogLevel.INFO, `Sync complete (${totalSyncItems} sync items, ${totalBackfillItems} backfill items)`)
-    }
-
-    protected async updateConnection(): Promise<void> {
-        if (!this.connectionDs) {
-            this.connectionDs = await this.vault.openDatastore(serverconfig.verida.schemas.DATA_CONNECTIONS)
+        // Add account auth info if it has changed
+        const newAuth = this.getAccountAuth()
+        if (newAuth) {
+            this.connection.accessToken = newAuth.accessToken
+            this.connection.refreshToken = newAuth.refreshToken
         }
 
-        delete this.connection['_rev']
-        await this.connectionDs.save(this.connection, {
-            forceUpdate: true
-        })
+        // Add latest profile info
+        this.connection.profile = await this.getProfile()
+
+        this.connection.syncStatus = SyncStatus.CONNECTED
+        this.connection.syncEnd = Utils.nowTimestamp()
+        await this.saveConnection()
+        this.logMessage(SyncProviderLogLevel.INFO, `Sync complete (${totalSyncItems} sync items, ${totalBackfillItems} backfill items)`)
+
+        return this.connection
     }
 
-    public async getSyncPosition(handlerName: string, syncPositionType: SyncSchemaPositionType, syncPositionsDs: IDatastore): Promise<SyncHandlerPosition> {
+    protected async getConnectionDs() {
+        if (!this.connectionDs) {
+            this.connectionDs = await this.vault.openDatastore(SCHEMA_CONNECTION)
+        }
+
+        return this.connectionDs
+    }
+
+    protected async getSyncPositionsDs() {
+        if (!this.syncPositionsDs) {
+            this.syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
+        }
+
+        return this.syncPositionsDs
+    }
+
+    public async getSyncPosition(handlerName: string, syncPositionType: SyncSchemaPositionType, syncPositionsDs?: IDatastore): Promise<SyncHandlerPosition> {
+        if (!syncPositionsDs) {
+            syncPositionsDs = await this.getSyncPositionsDs()
+        }
+
         try {
             const id = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handlerName, SyncSchemaPositionType.SYNC)
             return await syncPositionsDs.get(id, {})

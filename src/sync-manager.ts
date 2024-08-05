@@ -29,7 +29,7 @@ export default class SyncManager {
     private connectionDatastore?: IDatastore
     private connections?: BaseProvider[]
 
-    private status: SyncStatus = SyncStatus.ACTIVE
+    private status: SyncStatus = SyncStatus.CONNECTED
 
     public constructor(did: string, seedPhrase: string) {
         this.did = did
@@ -45,7 +45,7 @@ export default class SyncManager {
         await this.init()
 
         switch (this.status) {
-            case SyncStatus.ACTIVE:
+            case SyncStatus.CONNECTED:
                 // @todo: check if enough time has elapsed before syncing again
                 await this.sync()
                 return true
@@ -55,8 +55,10 @@ export default class SyncManager {
         return false
     }
 
-    public async sync(providerName?: string, providerId?: string) {
+    public async sync(providerName?: string, providerId?: string): Promise<Connection[]> {
         const vault = await this.getVault()
+
+        const connections: Connection[] = []
 
         const providers = await this.getProviders(providerName, providerId)
         // @todo: Do these in parallel?
@@ -64,8 +66,10 @@ export default class SyncManager {
         // don't try to open the same one multiple times
         for (let p in providers) {
             const provider = providers[p]
-            await this.syncProvider(provider)
+            connections.push(await provider.sync())
         }
+
+        return connections
     }
 
     private async init(): Promise<void> {
@@ -80,7 +84,7 @@ export default class SyncManager {
         }
 
         try {
-            const { context } = await Utils.getNetwork(this.did, this.seedPhrase)
+            const { context } = await Utils.getNetwork(this.seedPhrase)
 
             this.vault = <IContext> context
             return this.vault
@@ -91,6 +95,22 @@ export default class SyncManager {
 
     public async getProviders(providerName?: string, providerId?: string): Promise<BaseProvider[]> {
         if (this.connections) {
+            if (providerName) {
+                const connections = []
+
+                for (const connection of this.connections) {
+                    if (connection.getProviderName() != providerName) {
+                        continue
+                    }
+
+                    if (!providerId || connection.getProviderId() == providerId) {
+                        connections.push(connection)
+                    }
+                }
+
+                return connections
+            }
+
             return this.connections
         }
 
@@ -144,145 +164,6 @@ export default class SyncManager {
         )
 
         return this.connectionDatastore
-    }
-
-    /**
-     * Synchronize data from a third party data source with a local collection of datastores.
-     * 
-     * Converts the third party into an appropriate Verida schema.
-     * 
-     * Once this is complete, the Vault will then sync the data over the Verida network and
-     * call `syncDone`
-     * 
-     * Requires the following query parameters:
-     * 
-     * - did
-     * - any other data required by the provider (ie: `accessToken`)
-     * 
-     * @param req 
-     * @param res 
-     * @param next 
-     * @returns 
-     */
-    public async syncProvider(provider: BaseProvider): Promise<void> {
-        const connection = provider.getConnection()
-        const accessToken = connection.accessToken
-        const refreshToken = connection.refreshToken
-
-        // Generate a new sync request
-        const vault = await this.getVault()
-        const syncRequestDatastore = await vault.openDatastore(DATA_SYNC_REQUEST_SCHEMA)
-        
-        const syncRequestResult = <DatastoreSaveResponse> await syncRequestDatastore.save({
-            source: provider.getProviderId(),
-            requestStart: (new Date()).toISOString(),
-            status: 'requested'
-        }, {})
-        const syncRequest = await syncRequestDatastore.get(syncRequestResult.id, {})
-        if (!syncRequest.syncInfo) {
-            syncRequest.syncInfo = {}
-        }
-
-        // Fetch the latest data from the provider (if required)
-
-
-        // Backfill data from the provider (if required)
-
-        // Fetch the necessary data from the provider
-        let data: any = {}
-        try {
-            data = await provider.sync(accessToken, refreshToken)
-        } catch (err: any) {
-            syncRequest.status = 'error'
-            if (err instanceof TokenExpiredError) {
-                syncRequest.syncInfo.error = `Token expired, please reconnect.`
-            }
-            else {
-                syncRequest.syncInfo.error = err.message
-            }
-
-            await syncRequestDatastore.save(syncRequest, {})
-
-            // @todo: Check if this code is needed
-            /*
-            // Add a delay so the sync request has time to sync
-            await delay(2000)
-
-            await context.close({
-                clearLocal: true
-            })*/
-
-            return
-        }
-
-        // Add account auth info if it has changed
-        const newAuth = provider.getAccountAuth()
-        if (newAuth) {
-            connection.accessToken = newAuth.accessToken
-            connection.refreshToken = newAuth.refreshToken
-        }
-
-        // Add latest profile info
-        connection.profile = await provider.getProfile()
-
-        const connectionDatastore = await this.getConnectionDatastore()
-        await connectionDatastore.save(connection, {})
-
-        const response: any = {}
-        const syncingDatabases = []
-
-        // iterate through the data and save it into the appropriate datastore
-        // NOTE: database stores data for all providers, not just this one being processed
-        for (var schemaUri in data) {
-            // open a datastore where the user has permission to access the datastores
-            const datastore = await vault.openDatastore(schemaUri)
-
-            logger.info(`Inserting ${data[schemaUri].length} records into datastore: ${schemaUri}`)
-
-            try {
-                for (var i in data[schemaUri]) {
-                    const record = data[schemaUri][i]
-                    logger.trace(`Inserting record:`, record)
-
-                    try {
-                        if (!record.insertedAt) {
-                            // Since we manually set the `_id`, we need to manually set `insertedAt` because
-                            // the database library will assume the record is an update
-                            record.insertedAt = new Date().toISOString()
-                        }
-
-                        const result = await datastore.save(record, {
-                            forceUpdate: false
-                        })
-                        if (!result) {
-                            // Validation errors, how to log? Should only happen in dev
-                            logger.error(datastore.errors)
-                            logger.error(record)
-                        }
-                    } catch (err) {
-                        // ignore conflict errors (ie; document already existed)
-                        if (err.status == 409) {
-                            logger.trace(`Conflict error inserting:`, record._id)
-                            continue
-                        }
-
-                        // unknown error, throw
-                        throw err
-                    }
-                }
-            } catch (err) {
-                logger.error(err.status, err.name)
-            }
-
-            await datastore.close({
-                clearLocal: true
-            })
-        }
-        
-        syncRequest.status = "complete"
-        await syncRequestDatastore.save(syncRequest, {})
-
-        logger.info(`sync request saved for ${provider.getProviderId()}`)
     }
 
     public async saveProvider(providerName: string, accessToken: string, refreshToken: string, profile: any) {
@@ -343,7 +224,7 @@ export default class SyncManager {
             accessToken,
             refreshToken,
             profile: connectionProfile,
-            syncStatus: SyncStatus.ACTIVE,
+            syncStatus: SyncStatus.CONNECTED,
             syncFrequency: SyncFrequency.HOUR,
             handlers: connectionHandlers,
             config: providerConfig
@@ -355,5 +236,16 @@ export default class SyncManager {
             throw new Error(`Unable to save connection: ${JSON.stringify(connectionDatastore.errors, null, 2)}`)
         }
     }
+
+    // public async disconnectProvider(providerName: string, providerId: string): Promise<void> {
+    //     const providers = await this.getProviders(providerName, providerId)
+
+    //     if (!providers.length) {
+    //         throw new Error(`Unable to locate provider: ${providerName} (${providerId})`)
+    //     }
+
+    //     const provider = providers[0]
+    //     await provider.disconnect()
+    // }
 
 }

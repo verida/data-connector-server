@@ -36,12 +36,12 @@ export enum SyncFrequency {
 }
 
 export enum SyncStatus {
-    ACTIVE = "active",
-    ERROR = "error",
-    PAUSED = "paused",
-    SYNC_REQUESTED = "sync-requested",
-    SYNC_ACTIVE = "sync-active",
-    DISABLED = "disabled"
+    CONNECTED = "connected",    // sync is connected, but not currently running
+    ERROR = "error",            // sync had an error on its last run
+    PAUSED = "paused",          // sync is temporarily paused
+    SYNC_REQUESTED = "sync-requested",  // sync has been requested, but not yet started (deprecated?)
+    SYNC_ACTIVE = "sync-active",        // sync is currently running
+    DISABLED = "disabled"               // sync is permanently disabled
 }
 
 export interface ConnectionHandler {
@@ -61,7 +61,8 @@ export interface Connection {
     profile: ConnectionProfile
     syncStatus: SyncStatus
     syncFrequency: SyncFrequency
-    syncLast?: string
+    syncStart?: string
+    syncEnd?: string
     syncNext?: string
     handlers: ConnectionHandler[]
     config: Record<string, string>

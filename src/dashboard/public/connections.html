@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connections</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Connections</h1>
+
+        <!-- Verida Private Key Input, Load, Clear, and Generate Identity Button -->
+        <div class="form-group">
+            <label for="veridaKey">Verida Private Key:</label>
+            <input type="text" class="form-control" id="veridaKey" placeholder="Enter your Verida Private Key">
+            <button id="loadBtn" class="btn btn-primary mt-2" disabled="true">Load</button>
+            <button id="clearBtn" class="btn btn-secondary mt-2">Clear</button>
+            <button id="generateIdentityBtn" class="btn btn-info mt-2">Generate Identity</button>
+        </div>
+
+        <!-- Add Connection Dropdown -->
+        <div class="dropdown mt-2">
+            <button class="btn btn-success dropdown-toggle" type="button" id="addConnectionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Add Connection
+            </button>
+            <div class="dropdown-menu" aria-labelledby="addConnectionDropdown" id="providerListDropdown">
+                <!-- Provider list filled by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="alert alert-info text-center mt-3" role="alert" style="display: none;">
+            <strong>Loading data...</strong> Please wait.
+        </div>
+
+        <table class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th scope="col">Provider</th>
+                    <th scope="col">Profile Name</th>
+                    <th scope="col">Sync Status and Time</th>
+                    <th scope="col">Handlers</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="providerTable">
+                <!-- Rows will be populated by jQuery -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="connections.js"></script>
+</body>
+</html>

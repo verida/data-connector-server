@@ -52,7 +52,7 @@ export const Connections: Command<ConnectionsOptions> = {
     const did = (await account.did()).toLowerCase();
     console.log(`Verida Account has DID: ${did}`);
 
-    const networkInstance = await Utils.getNetwork(did, options.key);
+    const networkInstance = await Utils.getNetwork(options.key);
     const vault = networkInstance.context;
 
     const syncManager = new SyncManager(

@@ -37,27 +37,13 @@ export const Sync: Command<SyncOptions> = {
       return;
     }
 
-    // Initialize Account
-    const account = new AutoAccount({
-      privateKey: options.key,
-      network: <Network>options.network,
-      didClientConfig: {
-        callType: "web3",
-        web3Config: {
-          // Set a dummy private key as we shouldn't need to create a DID automatically
-          // The sending DID should already exist
-          privateKey:
-            "0x0000000000000000000000000000000000000000000000000000000000000000",
-        },
-      },
-    });
+    const networkInstance = await Utils.getNetwork(options.key);
+    const did = (await networkInstance.account.did()).toLowerCase();
 
-    const did = (await account.did()).toLowerCase();
     console.log(
       `Syncing data from (${options.provider}) (${options.providerId ? options.providerId : 'all connections'}) to ${did} on network ${options.network}.`
     );
 
-    const networkInstance = await Utils.getNetwork(did, options.key);
     const vault = networkInstance.context;
     const logs = await vault.openDatastore(SCHEMA_SYNC_LOG);
     logs.changes(async function (changeInfo: any) {
@@ -78,16 +64,15 @@ export const Sync: Command<SyncOptions> = {
       options.provider,
       options.providerId
     );
-    const provider = providers[0];
+    
 
-    // console.log('Syncing started')
-    const connection = provider.getConnection();
-    await provider.sync(
-      connection.accessToken,
-      connection.refreshToken,
-      options.force
-    );
-    // console.log('Syncing done')
+    for (const provider of providers) {
+      await provider.sync(
+        undefined,
+        undefined,
+        options.force
+      )
+    }
 
     // Sleep for 5 seconds so sync can complete
     await sleep(5000);

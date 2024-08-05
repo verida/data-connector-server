@@ -43,25 +43,10 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       return;
     }
 
-    // Initialize Account
-    const account = new AutoAccount({
-      privateKey: options.key,
-      network: <Network>options.network,
-      didClientConfig: {
-        callType: "web3",
-        web3Config: {
-          // Set a dummy private key as we shouldn't need to create a DID automatically
-          // The sending DID should already exist
-          privateKey:
-            "0x0000000000000000000000000000000000000000000000000000000000000000",
-        },
-      },
-    });
-
-    const did = (await account.did()).toLowerCase();
+    const networkInstance = await Utils.getNetwork(options.key);
+    const did = (await networkInstance.account.did()).toLowerCase();
     console.log(`Verida Account has DID: ${did}`);
 
-    const networkInstance = await Utils.getNetwork(did, options.key);
     const vault = networkInstance.context;
 
     const syncManager = new SyncManager(

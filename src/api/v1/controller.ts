@@ -1,5 +1,10 @@
 import { Request, Response } from 'express'
+import Providers from "../../providers"
+import SyncManager from '../../sync-manager'
+import { HandlerOption, SyncHandlerPosition, SyncSchemaPositionType } from '../../interfaces'
+import { Utils } from '../../utils'
 import CONFIG from '../../config'
+import { SchemaRecord } from '../../schemas'
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -7,10 +12,6 @@ const logger = log4js.getLogger()
 //const DATA_CONNECTION_SCHEMA = 'https://vault.schemas.verida.io/data-connections/connection/v0.1.0/schema.json'
 //const DATA_PROFILE_SCHEMA = 'https://vault.schemas.verida.io/data-connections/profile/v0.1.0/schema.json'
 const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
-
-import Providers from "../../providers"
-import SyncManager from '../../sync-manager'
-import { HandlerOption } from '../../interfaces'
 
 /**
  * Sign in process:
@@ -41,13 +42,9 @@ export default class Controller {
         logger.trace('connect()')
         const providerName = req.params.provider
         const query = req.query
-        let redirect = query.redirect ? query.redirect.toString() : 'deeplink'
+        let redirect = query.redirect ? query.redirect.toString() : ''
         const key = query.key ? query.key.toString() : undefined
-        const did = query.did ? query.did.toString() : undefined
-
-        if (key && did) {
-            redirect = 'save'
-        }
+        const did = await Utils.getDidFromKey(key)
 
         // Session data isn't retained if using localhost, so use 127.0.0.1
         // @ts-ignore Session is injected as middleware
@@ -79,11 +76,14 @@ export default class Controller {
     
             const did = req.session.did
             const key = req.session.key
+            const redirect = req.session.redirect
 
-            if (did && key) {
-                const syncManager = new SyncManager(did, key)
-                await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
+            const syncManager = new SyncManager(did, key)
+            await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
+            if (redirect) {
+                res.redirect(redirect)
+            } else {
                 const output = `<html>
                     <head>
                         <style>
@@ -107,44 +107,46 @@ export default class Controller {
                     </html>`
                 
                 res.send(output)
-
-                // dont sync for now
-                //await syncManager.sync(providerName)
-            } else {
-                const redirect = req.session.redirect
-
-                let redirectPath = 'https://vault.verida.io/connection-success'
-                if (redirect != 'deeplink') {
-                    redirectPath = redirect
-                }
-
-                // Send the access token, refresh token and profile database name and encryption key
-                // so the user can pull their profile remotely and store their tokens securely
-                // This also avoids this server saving those credentials anywhere, they are only stored by the user
-                const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionResponse.accessToken}&refreshToken=${connectionResponse.refreshToken ? connectionResponse.refreshToken : ''}`
-
-                // @todo: Generate nice looking thank you page
-                const output = `<html>
-                <head>
-                    <style>
-                    button {
-                        font-size: 30pt;
-                        margin-top: 50px;
-                    }
-                    </style>
-                </head>
-                <body>
-                    <div style="margin: auto; text-align: center;">
-                        <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
-                    </div>
-                    <div style="margin: auto; text-align: center;">
-                        <button onclick="window.location.href='${redirectUrl}'">Complete Connection</a>
-                    </div>
-                </body>
-                </html>`
-                
-                res.send(output)
             }
+            // } else {
+                
+
+            //     // let redirectPath = 'https://vault.verida.io/connection-success'
+            //     // if (redirect != 'deeplink') {
+            //     //     redirectPath = redirect
+            //     // }
+
+            //     // Send the access token, refresh token and profile database name and encryption key
+            //     // so the user can pull their profile remotely and store their tokens securely
+            //     // This also avoids this server saving those credentials anywhere, they are only stored by the user
+            //     //const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionResponse.accessToken}&refreshToken=${connectionResponse.refreshToken ? connectionResponse.refreshToken : ''}`
+                
+
+            //     // @todo: Generate nice looking thank you page
+            //     const output = `<html>
+            //     <head>
+            //         <style>
+            //         button {
+            //             font-size: 30pt;
+            //             margin-top: 50px;
+            //         }
+            //         </style>
+            //     </head>
+            //     <body>
+            //         <div style="margin: auto; text-align: center;">
+            //             <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
+            //         </div>
+            //         <div style="margin: auto; text-align: center;">
+            //             <button onclick="window.location.href='${redirectUrl}'">Complete Connection</a>
+            //         </div>
+            //     </body>
+            //     </html>`
+                
+            //     res.send(output)
+            // }
+
+            // dont sync for now
+            //await syncManager.sync(providerName)
         } catch (err: any) {
             const message = err.message
             // @todo: Generate nice looking thank you page
@@ -173,16 +175,17 @@ export default class Controller {
      */
     public static async sync(req: Request, res: Response, next: any) {
         const query = req.query
-        const did = query.did.toString()
         const vaultSeedPhrase = query.key.toString()
+        const did = await Utils.getDidFromKey(vaultSeedPhrase)
         const providerName = query.provider ? query.provider.toString() : undefined
         const providerId = query.providerId ? query.providerId.toString() : undefined
 
         const syncManager = new SyncManager(did, vaultSeedPhrase)
-        await syncManager.sync(providerName, providerId)
+        const connections = await syncManager.sync(providerName, providerId)
 
         // @todo: catch and send errors
         return res.send({
+            connection: connections[0],
             success: true
         })
     }
@@ -216,6 +219,134 @@ export default class Controller {
         }
 
         return res.send(results)
+    }
+
+    public static async syncStatus(req: Request, res: Response, next: any) {
+        try {
+            const query = req.query
+            const vaultSeedPhrase = query.key.toString()
+            const did = await Utils.getDidFromKey(vaultSeedPhrase)
+            const providerName = query.provider ? query.provider.toString() : undefined
+            const providerId = query.providerId ? query.providerId.toString() : undefined
+
+            const syncManager = new SyncManager(did, vaultSeedPhrase)
+            const connections = await syncManager.getProviders(providerName, providerId)
+
+            const result: Record<string, {
+                connection: object,
+                // sync
+                handlers: SyncHandlerPosition[]
+            }> = {}
+            for (const connection of connections) {
+                const handlerPositions: SyncHandlerPosition[] = []
+
+                for (const handler of await connection.getSyncHandlers()) {
+                    handlerPositions.push(await connection.getSyncPosition(handler.getName(), SyncSchemaPositionType.SYNC))
+                }
+
+                const redactedConnection = connection.getConnection()
+                delete redactedConnection['accessToken']
+                delete redactedConnection['refreshToken']
+
+                const uniqueId = `${connection.getProviderName()}:${connection.getProviderId()}`
+                result[uniqueId] = {
+                    connection: redactedConnection,
+                    handlers: handlerPositions
+                }
+            }
+            
+            // get connections, for each connection, get handler position
+
+            // @todo: catch and send errors
+            return res.send({
+                result,
+                success: true
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send(error.message);
+        }
+    }
+
+    public static async disconnect(req: Request, res: Response, next: any) {
+        try {
+            const providerName = req.params.provider
+            const query = req.query
+            const vaultSeedPhrase = query.key.toString()
+            const did = await Utils.getDidFromKey(vaultSeedPhrase)
+            const providerId = query.providerId ? query.providerId.toString() : undefined
+
+            const syncManager = new SyncManager(did, vaultSeedPhrase)
+            const connections = await syncManager.getProviders(providerName, providerId)
+            if (!connections.length) {
+                throw new Error(`Unable to locate connection: ${providerName} (${providerId})`)
+            }
+
+            const connection = connections[0]
+            await connection.reset(false, true, true)
+
+            return res.send({
+                success: true
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send(error.message);
+        }
+    }
+
+    public static async data(req: Request, res: Response, next: any) {
+        try {
+            const query = req.query
+            const privateKey = query.key.toString()
+            const schema = query.schema.toString()
+            const limit = query.limit ? query.limit.toString() : "20"
+            const offset = query.offset ? query.offset.toString() : "0"
+            const filterParams = query.filter ? query.filter.toString() : ''
+            const sortParams = query.sort ? query.sort.toString() : '_id:desc'
+
+            const sort: Record<string, string> = {};
+            const [ sortField, sortDirection ] = sortParams.split(':')
+            sort[sortField] = sortDirection ? sortDirection : 'asc'
+
+            const networkInstance = await Utils.getNetwork(privateKey)
+
+            const filter: Record<string, string> = {}
+            if (filterParams) {
+                const filterAttributes = filterParams ? filterParams.split(",") : [];
+                for (const attribute of filterAttributes) {
+                    const [key, value] = attribute.split(':')
+                    filter[key] = value
+                }
+            }
+
+            const options = {
+                sort: [sort],
+                limit: parseInt(limit),
+                skip: parseInt(offset)
+              }
+
+            const datastore = await networkInstance.context.openDatastore(schema)
+            const results = <SchemaRecord[]> await datastore.getMany(
+                filter,
+                options
+              )
+            
+
+            return res.send({
+                results,
+                filter,
+                options: {
+                    sort,
+                    limit: options.limit,
+                    offset: options.skip
+                }
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(400).send({
+                error: error.message
+            });
+        }
     }
 
 }
