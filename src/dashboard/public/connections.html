@@ -13,12 +13,24 @@
     <div class="container mt-5">
         <h1 class="text-center">Connections</h1>
 
-        <!-- Verida Private Key Input and Load Button -->
+        <!-- Verida Private Key Input, Load, Clear, and Generate Identity Button -->
         <div class="form-group">
             <label for="veridaKey">Verida Private Key:</label>
             <input type="text" class="form-control" id="veridaKey" placeholder="Enter your Verida Private Key">
+            <button id="loadBtn" class="btn btn-primary mt-2" disabled="true">Load</button>
+            <button id="clearBtn" class="btn btn-secondary mt-2">Clear</button>
+            <button id="generateIdentityBtn" class="btn btn-info mt-2">Generate Identity</button>
         </div>
-        <button id="loadBtn" class="btn btn-primary">Load</button>
+
+        <!-- Add Connection Dropdown -->
+        <div class="dropdown mt-2">
+            <button class="btn btn-success dropdown-toggle" type="button" id="addConnectionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Add Connection
+            </button>
+            <div class="dropdown-menu" aria-labelledby="addConnectionDropdown" id="providerListDropdown">
+                <!-- Provider list filled by JavaScript -->
+            </div>
+        </div>
 
         <!-- Loading Indicator -->
         <div id="loadingIndicator" class="text-center mt-3" style="display: none;">
@@ -30,7 +42,7 @@
                 <tr>
                     <th scope="col">Provider</th>
                     <th scope="col">Profile Name</th>
-                    <th scope="col">Sync Status</th>
+                    <th scope="col">Sync Status and Time</th>
                     <th scope="col">Handlers</th>
                     <th scope="col">Actions</th>
                 </tr>
