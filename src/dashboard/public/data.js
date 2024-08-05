@@ -3,10 +3,43 @@ $(document).ready(function() {
     const apiUrl = '/api/v1/data';
     let currentSortField = '';
     let currentSortDirection = 'asc';
+    let currentFilters = {};
 
     // Load Verida Key and Schema from local storage
     $('#veridaKey').val(localStorage.getItem('veridaKey') || '');
     $('#schema').val(localStorage.getItem('schema') || '');
+
+    // Function to get query parameters
+    function getQueryParams() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            limit: params.get('limit') || '10',
+            offset: params.get('offset') || '0',
+            sort: params.get('sort') || '',
+            filter: params.get('filter') || ''
+        };
+    }
+
+    // Parse query parameters and set form values
+    function setInitialValues() {
+        const queryParams = getQueryParams();
+        $('#limit').val(queryParams.limit);
+        offset = parseInt(queryParams.offset, 10);
+        const [sortField, sortDirection] = queryParams.sort.split(':');
+        currentSortField = sortField || '';
+        currentSortDirection = sortDirection || 'asc';
+
+        $('#sortField').val(currentSortField);
+        $('#sortDirection').val(currentSortDirection);
+
+        // Set filters
+        queryParams.filter.split(',').forEach(filter => {
+            const [field, value] = filter.split(':');
+            if (field && value) {
+                currentFilters[field] = value;
+            }
+        });
+    }
 
     function fetchData() {
         const veridaKey = $('#veridaKey').val();
@@ -14,6 +47,7 @@ $(document).ready(function() {
         const limit = $('#limit').val();
         const sortField = currentSortField;
         const sortDirection = currentSortDirection;
+        const filterParam = Object.keys(currentFilters).map(key => `${key}:${currentFilters[key]}`).join(',');
 
         // Show loading message
         $('#tableBody').html('<tr><td colspan="100%" class="text-center">Loading...</td></tr>');
@@ -26,7 +60,8 @@ $(document).ready(function() {
                 schema: schema,
                 limit: limit,
                 offset: offset,
-                sort: sortField ? `${sortField}:${sortDirection}` : ''
+                sort: sortField ? `${sortField}:${sortDirection}` : '',
+                filter: filterParam
             },
             success: function(response) {
                 const results = response.results;
@@ -57,6 +92,29 @@ $(document).ready(function() {
                     $('#sortField').append(`<option value="${header}">${header}</option>`);
                 });
                 $('#sortField').val(currentSortField);
+
+                // Populate filter modal fields
+                $('#filterFields').empty();
+                headers.forEach(header => {
+                    $('#filterFields').append(`
+                        <div class="form-group">
+                            <label for="filter-${header}">${header}</label>
+                            <input type="text" id="filter-${header}" class="form-control" data-field="${header}">
+                        </div>
+                    `);
+                });
+
+                // Set existing filter values
+                Object.keys(currentFilters).forEach(key => {
+                    $(`#filter-${key}`).val(currentFilters[key]);
+                });
+
+                // Display applied filters
+                const filterInfoHtml = Object.keys(currentFilters).map(key => `<strong>${key}:</strong> ${currentFilters[key]}`).join(', ');
+                $('#filterInfo').html(filterInfoHtml ? `Applied Filters: ${filterInfoHtml}` : '');
+
+                // Show filter modal button if results are loaded
+                $('#openFilters').show();
 
                 // Handle pagination
                 $('#prevButton').toggleClass('disabled', options.skip === 0);
@@ -110,6 +168,21 @@ $(document).ready(function() {
         fetchData();
     });
 
+    // Apply filters from modal
+    $('#applyFilters').click(function() {
+        const filters = {};
+        $('#filterFields input').each(function() {
+            const field = $(this).data('field');
+            const value = $(this).val();
+            if (value) {
+                filters[field] = value;
+            }
+        });
+        currentFilters = filters;
+        fetchData();
+        $('#filterModal').modal('hide');
+    });
+
     $('#searchButton').click(fetchData);
 
     $('#prevButton').click(function(e) {
@@ -128,6 +201,41 @@ $(document).ready(function() {
 
     // Example of listing schemas
     $('#schemaModal').on('show.bs.modal', function() {
-        $('#schemaList').html('<li>schema1</li><li>schema2</li><li>schema3</li>');
+        const schemas = {
+            "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.1.0/schema.json",
+            "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
+            "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
+            "Social Following": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
+            "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
+            "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json"
+        };
+
+        // Clear previous list
+        $('#schemaList').empty();
+
+        // Append each schema as a list item
+        $.each(schemas, function(name, url) {
+            $('#schemaList').append(`<li><a href="#" data-url="${url}">${name}</a></li>`);
+        });
     });
+
+    // Set schema URL in input field on link click
+    $('#schemaList').on('click', 'a', function(e) {
+        e.preventDefault();
+        const url = $(this).data('url');
+        $('#schema').val(url);
+        $('#schemaModal').modal('hide');
+    });
+
+    // Show filter modal on button click
+    $('#openFilters').click(function() {
+        $('#filterModal').modal('show');
+    });
+
+    // Hide the filter button initially
+    $('#openFilters').hide();
+
+    // Set initial values from query parameters
+    setInitialValues();
+    fetchData();
 });

@@ -314,7 +314,7 @@ export default class Controller {
             if (filterParams) {
                 const filterAttributes = filterParams ? filterParams.split(",") : [];
                 for (const attribute of filterAttributes) {
-                    const [key, value] = attribute.split('=')
+                    const [key, value] = attribute.split(':')
                     filter[key] = value
                 }
             }
@@ -343,7 +343,9 @@ export default class Controller {
             })
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(400).send({
+                error: error.message
+            });
         }
     }
 
