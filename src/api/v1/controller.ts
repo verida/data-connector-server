@@ -41,13 +41,9 @@ export default class Controller {
         logger.trace('connect()')
         const providerName = req.params.provider
         const query = req.query
-        let redirect = query.redirect ? query.redirect.toString() : 'deeplink'
+        let redirect = query.redirect ? query.redirect.toString() : ''
         const key = query.key ? query.key.toString() : undefined
-        const did = query.did ? query.did.toString() : undefined
-
-        if (key && did) {
-            redirect = 'save'
-        }
+        const did = await Utils.getDidFromKey(key)
 
         // Session data isn't retained if using localhost, so use 127.0.0.1
         // @ts-ignore Session is injected as middleware
@@ -79,11 +75,14 @@ export default class Controller {
     
             const did = req.session.did
             const key = req.session.key
+            const redirect = req.session.redirect
 
-            if (did && key) {
-                const syncManager = new SyncManager(did, key)
-                await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
+            const syncManager = new SyncManager(did, key)
+            await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
+            if (redirect) {
+                res.redirect(redirect)
+            } else {
                 const output = `<html>
                     <head>
                         <style>
@@ -107,44 +106,46 @@ export default class Controller {
                     </html>`
                 
                 res.send(output)
-
-                // dont sync for now
-                //await syncManager.sync(providerName)
-            } else {
-                const redirect = req.session.redirect
-
-                let redirectPath = 'https://vault.verida.io/connection-success'
-                if (redirect != 'deeplink') {
-                    redirectPath = redirect
-                }
-
-                // Send the access token, refresh token and profile database name and encryption key
-                // so the user can pull their profile remotely and store their tokens securely
-                // This also avoids this server saving those credentials anywhere, they are only stored by the user
-                const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionResponse.accessToken}&refreshToken=${connectionResponse.refreshToken ? connectionResponse.refreshToken : ''}`
-
-                // @todo: Generate nice looking thank you page
-                const output = `<html>
-                <head>
-                    <style>
-                    button {
-                        font-size: 30pt;
-                        margin-top: 50px;
-                    }
-                    </style>
-                </head>
-                <body>
-                    <div style="margin: auto; text-align: center;">
-                        <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
-                    </div>
-                    <div style="margin: auto; text-align: center;">
-                        <button onclick="window.location.href='${redirectUrl}'">Complete Connection</a>
-                    </div>
-                </body>
-                </html>`
-                
-                res.send(output)
             }
+            // } else {
+                
+
+            //     // let redirectPath = 'https://vault.verida.io/connection-success'
+            //     // if (redirect != 'deeplink') {
+            //     //     redirectPath = redirect
+            //     // }
+
+            //     // Send the access token, refresh token and profile database name and encryption key
+            //     // so the user can pull their profile remotely and store their tokens securely
+            //     // This also avoids this server saving those credentials anywhere, they are only stored by the user
+            //     //const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionResponse.accessToken}&refreshToken=${connectionResponse.refreshToken ? connectionResponse.refreshToken : ''}`
+                
+
+            //     // @todo: Generate nice looking thank you page
+            //     const output = `<html>
+            //     <head>
+            //         <style>
+            //         button {
+            //             font-size: 30pt;
+            //             margin-top: 50px;
+            //         }
+            //         </style>
+            //     </head>
+            //     <body>
+            //         <div style="margin: auto; text-align: center;">
+            //             <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
+            //         </div>
+            //         <div style="margin: auto; text-align: center;">
+            //             <button onclick="window.location.href='${redirectUrl}'">Complete Connection</a>
+            //         </div>
+            //     </body>
+            //     </html>`
+                
+            //     res.send(output)
+            // }
+
+            // dont sync for now
+            //await syncManager.sync(providerName)
         } catch (err: any) {
             const message = err.message
             // @todo: Generate nice looking thank you page
@@ -257,6 +258,32 @@ export default class Controller {
             // @todo: catch and send errors
             return res.send({
                 result,
+                success: true
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send(error.message);
+        }
+    }
+
+    public static async disconnect(req: Request, res: Response, next: any) {
+        try {
+            const providerName = req.params.provider
+            const query = req.query
+            const vaultSeedPhrase = query.key.toString()
+            const did = await Utils.getDidFromKey(vaultSeedPhrase)
+            const providerId = query.providerId ? query.providerId.toString() : undefined
+
+            const syncManager = new SyncManager(did, vaultSeedPhrase)
+            const connections = await syncManager.getProviders(providerName, providerId)
+            if (!connections.length) {
+                throw new Error(`Unable to locate connection: ${providerName} (${providerId})`)
+            }
+
+            const connection = connections[0]
+            await connection.reset(false, true, true)
+
+            return res.send({
                 success: true
             })
         } catch (error) {
