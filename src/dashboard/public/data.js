@@ -1,13 +1,23 @@
 $(document).ready(function() {
     let offset = 0;
     const apiUrl = '/api/v1/data';
+    let currentSortField = '';
+    let currentSortDirection = 'asc';
+
+    // Load Verida Key and Schema from local storage
+    $('#veridaKey').val(localStorage.getItem('veridaKey') || '');
+    $('#schema').val(localStorage.getItem('schema') || '');
 
     function fetchData() {
         const veridaKey = $('#veridaKey').val();
         const schema = $('#schema').val();
         const limit = $('#limit').val();
-        const sortField = $('#sortField').val();
-        const sortDirection = $('#sortDirection').val();
+        const sortField = currentSortField;
+        const sortDirection = currentSortDirection;
+
+        // Show loading message
+        $('#tableBody').html('<tr><td colspan="100%" class="text-center">Loading...</td></tr>');
+        $('.alert').hide(); // Hide previous error messages
 
         $.ajax({
             url: apiUrl,
@@ -26,7 +36,8 @@ $(document).ready(function() {
                 // Populate table headers
                 $('#tableHeaders').empty();
                 headers.forEach(header => {
-                    $('#tableHeaders').append(`<th>${header}</th>`);
+                    const sortIcon = (header === currentSortField) ? (currentSortDirection === 'asc' ? '▲' : '▼') : '';
+                    $('#tableHeaders').append(`<th class="sortable" data-field="${header}">${header} ${sortIcon}</th>`);
                 });
 
                 // Populate table rows
@@ -41,19 +52,63 @@ $(document).ready(function() {
                 });
 
                 // Populate sort field dropdown
-                if (sortField === null) {
-                    $('#sortField').empty();
-                    headers.forEach(header => {
-                        $('#sortField').append(`<option value="${header}">${header}</option>`);
-                    });
-                }
+                $('#sortField').empty();
+                headers.forEach(header => {
+                    $('#sortField').append(`<option value="${header}">${header}</option>`);
+                });
+                $('#sortField').val(currentSortField);
 
                 // Handle pagination
                 $('#prevButton').toggleClass('disabled', options.skip === 0);
                 $('#nextButton').toggleClass('disabled', results.length < limit);
+            },
+            error: function(jqXHR) {
+                const error = jqXHR.responseJSON ? jqXHR.responseJSON.error : 'An error occurred';
+                $('.alert').text(error).show();
             }
         });
     }
+
+    // Save Verida Key and Schema to local storage
+    $('#veridaKey').on('input', function() {
+        localStorage.setItem('veridaKey', $(this).val());
+    });
+
+    $('#schema').on('input', function() {
+        localStorage.setItem('schema', $(this).val());
+    });
+
+    // Handle column header click for sorting
+    $('#tableHeaders').on('click', '.sortable', function() {
+        const field = $(this).data('field');
+        if (field === currentSortField) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortField = field;
+            currentSortDirection = 'asc';
+        }
+        $('#sortField').val(currentSortField);
+        $('#sortDirection').val(currentSortDirection);
+        fetchData();
+    });
+
+    // Update sort field and direction on dropdown change
+    $('#sortField').change(function() {
+        const field = $(this).val();
+        if (field === currentSortField) {
+            currentSortDirection = $('#sortDirection').val();
+        } else {
+            currentSortField = field;
+            currentSortDirection = 'asc';
+        }
+        $('#sortDirection').val(currentSortDirection);
+        fetchData();
+    });
+
+    $('#sortDirection').change(function() {
+        currentSortDirection = $(this).val();
+        fetchData();
+    });
 
     $('#searchButton').click(fetchData);
 
