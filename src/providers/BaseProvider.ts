@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import serverconfig from '../config'
-import { AccountAuth, BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../interfaces'
+import { AccountAuth, BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncHandlerPosition, SyncSchemaPositionType, SyncStatus } from '../interfaces'
 import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 import { SchemaRecord } from '../schemas'
@@ -100,12 +100,14 @@ export default class BaseProvider {
         return this.vault.openDatastore(schemaUrl)
     }
 
-    protected async logMessage(level: SyncProviderLogLevel, message: string, schemaUri?: string): Promise<void> {
+    protected async logMessage(level: SyncProviderLogLevel, message: string, handlerName?: string, schemaUri?: string): Promise<void> {
         const syncLog = await this.vault.openDatastore(SCHEMA_SYNC_LOG)
         const logEntry: SyncProviderLogEntry = {
             message,
             level,
-            provider: this.getProviderId(),
+            providerName: this.getProviderName(),
+            providerId: this.getProviderId(),
+            handlerName,
             schemaUri,
             insertedAt: (new Date()).toISOString()
         }
@@ -131,13 +133,13 @@ export default class BaseProvider {
             // delete positions
             const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
             try {
-                const syncPositionId = Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, SyncSchemaPositionType.SYNC)
+                const syncPositionId = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handler.getName(), SyncSchemaPositionType.SYNC)
                 await syncPositionsDs.delete(syncPositionId)
             } catch (err: any) {
                 // deleted already
             }
             try {
-                const syncBackfillId = Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, SyncSchemaPositionType.BACKFILL)
+                const syncBackfillId = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handler.getName(), SyncSchemaPositionType.SYNC)
                 await syncPositionsDs.delete(syncBackfillId)
             } catch (err: any) {
                 // deleted already
@@ -213,30 +215,30 @@ export default class BaseProvider {
             const schemaUri = handler.getSchemaUri()
             const datastore = await this.vault.openDatastore(schemaUri)
 
-            const syncPosition = await this.getSyncPosition(schemaUri, SyncSchemaPositionType.SYNC, syncPositionsDs)
+            const syncPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.SYNC, syncPositionsDs)
             syncPosition.status = SyncHandlerStatus.ACTIVE
-            const backfillPosition = await this.getSyncPosition(schemaUri, SyncSchemaPositionType.BACKFILL, syncPositionsDs)
+            const backfillPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.BACKFILL, syncPositionsDs)
             backfillPosition.status = SyncHandlerStatus.ACTIVE
 
             handler.on('error', (syncError: SyncProviderErrorEvent) => {
-                providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncError.message, schemaUri)
+                providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncError.message, handler.getName(), schemaUri)
             })
 
-            this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${schemaUri}`, schemaUri)
+            this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(),schemaUri)
             let syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
             totalSyncItems += syncResults.syncResults.length
             totalBackfillItems += syncResults.backfillResults.length
-            this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, schemaUri)
+            this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
             syncCount++
 
             while (!this.config.maxSyncLoops || syncCount < this.config.maxSyncLoops) {
                 if (syncResults.syncPosition.status == SyncHandlerStatus.ACTIVE || syncResults.backfillPosition.status == SyncHandlerStatus.ACTIVE) {
                     // sync again
-                    this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${schemaUri}`, schemaUri)
+                    this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(), schemaUri)
                     syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
                     totalSyncItems += syncResults.syncResults.length
                     totalBackfillItems += syncResults.backfillResults.length
-                    this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, schemaUri)
+                    this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
                 }
 
                 syncCount++
@@ -259,19 +261,20 @@ export default class BaseProvider {
         })
     }
 
-    public async getSyncPosition(schemaUri: string, syncPositionType: SyncSchemaPositionType, syncPositionsDs: IDatastore): Promise<SyncSchemaPosition> {
+    public async getSyncPosition(handlerName: string, syncPositionType: SyncSchemaPositionType, syncPositionsDs: IDatastore): Promise<SyncHandlerPosition> {
         try {
-            const id = Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, syncPositionType)
+            const id = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handlerName, SyncSchemaPositionType.SYNC)
             return await syncPositionsDs.get(id, {})
 
         } catch (err: any) {
             if (err.message.match('missing')) {
                 // Schema position doesn't exist, so create new
                 return {
-                    _id: Utils.buildSyncHandlerId(this.getProviderId(), schemaUri, syncPositionType),
+                    _id: Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handlerName, SyncSchemaPositionType.SYNC),
                     type: syncPositionType,
-                    provider: this.getProviderId(),
-                    schemaUri,
+                    providerName: this.getProviderName(),
+                    providerId: this.getProviderId(),
+                    handlerName,
                     status: SyncHandlerStatus.ACTIVE
                 }
             }

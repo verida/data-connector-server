@@ -21,7 +21,7 @@ export const Data: Command<DataOptions> = {
       name: "sortField",
       description: "Default sort field",
       type: "string",
-      defaultValue: "insertedAt",
+      defaultValue: "_id",
     },
     {
       name: "attributes",
@@ -121,6 +121,7 @@ export const Data: Command<DataOptions> = {
     printItems(last5Items, attributes);
 
     console.log(`-- Total rows: ${dataPouchInfo.doc_count}`);
+    console.log(await dataDb.info())
 
     await vault.close();
   },

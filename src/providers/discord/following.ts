@@ -1,4 +1,4 @@
-import { SyncSchemaPosition } from "../../interfaces"
+import { SyncHandlerPosition } from "../../interfaces"
 import BaseSyncHandler from "../BaseSyncHandler"
 const _ = require('lodash')
 
@@ -21,7 +21,7 @@ export default class Following extends BaseSyncHandler {
      * 
      * @param api 
      */
-    public async sync(api: any, syncPosition: SyncSchemaPosition): Promise<any> {
+    public async sync(api: any, syncPosition: SyncHandlerPosition): Promise<any> {
         const guildResponse: any = await api.get('/users/@me/guilds')
         console.log(syncPosition)
 

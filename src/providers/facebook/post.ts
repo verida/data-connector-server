@@ -3,7 +3,7 @@ import CONFIG from '../../config'
 const { Facebook } = require('fb')
 
 import dayjs from 'dayjs'
-import { SyncSchemaPosition, SyncResponse, SyncHandlerStatus } from "../../interfaces"
+import { SyncHandlerPosition, SyncResponse, SyncHandlerStatus } from "../../interfaces"
 import { SchemaPost } from "../../schemas"
 import { capitalizeFirstLetter } from "../../helpers"
 import Axios from "axios"
@@ -33,7 +33,7 @@ export default class Posts extends BaseSyncHandler {
      * @param syncPosition 
      * @returns SyncResponse
      */
-    public async _sync(Fb: typeof Facebook, syncPosition: SyncSchemaPosition): Promise<SyncResponse> {
+    public async _sync(Fb: typeof Facebook, syncPosition: SyncHandlerPosition): Promise<SyncResponse> {
         const me = await Fb.api('/me?fields=picture')
         const pictureUrl = me.picture.data.url
 
@@ -73,7 +73,7 @@ export default class Posts extends BaseSyncHandler {
         }
     }
 
-    protected stopSync(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+    protected stopSync(syncPosition: SyncHandlerPosition, serverResponse: any): SyncHandlerPosition {
         if (syncPosition.status == SyncHandlerStatus.STOPPED) {
             return syncPosition
         }
@@ -89,7 +89,7 @@ export default class Posts extends BaseSyncHandler {
         return syncPosition
     }
 
-    protected setNextPosition(syncPosition: SyncSchemaPosition, serverResponse: any): SyncSchemaPosition {
+    protected setNextPosition(syncPosition: SyncHandlerPosition, serverResponse: any): SyncHandlerPosition {
         if (_.has(serverResponse, 'paging.next')) {
             // We have a next page of results, so set that for the next page
             syncPosition.thisRef = serverResponse.paging.next

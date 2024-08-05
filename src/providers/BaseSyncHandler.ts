@@ -1,4 +1,4 @@
-import { Connection, HandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncSchemaPosition } from "../interfaces"
+import { Connection, HandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
@@ -56,8 +56,8 @@ export default class BaseSyncHandler extends EventEmitter {
      */
     public async sync(
         api: any,
-        syncPosition: SyncSchemaPosition,
-        backfillPosition: SyncSchemaPosition,
+        syncPosition: SyncHandlerPosition,
+        backfillPosition: SyncHandlerPosition,
         syncSchemaPositionDs: IDatastore,
         schemaDatastore: IDatastore): Promise<SyncHandlerResponse> {
         const promises = []
@@ -101,7 +101,7 @@ export default class BaseSyncHandler extends EventEmitter {
     }
 
     protected async handleResults(
-        position: SyncSchemaPosition,
+        position: SyncHandlerPosition,
         items: SchemaRecord[],
         syncSchemaPositionDs: IDatastore
         ): Promise<void> {
@@ -112,6 +112,13 @@ export default class BaseSyncHandler extends EventEmitter {
                 // The position record may already exist, if so, force update
                 forceUpdate: true
             })
+            if (!result) {
+                const message = `Unable to update sync position: ${JSON.stringify(syncSchemaPositionDs.errors, null, 2)} (${JSON.stringify(position, null, 2)})`
+                this.emit('error', {
+                    level: SyncProviderLogLevel.ERROR,
+                    message
+                })
+            }
         } catch (err: any) {
             const message = `Unable to update sync position: ${err.message} (${JSON.stringify(position, null, 2)})`
             this.emit('error', {
@@ -164,7 +171,7 @@ export default class BaseSyncHandler extends EventEmitter {
      * 
      * @returns SyncResponse Array of results that need to be saved and the updated syncPosition
      */
-    public async _sync(api: any, syncPosition: SyncSchemaPosition): Promise <SyncResponse> {
+    public async _sync(api: any, syncPosition: SyncHandlerPosition): Promise <SyncResponse> {
         throw new Error('Not implemented')
     }
 
@@ -175,7 +182,7 @@ export default class BaseSyncHandler extends EventEmitter {
      * 
      * @returns SyncResponse Array of results that need to be saved and the updated syncPosition
      */
-    protected async _backfill(api: any, backfillPosition: SyncSchemaPosition): Promise<SyncResponse> {
+    protected async _backfill(api: any, backfillPosition: SyncHandlerPosition): Promise<SyncResponse> {
         backfillPosition.status = SyncHandlerStatus.STOPPED
 
         return {
@@ -192,7 +199,7 @@ export default class BaseSyncHandler extends EventEmitter {
      * @param syncPosition 
      * @param serverResponse 
      */
-    protected stopSync(syncPosition: SyncSchemaPosition, serverResponse?: any): SyncSchemaPosition {
+    protected stopSync(syncPosition: SyncHandlerPosition, serverResponse?: any): SyncHandlerPosition {
         return syncPosition
     }
 }
