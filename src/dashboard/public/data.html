@@ -11,8 +11,76 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center">Hello, Express!</h1>
-        <button id="clickMe" class="btn btn-primary btn-block">Click Me</button>
+        <h1>Database Results</h1>
+        <form id="queryForm">
+            <div class="form-group">
+                <label for="veridaKey">Verida Key:</label>
+                <input type="text" class="form-control" id="veridaKey" required>
+            </div>
+            <div class="form-group">
+                <label for="schema">Schema:</label>
+                <input type="text" class="form-control" id="schema" required>
+                <a href="#" data-toggle="modal" data-target="#schemaModal" class="ml-2">List schemas</a>
+            </div>
+            <div class="form-row form-row-custom">
+                <div class="form-group col-md-3">
+                    <label for="limit">Limit:</label>
+                    <select class="form-control" id="limit">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="offset">Offset:</label>
+                    <input type="number" class="form-control" id="offset" value="0">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="sortField">Sort By:</label>
+                    <select class="form-control" id="sortField"></select>
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="sortDirection">Direction:</label>
+                    <select class="form-control" id="sortDirection">
+                        <option value="asc">Asc</option>
+                        <option value="desc">Desc</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" id="searchButton">Search</button>
+        </form>
+
+        <table class="table mt-4">
+            <thead>
+                <tr id="tableHeaders"></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+
+        <nav>
+            <ul class="pagination">
+                <li class="page-item"><a class="page-link" href="#" id="prevButton">Previous</a></li>
+                <li class="page-item"><a class="page-link" href="#" id="nextButton">Next</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Schema Modal -->
+    <div class="modal fade" id="schemaModal" tabindex="-1" role="dialog" aria-labelledby="schemaModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="schemaModalLabel">Schemas</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <ul id="schemaList"></ul>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- jQuery -->

@@ -53,25 +53,10 @@ export const Data: Command<DataOptions> = {
       console.log(`Filter: ${JSON.stringify(options.filter)}`)
     }
 
-    // Initialize Account
-    const account = new AutoAccount({
-      privateKey: options.key,
-      network: <Network>options.network,
-      didClientConfig: {
-        callType: "web3",
-        web3Config: {
-          // Set a dummy private key as we shouldn't need to create a DID automatically
-          // The sending DID should already exist
-          privateKey:
-            "0x0000000000000000000000000000000000000000000000000000000000000000",
-        },
-      },
-    });
-
-    const did = (await account.did()).toLowerCase();
+    const networkInstance = await Utils.getNetwork(options.key);
+    const did = (await networkInstance.account.did()).toLowerCase();
     console.log(`-- Verida Account has DID: ${did}`);
 
-    const networkInstance = await Utils.getNetwork(did, options.key);
     const vault = networkInstance.context;
     const dataDs = await vault.openDatastore(options.schemaUri);
     console.time("Database load");
@@ -94,7 +79,7 @@ export const Data: Command<DataOptions> = {
     }
 
     const first5Items = <SchemaRecord[]>await dataDs.getMany(
-      {},
+      filter,
       {
         sort: [sort],
         limit: 5,
@@ -105,7 +90,7 @@ export const Data: Command<DataOptions> = {
     sort[options.sortField] = "asc";
     console.time("Get last 5 items");
     const last5Items = <SchemaRecord[]>await dataDs.getMany(
-      {},
+      filter,
       {
         sort: [sort],
         limit: 5,

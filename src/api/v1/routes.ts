@@ -9,5 +9,6 @@ router.get('/callback/:provider', Controller.callback)
 router.get('/sync', Controller.sync)
 router.get('/syncStatus', Controller.syncStatus)
 router.get('/providers', Controller.providers)
+router.get('/data', Controller.data)
 
 export default router

@@ -23,7 +23,7 @@ export class Utils {
      * 
      * @returns 
      */
-    public static async getNetwork(did: string, contextSignature: string): Promise<{
+    public static async getNetwork(contextSignature: string): Promise<{
         network: Network,
         context: IContext,
         account: AutoAccount

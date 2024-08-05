@@ -4,6 +4,7 @@ import SyncManager from '../../sync-manager'
 import { HandlerOption, SyncHandlerPosition, SyncSchemaPositionType } from '../../interfaces'
 import { Utils } from '../../utils'
 import CONFIG from '../../config'
+import { SchemaRecord } from '../../schemas'
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -286,6 +287,59 @@ export default class Controller {
 
             return res.send({
                 success: true
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send(error.message);
+        }
+    }
+
+    public static async data(req: Request, res: Response, next: any) {
+        try {
+            const query = req.query
+            const privateKey = query.key.toString()
+            const schema = query.schema.toString()
+            const limit = query.limit ? query.limit.toString() : "20"
+            const offset = query.offset ? query.offset.toString() : "0"
+            const filterParams = query.filter ? query.filter.toString() : ''
+            const sortParams = query.sort ? query.sort.toString() : '_id:desc'
+
+            const sort: Record<string, string> = {};
+            const [ sortField, sortDirection ] = sortParams.split(':')
+            sort[sortField] = sortDirection ? sortDirection : 'asc'
+
+            const networkInstance = await Utils.getNetwork(privateKey)
+
+            const filter: Record<string, string> = {}
+            if (filterParams) {
+                const filterAttributes = filterParams ? filterParams.split(",") : [];
+                for (const attribute of filterAttributes) {
+                    const [key, value] = attribute.split('=')
+                    filter[key] = value
+                }
+            }
+
+            const options = {
+                sort: [sort],
+                limit: parseInt(limit),
+                skip: parseInt(offset)
+              }
+
+            const datastore = await networkInstance.context.openDatastore(schema)
+            const results = <SchemaRecord[]> await datastore.getMany(
+                filter,
+                options
+              )
+            
+
+            return res.send({
+                results,
+                filter,
+                options: {
+                    sort,
+                    limit: options.limit,
+                    offset: options.skip
+                }
             })
         } catch (error) {
             console.log(error)

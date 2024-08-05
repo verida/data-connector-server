@@ -84,7 +84,7 @@ export default class SyncManager {
         }
 
         try {
-            const { context } = await Utils.getNetwork(this.did, this.seedPhrase)
+            const { context } = await Utils.getNetwork(this.seedPhrase)
 
             this.vault = <IContext> context
             return this.vault
