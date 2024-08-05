@@ -81,7 +81,7 @@ $(document).ready(function() {
             $('.logs-btn').click(function() {
                 const provider = $(this).data('provider');
                 const providerId = $(this).data('provider-id');
-                window.open(`/dashboard/logs.html?providerName=${provider}&providerId=${providerId}`, '_blank');
+                window.open(`/dashboard/logs.html?provider=${provider}&providerId=${providerId}`, '_blank');
             });
 
             $('.sync-btn').click(function() {
@@ -90,7 +90,7 @@ $(document).ready(function() {
                 const providerId = $(this).data('provider-id');
                 $button.text('Syncing...')
                 $button.prop('disabled', true);
-                $.getJSON(`/api/v1/sync?key=${veridaKey}`, function(response) {
+                $.getJSON(`/api/v1/sync?key=${veridaKey}&provider=${provider}&providerId=${providerId}`, function(response) {
                     console.log(response.data)
                     $button.prop('disabled', false);
                     $button.text('Sync Now')

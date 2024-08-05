@@ -180,10 +180,11 @@ export default class Controller {
         const providerId = query.providerId ? query.providerId.toString() : undefined
 
         const syncManager = new SyncManager(did, vaultSeedPhrase)
-        await syncManager.sync(providerName, providerId)
+        const connections = await syncManager.sync(providerName, providerId)
 
         // @todo: catch and send errors
         return res.send({
+            connection: connections[0],
             success: true
         })
     }

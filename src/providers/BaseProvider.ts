@@ -193,7 +193,7 @@ export default class BaseProvider {
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken?: string, refreshToken?: string, force: boolean = false): Promise<void> {
+    public async sync(accessToken?: string, refreshToken?: string, force: boolean = false): Promise<Connection> {
         this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
 
         if (!accessToken) {
@@ -208,7 +208,7 @@ export default class BaseProvider {
                 // @todo: handle retries if status = error
                 // @todo: handle time delays for syncing
                 this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active (${this.connection.syncStatus}), so stopping`)
-                return
+                return this.connection
             } else {
                 this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active, but forcing as requested`)
                 this.connection.syncStatus = SyncStatus.CONNECTED
@@ -276,6 +276,8 @@ export default class BaseProvider {
         this.connection.syncEnd = Utils.nowTimestamp()
         await this.saveConnection()
         this.logMessage(SyncProviderLogLevel.INFO, `Sync complete (${totalSyncItems} sync items, ${totalBackfillItems} backfill items)`)
+
+        return this.connection
     }
 
     protected async getConnectionDs() {
