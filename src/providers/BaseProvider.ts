@@ -107,21 +107,24 @@ export default class BaseProvider {
     }
 
     protected async logMessage(level: SyncProviderLogLevel, message: string, handlerName?: string, schemaUri?: string): Promise<void> {
-        const syncLog = await this.vault.openDatastore(SCHEMA_SYNC_LOG)
-        const logEntry: SyncProviderLogEntry = {
-            message,
-            level,
-            providerName: this.getProviderName(),
-            providerId: this.getProviderId(),
-            handlerName,
-            schemaUri,
-            insertedAt: (new Date()).toISOString()
-        }
-        
-        const result = await syncLog.save(logEntry, {})
-        if (!result) {
-            console.log('sync log save error!!')
-            console.log(syncLog.errors)
+        try {
+            const syncLog = await this.vault.openDatastore(SCHEMA_SYNC_LOG)
+            const logEntry: SyncProviderLogEntry = {
+                message,
+                level,
+                providerName: this.getProviderName(),
+                providerId: this.getProviderId(),
+                handlerName,
+                schemaUri,
+                insertedAt: (new Date()).toISOString()
+            }
+            
+            const result = await syncLog.save(logEntry, {})
+            if (!result) {
+                console.error(`Error logging message: ${syncLog.errors}`)
+            }
+        } catch (err: any) {
+            console.error(`Error logging message: ${err.message}`)
         }
     }
 
@@ -194,7 +197,7 @@ export default class BaseProvider {
      * @returns 
      */
     public async sync(accessToken?: string, refreshToken?: string, force: boolean = false): Promise<Connection> {
-        this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
+        await this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
 
         if (!accessToken) {
             const connection = this.getConnection()
@@ -207,10 +210,10 @@ export default class BaseProvider {
                 // Sync isn't active, so don't sync
                 // @todo: handle retries if status = error
                 // @todo: handle time delays for syncing
-                this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active (${this.connection.syncStatus}), so stopping`)
+                await this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active (${this.connection.syncStatus}), so stopping`)
                 return this.connection
             } else {
-                this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active, but forcing as requested`)
+                await this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't active, but forcing as requested`)
                 this.connection.syncStatus = SyncStatus.CONNECTED
             }
         }
@@ -237,25 +240,25 @@ export default class BaseProvider {
             const backfillPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.BACKFILL, syncPositionsDs)
             backfillPosition.status = SyncHandlerStatus.ACTIVE
 
-            handler.on('error', (syncError: SyncProviderErrorEvent) => {
-                providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncError.message, handler.getName(), schemaUri)
+            handler.on('error', async (syncError: SyncProviderErrorEvent) => {
+                await providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncError.message, handler.getName(), schemaUri)
             })
 
-            this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(),schemaUri)
+            await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(),schemaUri)
             let syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
             totalSyncItems += syncResults.syncResults.length
             totalBackfillItems += syncResults.backfillResults.length
-            this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
+            await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
             syncCount++
 
             while (!this.config.maxSyncLoops || syncCount < this.config.maxSyncLoops) {
                 if (syncResults.syncPosition.status == SyncHandlerStatus.ACTIVE || syncResults.backfillPosition.status == SyncHandlerStatus.ACTIVE) {
                     // sync again
-                    this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(), schemaUri)
+                    await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(), schemaUri)
                     syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
                     totalSyncItems += syncResults.syncResults.length
                     totalBackfillItems += syncResults.backfillResults.length
-                    this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
+                    await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
                 }
 
                 syncCount++
@@ -275,7 +278,7 @@ export default class BaseProvider {
         this.connection.syncStatus = SyncStatus.CONNECTED
         this.connection.syncEnd = Utils.nowTimestamp()
         await this.saveConnection()
-        this.logMessage(SyncProviderLogLevel.INFO, `Sync complete (${totalSyncItems} sync items, ${totalBackfillItems} backfill items)`)
+        await this.logMessage(SyncProviderLogLevel.INFO, `Sync complete (${totalSyncItems} sync items, ${totalBackfillItems} backfill items)`)
 
         return this.connection
     }

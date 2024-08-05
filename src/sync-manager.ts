@@ -11,7 +11,6 @@ const log4js = require("log4js")
 const logger = log4js.getLogger()
 
 const DATA_CONNECTION_SCHEMA = serverconfig.verida.schemas.DATA_CONNECTIONS
-const DATA_SYNC_REQUEST_SCHEMA = serverconfig.verida.schemas.SYNC_REQUEST
 
 const delay = async (ms: number) => {
     await new Promise((resolve: any) => setTimeout(() => resolve(), ms))
@@ -25,15 +24,17 @@ export default class SyncManager {
     private vault?: IContext
     private did: string
     private seedPhrase: string
+    private requestId: string
 
     private connectionDatastore?: IDatastore
     private connections?: BaseProvider[]
 
     private status: SyncStatus = SyncStatus.CONNECTED
 
-    public constructor(did: string, seedPhrase: string) {
+    public constructor(did: string, seedPhrase: string, requestId: string = 'none') {
         this.did = did
         this.seedPhrase = seedPhrase
+        this.requestId = requestId
     }
 
     /**
@@ -56,8 +57,6 @@ export default class SyncManager {
     }
 
     public async sync(providerName?: string, providerId?: string): Promise<Connection[]> {
-        const vault = await this.getVault()
-
         const connections: Connection[] = []
 
         const providers = await this.getProviders(providerName, providerId)
@@ -84,7 +83,7 @@ export default class SyncManager {
         }
 
         try {
-            const { context } = await Utils.getNetwork(this.seedPhrase)
+            const { context } = await Utils.getNetwork(this.seedPhrase, this.requestId)
 
             this.vault = <IContext> context
             return this.vault

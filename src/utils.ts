@@ -1,5 +1,5 @@
 import { Network as VeridaNetwork, IContext } from '@verida/types'
-import { Client, Network } from "@verida/client-ts"
+import { Client } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
 import fs from 'fs'
@@ -16,19 +16,29 @@ export {
     SBT_CREDENTIAL_SCHEMA
 }
 
+export interface NetworkConnectionCache {
+    requestIds: string[],
+    currentPromise?: Promise<void>,
+    networkConnection?: NetworkConnection
+}
+
+export interface NetworkConnection {
+    network: Client,
+    context: IContext,
+    account: AutoAccount,
+    did: string
+}
+
 export class Utils {
+
+    protected static networkCache: Record<string, NetworkConnectionCache> = {}
 
     /**
      * Get a network, context and account instance
      * 
      * @returns 
      */
-    public static async getNetwork(contextSignature: string): Promise<{
-        network: Network,
-        context: IContext,
-        account: AutoAccount
-        //account: ContextAccount
-    }> {
+    public static async getNetwork(contextSignature: string, requestId: string = 'none'): Promise<NetworkConnection> {
         const VAULT_CONTEXT_NAME = 'Verida: Vault'
         const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
         const network = new Client({
@@ -44,13 +54,64 @@ export class Utils {
             didClientConfig: DID_CLIENT_CONFIG
         })
         //}, did, VAULT_CONTEXT_NAME)
-        await network.connect(account)
-        const context = await network.openContext(VAULT_CONTEXT_NAME)
 
-        return {
-            network,
-            context,
-            account
+        const did = await account.did()
+
+        // If we have a promise for changing state, wait for it to complete
+        if (Utils.networkCache[did] && Utils.networkCache[did].currentPromise) {
+            await Utils.networkCache[did].currentPromise
+        }
+
+        if (Utils.networkCache[did]) {
+            Utils.networkCache[did].requestIds.push(requestId)
+            return Utils.networkCache[did].networkConnection
+        }
+
+        // If cache is shutting down, wait until it's shut down
+        // if (Utils.networkCache[did] && Utils.networkCache[did].shutting) {
+        //     console.log('awaiting shut down promise', requestId)
+        //     await Utils.networkCache[did].shuttingPromise
+        // }
+        Utils.networkCache[did] = {
+            requestIds: [requestId]
+        }
+
+        Utils.networkCache[did].currentPromise = new Promise(async (resolve, reject) => {
+            await network.connect(account)
+            const context = await network.openContext(VAULT_CONTEXT_NAME)
+    
+            const networkConnection = {
+                network,
+                context,
+                account,
+                did
+            }
+    
+            Utils.networkCache[did] = {
+                requestIds: [requestId],
+                networkConnection
+            }
+
+            resolve()
+        })
+
+        await Utils.networkCache[did].currentPromise
+        return Utils.networkCache[did].networkConnection
+    }
+
+    public static async closeConnection(did: string, requestId: string = 'none'): Promise<void> {
+        Utils.networkCache[did].requestIds = Utils.networkCache[did].requestIds.filter(id => id !== requestId)
+
+        if (Utils.networkCache[did].currentPromise) {
+            await Utils.networkCache[did].currentPromise
+        }
+
+        if (Utils.networkCache[did].requestIds.length == 0 && !Utils.networkCache[did].currentPromise) {
+            Utils.networkCache[did].currentPromise = new Promise((resolve, reject) => {
+                Utils.networkCache[did].networkConnection.context.close()
+                delete Utils.networkCache[did]
+                resolve()
+            })
         }
     }
 

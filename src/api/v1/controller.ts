@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Providers from "../../providers"
 import SyncManager from '../../sync-manager'
-import { HandlerOption, SyncHandlerPosition, SyncSchemaPositionType } from '../../interfaces'
+import { HandlerOption, SyncHandlerPosition, SyncSchemaPositionType, UniqueRequest } from '../../interfaces'
 import { Utils } from '../../utils'
 import CONFIG from '../../config'
 import { SchemaRecord } from '../../schemas'
@@ -66,7 +66,7 @@ export default class Controller {
      * @param next 
      * @returns 
      */
-    public static async callback(req: Request, res: Response, next: any) {
+    public static async callback(req: UniqueRequest, res: Response, next: any) {
         logger.trace('callback()')
         const providerName = req.params.provider
         const provider = Providers(providerName)
@@ -78,7 +78,7 @@ export default class Controller {
             const key = req.session.key
             const redirect = req.session.redirect
 
-            const syncManager = new SyncManager(did, key)
+            const syncManager = new SyncManager(did, key, req.requestId)
             await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
             if (redirect) {
@@ -105,6 +105,8 @@ export default class Controller {
                         </div>
                     </body>
                     </html>`
+                
+                Utils.closeConnection(did, req.requestId)
                 
                 res.send(output)
             }
@@ -173,15 +175,17 @@ export default class Controller {
      * @param res 
      * @param next 
      */
-    public static async sync(req: Request, res: Response, next: any) {
+    public static async sync(req: UniqueRequest, res: Response, next: any) {
         const query = req.query
         const vaultSeedPhrase = query.key.toString()
         const did = await Utils.getDidFromKey(vaultSeedPhrase)
         const providerName = query.provider ? query.provider.toString() : undefined
         const providerId = query.providerId ? query.providerId.toString() : undefined
 
-        const syncManager = new SyncManager(did, vaultSeedPhrase)
+        const syncManager = new SyncManager(did, vaultSeedPhrase, req.requestId)
         const connections = await syncManager.sync(providerName, providerId)
+
+        Utils.closeConnection(did, req.requestId)
 
         // @todo: catch and send errors
         return res.send({
@@ -221,7 +225,7 @@ export default class Controller {
         return res.send(results)
     }
 
-    public static async syncStatus(req: Request, res: Response, next: any) {
+    public static async syncStatus(req: UniqueRequest, res: Response, next: any) {
         try {
             const query = req.query
             const vaultSeedPhrase = query.key.toString()
@@ -229,7 +233,7 @@ export default class Controller {
             const providerName = query.provider ? query.provider.toString() : undefined
             const providerId = query.providerId ? query.providerId.toString() : undefined
 
-            const syncManager = new SyncManager(did, vaultSeedPhrase)
+            const syncManager = new SyncManager(did, vaultSeedPhrase, req.requestId)
             const connections = await syncManager.getProviders(providerName, providerId)
 
             const result: Record<string, {
@@ -254,8 +258,8 @@ export default class Controller {
                     handlers: handlerPositions
                 }
             }
-            
-            // get connections, for each connection, get handler position
+
+            Utils.closeConnection(did, req.requestId)
 
             // @todo: catch and send errors
             return res.send({
@@ -268,7 +272,7 @@ export default class Controller {
         }
     }
 
-    public static async disconnect(req: Request, res: Response, next: any) {
+    public static async disconnect(req: UniqueRequest, res: Response, next: any) {
         try {
             const providerName = req.params.provider
             const query = req.query
@@ -276,7 +280,7 @@ export default class Controller {
             const did = await Utils.getDidFromKey(vaultSeedPhrase)
             const providerId = query.providerId ? query.providerId.toString() : undefined
 
-            const syncManager = new SyncManager(did, vaultSeedPhrase)
+            const syncManager = new SyncManager(did, vaultSeedPhrase, req.requestId)
             const connections = await syncManager.getProviders(providerName, providerId)
             if (!connections.length) {
                 throw new Error(`Unable to locate connection: ${providerName} (${providerId})`)
@@ -284,6 +288,8 @@ export default class Controller {
 
             const connection = connections[0]
             await connection.reset(false, true, true)
+
+            Utils.closeConnection(did, req.requestId)
 
             return res.send({
                 success: true
@@ -294,7 +300,7 @@ export default class Controller {
         }
     }
 
-    public static async data(req: Request, res: Response, next: any) {
+    public static async data(req: UniqueRequest, res: Response, next: any) {
         try {
             const query = req.query
             const privateKey = query.key.toString()
@@ -308,7 +314,7 @@ export default class Controller {
             const [ sortField, sortDirection ] = sortParams.split(':')
             sort[sortField] = sortDirection ? sortDirection : 'asc'
 
-            const networkInstance = await Utils.getNetwork(privateKey)
+            const networkInstance = await Utils.getNetwork(privateKey, req.requestId)
 
             const filter: Record<string, string> = {}
             if (filterParams) {
@@ -331,6 +337,7 @@ export default class Controller {
                 options
               )
             
+              Utils.closeConnection(networkInstance.did, req.requestId)
 
             return res.send({
                 results,

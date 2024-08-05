@@ -1,4 +1,9 @@
+import { Request } from "express";
 import { SchemaRecord } from "./schemas"
+
+export interface UniqueRequest extends Request {
+    requestId?: string;
+}
 
 export interface AccountAuth {
     accessToken: string,
