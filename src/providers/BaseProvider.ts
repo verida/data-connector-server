@@ -261,7 +261,11 @@ export default class BaseProvider {
         })
     }
 
-    public async getSyncPosition(handlerName: string, syncPositionType: SyncSchemaPositionType, syncPositionsDs: IDatastore): Promise<SyncHandlerPosition> {
+    public async getSyncPosition(handlerName: string, syncPositionType: SyncSchemaPositionType, syncPositionsDs?: IDatastore): Promise<SyncHandlerPosition> {
+        if (!syncPositionsDs) {
+            syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
+        }
+
         try {
             const id = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handlerName, SyncSchemaPositionType.SYNC)
             return await syncPositionsDs.get(id, {})

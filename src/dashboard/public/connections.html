@@ -11,21 +11,34 @@
 </head>
 <body>
     <div class="container mt-5">
-        <div class="container mt-5">
-            <h1 class="text-center">Connections</h1>
-            <table class="table table-striped mt-4">
-                <thead>
-                    <tr>
-                        <th scope="col">Icon</th>
-                        <th scope="col">Label</th>
-                        <th scope="col">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="providerTable">
-                    <!-- Rows will be populated by jQuery -->
-                </tbody>
-            </table>
+        <h1 class="text-center">Connections</h1>
+
+        <!-- Verida Private Key Input and Load Button -->
+        <div class="form-group">
+            <label for="veridaKey">Verida Private Key:</label>
+            <input type="text" class="form-control" id="veridaKey" placeholder="Enter your Verida Private Key">
         </div>
+        <button id="loadBtn" class="btn btn-primary">Load</button>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="text-center mt-3" style="display: none;">
+            <p>Loading data, please wait...</p>
+        </div>
+
+        <table class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th scope="col">Provider</th>
+                    <th scope="col">Profile Name</th>
+                    <th scope="col">Sync Status</th>
+                    <th scope="col">Handlers</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="providerTable">
+                <!-- Rows will be populated by jQuery -->
+            </tbody>
+        </table>
     </div>
 
     <!-- jQuery -->

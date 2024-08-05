@@ -113,6 +113,20 @@ export class Utils {
 
         return result
     }
+
+    public static async getDidFromKey(privateKey: string): Promise<string> {
+        const network = <VeridaNetwork> serverconfig.verida.environment
+      // Initialize Account
+      const account = new AutoAccount({
+        privateKey,
+        network,
+        // @ts-ignore
+        didClientConfig: DID_CLIENT_CONFIG
+      })
+
+      const did = await account.did()
+      return did
+    }
 }
 
 const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment

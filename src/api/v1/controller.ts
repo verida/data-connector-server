@@ -1,4 +1,8 @@
 import { Request, Response } from 'express'
+import Providers from "../../providers"
+import SyncManager from '../../sync-manager'
+import { HandlerOption, SyncHandlerPosition, SyncSchemaPositionType } from '../../interfaces'
+import { Utils } from '../../utils'
 import CONFIG from '../../config'
 
 const log4js = require("log4js")
@@ -7,10 +11,6 @@ const logger = log4js.getLogger()
 //const DATA_CONNECTION_SCHEMA = 'https://vault.schemas.verida.io/data-connections/connection/v0.1.0/schema.json'
 //const DATA_PROFILE_SCHEMA = 'https://vault.schemas.verida.io/data-connections/profile/v0.1.0/schema.json'
 const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
-
-import Providers from "../../providers"
-import SyncManager from '../../sync-manager'
-import { HandlerOption } from '../../interfaces'
 
 /**
  * Sign in process:
@@ -216,6 +216,53 @@ export default class Controller {
         }
 
         return res.send(results)
+    }
+
+    public static async syncStatus(req: Request, res: Response, next: any) {
+        try {
+            const query = req.query
+            const vaultSeedPhrase = query.key.toString()
+            const did = await Utils.getDidFromKey(vaultSeedPhrase)
+            const providerName = query.provider ? query.provider.toString() : undefined
+            const providerId = query.providerId ? query.providerId.toString() : undefined
+
+            const syncManager = new SyncManager(did, vaultSeedPhrase)
+            const connections = await syncManager.getProviders(providerName, providerId)
+
+            const result: Record<string, {
+                connection: object,
+                // sync
+                handlers: SyncHandlerPosition[]
+            }> = {}
+            for (const connection of connections) {
+                const handlerPositions: SyncHandlerPosition[] = []
+
+                for (const handler of await connection.getSyncHandlers()) {
+                    handlerPositions.push(await connection.getSyncPosition(handler.getName(), SyncSchemaPositionType.SYNC))
+                }
+
+                const redactedConnection = connection.getConnection()
+                delete redactedConnection['accessToken']
+                delete redactedConnection['refreshToken']
+
+                const uniqueId = `${connection.getProviderName()}:${connection.getProviderId()}`
+                result[uniqueId] = {
+                    connection: redactedConnection,
+                    handlers: handlerPositions
+                }
+            }
+            
+            // get connections, for each connection, get handler position
+
+            // @todo: catch and send errors
+            return res.send({
+                result,
+                success: true
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send(error.message);
+        }
     }
 
 }
