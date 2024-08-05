@@ -84,6 +84,19 @@ $(document).ready(function() {
                 window.open(`/dashboard/logs.html?providerName=${provider}&providerId=${providerId}`, '_blank');
             });
 
+            $('.sync-btn').click(function() {
+                const $button = $(this)
+                const provider = $(this).data('provider');
+                const providerId = $(this).data('provider-id');
+                $button.text('Syncing...')
+                $button.prop('disabled', true);
+                $.getJSON(`/api/v1/sync?key=${veridaKey}`, function(response) {
+                    console.log(response.data)
+                    $button.prop('disabled', false);
+                    $button.text('Sync Now')
+                })
+            });
+
             $('#loadingIndicator').hide(); // Hide the loading indicator
             $('#loadBtn').prop('disabled', false);
         });

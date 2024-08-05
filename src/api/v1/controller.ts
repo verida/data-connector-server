@@ -174,8 +174,8 @@ export default class Controller {
      */
     public static async sync(req: Request, res: Response, next: any) {
         const query = req.query
-        const did = query.did.toString()
         const vaultSeedPhrase = query.key.toString()
+        const did = await Utils.getDidFromKey(vaultSeedPhrase)
         const providerName = query.provider ? query.provider.toString() : undefined
         const providerId = query.providerId ? query.providerId.toString() : undefined
 
