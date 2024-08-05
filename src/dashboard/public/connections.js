@@ -106,10 +106,9 @@ $(document).ready(function() {
 
                 // Add event listeners for the buttons
                 $('.connect-btn').click(function() {
-                    const provider = $(this).data('provider');
-                    const providerId = $(this).data('provider-id');
-                    alert(`Connecting to ${provider} (ID: ${providerId || 'N/A'}) with Verida Key: ${veridaKey}`);
-                    // Add your connect logic here using the veridaKey if needed
+                    const providerName = $(this).data('provider');
+                    const url = `/api/v1/connect/${providerName}?key=${veridaKey}`;
+                    window.open(url, '_blank');
                 });
 
                 $('.sync-btn').click(function() {
