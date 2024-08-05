@@ -10,12 +10,29 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Dashboard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+            <a class="nav-link" href="/dashboard">Connections</a>
+            </li>
+            <li class="nav-item">
+            <a class="nav-link active" href="/dashboard/data">Browse Data</a>
+            </li>
+        </ul>
+        </div>
+    </nav>
     <div class="container mt-5">
         <h1>Database Results</h1>
         <form id="queryForm">
             <div class="form-group">
                 <label for="veridaKey">Verida Key:</label>
-                <input type="text" class="form-control" id="veridaKey" required>
+                <input type="password" class="form-control" id="veridaKey" required>
             </div>
             <div class="form-group">
                 <label for="schema">Schema:</label>

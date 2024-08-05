@@ -71,7 +71,7 @@ $(document).ready(function() {
                         <td><ul>${handlers.map(handler => `<li>${handler.handlerName} (Status: ${handler.status})</li>`).join('')}</ul></td>
                         <td>
                             <button class="btn btn-success sync-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Sync Now</button>
-                            <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Show Logs</button>
+                            <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Full Logs</button>
                             <button class="btn btn-danger disconnect-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Disconnect</button>
                         </td>
                     </tr>
@@ -99,10 +99,45 @@ $(document).ready(function() {
                 const providerId = $(this).data('provider-id');
                 $button.text('Syncing...')
                 $button.prop('disabled', true);
+
+                // Start tailing logs
+                const eventSource = new EventSource(`/api/v1/logs?key=${veridaKey}`);
+
+                function addEventRow(eventData) {
+                    const tableBody = $('#eventTableBody');
+                    const rowHtml = `
+                      <tr>
+                        <td>${eventData.level}</td>
+                        <td>${eventData.insertedAt}</td>
+                        <td>${eventData.providerName}</td>
+                        <td>${eventData.providerId}</td>
+                        <td>${eventData.message}</td>
+                      </tr>
+                    `;
+                    tableBody.append(rowHtml);
+                  }
+
+                eventSource.addEventListener('message', (item) => {
+                    const record = JSON.parse(item.data)
+                    addEventRow(record)
+                })
+
+                // Display log modal
+                $('#eventLogModal').modal('show');
+
+                // Handle modal closing
+                $('#eventLogModal').on('hidden.bs.modal', function (e) {
+                    eventSource.close()
+                  });
+
+                // Initialize sync
                 $.getJSON(`/api/v1/sync?key=${veridaKey}&provider=${provider}&providerId=${providerId}`, function(response) {
-                    console.log(response.data)
                     $button.prop('disabled', false);
                     $button.text('Sync Now')
+
+                    setTimeout(() => {
+                        eventSource.close()
+                    }, 5000)
                 })
             });
 

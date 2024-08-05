@@ -9,9 +9,7 @@ import { SchemaRecord } from '../../schemas'
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 
-//const DATA_CONNECTION_SCHEMA = 'https://vault.schemas.verida.io/data-connections/connection/v0.1.0/schema.json'
-//const DATA_PROFILE_SCHEMA = 'https://vault.schemas.verida.io/data-connections/profile/v0.1.0/schema.json'
-const DATA_SYNC_REQUEST_SCHEMA = 'https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json'
+const SCHEMA_SYNC_LOG = CONFIG.verida.schemas.SYNC_LOG
 
 /**
  * Sign in process:
@@ -348,6 +346,40 @@ export default class Controller {
                     offset: options.skip
                 }
             })
+        } catch (error) {
+            console.log(error)
+            res.status(400).send({
+                error: error.message
+            });
+        }
+    }
+
+    public static async logs(req: UniqueRequest, res: Response, next: any) {
+        try {
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.flushHeaders()
+            // Tell the client to retry every 10 seconds if connectivity is lost
+            res.write('retry: 10000\n\n')
+
+            const query = req.query
+            const privateKey = query.key.toString()
+            const networkInstance = await Utils.getNetwork(privateKey, req.requestId)
+
+            const logsDs = await networkInstance.context.openDatastore(SCHEMA_SYNC_LOG)
+            const logsDb = await logsDs.getDb()
+            logsDb.changes(async (item: any) => {
+                const record = await logsDs.getOne({
+                    _id: item.id
+                })
+                res.write(`data: ${JSON.stringify(record)}\n\n`)
+            })
+
+            req.on('close', () => {
+                Utils.closeConnection(networkInstance.did, req.requestId)
+                res.end()
+            });
         } catch (error) {
             console.log(error)
             res.status(400).send({

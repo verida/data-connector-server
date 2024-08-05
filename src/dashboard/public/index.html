@@ -10,13 +10,30 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Dashboard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+            <a class="nav-link active" href="/dashboard">Connections</a>
+            </li>
+            <li class="nav-item">
+            <a class="nav-link" href="/dashboard/data">Browse Data</a>
+            </li>
+        </ul>
+        </div>
+    </nav>
     <div class="container mt-5">
         <h1 class="text-center">Connections</h1>
 
         <!-- Verida Private Key Input, Load, Clear, and Generate Identity Button -->
         <div class="form-group">
             <label for="veridaKey">Verida Private Key:</label>
-            <input type="text" class="form-control" id="veridaKey" placeholder="Enter your Verida Private Key">
+            <input type="password" class="form-control" id="veridaKey" placeholder="Enter your Verida Private Key">
             <button id="loadBtn" class="btn btn-primary mt-2" disabled="true">Load</button>
             <button id="clearBtn" class="btn btn-secondary mt-2">Clear</button>
             <button id="generateIdentityBtn" class="btn btn-info mt-2">Generate Identity</button>
@@ -51,6 +68,36 @@
                 <!-- Rows will be populated by jQuery -->
             </tbody>
         </table>
+
+        <!-- Log Modal -->
+        <div class="modal fade" id="eventLogModal" tabindex="-1" role="dialog" aria-labelledby="eventLogModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="eventLogModalLabel">Event Log</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                <div class="modal-body">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th>Inserted</th>
+                        <th>Provider</th>
+                        <th>Provider ID</th>
+                        <th>Message</th>
+                    </tr>
+                    </thead>
+                    <tbody id="eventTableBody">
+                    <!-- Rows will be added here dynamically -->
+                    </tbody>
+                </table>
+                </div>
+            </div>
+            </div>
+        </div>
     </div>
 
     <!-- jQuery -->
