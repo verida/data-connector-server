@@ -127,6 +127,10 @@ export class Utils {
       const did = await account.did()
       return did
     }
+
+    public static nowTimestamp() {
+        return (new Date()).toISOString()
+    }
 }
 
 const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
