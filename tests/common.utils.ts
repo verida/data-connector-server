@@ -3,7 +3,7 @@ import Axios from 'axios'
 import { Context, Client, Datastore } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 
-import serverconfig from '../src/serverconfig.json'
+import serverconfig from '../src/serverconfig.local.json'
 import { DatabasePermissionOptionsEnum, Network, IContext } from '@verida/types'
 import { Connection } from '../src/interfaces'
 

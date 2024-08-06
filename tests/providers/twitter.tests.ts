@@ -1,5 +1,5 @@
 const assert = require("assert")
-import serverconfig from '../../src/serverconfig.json'
+import serverconfig from '../../src/serverconfig.local.json'
 import Providers from '../../src/providers'
 import CommonUtils from '../common.utils'
 

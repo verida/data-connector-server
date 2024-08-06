@@ -11,7 +11,7 @@ import providers from "../src/providers";
 import BaseProvider from "../src/providers/BaseProvider";
 import BaseSyncHandler from "../src/providers/BaseSyncHandler";
 import { SchemaRecord } from "../src/schemas";
-import serverconfig from "../src/serverconfig.json";
+import serverconfig from "../src/serverconfig.local.json";
 import CommonUtils from "./common.utils";
 const assert = require("assert");
 
