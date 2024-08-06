@@ -82,7 +82,7 @@ $(document).ready(function() {
             $('.logs-btn').click(function() {
                 const provider = $(this).data('provider');
                 const providerId = $(this).data('provider-id');
-                window.open(`/dashboard/data.html?limit=50&filter=provider:${provider},providerId:${providerId}&schema=https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json&sort=insertedAt:desc`, '_blank');
+                window.open(`/dashboard/data?limit=50&filter=providerName:${provider},providerId:${providerId}&schema=https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json&sort=insertedAt:desc`, '_blank');
             });
 
             $('.disconnect-btn').click(function() {
