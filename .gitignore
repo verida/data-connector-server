@@ -8,3 +8,6 @@ keys/
 src/serverconfig*.json
 !src/serverconfig.example.json
 .DS_Store
+td.*
+tdlib*
+_td*/
