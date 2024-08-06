@@ -179,9 +179,10 @@ export default class Controller {
         const did = await Utils.getDidFromKey(vaultSeedPhrase)
         const providerName = query.provider ? query.provider.toString() : undefined
         const providerId = query.providerId ? query.providerId.toString() : undefined
+        const forceSync = query.force ? query.force == 'true' : undefined
 
         const syncManager = new SyncManager(did, vaultSeedPhrase, req.requestId)
-        const connections = await syncManager.sync(providerName, providerId)
+        const connections = await syncManager.sync(providerName, providerId, forceSync)
 
         Utils.closeConnection(did, req.requestId)
 

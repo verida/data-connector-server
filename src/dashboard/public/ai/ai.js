@@ -13,7 +13,7 @@ $(document).ready(function() {
         const messageClass = type === 'user' ? 'user' : 'bot';
         $('#chat-container').append(`
             <div class="message ${messageClass}">
-                <div class="bubble">${content}</div>
+                <div class="bubble">${marked.parse(content)}</div>
             </div>
         `);
         $('#chat-container').scrollTop($('#chat-container')[0].scrollHeight);

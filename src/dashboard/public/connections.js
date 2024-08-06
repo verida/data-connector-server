@@ -131,7 +131,7 @@ $(document).ready(function() {
                   });
 
                 // Initialize sync
-                $.getJSON(`/api/v1/sync?key=${veridaKey}&provider=${provider}&providerId=${providerId}`, function(response) {
+                $.getJSON(`/api/v1/sync?key=${veridaKey}&provider=${provider}&providerId=${providerId}&force=true`, function(response) {
                     $button.prop('disabled', false);
                     $button.text('Sync Now')
 

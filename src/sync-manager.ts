@@ -56,7 +56,7 @@ export default class SyncManager {
         return false
     }
 
-    public async sync(providerName?: string, providerId?: string): Promise<Connection[]> {
+    public async sync(providerName?: string, providerId?: string, force: boolean = false): Promise<Connection[]> {
         const connections: Connection[] = []
 
         const providers = await this.getProviders(providerName, providerId)
@@ -65,7 +65,7 @@ export default class SyncManager {
         // don't try to open the same one multiple times
         for (let p in providers) {
             const provider = providers[p]
-            connections.push(await provider.sync())
+            connections.push(await provider.sync(undefined, undefined, force))
         }
 
         return connections
