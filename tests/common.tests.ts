@@ -137,9 +137,9 @@ export class CommonTests {
     assert.ok(results[0].sourceData, "Items have sourceData set")
 
     assert.equal(
-      SyncStatus.CONNECTED,
+      SyncHandlerStatus.ACTIVE,
       response.position.status,
-      "Sync is still active"
+      "Sync is set to connected"
     );
     assert.ok(response.position.thisRef, "Have a next page reference");
     assert.equal(response.position.breakId, undefined, "Break ID is undefined");
@@ -174,7 +174,7 @@ export class CommonTests {
 
     assert.equal(
       response.position.status,
-      SyncStatus.CONNECTED,
+      SyncHandlerStatus.ACTIVE,
       "Sync is still active"
     );
     assert.ok(response.position.thisRef, "Have a next page reference");
