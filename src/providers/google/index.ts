@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import Base from "../BaseProvider";
 import Gmail from "./gmail";
+import YouTubeFollowing from "./youtube-following";
+import YouTubePost from "./youtube-post";
 import { GoogleProviderConfig, GoogleProviderConnection } from "./interfaces";
 
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20");
-
-
 
 export default class GoogleProvider extends Base {
   protected config: GoogleProviderConfig
@@ -25,15 +25,26 @@ export default class GoogleProvider extends Base {
   }
 
   public syncHandlers(): any[] {
-    return [Gmail];
+    return [
+      Gmail,
+      YouTubeFollowing,
+      YouTubePost,
+    ];
   }
 
   public getScopes(): string[] {
     return [
-      "profile",
-      "openid",
-      "email",
-      "https://www.googleapis.com/auth/gmail.readonly",
+        "profile",
+        "openid",
+        "email",
+        "https://www.googleapis.com/auth/gmail.readonly",
+        "https://www.googleapis.com/auth/youtube",
+        "https://www.googleapis.com/auth/youtube.channel-memberships.creator",
+        "https://www.googleapis.com/auth/youtube.force-ssl",
+        "https://www.googleapis.com/auth/youtube.readonly",
+        "https://www.googleapis.com/auth/youtube.upload",
+        "https://www.googleapis.com/auth/youtubepartner",
+        "https://www.googleapis.com/auth/youtubepartner-channel-audit"
     ];
   }
 
