@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f0f5;
+        }
+        .chat-container {
+            height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .message {
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+        .message.user {
+            justify-content: flex-end;
+        }
+        .message.bot {
+            justify-content: flex-start;
+        }
+        .message .bubble {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .message.user .bubble {
+            background-color: #007aff;
+            color: #ffffff;
+            border: 1px solid #007aff;
+        }
+        .message.bot .bubble {
+            background-color: #e5e5ea;
+            color: #000000;
+            border: 1px solid #d1d1d6;
+        }
+        .message.typing .bubble {
+            background-color: transparent;
+            color: #888888;
+            font-style: italic;
+        }
+        .input-group {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            background-color: #ffffff;
+            border-top: 1px solid #ddd;
+            box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+     <!-- Navigation Bar -->
+     <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">Dashboard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+            <a class="nav-link" href="/dashboard">Connections</a>
+            </li>
+            <li class="nav-item">
+            <a class="nav-link" href="/dashboard/data">Browse Data</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/dashboard/ai">Personal AI</a>
+            </li>
+        </ul>
+        </div>
+    </nav>
+    <div class="container mt-5 pt-5">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="form-group">
+                    <label for="verida-key">Enter Verida Key:</label>
+                    <input type="password" class="form-control" id="verida-key" placeholder="Your Verida Key">
+                </div>
+                <div class="chat-container" id="chat-container"></div>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="user-input" placeholder="Type your message...">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" id="send-btn">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="ai.js"></script>
+</body>
+</html>
