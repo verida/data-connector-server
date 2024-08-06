@@ -3,7 +3,7 @@ import {
   Connection,
   SyncHandlerStatus,
   SyncResponse,
-  SyncSchemaPosition,
+  SyncHandlerPosition,
   SyncSchemaPositionType,
   SyncStatus,
 } from "../src/interfaces";
@@ -11,7 +11,7 @@ import providers from "../src/providers";
 import BaseProvider from "../src/providers/BaseProvider";
 import BaseSyncHandler from "../src/providers/BaseSyncHandler";
 import { SchemaRecord } from "../src/schemas";
-import serverconfig from "../src/serverconfig.json";
+import serverconfig from "../src/config";
 import CommonUtils from "./common.utils";
 const assert = require("assert");
 
@@ -34,7 +34,7 @@ export class CommonTests {
       timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     },
-    syncPositionConfig: Omit<SyncSchemaPosition, "_id" | "schemaUri">,
+    syncPositionConfig: Omit<SyncHandlerPosition, "_id">,
     providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
   ): Promise<SyncResponse> {
     const { api, handler, schemaUri } = await this.buildTestObjects(
@@ -43,9 +43,8 @@ export class CommonTests {
       providerConfig
     );
 
-    const syncPosition: SyncSchemaPosition = {
+    const syncPosition: SyncHandlerPosition = {
       _id: `${providerName}-${schemaUri}`,
-      schemaUri,
       ...syncPositionConfig,
     };
 
@@ -108,11 +107,12 @@ export class CommonTests {
 
     const idPrefix = testConfig.idPrefix ? testConfig.idPrefix : providerName;
 
-    const syncPosition: SyncSchemaPosition = {
+    const syncPosition: SyncHandlerPosition = {
       _id: `${providerName}-${schemaUri}`,
       type: SyncSchemaPositionType.SYNC,
-      provider: providerName,
-      schemaUri,
+      providerName,
+      handlerName: handler.getName(),
+      providerId: provider.getProviderId(),
       status: SyncHandlerStatus.ACTIVE,
     };
     // Snapshot: Page 1
@@ -137,7 +137,7 @@ export class CommonTests {
     assert.ok(results[0].sourceData, "Items have sourceData set")
 
     assert.equal(
-      SyncStatus.ACTIVE,
+      SyncStatus.CONNECTED,
       response.position.status,
       "Sync is still active"
     );
@@ -174,7 +174,7 @@ export class CommonTests {
 
     assert.equal(
       response.position.status,
-      SyncStatus.ACTIVE,
+      SyncStatus.CONNECTED,
       "Sync is still active"
     );
     assert.ok(response.position.thisRef, "Have a next page reference");

@@ -1,10 +1,10 @@
 const assert = require("assert")
 import Axios from 'axios'
-import { Context, Client, Datastore } from '@verida/client-ts'
+import { Context, Client } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 
-import serverconfig from '../src/serverconfig.json'
-import { DatabasePermissionOptionsEnum, Network, IContext } from '@verida/types'
+import serverconfig from '../src/config'
+import { DatabasePermissionOptionsEnum, Network, IContext, IDatastore } from '@verida/types'
 import { Connection } from '../src/interfaces'
 
 const SERVER_URL = serverconfig.serverUrl
@@ -158,7 +158,7 @@ export default class CommonUtils {
         }
     }
 
-    static closeDatastore = async (datastore: Datastore) => {
+    static closeDatastore = async (datastore: IDatastore) => {
         await datastore.close({
             clearLocal: true
         })
