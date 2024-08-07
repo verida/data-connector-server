@@ -2,11 +2,10 @@ const assert = require("assert")
 
 import CommonUtils from './common.utils'
 import SyncManager from '../src/sync-manager'
-import Post from '../src/providers/mock/post'
 import MockProvider from '../src/providers/mock/index'
-import CONFIG from '../src/serverconfig.json'
+import CONFIG from '../src/config'
 import { IContext, IDatastore } from '@verida/types'
-import { Connection, SyncFrequency, SyncHandlerStatus, SyncProviderErrorEvent, SyncSchemaPosition, SyncSchemaPositionType, SyncStatus } from '../src/interfaces'
+import { Connection, SyncHandlerStatus, SyncHandlerPosition, SyncSchemaPositionType, SyncStatus } from '../src/interfaces'
 import { Utils } from '../src/utils'
 import serverconfig from '../src/config'
 import BaseProvider from '../src/providers/BaseProvider'
@@ -39,7 +38,7 @@ describe(`${providerName} Tests`, function() {
         const syncManager = new SyncManager(await networkInstance.account.did(), serverconfig.verida.testVeridaKey)
 
         // create mock connection
-        await syncManager.saveProvider(providerName, 'fake-access-token', 'fake-refresh-token')
+        await syncManager.saveProvider(providerName, 'fake-access-token', 'fake-refresh-token', {})
         const providers = await syncManager.getProviders(providerName)
         provider = <MockProvider> providers[0]
         provider.setConfig({
@@ -84,15 +83,15 @@ describe(`${providerName} Tests`, function() {
             
             // verify connection is correct
             const connection = <Connection> await connectionsDs.get(providerName, {})
-            assert.equal(SyncStatus.ACTIVE, connection.syncStatus, "Connection sync status is active")
+            assert.equal(SyncStatus.CONNECTED, connection.syncStatus, "Connection sync status is active")
 
             // verify sync position is correct
-            const syncPosition = <SyncSchemaPosition> await syncPositionsDs.get(Utils.buildSyncHandlerId(providerName, SCHEMA_POST, SyncSchemaPositionType.SYNC), {})
+            const syncPosition = <SyncHandlerPosition> await syncPositionsDs.get(Utils.buildSyncHandlerId(providerName, provider.getProviderId(), 'post', SyncSchemaPositionType.SYNC), {})
             assert.equal(SyncHandlerStatus.STOPPED, syncPosition.status, 'Sync status is stopped')
             assert.equal('1', syncPosition.breakId, 'Sync break ID is correct')
 
             // verify backfill position is correct
-            const backfillPosition = <SyncSchemaPosition> await syncPositionsDs.get(Utils.buildSyncHandlerId(providerName, SCHEMA_POST, SyncSchemaPositionType.BACKFILL), {})
+            const backfillPosition = <SyncHandlerPosition> await syncPositionsDs.get(Utils.buildSyncHandlerId(providerName, provider.getProviderId(), 'post', SyncSchemaPositionType.BACKFILL), {})
             assert.equal(SyncHandlerStatus.STOPPED, backfillPosition.status, 'Backfill status is stopped')
 
             // verify results are correct

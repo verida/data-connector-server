@@ -3,7 +3,6 @@ coverage
 .env
 .env*
 dist/
-keys/
 /v*/
 src/serverconfig*.json
 !src/serverconfig.example.json
