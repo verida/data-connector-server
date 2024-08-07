@@ -9,6 +9,7 @@ import {
 import { SchemaFollowing } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
+import { SlashCommandIntegerOption } from "discord.js";
 
 const _ = require("lodash");
 
@@ -147,20 +148,26 @@ export default class YouTubeFollowing extends BaseSyncHandler {
             }
 
             const snippet = item.snippet;
-            const contentDetails = item.contentDetails;
             const insertedAt = snippet.publishedAt || "Unknown";
-
+            
             if (breakTimestamp && insertedAt < breakTimestamp) {
                 break;
             }
-
+            
             const title = snippet.title || "No title";
+            const description = snippet.description || "No description"; 
+            const uri = "https://www.youtube.com/channel/" + snippet.resourceId.channelId;
+            const icon = snippet.thumbnails.default.url;
 
             results.push({
-                _id: `youtube-following-${itemId}`,
+                _id: `youtube-${itemId}`,
                 name: title,
+                icon: icon,
+                uri: uri,
+                sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
+                followedTimestamp: insertedAt,
                 insertedAt: insertedAt,
             });
         }

@@ -147,7 +147,6 @@ export default class YouTubePost extends BaseSyncHandler {
             }
 
             const snippet = item.snippet;
-            const contentDetails = item.contentDetails;
             const insertedAt = snippet.publishedAt || "Unknown";
 
             if (breakTimestamp && insertedAt < breakTimestamp) {
@@ -155,10 +154,48 @@ export default class YouTubePost extends BaseSyncHandler {
             }
 
             const title = snippet.title || "No title";
+            const description = snippet.description || "No description";
+            const contentDetails = item.contentDetails;
+
+            const activityType = snippet.type;
+            const iconUri = snippet.thumbnails.default.url;
+            // extract activity URI
+            let activityUri = "";
+            switch (activityType) {
+                case 'upload':
+                  var videoId = contentDetails.upload.videoId;
+                  activityUri = 'https://www.youtube.com/watch?v=' + videoId;
+                  break;
+                case 'like':
+                  var videoId = contentDetails.like.resourceId.videoId;
+                  activityUri = 'https://www.youtube.com/watch?v=' + videoId;
+                  break;
+                case 'comment':
+                  var videoId = contentDetails.comment.resourceId.videoId;
+                  activityUri = 'https://www.youtube.com/watch?v=' + videoId;
+                  break;
+                case 'subscription':
+                  var channelId = contentDetails.subscription.resourceId.channelId;
+                  activityUri = 'https://www.youtube.com/channel/' + channelId;
+                  break;
+                case 'playlistItem':
+                  var playlistId = contentDetails.playlistItem.playlistId;
+                  activityUri = 'https://www.youtube.com/playlist?list=' + playlistId;
+                  break;
+                default:
+                  activityUri = 'Unknown activity type';
+                  break;
+              }
+
 
             results.push({
-                _id: `youtube-post-${itemId}`,
+                _id: `youtube-${itemId}`,
                 name: title,
+                icon: iconUri,
+                uri: activityUri,
+                type: activityType,
+                content: description,
+                sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 insertedAt: insertedAt,
