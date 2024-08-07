@@ -3,7 +3,7 @@ import {
   BaseProviderConfig,
   Connection,
   SyncHandlerStatus,
-  SyncSchemaPosition,
+  SyncHandlerPosition,
   SyncSchemaPositionType,
 } from "../../../src/interfaces";
 import Providers from "../../../src/providers";
@@ -52,9 +52,11 @@ describe(`${providerName} Tests`, function () {
         Date.now() - lastRecordHours * 3600000
       ).toISOString();
 
-      const syncPosition: Omit<SyncSchemaPosition, "_id" | "schemaUri"> = {
+      const syncPosition: Omit<SyncHandlerPosition, "_id"> = {
         type: SyncSchemaPositionType.SYNC,
-        provider: providerName,
+        providerName,
+        providerId: provider.getProviderId(),
+        handlerName,
         status: SyncHandlerStatus.ACTIVE,
       };
 
