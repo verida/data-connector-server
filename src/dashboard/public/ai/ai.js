@@ -73,4 +73,28 @@ $(document).ready(function() {
             $('#send-btn').click();
         }
     });
+
+    // Hotload data
+    const eventSource = new EventSource(`http://localhost:5022/minisearch/hotload?key=${savedVeridaKey}`);
+    
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const progressBar = $('#progress-bar');
+        const statusMessage = $('#loading-overlay p');
+
+        if (data.schema) {
+            statusMessage.text(`${data.schema} (${data.status})`);
+        }
+        if (data.totalProgress) {
+            const progressPercentage = Math.floor(data.totalProgress * 100);
+            progressBar.css('width', `${progressPercentage}%`).attr('aria-valuenow', data.totalProgress);
+        }
+        if (data.status === 'Load Complete' && data.totalProgress >= 1) {
+            $('#loading-overlay').fadeOut();
+        }
+    };
+
+    eventSource.onerror = function(err) {
+        $('#loading-overlay p').text('An error occurred while hotloading data.');
+    };
 });
