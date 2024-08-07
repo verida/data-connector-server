@@ -1,5 +1,4 @@
 $(document).ready(function() {
-    // Load the private key from local storage
     const savedVeridaKey = localStorage.getItem('veridaKey');
     $('#verida-key').val(savedVeridaKey);
 
@@ -51,7 +50,7 @@ $(document).ready(function() {
             data: JSON.stringify(body),
             success: function(response) {
                 removeTypingIndicator();
-                addMessage(response.result, 'bot'); // Adjust based on your API response structure
+                addMessage(response.result, 'bot');
             },
             error: function(xhr) {
                 removeTypingIndicator();
@@ -77,6 +76,7 @@ $(document).ready(function() {
     // Hotload data
     const eventSource = new EventSource(`http://localhost:5022/minisearch/hotload?key=${savedVeridaKey}`);
     
+    let loadComplete = false
     eventSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
         const progressBar = $('#progress-bar');
@@ -90,11 +90,16 @@ $(document).ready(function() {
             progressBar.css('width', `${progressPercentage}%`).attr('aria-valuenow', data.totalProgress);
         }
         if (data.status === 'Load Complete' && data.totalProgress >= 1) {
+            loadComplete = true
             $('#loading-overlay').fadeOut();
         }
     };
 
     eventSource.onerror = function(err) {
+        if (loadComplete) {
+            return
+        }
+        
         $('#loading-overlay p').text('An error occurred while hotloading data.');
     };
 });
