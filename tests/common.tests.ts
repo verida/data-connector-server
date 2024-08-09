@@ -30,17 +30,19 @@ export class CommonTests {
   static async runSyncTest(
     providerName: string,
     handlerType: typeof BaseSyncHandler,
+    connection: Connection,
     testConfig: GenericTestConfig = {
       timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     },
     syncPositionConfig: Omit<SyncHandlerPosition, "_id">,
-    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
+    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">,
   ): Promise<SyncResponse> {
     const { api, handler, schemaUri } = await this.buildTestObjects(
       providerName,
       handlerType,
-      providerConfig
+      providerConfig,
+      connection
     );
 
     const syncPosition: SyncHandlerPosition = {

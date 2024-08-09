@@ -34,6 +34,8 @@ export default class YouTubeFavourite extends BaseSyncHandler {
             token_type: "Bearer",
         };
 
+        console.log(TOKEN)
+
         const redirectUrl = "";
 
         const oAuth2Client = new google.auth.OAuth2(
@@ -41,6 +43,14 @@ export default class YouTubeFavourite extends BaseSyncHandler {
             this.config.clientSecret,
             redirectUrl
         );
+
+        oAuth2Client.on('tokens', (tokens) => {
+            if (tokens.refresh_token) {
+              // store the refresh_token in my database!
+              console.log('refresh token!', tokens.refresh_token);
+            }
+            console.log('access token!', tokens.access_token);
+          });
 
         oAuth2Client.setCredentials(TOKEN);
 
