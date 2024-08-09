@@ -9,7 +9,6 @@ import {
 import { SchemaFollowing } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
-import { SlashCommandIntegerOption } from "discord.js";
 
 const _ = require("lodash");
 
