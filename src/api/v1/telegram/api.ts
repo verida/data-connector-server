@@ -3,6 +3,7 @@ import { Client } from "tdlib-native";
 import { TDLibAddon } from "tdlib-native/addon";
 
 import CONFIG from '../../../config'
+import { ConnectionProfile } from '../../../interfaces';
 
 const tdPathPrefix = `_td`
 
@@ -121,16 +122,38 @@ export class TelegramApi {
         }
     }
 
-    public async completeLogin() {
+    public async completeLogin(veridaKey: string) {
         const client = await this.getClient()
+
+        // @todo: get profile
+        const tgProfile = await client.api.getMe({})
+        console.log('telegram profile', tgProfile)
+
+        const profile: ConnectionProfile = {
+            id: tgProfile.id.toString(),
+            name: `${tgProfile.first_name} ${tgProfile.last_name}}`.trim(),
+            givenName: tgProfile.first_name,
+            familyName: tgProfile.last_name,
+            username: tgProfile.usernames && tgProfile.usernames.active_usernames ? tgProfile.usernames.active_usernames[0] : undefined,
+            phone: tgProfile.phone_number,
+            verified: tgProfile.is_verified,
+            sourceData: tgProfile
+        }
+
+        if (tgProfile.profile_photo && tgProfile.profile_photo.small) {
+            console.log('photo info')
+            console.log(tgProfile.profile_photo.small.local)
+
+            // avatar: {
+            //     uri: `data:${asset.mimeType};base64,` + asset.base64
+            // } 
+        }
 
         // close API connection
         await client.api.close({})
 
         // @todo: get bin file
         const binFile = this.getBinFile()
-
-        // @todo: get profile
         
         // @todo: save connection with profile and binfile
     }

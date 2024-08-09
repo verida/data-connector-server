@@ -146,7 +146,9 @@ export default class DiscordProvider extends Base {
             name: me.display_name ? me.display_name : me.username,
             username: me.username,
             // use user custom avatar if set, otherwise use default discord avatar
-            avatarUrl: me.avatar ? client.cdn.avatar(me.id, me.avatar) : client.cdn.defaultAvatar(me.discriminator % 5),
+            avatar: {
+                uri: me.avatar ? client.cdn.avatar(me.id, me.avatar) : client.cdn.defaultAvatar(me.discriminator % 5)
+            },
             createdAt
         }
 

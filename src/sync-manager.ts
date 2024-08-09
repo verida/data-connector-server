@@ -182,7 +182,9 @@ export default class SyncManager {
         const connectionProfile: ConnectionProfile = {
             id: profile.id,
             name: profile.displayName,
-            avatarUrl: profile.photos && profile.photos.length ? profile.photos[0].value : undefined,
+            avatar: {
+                uri: profile.photos && profile.photos.length ? profile.photos[0].value : undefined
+            },
             //uri: 
             givenName: profile.name.givenName,
             familyName: profile.name.familyName,

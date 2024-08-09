@@ -106,6 +106,7 @@ export default class Controller {
         const requestId = req.requestId
         const clientId = requestId
         const api = new TelegramApi(clientId)
+        const veridaKey = req.query.key.toString()
 
         try {
             res.setHeader('Content-Type', 'text/event-stream');
@@ -152,7 +153,7 @@ export default class Controller {
                         } else if (data.authorization_state._ == 'authorizationStateReady') {
                             // We are logged in!
                             console.log('logged in!')
-                            await api.completeLogin()
+                            await api.completeLogin(veridaKey)
                         }
                         break
                 }

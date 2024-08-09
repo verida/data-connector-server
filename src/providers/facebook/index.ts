@@ -98,7 +98,9 @@ export default class FacebookProvider extends Base {
                     id: me.id,
                     name: me.name,
                     link: me.link,
-                    avatarUrl: me.picture.data.url
+                    avatar: {
+                        uri: me.picture.data.url
+                    }
                 }
             }
 

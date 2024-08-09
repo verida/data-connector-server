@@ -20,18 +20,26 @@ export interface ConnectionOption {
 
 export interface HandlerOption extends ConnectionOption {}
 
+export interface AvatarObject extends Object {
+    uri: string
+}
+
 export interface ConnectionProfile {
     id: string
     name: string
-    avatarUrl?: string
+    description?: string
+    avatar?: AvatarObject
     link?: string
     givenName?: string
     familyName?: string
     email?: string
     emailVerified?: boolean
+    phone?: string
+    phoneVerified?: boolean
+    verified?: boolean
     username?: string
-    description?: string
     createdAt?: string
+    sourceData?: object
 }
 
 export enum SyncFrequency {
