@@ -1,4 +1,4 @@
-import { gmail_v1 } from "googleapis";
+import { gmail_v1, drive_v3 } from "googleapis";
 import pdf from "pdf-parse";
 
 export class GmailHelpers {
@@ -170,3 +170,107 @@ export class GmailHelpers {
     return { name: "", email: "" };
   }
 }
+
+export class GoogleDriveHelpers {
+  
+  static async getFile(
+    drive: drive_v3.Drive,
+    fileId: string
+  ): Promise<drive_v3.Schema$File> {
+    try {
+      const res = await drive.files.get({
+        fileId: fileId,
+        fields: 'id, name, mimeType, webViewLink, createdTime, modifiedTime, thumbnailLink'
+      });
+      return res.data;
+    } catch (error) {
+      console.error("Error getting file:", error);
+      throw error;
+    }
+  }
+
+  static async downloadFile(
+    drive: drive_v3.Drive,
+    fileId: string
+  ): Promise<Buffer> {
+    try {
+      const res = await drive.files.get(
+        { fileId: fileId, alt: 'media' },
+        { responseType: 'arraybuffer' }
+      );
+      return Buffer.from(res.data as ArrayBuffer);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      throw error;
+    }
+  }
+
+  static async extractTextContent(
+    drive: drive_v3.Drive,
+    fileId: string,
+    mimeType: string
+  ): Promise<string> {
+    let textContent = '';
+
+    if (mimeType === 'application/pdf') {
+      const fileBuffer = await this.downloadFile(drive, fileId);
+      textContent = await this.parsePdf(fileBuffer);
+    } else if (mimeType === 'application/vnd.google-apps.document') {
+      textContent = await this.extractGoogleDocsText(drive, fileId);
+    } else if (mimeType === 'text/plain') {
+      const fileBuffer = await this.downloadFile(drive, fileId);
+      textContent = fileBuffer.toString('utf8');
+    }
+    
+    // Add more MIME types as needed (e.g., spreadsheets, presentations, etc.)
+
+    return textContent;
+  }
+
+  static async extractGoogleDocsText(
+    drive: drive_v3.Drive,
+    fileId: string
+  ): Promise<string> {
+    try {
+      const res = await drive.files.export(
+        { fileId: fileId, mimeType: 'text/plain' },
+        { responseType: 'arraybuffer' }
+      );
+      return Buffer.from(res.data as ArrayBuffer).toString('utf8');
+    } catch (error) {
+      console.error("Error extracting text from Google Docs:", error);
+      return "";
+    }
+  }
+
+  static async parsePdf(pdfBuffer: Buffer): Promise<string> {
+    try {
+      const pdfData = await pdf(pdfBuffer);
+      return pdfData.text;
+    } catch (error) {
+      console.error("Error parsing PDF:", error);
+      return "";
+    }
+  }
+
+  static getFileMetadata(
+    file: drive_v3.Schema$File
+  ): {
+    id: string;
+    name: string;
+    mimeType: string;
+    webViewLink: string;
+    modifiedTime: string;
+    thumbnailLink?: string;
+  } {
+    return {
+      id: file.id || '',
+      name: file.name || 'Untitled',
+      mimeType: file.mimeType || 'Unknown',
+      webViewLink: file.webViewLink || '',
+      modifiedTime: file.modifiedTime || '',
+      thumbnailLink: file.thumbnailLink,
+    };
+  }
+}
+
