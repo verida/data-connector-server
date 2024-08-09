@@ -79,3 +79,21 @@ export interface SchemaFavourite extends SchemaRecord {
     favouriteType: FavouriteType
     contentType: ContentType
 }
+
+export enum DocumentType {
+    TXT = "txt",
+    PDF = "pdf",
+    DOC = "doc",
+    DOCX = "docx",
+    XLS = "xls",
+    XLSX = "xlsx",
+    PPT = "ppt",
+    PPTX = "pptx"
+}
+
+export interface SchemaDocument extends SchemaRecord {
+    type: DocumentType
+    size: number
+    contentText: string
+    contentRaw?: string
+}
