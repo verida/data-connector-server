@@ -6,14 +6,14 @@ import {
     SyncHandlerPosition,
     SyncHandlerStatus,
 } from "../../interfaces";
-import { SchemaPost } from "../../schemas";
+import { SchemaPost, SchemaYoutubeActivityType } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 
 const _ = require("lodash");
 
 export default class YouTubePost extends BaseSyncHandler {
-    
+
     public getName(): string {
         return "youtube-post";
     }
@@ -139,14 +139,18 @@ export default class YouTubePost extends BaseSyncHandler {
         breakTimestamp?: string
     ): Promise<SchemaPost[]> {
         const results: SchemaPost[] = [];
-        for (const item of serverResponse.data.items) {
-            const itemId = `${this.connection.profile.id}-${item.id}`;
 
-            if (itemId == breakId) {
+        const activities = serverResponse.data.items;
+        // filter post(upload, comment, bulletin)
+        const posts = activities.filter(activity => [SchemaYoutubeActivityType.UPLOAD, SchemaYoutubeActivityType.COMMENT].includes(activity.snippet.type as SchemaYoutubeActivityType))
+        for (const post of posts) {
+            const postId = `${this.connection.profile.id}-${post.id}`;
+
+            if (postId == breakId) {
                 break;
             }
 
-            const snippet = item.snippet;
+            const snippet = post.snippet;
             const insertedAt = snippet.publishedAt || "Unknown";
 
             if (breakTimestamp && insertedAt < breakTimestamp) {
@@ -155,41 +159,29 @@ export default class YouTubePost extends BaseSyncHandler {
 
             const title = snippet.title || "No title";
             const description = snippet.description || "No description";
-            const contentDetails = item.contentDetails;
+            const contentDetails = post.contentDetails;
 
             const activityType = snippet.type;
             const iconUri = snippet.thumbnails.default.url;
             // extract activity URI
             let activityUri = "";
             switch (activityType) {
-                case 'upload':
-                  var videoId = contentDetails.upload.videoId;
-                  activityUri = 'https://www.youtube.com/watch?v=' + videoId;
-                  break;
-                case 'like':
-                  var videoId = contentDetails.like.resourceId.videoId;
-                  activityUri = 'https://www.youtube.com/watch?v=' + videoId;
-                  break;
-                case 'comment':
-                  var videoId = contentDetails.comment.resourceId.videoId;
-                  activityUri = 'https://www.youtube.com/watch?v=' + videoId;
-                  break;
-                case 'subscription':
-                  var channelId = contentDetails.subscription.resourceId.channelId;
-                  activityUri = 'https://www.youtube.com/channel/' + channelId;
-                  break;
-                case 'playlistItem':
-                  var playlistId = contentDetails.playlistItem.playlistId;
-                  activityUri = 'https://www.youtube.com/playlist?list=' + playlistId;
-                  break;
+                case SchemaYoutubeActivityType.UPLOAD:
+                    var videoId = contentDetails.upload.videoId;
+                    activityUri = 'https://www.youtube.com/watch?v=' + videoId;
+                    break;
+                case SchemaYoutubeActivityType.COMMENT:
+                    var videoId = contentDetails.comment.resourceId.videoId;
+                    activityUri = 'https://www.youtube.com/watch?v=' + videoId;
+                    break;
                 default:
-                  activityUri = 'Unknown activity type';
-                  break;
-              }
+                    activityUri = 'Unknown activity type';
+                    break;
+            }
 
 
             results.push({
-                _id: `youtube-${itemId}`,
+                _id: `youtube-${postId}`,
                 name: title,
                 icon: iconUri,
                 uri: activityUri,
