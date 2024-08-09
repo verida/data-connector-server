@@ -4,6 +4,7 @@ import Gmail from "./gmail";
 import YouTubeFollowing from "./youtube-following";
 import YouTubePost from "./youtube-post";
 import { GoogleProviderConfig, GoogleProviderConnection } from "./interfaces";
+import YouTubeFavourite from "./youtube-favourite";
 
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20");
@@ -29,6 +30,7 @@ export default class GoogleProvider extends Base {
       Gmail,
       YouTubeFollowing,
       YouTubePost,
+      YouTubeFavourite
     ];
   }
 
