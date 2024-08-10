@@ -5,7 +5,8 @@ import { AutoAccount } from '@verida/account-node'
 
 import serverconfig from '../src/config'
 import { DatabasePermissionOptionsEnum, Network, IContext, IDatastore } from '@verida/types'
-import { Connection } from '../src/interfaces'
+import { Connection, SyncProviderLogEntry, SyncProviderLogLevel } from '../src/interfaces'
+import BaseSyncHandler from '../src/providers/BaseSyncHandler'
 
 const SERVER_URL = serverconfig.serverUrl
 const TEST_VAULT_PRIVATE_KEY = serverconfig.verida.testVeridaKey
@@ -69,6 +70,10 @@ export default class CommonUtils {
     static getConnection = async(providerName: string, providerId?: string): Promise<Connection> => {
         if (!providerId) {
             providerId = cliProviderId
+        }
+
+        if (!cliProviderId) {
+            console.log(`Provider ID is not defined, using first. Specify with --providerId=<providerId>`)
         }
 
         const { context } = await CommonUtils.getNetwork()
@@ -166,5 +171,37 @@ export default class CommonUtils {
 
     static sleep = async (ms) => {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    static outputLogMessage(log: SyncProviderLogEntry) {
+        console.log(
+            `${log.level.toUpperCase()}: ${log.message} (${log.insertedAt})${
+            log.schemaUri ? "-" + log.schemaUri : ""
+            }`
+        );
+    }
+
+    static setupHandlerLogging(handler: BaseSyncHandler, logLevel?: SyncProviderLogLevel) {
+        if (logLevel) {
+            console.log(`Setting log level: ${logLevel}`)
+            handler.on('log', ((logEntry: SyncProviderLogEntry)=> {
+              switch(logLevel) {
+                case 'debug':
+                  if (logEntry.level == SyncProviderLogLevel.DEBUG) {
+                    CommonUtils.outputLogMessage(logEntry)
+                  }
+                case 'info':
+                  if (logEntry.level == SyncProviderLogLevel.INFO) {
+                    CommonUtils.outputLogMessage(logEntry)
+                  }
+                case 'error':
+                  if (logEntry.level == SyncProviderLogLevel.ERROR) {
+                    CommonUtils.outputLogMessage(logEntry)
+                  }
+              }
+            }))
+          } else {
+            console.log(`Logging is disabled. Enable with --logLevel=debug|info|error`)
+          }
     }
 }
