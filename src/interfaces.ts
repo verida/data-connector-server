@@ -10,10 +10,16 @@ export interface AccountAuth {
     refreshToken: string
 }
 
+export enum ConnectionOptionType {
+    ENUM = "enum",
+    ENUM_MULTI = "enumMulti",
+    BOOLEAN = "boolean"
+}
+
 export interface ConnectionOption {
     name: string
     label: string
-    type: 'enum' | 'boolean'
+    type: ConnectionOptionType
     enumOptions?: string[]
     defaultValue: string
 }
