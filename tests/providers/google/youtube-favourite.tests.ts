@@ -19,7 +19,7 @@ let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
 
-describe(`${providerName} Favourite Tests`, function () {
+describe(`${providerName} Youtube Favourite Tests`, function () {
   this.timeout(100000);
 
   this.beforeAll(async function () {
