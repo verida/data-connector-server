@@ -1,16 +1,17 @@
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import serverconfig from '../config'
-import { BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncHandlerPosition, SyncSchemaPositionType, SyncStatus, SyncProviderLogEvent } from '../interfaces'
+import { BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderLogEntry, SyncProviderLogLevel, SyncHandlerPosition, SyncSchemaPositionType, SyncStatus, SyncProviderLogEvent } from '../interfaces'
 import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 import { SchemaRecord } from '../schemas'
+import EventEmitter from 'events'
 
 const SCHEMA_SYNC_POSITIONS = serverconfig.verida.schemas.SYNC_POSITION
 const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
 const SCHEMA_CONNECTION = serverconfig.verida.schemas.DATA_CONNECTIONS
 
-export default class BaseProvider {
+export default class BaseProvider extends EventEmitter {
 
     protected config: BaseProviderConfig
     protected vault: IContext
@@ -19,6 +20,7 @@ export default class BaseProvider {
     protected syncPositionsDs?: IDatastore
     
     public constructor(config: BaseProviderConfig, vault?: IContext, connection?: Connection) {
+        super()
         this.config = config
         this.connection = connection
         this.vault = vault
@@ -121,6 +123,8 @@ export default class BaseProvider {
             if (!result) {
                 console.error(`Error logging message: ${syncLog.errors}`)
             }
+
+            this.emit('logMessage', logEntry)
         } catch (err: any) {
             console.error(`Error logging message: ${err.message}`)
         }
