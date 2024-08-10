@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
 
-import { BaseProviderConfig, ConnectionProfile } from '../../interfaces'
+import { BaseProviderConfig, ConnectionProfile, PassportPhoto, PassportProfile } from '../../interfaces'
 import { TelegramApi } from './api'
 
 export interface TelegramProviderConfig extends BaseProviderConfig {
@@ -44,7 +44,7 @@ export default class TelegramProvider extends Base {
     // }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
-        return res.redirect('/custom/telegram')
+        return res.redirect('/provider/telegram')
     }
 
     public async callback(req: Request, res: Response, next: any): Promise<any> {
@@ -58,20 +58,27 @@ export default class TelegramProvider extends Base {
         const tgProfile = await client.api.getMe({})
         console.log('telegram profile', tgProfile)
 
-        const profile: ConnectionProfile = {
+        const profile: PassportProfile = {
             id: tgProfile.id.toString(),
-            name: `${tgProfile.first_name} ${tgProfile.last_name}}`.trim(),
-            givenName: tgProfile.first_name,
-            familyName: tgProfile.last_name,
-            username: tgProfile.usernames && tgProfile.usernames.active_usernames ? tgProfile.usernames.active_usernames[0] : undefined,
-            phone: tgProfile.phone_number,
-            verified: tgProfile.is_verified,
-            sourceData: tgProfile
+            provider: this.getProviderName(),
+            displayName: `${tgProfile.first_name} ${tgProfile.last_name}`.trim(),
+            name: {
+                familyName: tgProfile.last_name,
+                givenName: tgProfile.first_name
+            },
+            connectionProfile: {
+                username: tgProfile.usernames && tgProfile.usernames.active_usernames ? tgProfile.usernames.active_usernames[0] : undefined,
+                phone: tgProfile.phone_number,
+                verified: tgProfile.is_verified
+            }
         }
 
         if (tgProfile.profile_photo && tgProfile.profile_photo.small) {
             console.log('photo info')
             console.log(tgProfile.profile_photo.small.local)
+            // profile.photos = [{
+            //     value: tgProfile.profile_photo.small.local
+            // }]
 
             // avatar: {
             //     uri: `data:${asset.mimeType};base64,` + asset.base64
@@ -79,10 +86,12 @@ export default class TelegramProvider extends Base {
         }
 
         // close API connection
-        await client.api.close({})
+        console.log('close connection')
+        const binFile = await api.closeClient()
 
-        // get bin file and sae it in the refresh token
-        const binFile = api.getBinFile()
+        console.log('have binfile', binFile)
+
+        // get bin file and sae it in the refresh token)
 
         return {
             id: profile.id,
@@ -113,13 +122,7 @@ export default class TelegramProvider extends Base {
 
     public async close() {
         const api = await this.getApi()
-        const client = await api.getClient(false)
-
-        // close API connection
-        await client.api.close({})
-
-        // get bin file and sae it in the refresh token
-        const binFile = api.getBinFile()
+        const binFile = await api.closeClient()
 
         console.log('setting binfile:', binFile)
         this.connection!.refreshToken = binFile

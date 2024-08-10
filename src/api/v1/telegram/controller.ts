@@ -106,13 +106,6 @@ export default class Controller {
 
         const clientId = requestId
         const api = new TelegramApi(clientId)
-        const veridaKey = req.query.key ? req.query.key.toString() : undefined
-
-        if (!veridaKey) {
-            return res.status(400).send({
-                error: `veridaKey not specified`
-            });
-        }
 
         try {
             res.setHeader('Content-Type', 'text/event-stream');
@@ -158,8 +151,11 @@ export default class Controller {
                             })}\n\n`)
                         } else if (data.authorization_state._ == 'authorizationStateReady') {
                             // We are logged in!
-                            console.log('logged in!')
-                            return res.redirect('/custom/telegram')
+                            await api.closeClient(false)
+                            res.write(`data: ${JSON.stringify({
+                                type: 'complete',
+                                redirect: `/callback/telegram?id=${requestId}`
+                            })}\n\n`)
                         }
                         break
                 }

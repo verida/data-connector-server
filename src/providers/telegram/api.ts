@@ -3,25 +3,25 @@ import { Client } from "tdlib-native";
 import { TDLibAddon } from "tdlib-native/addon";
 
 import CONFIG from '../../config'
-import { ConnectionProfile } from '../../interfaces';
-import { Utils } from '../../utils'
 
 const tdPathPrefix = `_td`
 
 export class TelegramApi {
 
     clientId: string
+    tdPath: string
     client?: Client
 
     constructor(clientId: string, binFile?: string) {
-        this.clientId = this.clientId
+        this.clientId = clientId
+        this.tdPath = `${tdPathPrefix}/${this.clientId}`
 
         if (binFile) {
             this.restoreBinFile(binFile)
         }
     }
 
-    public async getClient(startClient: boolean = true): Promise<Client> {
+    public async getClient(startClient: boolean = false): Promise<Client> {
         if (this.client) {
             return this.client
         }
@@ -46,7 +46,6 @@ export class TelegramApi {
     
     public async startClient() {
         const client = await this.getClient()
-        const path = `${tdPathPrefix}/${this.clientId}`
 
         // load saved binary file to disk
         // const nowMinutes = Math.floor(Date.now() / 1000 / 60)
@@ -57,15 +56,27 @@ export class TelegramApi {
             system_language_code: 'en',
             device_model: 'Verida: Data Connector',
             application_version: '0.1',
-            database_directory: `${path}/db`,
-            files_directory: `${path}/files`,
+            database_directory: `${this.tdPath}/db`,
+            files_directory: `${this.tdPath}/files`,
         })
     }
 
-    public async closeClient(): Promise<string> {
+    public async closeClient(deleteSession: boolean = true): Promise<string> {
+        // Close the Telegram socket connection
         const client = await this.getClient()
         await client.api.close({})
-        return this.getBinFile()
+        
+        // Return the bin file representing the session
+        const binFile = this.getBinFile()
+
+        // Delete session from disk
+        if (deleteSession) {
+            fs.rmSync(this.tdPath, {
+                recursive: true
+            })
+        }
+
+        return binFile
     }
 
     public async getChatHistory(client: Client, chatId: number, limit: number = 100): Promise<any> {
@@ -113,7 +124,7 @@ export class TelegramApi {
     }
 
     public getBinFile() {
-        const path = `${tdPathPrefix}/${this.clientId}`
+        const path = `${tdPathPrefix}/${this.clientId}/db/td.binlog`
 
         try {
             const data = fs.readFileSync(path)

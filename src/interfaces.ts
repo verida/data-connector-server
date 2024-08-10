@@ -18,6 +18,31 @@ export interface ConnectionOption {
     defaultValue: string
 }
 
+export interface PassportName {
+    givenName?: string
+    familyName?: string
+    middleName?: string
+}
+
+export interface PassportEmail {
+    type?: string
+    value: string
+}
+
+export interface PassportPhoto {
+    value: string
+}
+
+export interface PassportProfile {
+    id: string,
+    provider: string,
+    displayName?: string
+    name?: PassportName
+    emails?: PassportEmail[]
+    photos?: PassportPhoto[]
+    connectionProfile?: Partial<ConnectionProfile>
+}
+
 export interface HandlerOption extends ConnectionOption {}
 
 export interface AvatarObject extends Object {

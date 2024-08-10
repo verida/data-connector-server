@@ -66,6 +66,8 @@ $(document).ready(function() {
             createInputBox('phone', 'Enter phone number (include country code)', 'Submit', submitPhoneNumber);
         } else if (data.type === 'password') {
             createInputBox('password', 'Enter password', 'Submit', submitPassword);
+        } else if (data.type === 'complete') {
+            window.location.href = data.redirect
         }
     };
 });

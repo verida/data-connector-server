@@ -1,9 +1,8 @@
 import CONFIG from './config'
 import { IContext, IDatastore } from "@verida/types";
 import Providers from "./providers"
-import { Connection, DatastoreSaveResponse, SyncStatus, SyncFrequency, ConnectionProfile, ConnectionHandler } from './interfaces';
+import { Connection, SyncStatus, SyncFrequency, ConnectionProfile, ConnectionHandler, PassportProfile } from './interfaces';
 import BaseProvider from './providers/BaseProvider';
-import TokenExpiredError from './providers/TokenExpiredError';
 import { Utils } from './utils';
 import serverconfig from './config';
 
@@ -165,7 +164,7 @@ export default class SyncManager {
         return this.connectionDatastore
     }
 
-    public async saveProvider(providerName: string, accessToken: string, refreshToken: string, profile: any) {
+    public async saveProvider(providerName: string, accessToken: string, refreshToken: string, profile: PassportProfile) {
         const connectionDatastore = await this.getConnectionDatastore()
 
         const providerId = `${providerName}:${profile.id}`
@@ -189,7 +188,7 @@ export default class SyncManager {
             givenName: profile.name.givenName,
             familyName: profile.name.familyName,
             email: profile.emails && profile.emails.length ? profile.emails[0].value : undefined,
-            emailVerified: profile.emails && profile.emails.length ? profile.emails[0].verified : undefined,
+            ...(profile.connectionProfile ? profile.connectionProfile : {})
         }
 
         const provider = Providers(providerName)
