@@ -369,7 +369,7 @@ export default class BaseProvider extends EventEmitter {
     /**
      * Close any connections
      */
-    protected async close(): Promise<void> {}
+    public async close(): Promise<void> {}
 
     /**
      * Override this with a list of sync handlers supported by this provider.
