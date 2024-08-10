@@ -202,4 +202,8 @@ export default class BaseSyncHandler extends EventEmitter {
     protected stopSync(syncPosition: SyncHandlerPosition, serverResponse?: any): SyncHandlerPosition {
         return syncPosition
     }
+
+    protected buildItemId(itemId: string) {
+        return `${this.provider.getProviderName()}-${this.connection.profile.id}-${itemId}`
+    }
 }
