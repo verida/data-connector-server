@@ -3,6 +3,7 @@ export interface SchemaRecord {
     _rev?: string
     schema?: string
     name: string
+    description?: string
     insertedAt?: string
     modifiedAt?: string
     icon?: string
@@ -78,4 +79,16 @@ export enum ContentType {
 export interface SchemaFavourite extends SchemaRecord {
     favouriteType: FavouriteType
     contentType: ContentType
+}
+
+export interface SchemaSocialChatGroup extends SchemaRecord {}
+
+export interface SchemaSocialChatMessage extends SchemaRecord {
+    chatGroupId: string
+    type: "send" | "receive"
+    messageText: string
+    messageHTML?: string
+    senderId: string
+    senderHandle?: string
+    sentAt: string
 }
