@@ -11,17 +11,17 @@ import BaseProvider from "../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../common.tests";
 
 const providerName = "telegram";
-let network: NetworkInstance;
-let connection: Connection;
-let provider: BaseProvider;
+// let network: NetworkInstance;
+// let connection: Connection;
+// let provider: BaseProvider;
 
-describe(`${providerName} Tests`, function () {
+describe(`${providerName} chat tests`, function () {
   this.timeout(100000);
 
   this.beforeAll(async function () {
-    network = await CommonUtils.getNetwork();
-    connection = await CommonUtils.getConnection(providerName);
-    provider = Providers(providerName, network.context, connection);
+    // network = await CommonUtils.getNetwork();
+    // connection = await CommonUtils.getConnection(providerName);
+    // provider = Providers(providerName, network.context, connection);
   });
 
   describe(`Fetch ${providerName} data`, () => {
@@ -34,12 +34,11 @@ describe(`${providerName} Tests`, function () {
     const providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
 
     it(`Can pass basic tests: ${handlerName}`, async () => {
-      await CommonTests.runGenericTests(
+      const { provider } = await CommonTests.runGenericTests(
         providerName,
         TelegramChatMessageHandler,
         testConfig,
-        providerConfig,
-        connection
+        providerConfig
       );
     });
   });

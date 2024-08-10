@@ -5,16 +5,20 @@ import {
   SyncResponse,
   SyncHandlerPosition,
   SyncHandlerStatus,
+  HandlerOption,
+  ConnectionOptionType,
 } from "../../interfaces";
 import {
   ContentType,
   FavouriteType,
   SchemaFavourite,
+  SchemaSocialChatGroup,
   SchemaYoutubeActivityType,
 } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { TelegramApi } from "./api";
+import { TelegramChatGroupType } from "./interfaces";
 
 const _ = require("lodash");
 
@@ -24,11 +28,22 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
   }
 
   public getSchemaUri(): string {
-    return CONFIG.verida.schemas.FAVOURITE;
+    return CONFIG.verida.schemas.CHAT_MESSAGE;
   }
 
   public getProviderApplicationUrl(): string {
     return "https://telegram.com";
+  }
+
+  public getOptions(): HandlerOption[] {
+    return [{
+      name: 'groupTypes',
+      label: 'Group types',
+      type: ConnectionOptionType.ENUM_MULTI,
+      enumOptions: [TelegramChatGroupType.BASIC, TelegramChatGroupType.PRIVATE, TelegramChatGroupType.SECRET, TelegramChatGroupType.SUPERGROUP],
+      // Exclude super groups by default
+      defaultValue: [TelegramChatGroupType.BASIC, TelegramChatGroupType.PRIVATE, TelegramChatGroupType.SECRET].join(',')
+    }]
   }
 
   public async _sync(
@@ -36,15 +51,36 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     syncPosition: SyncHandlerPosition
   ): Promise<SyncResponse> {
     try {
-        const chatId = 0
+      // Always fetch all the latest chat groups
+      const chatGroupIds = await api.getChatGroupIds()
+      const chatGroupResults = await this.buildChatGroupResults(api, chatGroupIds)
 
-      const client = await api.getClient(true)
+      // Fetch chat history for groups... how to know which groups?
+      const chatHistory = []
 
-      const chats = await client.api.getChats({
-        limit: 10,
-      });
+      console.log(chatGroupResults[0])
+      console.log(chatGroupResults[1])
+      console.log(chatGroupResults[2])
+      console.log(chatGroupResults[3])
 
-      console.log(chats);
+      return {
+        results: chatGroupResults.concat(chatHistory),
+        position: syncPosition
+      }
+
+      //const chatHistory = await api.getChatHistory(chats[0], 3)
+      // id = id
+      // is_outgoing = isOutgoing
+      // sender_id.user_id = senderId
+      // date = unix timestamp?
+      // message_thread_id = ??
+      // content.text._ = 'formattedText'
+      // content.text.text = content -- how is markdown / formatting handled?
+
+
+      // console.log(chatDetail)
+      // console.log('---')
+
     //   const chatId = chats.chat_ids[chatPos];
 
     //   const chatDetail = await client.api.getChat({
@@ -228,4 +264,34 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
 
     return results;
   }
+
+  protected async buildChatGroupResults(api: TelegramApi, chatGroupIds: number[]): Promise<SchemaSocialChatGroup[]> {
+    const results: SchemaSocialChatGroup[] = []
+
+    for (const groupId of chatGroupIds) {
+      const groupDetails = await api.getChatGroup(groupId)
+
+      const item: SchemaSocialChatGroup = {
+        _id: groupId.toString(),
+        schema: CONFIG.verida.schemas.CHAT_GROUP,
+        name: groupDetails.title,
+      }
+
+      console.log(groupDetails.photo)
+      if (groupDetails.photo && groupDetails.photo.minithumbnail && groupDetails.photo.minithumbnail.data) {
+        const smallPhoto = await api.downloadFile(groupDetails.photo.small.id)
+        item.icon = `data:image/jpeg;base64,` + smallPhoto
+      }
+
+      results.push(item)
+    }
+
+    return results
+  }
+
 }
+
+// type._i = chatTypeSupergroup
+      // title = name
+      // photo.minithumbnail.data = image/icon
+      // photo.minithumbnail.has_animation

@@ -81,10 +81,40 @@ export class TelegramApi {
         return binFile
     }
 
-    public async getChatHistory(chatId: number, limit: number = 100): Promise<any> {
+    public async getChatGroupIds(limit: number=100): Promise<number[]> {
+        const client = await this.getClient()
+        const chatGroups: number[] = []
+        
+        while (chatGroups.length < limit) {
+            console.log('loop')
+            const response = await client.api.getChats({
+                limit
+              });
+    
+            if (!response.chat_ids.length || response.total_count == 0) {
+                break
+            }
+    
+            for (const chatId of response.chat_ids) {
+                chatGroups.push(chatId)
+            }
+        }
+
+        return chatGroups
+    }
+
+    public async getChatGroup(chat_id: number): Promise<any> {
+        const client = await this.getClient()
+        const chatDetail = await client.api.getChat({
+            chat_id,
+        });
+
+        return chatDetail
+    }
+
+    public async getChatHistory(chatId: number, limit: number=100, fromMessageId: number=0): Promise<any> {
         const client = await this.getClient()
         const messages = []
-        let fromMessageId = 0
     
         while (messages.length < limit) {
             console.log('loop')
@@ -108,9 +138,20 @@ export class TelegramApi {
             }
         }
     
-        // is_outgoing
-    
         return messages
+    }
+
+    public async downloadFile(file_id: number): Promise<string> {
+        const client = await this.getClient()
+        const file = await client.api.downloadFile({
+            file_id,
+            priority: 1,
+            synchronous: true
+        })
+        
+        const data = fs.readFileSync(file.local.path)
+        const base64 = data.toString('base64');
+        return base64
     }
 
     public restoreBinFile(binFile: string) {
@@ -134,22 +175,20 @@ export class TelegramApi {
 
         try {
             const data = fs.readFileSync(path)
-            return data.toString('base64');
+            const base64 = data.toString('base64');
+            console.log(base64.length)
+            return base64
         } catch (err: any) {
             throw new Error(`Error reading telegram binlog file: ${err.message}`)
         }
     }
 
     protected ensureDirectoryExists(filePath: string): void {
-        console.log("ensureDirectoryExists")
-        console.log(filePath)
         const dir = path.dirname(filePath);
-        console.log(dir)
         
         try {
           // Ensure that the directory exists
           const result = fs.mkdirSync(dir, { recursive: true });
-          console.log(result)
         } catch (err) {
           console.error('Error creating directories:', err);
           throw err;
