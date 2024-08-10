@@ -120,7 +120,10 @@ export default class DiscordProvider extends Base {
                     })
 
                     const { access_token, refresh_token } = newTokenResponse.data
-                    this.setAccountAuth(access_token, refresh_token)
+                    this.updateConnection({
+                        accessToken: access_token,
+                        refreshToken: refresh_token
+                    })
 
                     client = new REST({ version: '10', authPrefix: 'Bearer' }).setToken(access_token);
                     me = await client.get('/users/@me')

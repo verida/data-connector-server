@@ -50,3 +50,32 @@ export interface SchemaEmail extends SchemaRecord {
     attachments?: SchemaEmailAttachment[]
     threadId?: string
 }
+
+export enum SchemaYoutubeActivityType {
+    UPLOAD = "upload", // post
+    LIKE = "like", // favourite
+    SUBSCRIPTION = "subscription", // following
+    FAVOURITE = "favourite", // favourite
+    COMMENT = "comment", // post
+    PLAYLIST_ITEM = "playlistItem", //ignored
+    RECOMMENDATION = "recommendation", // favourite
+}
+
+export enum FavouriteType {
+    LIKE = "like",
+    FAVOURITE = "favourite",
+    RECOMMENDATION = "recommendation",
+    SHARE = "share"
+}
+
+export enum ContentType {
+    VIDEO = "video",
+    AUDIO = "audio",
+    DOCUMENT = "document",
+    WEBPAGE = "webpage"
+}
+
+export interface SchemaFavourite extends SchemaRecord {
+    favouriteType: FavouriteType
+    contentType: ContentType
+}

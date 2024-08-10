@@ -149,7 +149,7 @@ export enum SyncProviderLogLevel {
     ERROR = "error"
 }
 
-export interface SyncProviderErrorEvent {
+export interface SyncProviderLogEvent {
     level: SyncProviderLogLevel
     message: string
 }
