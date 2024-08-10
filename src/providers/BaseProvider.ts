@@ -18,7 +18,6 @@ export default class BaseProvider {
     protected connection?: Connection
     protected connectionDs?: IDatastore
     protected syncPositionsDs?: IDatastore
-    protected newAuth?: AccountAuth
     
     public constructor(config: BaseProviderConfig, vault?: IContext, connection?: Connection) {
         this.config = config
@@ -265,13 +264,6 @@ export default class BaseProvider {
             }
         }
 
-        // Add account auth info if it has changed
-        const newAuth = this.getAccountAuth()
-        if (newAuth) {
-            this.connection.accessToken = newAuth.accessToken
-            this.connection.refreshToken = newAuth.refreshToken
-        }
-
         // Add latest profile info
         this.connection.profile = await this.getProfile()
 
@@ -349,16 +341,11 @@ export default class BaseProvider {
         return syncHandlers
     }
 
-    // Set new authentication credentials for this provider instance, if they changed
-    protected setAccountAuth(accessToken: string, refreshToken: string) {
-        this.newAuth = {
-            accessToken,
-            refreshToken
+    public updateConnection(connectionParams: object) {
+        this.connection = {
+            ...this.connection,
+            ...connectionParams
         }
-    }
-
-    public getAccountAuth(): AccountAuth {
-        return this.newAuth
     }
 
     /**

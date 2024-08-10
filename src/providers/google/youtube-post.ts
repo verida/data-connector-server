@@ -1,4 +1,4 @@
-import BaseSyncHandler from "../BaseSyncHandler";
+import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
 
 import {
@@ -12,7 +12,7 @@ import { GaxiosResponse } from "gaxios";
 
 const _ = require("lodash");
 
-export default class YouTubePost extends BaseSyncHandler {
+export default class YouTubePost extends GoogleHandler {
 
     public getName(): string {
         return "youtube-post";
@@ -27,23 +27,7 @@ export default class YouTubePost extends BaseSyncHandler {
     }
 
     public getYouTube(): youtube_v3.Youtube {
-        const TOKEN = {
-            access_token: this.connection.accessToken,
-            refresh_token: this.connection.refreshToken,
-            scope: "https://www.googleapis.com/auth/youtube.readonly",
-            token_type: "Bearer",
-        };
-
-        const redirectUrl = "";
-
-        const oAuth2Client = new google.auth.OAuth2(
-            this.config.clientId,
-            this.config.clientSecret,
-            redirectUrl
-        );
-
-        oAuth2Client.setCredentials(TOKEN);
-
+        const oAuth2Client = this.getGoogleAuth()
         const youtube = google.youtube({ version: "v3", auth: oAuth2Client });
         return youtube;
     }

@@ -44,6 +44,10 @@ export default class BaseSyncHandler extends EventEmitter {
         throw new Error('Not implemented')
     }
 
+    protected updateConnection(connectionParams: object) {
+        this.provider.updateConnection(connectionParams)
+    }
+
     /**
      * Continuously syncronize the data in batches, until complete.
      * 

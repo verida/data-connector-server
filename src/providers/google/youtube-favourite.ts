@@ -1,4 +1,4 @@
-import BaseSyncHandler from "../BaseSyncHandler";
+import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
 
 import {
@@ -12,7 +12,7 @@ import { GaxiosResponse } from "gaxios";
 
 const _ = require("lodash");
 
-export default class YouTubeFavourite extends BaseSyncHandler {
+export default class YouTubeFavourite extends GoogleHandler {
 
     public getName(): string {
         return "youtube-favourite";
@@ -27,33 +27,7 @@ export default class YouTubeFavourite extends BaseSyncHandler {
     }
 
     public getYouTube(): youtube_v3.Youtube {
-        const TOKEN = {
-            access_token: this.connection.accessToken,
-            refresh_token: this.connection.refreshToken,
-            scope: "https://www.googleapis.com/auth/youtube.readonly",
-            token_type: "Bearer",
-        };
-
-        console.log(TOKEN)
-
-        const redirectUrl = "";
-
-        const oAuth2Client = new google.auth.OAuth2(
-            this.config.clientId,
-            this.config.clientSecret,
-            redirectUrl
-        );
-
-        oAuth2Client.on('tokens', (tokens) => {
-            if (tokens.refresh_token) {
-              // store the refresh_token in my database!
-              console.log('refresh token!', tokens.refresh_token);
-            }
-            console.log('access token!', tokens.access_token);
-          });
-
-        oAuth2Client.setCredentials(TOKEN);
-
+        const oAuth2Client = this.getGoogleAuth()
         const youtube = google.youtube({ version: "v3", auth: oAuth2Client });
         return youtube;
     }

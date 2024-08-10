@@ -113,7 +113,10 @@ export default class TwitterProvider extends Base {
                         refreshToken: newRefreshToken
                     } = await client.refreshOAuth2Token(refreshToken);
 
-                    this.setAccountAuth(newAccessToken, newRefreshToken)
+                    this.updateConnection({
+                        accessToken: newAccessToken,
+                        refreshToken: newRefreshToken
+                    })
                     client = refreshedClient
 
                     me = await client.v2.me({
