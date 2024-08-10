@@ -1,5 +1,6 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
+import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 
 import {
     SyncResponse,
@@ -128,13 +129,23 @@ export default class YouTubeFollowing extends GoogleHandler {
             console.log(item)
 
             if (itemId == breakId) {
-                break;
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break ID hit (${breakId})`
+                }
+                this.emit('log', logEvent)
+                break
             }
 
             const snippet = item.snippet;
             const insertedAt = snippet.publishedAt || "Unknown";
             
             if (breakTimestamp && insertedAt < breakTimestamp) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break timestamp hit (${breakTimestamp})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
             
