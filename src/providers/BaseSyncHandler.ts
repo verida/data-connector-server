@@ -202,4 +202,5 @@ export default class BaseSyncHandler extends EventEmitter {
     protected stopSync(syncPosition: SyncHandlerPosition, serverResponse?: any): SyncHandlerPosition {
         return syncPosition
     }
+
 }

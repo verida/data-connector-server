@@ -1,6 +1,5 @@
 import { Response } from "express";
-import { Client } from "tdlib-native";
-import { TelegramApi } from './api'
+import { TelegramApi } from '../../../providers/telegram/api'
 
 import { UniqueRequest } from "../../../interfaces";
 
@@ -104,9 +103,16 @@ export default class Controller {
     public static async login(req: UniqueRequest, res: Response, next: any) {
         Controller.gc()
         const requestId = req.requestId
+
         const clientId = requestId
         const api = new TelegramApi(clientId)
-        const veridaKey = req.query.key.toString()
+        const veridaKey = req.query.key ? req.query.key.toString() : undefined
+
+        if (!veridaKey) {
+            return res.status(400).send({
+                error: `veridaKey not specified`
+            });
+        }
 
         try {
             res.setHeader('Content-Type', 'text/event-stream');
@@ -153,7 +159,7 @@ export default class Controller {
                         } else if (data.authorization_state._ == 'authorizationStateReady') {
                             // We are logged in!
                             console.log('logged in!')
-                            await api.completeLogin(veridaKey)
+                            return res.redirect('/custom/telegram')
                         }
                         break
                 }

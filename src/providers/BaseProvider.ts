@@ -275,6 +275,9 @@ export default class BaseProvider {
         // Add latest profile info
         this.connection.profile = await this.getProfile()
 
+        // Close any connections
+        await this.close()
+
         this.connection.syncStatus = SyncStatus.CONNECTED
         this.connection.syncEnd = Utils.nowTimestamp()
         await this.saveConnection()
@@ -372,6 +375,11 @@ export default class BaseProvider {
     public async getApi(accessToken?: string, refreshToken?: string): Promise<any> {
         throw new Error('Not implemented')
     }
+
+    /**
+     * Close any connections
+     */
+    protected async close(): Promise<void> {}
 
     /**
      * Override this with a list of sync handlers supported by this provider.
