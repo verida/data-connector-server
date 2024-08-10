@@ -184,7 +184,7 @@ export default class Gmail extends BaseSyncHandler {
       const attachments = await GmailHelpers.getAttachments(gmail, msg);
 
       results.push({
-        _id: `gmail-${messageId}`,
+        _id: `gmail-${this.connection.profile.id}-${messageId}`,
         type: messageType,
         name: subject ? subject : 'No email subject',
         sourceAccountId: this.provider.getProviderId(),
