@@ -74,22 +74,16 @@ export default class TelegramProvider extends Base {
         }
 
         if (tgProfile.profile_photo && tgProfile.profile_photo.small) {
-            console.log('photo info')
-            console.log(tgProfile.profile_photo.small.local)
-            // profile.photos = [{
-            //     value: tgProfile.profile_photo.small.local
-            // }]
+            const photo = await api.downloadFile(tgProfile.profile_photo.small.id)
 
-            // avatar: {
-            //     uri: `data:${asset.mimeType};base64,` + asset.base64
-            // } 
+            profile.photos = [{
+                value: `data:image/jpeg;base64,` + photo
+            }]
         }
 
         // close API connection
         console.log('close connection')
         const binFile = await api.closeClient()
-
-        console.log('have binfile', binFile)
 
         // get bin file and sae it in the refresh token)
 
@@ -102,7 +96,9 @@ export default class TelegramProvider extends Base {
     }
 
     public async getApi(accessToken?: string, refreshToken?: string): Promise<TelegramApi> {
+        console.log('get telegram api')
         if (this.api) {
+            console.log('returning api from cache')
             return this.api
         }
         
@@ -116,15 +112,18 @@ export default class TelegramProvider extends Base {
         }
 
         api.restoreBinFile(refreshToken)
+
+        await api.getClient(true)
         this.api = api
         return api
     }
 
     public async close() {
+        console.log('telegram close')
         const api = await this.getApi()
+        console.log('close client')
         const binFile = await api.closeClient()
 
-        console.log('setting binfile:', binFile)
         this.connection!.refreshToken = binFile
     }
 
