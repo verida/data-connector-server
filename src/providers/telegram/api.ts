@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as path from 'path'
 import { Client } from "tdlib-native";
 import { TDLibAddon } from "tdlib-native/addon";
 
@@ -62,6 +63,7 @@ export class TelegramApi {
     }
 
     public async closeClient(deleteSession: boolean = true): Promise<string> {
+        console.log('closing client')
         // Close the Telegram socket connection
         const client = await this.getClient()
         await client.api.close({})
@@ -79,7 +81,8 @@ export class TelegramApi {
         return binFile
     }
 
-    public async getChatHistory(client: Client, chatId: number, limit: number = 100): Promise<any> {
+    public async getChatHistory(chatId: number, limit: number = 100): Promise<any> {
+        const client = await this.getClient()
         const messages = []
         let fromMessageId = 0
     
@@ -111,7 +114,9 @@ export class TelegramApi {
     }
 
     public restoreBinFile(binFile: string) {
-        const path = `${tdPathPrefix}/${this.clientId}`
+        console.log('restoring bin file')
+        const path = `${tdPathPrefix}/${this.clientId}/db/td.binlog`
+        this.ensureDirectoryExists(path)
 
         // Decode the base64 data
         const buffer = Buffer.from(binFile, 'base64');
@@ -124,6 +129,7 @@ export class TelegramApi {
     }
 
     public getBinFile() {
+        console.log('getting bin file')
         const path = `${tdPathPrefix}/${this.clientId}/db/td.binlog`
 
         try {
@@ -133,4 +139,21 @@ export class TelegramApi {
             throw new Error(`Error reading telegram binlog file: ${err.message}`)
         }
     }
+
+    protected ensureDirectoryExists(filePath: string): void {
+        console.log("ensureDirectoryExists")
+        console.log(filePath)
+        const dir = path.dirname(filePath);
+        console.log(dir)
+        
+        try {
+          // Ensure that the directory exists
+          const result = fs.mkdirSync(dir, { recursive: true });
+          console.log(result)
+        } catch (err) {
+          console.error('Error creating directories:', err);
+          throw err;
+        }
+      }
+      
 }

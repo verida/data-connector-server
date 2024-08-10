@@ -7,46 +7,6 @@ const pendingClients: Record<string, TelegramApi> = {}
 
 export default class Controller {
 
-    // public static async testing(req: UniqueRequest, res: Response, next: any) {
-    //     try {
-    //         const chatPos = req.query.chatId ? parseInt(req.query.chatId.toString()) : 0
-
-    //         const key ='28718470-ae45ce8b-fea6-4c6d-8629-0a0661096693'
-
-    //         const client = await getClient()
-    //         await startClient(client, key, false)
-
-    //         const chats = await client.api.getChats({
-    //             limit: 10
-    //         })
-
-    //         console.log(chats)
-    //         const chatId = chats.chat_ids[chatPos]
-
-    //         const chatDetail = await client.api.getChat({
-    //             chat_id: chatId
-    //         })
-
-    //         const messages = await getChatHistory(client, chatId)
-    //         console.log(messages.length, 'messages')
-
-    //         console.log('closing')
-    //         await client.api.close({})
-    //         console.log('closed')
-
-    //         res.send({
-    //             group: chatDetail,
-    //             messages,
-    //             success: true
-    //         })
-    //     } catch (error) {
-    //         console.log(error)
-    //         res.status(500).send({
-    //             error: error.message
-    //         });
-    //     }
-    // }
-
     public static async loginSubmit(req: UniqueRequest, res: Response, next: any) {
         const requestId = req.body.requestId
         const clientId = requestId
