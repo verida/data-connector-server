@@ -143,7 +143,9 @@ export default class BaseSyncHandler extends EventEmitter {
                 continue
             }
 
-            const schemaDatastore = await this.provider.getDatastore(this.getSchemaUri())
+            // Load schema specified in item, fallback to default schema for this sync handler
+            // This allows a sync handler to return results of different schema types
+            const schemaDatastore = await this.provider.getDatastore(item.schema ? item.schema : this.getSchemaUri())
 
             try {
                 const success = await schemaDatastore.save(item, {
