@@ -78,4 +78,5 @@ export enum ContentType {
 export interface SchemaFavourite extends SchemaRecord {
     favouriteType: FavouriteType
     contentType: ContentType
+    description?: string
 }

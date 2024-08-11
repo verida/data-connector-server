@@ -23,7 +23,7 @@ export default class YouTubeFavourite extends GoogleHandler {
     }
 
     public getProviderApplicationUrl(): string {
-        return "https://youtube.com";
+        return "https://youtube.com/";
     }
 
     public getYouTube(): youtube_v3.Youtube {
@@ -169,9 +169,10 @@ export default class YouTubeFavourite extends GoogleHandler {
             }
 
             results.push({
-                _id: `youtube-${favouriteId}`,
+                _id: this.buildItemId(favouriteId),
                 name: title,
                 icon: iconUri,
+                description: description,
                 uri: activityUri,
                 favouriteType: activityType as FavouriteType,
                 contentType: ContentType.VIDEO,

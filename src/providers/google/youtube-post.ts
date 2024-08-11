@@ -23,7 +23,7 @@ export default class YouTubePost extends GoogleHandler {
     }
 
     public getProviderApplicationUrl(): string {
-        return "https://youtube.com";
+        return "https://youtube.com/";
     }
 
     public getYouTube(): youtube_v3.Youtube {
@@ -166,7 +166,7 @@ export default class YouTubePost extends GoogleHandler {
 
 
             results.push({
-                _id: `youtube-${postId}`,
+                _id: this.buildItemId(postId),
                 name: title,
                 icon: iconUri,
                 uri: activityUri,
