@@ -167,7 +167,7 @@ export default class Gmail extends GoogleHandler {
       const attachments = await GmailHelpers.getAttachments(gmail, msg);
 
       results.push({
-        _id: `gmail-${messageId}`,
+        _id: this.buildItemId(messageId),
         type: messageType,
         name: subject ? subject : 'No email subject',
         sourceAccountId: this.provider.getProviderId(),

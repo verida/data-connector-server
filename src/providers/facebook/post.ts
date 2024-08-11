@@ -129,7 +129,7 @@ export default class Posts extends BaseSyncHandler {
                 `Untitled Facebook ${capitalizeFirstLetter(post.type)}`
 
             results.push({
-                _id: `facebook-${post.id}`,
+                _id: this.buildItemId(post.id),
                 name: name,
                 type: post.type,
                 content: post.message ? post.message : '',
