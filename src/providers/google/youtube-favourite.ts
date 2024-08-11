@@ -176,6 +176,7 @@ export default class YouTubeFavourite extends GoogleHandler {
                 uri: activityUri,
                 favouriteType: activityType as FavouriteType,
                 contentType: ContentType.VIDEO,
+                sourceId: favouriteId,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
