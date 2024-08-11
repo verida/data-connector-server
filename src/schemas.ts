@@ -18,8 +18,22 @@ export interface SchemaFollowing extends SchemaRecord {
     insertedAt: string
 }
 
+export enum PostType {
+    LINK = "link",
+    STATUS = "status",
+    PHOTO = "photo",
+    VIDEO = "video",
+    MUSIC = "music",
+    EVENT = "event",
+    OFFER = "offer",
+    QUESTION = "question",
+    NOTE = "note",
+    ALBUM = "album",
+    LIFE_EVENT = "life_event"
+}
+
 export interface SchemaPost extends SchemaRecord {
-    type?: string
+    type?: PostType
     content?: string
     contentHtml? :string
     summary?: string

@@ -6,7 +6,7 @@ import {
     SyncHandlerPosition,
     SyncHandlerStatus,
 } from "../../interfaces";
-import { SchemaPost, SchemaYoutubeActivityType } from "../../schemas";
+import { PostType, SchemaPost, SchemaYoutubeActivityType } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 
@@ -170,8 +170,9 @@ export default class YouTubePost extends GoogleHandler {
                 name: title,
                 icon: iconUri,
                 uri: activityUri,
-                type: activityType,
+                type: PostType.VIDEO,
                 content: description,
+                sourceId: postId,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
