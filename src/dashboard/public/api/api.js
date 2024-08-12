@@ -1,3 +1,17 @@
+const commonParams = {
+    "provider": {
+        "type": "string",
+        "required": true,
+        "documentation": "The name of the provider to connect to, ie: `google`",
+        "default": "google"
+    },
+    "providerId": {
+        "type": "string",
+        "required": false,
+        "documentation": "The unique provider ID to use. For example, if you have two Google accounts connected, you can specify which account. The provider ID is listed in the /dashboard/connections table.",
+    },
+}
+
 // Global JSON object with endpoint configurations
 const apiEndpoints = {
     "/providers": {
@@ -10,17 +24,8 @@ const apiEndpoints = {
         "path": "/api/v1/sync",
         "documentation": "Start syncing data for a given provider",
         "params": {
-            "provider": {
-                "type": "string",
-                "required": true,
-                "documentation": "The name of the provider to connect to, ie: `google`",
-                "default": "google"
-            },
-            "providerId": {
-                "type": "string",
-                "required": false,
-                "documentation": "The unique provider ID to use. For example, if you have two Google accounts connected, you can specify which account. The provider ID is listed in the /dashboard/connections table.",
-            },
+            "provider": commonParams.provider,
+            "providerId": commonParams.providerId,
             "force": {
                 "type": "boolean",
                 "required": false,
@@ -28,37 +33,14 @@ const apiEndpoints = {
             }
         }
     },
-    "/connect/provider": {
+    "/syncStatus": {
         "method": "GET",
-        "path": "/connect/",
+        "path": "/api/v1/syncStatus",
         "params": {
-            "provider": {
-                "type": "string",
-                "required": true,
-                "documentation": "The name of the provider to connect to.",
-                "default": "google"
-            }
+            "provider": commonParams.provider,
+            "providerId": commonParams.providerId,
         },
-        "documentation": "Initiates a connection to the specified provider."
-    },
-    "createPost": {
-        "method": "POST",
-        "path": "/api/post",
-        "params": {
-            "title": {
-                "type": "string",
-                "required": true,
-                "documentation": "The title of the post.",
-                "default": "New Post"
-            },
-            "content": {
-                "type": "string",
-                "required": true,
-                "documentation": "The content of the post.",
-                "default": "This is the content of the new post."
-            }
-        },
-        "documentation": "Creates a new post with the given title and content."
+        "documentation": "Get the status of the current sync connection for a provider."
     }
 };
 
@@ -275,14 +257,16 @@ function runEndpoint() {
         }
     });
 
+    data.key = privateKey
+
     $.ajax({
         url: url,
         method: method,
         data: method === 'GET' ? data : JSON.stringify(data),
         contentType: 'application/json',
-        headers: {
+        /*headers: {
             'Authorization': `Bearer ${privateKey}`
-        },
+        },*/
         success: function(response) {
             $('#result').text(JSON.stringify(response, null, 2));
         },
