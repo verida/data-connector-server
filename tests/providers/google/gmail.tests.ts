@@ -42,7 +42,8 @@ describe(`${providerName} Tests`, function () {
         providerName,
         Gmail,
         testConfig,
-        providerConfig
+        providerConfig,
+        connection
       );
     });
 
@@ -68,6 +69,7 @@ describe(`${providerName} Tests`, function () {
       const syncResponse = await CommonTests.runSyncTest(
         providerName,
         Gmail,
+        connection,
         testConfig,
         syncPosition,
         providerConfig

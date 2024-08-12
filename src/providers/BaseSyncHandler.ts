@@ -44,6 +44,10 @@ export default class BaseSyncHandler extends EventEmitter {
         throw new Error('Not implemented')
     }
 
+    protected updateConnection(connectionParams: object) {
+        this.provider.updateConnection(connectionParams)
+    }
+
     /**
      * Continuously syncronize the data in batches, until complete.
      * 
@@ -75,7 +79,7 @@ export default class BaseSyncHandler extends EventEmitter {
             await this.handleResults(syncResult.value.position, syncResults, syncSchemaPositionDs)
         } else {
             const message = `Unknown error handling sync results: ${syncResult.reason}`
-            this.emit('error', {
+            this.emit('log', {
                 level: SyncProviderLogLevel.ERROR,
                 message
             })
@@ -86,7 +90,7 @@ export default class BaseSyncHandler extends EventEmitter {
             await this.handleResults(backfillResult.value.position, backfillResults, syncSchemaPositionDs)
         } else {
             const message = `Unknown error handling backfill results: ${backfillResult.reason}`
-            this.emit('error', {
+            this.emit('log', {
                 level: SyncProviderLogLevel.ERROR,
                 message
             })
@@ -114,14 +118,14 @@ export default class BaseSyncHandler extends EventEmitter {
             })
             if (!result) {
                 const message = `Unable to update sync position: ${JSON.stringify(syncSchemaPositionDs.errors, null, 2)} (${JSON.stringify(position, null, 2)})`
-                this.emit('error', {
+                this.emit('log', {
                     level: SyncProviderLogLevel.ERROR,
                     message
                 })
             }
         } catch (err: any) {
             const message = `Unable to update sync position: ${err.message} (${JSON.stringify(position, null, 2)})`
-            this.emit('error', {
+            this.emit('log', {
                 level: SyncProviderLogLevel.ERROR,
                 message
             })
@@ -132,7 +136,7 @@ export default class BaseSyncHandler extends EventEmitter {
             const item = items[i]
             if (!item.insertedAt) {
                 const message = `Unable to save item: insertedAt field is missing (${JSON.stringify(item, null, 2)})`
-                this.emit('error', {
+                this.emit('log', {
                     level: SyncProviderLogLevel.ERROR,
                     message
                 })
@@ -149,14 +153,14 @@ export default class BaseSyncHandler extends EventEmitter {
                     // @ts-ignore
                     const message = `Unable to save item: ${Utils.datastoreErorrsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
 
-                    this.emit('error', {
+                    this.emit('log', {
                         level: SyncProviderLogLevel.ERROR,
                         message
                     })
                 }
             } catch (err: any) {
                 const message = `Unable to save item: ${err.message} (${JSON.stringify(item, null, 2)})`
-                this.emit('error', {
+                this.emit('log', {
                     level: SyncProviderLogLevel.ERROR,
                     message
                 })
@@ -201,5 +205,9 @@ export default class BaseSyncHandler extends EventEmitter {
      */
     protected stopSync(syncPosition: SyncHandlerPosition, serverResponse?: any): SyncHandlerPosition {
         return syncPosition
+    }
+
+    protected buildItemId(itemId: string) {
+        return `${this.provider.getProviderName()}-${this.connection.profile.id}-${itemId}`
     }
 }

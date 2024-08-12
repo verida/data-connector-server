@@ -19,7 +19,7 @@ let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
 
-describe(`${providerName} Tests`, function () {
+describe(`${providerName} Youtube Following Tests`, function () {
   this.timeout(100000);
 
   this.beforeAll(async function () {
@@ -42,7 +42,8 @@ describe(`${providerName} Tests`, function () {
         providerName,
         YoutubeFollowing,
         testConfig,
-        providerConfig
+        providerConfig,
+        connection
       );
     });
 
@@ -68,6 +69,7 @@ describe(`${providerName} Tests`, function () {
       const syncResponse = await CommonTests.runSyncTest(
         providerName,
         YoutubeFollowing,
+        connection,
         testConfig,
         syncPosition,
         providerConfig
@@ -105,6 +107,7 @@ describe(`${providerName} Tests`, function () {
       const syncResponse = await CommonTests.runSyncTest(
         providerName,
         YoutubeFollowing,
+        connection,
         testConfig,
         syncPosition,
         providerConfig

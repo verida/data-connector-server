@@ -96,7 +96,7 @@ export default class Following extends BaseSyncHandler {
             const followedTimestamp = like.created_time ? like.created_time : new Date().toISOString()
 
             results.push({
-                _id: `facebook-${like.id}`,
+                _id: this.buildItemId(like.id),
                 icon: `https://graph.facebook.com/${like.id}/picture`,
                 name: like.name,
                 uri: `https://facebook.com/${uriName}-${like.id}`,

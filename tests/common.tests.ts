@@ -6,6 +6,8 @@ import {
   SyncHandlerPosition,
   SyncSchemaPositionType,
   SyncStatus,
+  SyncProviderLogEntry,
+  SyncProviderLogLevel,
 } from "../src/interfaces";
 import providers from "../src/providers";
 import BaseProvider from "../src/providers/BaseProvider";
@@ -24,29 +26,37 @@ export interface GenericTestConfig {
   idPrefix?: string;
 }
 
+// info,debug,error
+const logLevelArg = process.argv.find(arg => arg.startsWith('--logLevel='))
+const logLevel = logLevelArg ? logLevelArg.split('=')[1] : undefined
+
 let provider: BaseProvider, connection: Connection
 
 export class CommonTests {
   static async runSyncTest(
     providerName: string,
     handlerType: typeof BaseSyncHandler,
+    connection: Connection,
     testConfig: GenericTestConfig = {
       timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     },
     syncPositionConfig: Omit<SyncHandlerPosition, "_id">,
-    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
+    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">,
   ): Promise<SyncResponse> {
     const { api, handler, schemaUri } = await this.buildTestObjects(
       providerName,
       handlerType,
-      providerConfig
+      providerConfig,
+      connection
     );
 
     const syncPosition: SyncHandlerPosition = {
       _id: `${providerName}-${schemaUri}`,
       ...syncPositionConfig,
     };
+
+    CommonUtils.setupHandlerLogging(handler, <SyncProviderLogLevel> logLevel)
 
     return handler._sync(api, syncPosition);
   }
@@ -66,6 +76,8 @@ export class CommonTests {
 
     const handler = await provider.getSyncHandler(handlerType);
     const schemaUri = handler.getSchemaUri();
+
+    CommonUtils.setupHandlerLogging(handler, <SyncProviderLogLevel> logLevel)
 
     const api = await provider.getApi(
       connection.accessToken,

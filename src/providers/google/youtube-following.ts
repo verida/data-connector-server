@@ -1,5 +1,6 @@
-import BaseSyncHandler from "../BaseSyncHandler";
+import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
+import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 
 import {
     SyncResponse,
@@ -9,11 +10,10 @@ import {
 import { SchemaFollowing } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
-import { SlashCommandIntegerOption } from "discord.js";
 
 const _ = require("lodash");
 
-export default class YouTubeFollowing extends BaseSyncHandler {
+export default class YouTubeFollowing extends GoogleHandler {
     
     public getName(): string {
         return "youtube-following";
@@ -24,27 +24,11 @@ export default class YouTubeFollowing extends BaseSyncHandler {
     }
 
     public getProviderApplicationUrl(): string {
-        return "https://youtube.com";
+        return "https://youtube.com/";
     }
 
     public getYouTube(): youtube_v3.Youtube {
-        const TOKEN = {
-            access_token: this.connection.accessToken,
-            refresh_token: this.connection.refreshToken,
-            scope: "https://www.googleapis.com/auth/youtube.readonly",
-            token_type: "Bearer",
-        };
-
-        const redirectUrl = "";
-
-        const oAuth2Client = new google.auth.OAuth2(
-            this.config.clientId,
-            this.config.clientSecret,
-            redirectUrl
-        );
-
-        oAuth2Client.setCredentials(TOKEN);
-
+        const oAuth2Client = this.getGoogleAuth()
         const youtube = google.youtube({ version: "v3", auth: oAuth2Client });
         return youtube;
     }
@@ -142,28 +126,40 @@ export default class YouTubeFollowing extends BaseSyncHandler {
         const results: SchemaFollowing[] = [];
         for (const item of serverResponse.data.items) {
             const itemId = `${this.connection.profile.id}-${item.id}`;
+            console.log(item)
 
             if (itemId == breakId) {
-                break;
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break ID hit (${breakId})`
+                }
+                this.emit('log', logEvent)
+                break
             }
 
             const snippet = item.snippet;
             const insertedAt = snippet.publishedAt || "Unknown";
             
             if (breakTimestamp && insertedAt < breakTimestamp) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break timestamp hit (${breakTimestamp})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
             
             const title = snippet.title || "No title";
-            const description = snippet.description || "No description"; 
+            // const description = snippet.description || "No description";
             const uri = "https://www.youtube.com/channel/" + snippet.resourceId.channelId;
             const icon = snippet.thumbnails.default.url;
 
             results.push({
-                _id: `youtube-${itemId}`,
+                _id: this.buildItemId(itemId),
                 name: title,
                 icon: icon,
                 uri: uri,
+                sourceId: itemId,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
