@@ -81,11 +81,19 @@ export interface SchemaFavourite extends SchemaRecord {
     contentType: ContentType
 }
 
-export interface SchemaSocialChatGroup extends SchemaRecord {}
+export interface SchemaSocialChatGroup extends SchemaRecord {
+    newestId?: string
+    backlogIds?: string
+}
+
+export enum SchemaChatMessageType {
+    SEND = "send",
+    RECEIVE = "receive"
+}
 
 export interface SchemaSocialChatMessage extends SchemaRecord {
     chatGroupId: string
-    type: "send" | "receive"
+    type: SchemaChatMessageType
     messageText: string
     messageHTML?: string
     senderId: string

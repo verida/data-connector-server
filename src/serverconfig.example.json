@@ -64,7 +64,12 @@
         "telegram": {
             "label": "Telegram",
             "apiId": 0,
-            "apiHash": ""
+            "apiHash": "",
+            "maxSyncLoops": 1,
+            "groupLimit": 3,
+            "messageMaxAgeDays": 7,
+            "messageBatchSize": 10,
+            "useDbPos": false
         }
     },
     "providerDefaults": {

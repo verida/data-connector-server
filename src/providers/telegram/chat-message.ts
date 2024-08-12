@@ -11,18 +11,23 @@ import {
 import {
   ContentType,
   FavouriteType,
+  SchemaChatMessageType,
   SchemaFavourite,
   SchemaSocialChatGroup,
+  SchemaSocialChatMessage,
   SchemaYoutubeActivityType,
 } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { TelegramApi } from "./api";
-import { TelegramChatGroupType } from "./interfaces";
+import { TelegramChatGroupBacklog, TelegramChatGroupType, TelegramConfig } from "./interfaces";
+import config from "../../config";
 
 const _ = require("lodash");
 
 export default class TelegramChatMessageHandler extends BaseSyncHandler {
+  protected config: TelegramConfig
+
   public getName(): string {
     return "chat-message";
   }
@@ -50,21 +55,128 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     api: TelegramApi,
     syncPosition: SyncHandlerPosition
   ): Promise<SyncResponse> {
+    // syncPosition.thisRef = groupIds
+    // syncPosition.futureBreakId = unused
+
+    // --/.....---------------/.....---------------
+    // first:last,first:last,
+    // 0-first,last-first,last-limit
+    // ../..................../.....---------------
+    // first,last
+
     try {
-      // Always fetch all the latest chat groups
-      const chatGroupIds = await api.getChatGroupIds()
+      let chatGroupIds: string[] = []
+      if (syncPosition.thisRef) {
+        // Load chat group list from current sync position
+        chatGroupIds = syncPosition.thisRef.split(',')
+      }
+
+      // Fetch all the latest chat groups, up to group limit
+      const latestChatGroupIds = await api.getChatGroupIds(this.config.groupLimit)
+
+      // Append the chat group list with any new chat groups so we don't miss any
+      for (const groupId of latestChatGroupIds) {
+        if (chatGroupIds.indexOf(groupId) === -1) {
+          chatGroupIds.push(groupId)
+        }
+      }
+
+      // Build chat group data for each group ID
       const chatGroupResults = await this.buildChatGroupResults(api, chatGroupIds)
 
-      // Fetch chat history for groups... how to know which groups?
-      const chatHistory = []
+      // Build a list of chat groups to process that includes the newest / oldest
+      // IDs from the database, if they exist
+      let chatGroupsBacklog: SchemaSocialChatGroup[] = []
+      if (this.config.useDbPos) {
+        const chatGroupDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_GROUP)
+        const chatGroupDbItems = <SchemaSocialChatGroup[]> await chatGroupDs.getMany({}, {
+          limit: this.config.groupLimit
+        })
+        for (const chatItem of chatGroupDbItems) {
+          if (chatGroupResults[chatItem._id]) {
+            chatGroupResults[chatItem._id].newestId = chatItem.newestId
+            chatGroupResults[chatItem._id].backlogIds = chatItem.backlogIds
+          } else {
+            chatGroupResults[chatItem._id] = chatItem
+          }
 
-      console.log(chatGroupResults[0])
-      console.log(chatGroupResults[1])
-      console.log(chatGroupResults[2])
-      console.log(chatGroupResults[3])
+          chatGroupsBacklog.push(chatGroupResults[chatItem._id])
+        }
+      } else {
+        chatGroupsBacklog = Object.values(chatGroupResults)
+      }
+
+      let groupCount = 0
+      const chatHistory: SchemaSocialChatMessage[] = []
+      const chatGroups: SchemaSocialChatGroup[] = []
+
+      // Process each chat group
+      for (const chatGroup of chatGroupsBacklog) {
+        let messageCount = 0
+        let groupBacklog: TelegramChatGroupBacklog[] = []
+        if (chatGroup.backlogIds) {
+          const backlogItems = chatGroup.backlogIds.split(',')
+          for (const item of backlogItems) {
+            const [ startId, endId ] = item.split(':')
+            groupBacklog.push[{
+              startId,
+              endId
+            }]
+          }
+        }
+
+        // Respect group limit
+        if (groupCount++ > this.config.groupLimit) {
+          break
+        }
+
+        // Fetch messages from now up until the newest
+        const newestId = chatGroup.newestId ? parseInt(chatGroup.newestId) : undefined
+        const oldestId = chatGroup.oldestId ? parseInt(chatGroup.oldestId) : undefined
+        const recentGroupMessageList = await api.getChatHistory(parseInt(chatGroup.sourceId!), this.config.messageBatchSize, undefined, newestId)
+        for (const messageData of recentGroupMessageList) {
+          // Respect message limit
+          // @todo use messageMaxAgeDays
+          if (messageCount >= this.config.messageLimit) {
+            break
+          }
+
+          const message = this.buildMessage(messageData, chatGroup._id)
+          chatHistory.push(message)
+          messageCount++
+        }
+
+        if (messageCount < this.config.messageLimit) {
+          // Fetch messages from the last, up until the message limit
+          const oldGroupMessageList = await api.getChatHistory(parseInt(chatGroup.sourceId!), this.config.messageBatchSize, oldestId)
+
+          for (const messageData of oldGroupMessageList) {
+            // Respect message limit
+            if (messageCount >= this.config.messageLimit) {
+              break
+            }
+  
+            const message = this.buildMessage(messageData, chatGroup._id)
+            chatHistory.push(message)
+            messageCount++
+          }
+        }
+
+        if (chatHistory.length) {
+          chatGroup.oldestId = chatHistory[chatHistory.length-1]._id
+          chatGroup.newestId = chatHistory[0]._id
+        }
+
+        // Include this chat group in the list of processed groups to save
+        chatGroups.push(chatGroup)
+      }
+
+      // Update sync position to have a list of the next set of groups to process
+      const nextBatchGroupIds = chatGroupIds.splice(0, groupCount)
+      syncPosition.thisRef = nextBatchGroupIds.join(',')
 
       return {
-        results: chatGroupResults.concat(chatHistory),
+        results: Object.values(chatGroupResults).concat(chatHistory),
         position: syncPosition
       }
 
@@ -265,14 +377,44 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     return results;
   }
 
-  protected async buildChatGroupResults(api: TelegramApi, chatGroupIds: number[]): Promise<SchemaSocialChatGroup[]> {
-    const results: SchemaSocialChatGroup[] = []
+  protected buildMessage(rawMessage: any, chatGroupId: string): SchemaSocialChatMessage {
+    const timestamp = (new Date(rawMessage.date * 1000)).toString()
+
+    console.log(rawMessage)
+
+    const message: SchemaSocialChatMessage = {
+      _id: `${this.provider.getProviderName()}-${this.connection.profile.id}-${rawMessage.id}`,
+      name: rawMessage.content.text.text.substring(0,30),
+      chatGroupId,
+      type: rawMessage.is_outgoing ? SchemaChatMessageType.SEND : SchemaChatMessageType.SEND,
+      senderId: rawMessage.sender_id.user_id.toString(),
+      messageText: rawMessage.content.text.text,
+      insertedAt: timestamp,
+      sentAt: timestamp
+    }
+
+    console.log(message)
+
+    // id = id
+      // is_outgoing = isOutgoing
+      // sender_id.user_id = senderId
+      // date = unix timestamp?
+      // message_thread_id = ??
+      // content.text._ = 'formattedText'
+      // content.text.text = content -- how is markdown / formatting handled?
+
+    return message
+  }
+
+  protected async buildChatGroupResults(api: TelegramApi, chatGroupIds: string[]): Promise<Record<number, SchemaSocialChatGroup>> {
+    const results: Record<number, SchemaSocialChatGroup> = {}
 
     for (const groupId of chatGroupIds) {
-      const groupDetails = await api.getChatGroup(groupId)
+      const groupDetails = await api.getChatGroup(parseInt(groupId))
 
       const item: SchemaSocialChatGroup = {
-        _id: groupId.toString(),
+        _id: `${this.provider.getProviderName()}-${this.connection.profile.id}-${groupId.toString()}`,
+        sourceId: groupId.toString(),
         schema: CONFIG.verida.schemas.CHAT_GROUP,
         name: groupDetails.title,
       }
@@ -283,7 +425,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         item.icon = `data:image/jpeg;base64,` + smallPhoto
       }
 
-      results.push(item)
+      results[item._id] = item
     }
 
     return results

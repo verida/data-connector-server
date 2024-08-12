@@ -43,7 +43,7 @@ export default class Gmail extends GoogleHandler {
       type: 'enum',
       enumOptions: ['1 month', '3 months', '6 months', '12 months'],
       defaultValue: '3 months'
-  }]
+    }]
   }
 
   public async _sync(

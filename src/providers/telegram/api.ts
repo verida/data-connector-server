@@ -81,9 +81,9 @@ export class TelegramApi {
         return binFile
     }
 
-    public async getChatGroupIds(limit: number=100): Promise<number[]> {
+    public async getChatGroupIds(limit: number=100): Promise<string[]> {
         const client = await this.getClient()
-        const chatGroups: number[] = []
+        const chatGroups: string[] = []
         
         while (chatGroups.length < limit) {
             console.log('loop')
@@ -96,7 +96,7 @@ export class TelegramApi {
             }
     
             for (const chatId of response.chat_ids) {
-                chatGroups.push(chatId)
+                chatGroups.push(chatId.toString())
             }
         }
 
@@ -112,9 +112,9 @@ export class TelegramApi {
         return chatDetail
     }
 
-    public async getChatHistory(chatId: number, limit: number=100, fromMessageId: number=0): Promise<any> {
+    public async getChatHistory(chatId: number, limit: number=100, fromMessageId: number=0, toMessageId?: number): Promise<any[]> {
         const client = await this.getClient()
-        const messages = []
+        const messages: any[] = []
     
         while (messages.length < limit) {
             console.log('loop')
@@ -131,6 +131,9 @@ export class TelegramApi {
             for (const message of chatHistory.messages) {
                 messages.push(message)
                 fromMessageId = message.id
+                if (fromMessageId == toMessageId) {
+                    break
+                }
     
                 if (messages.length >= limit) {
                     break
