@@ -180,12 +180,33 @@ export class GoogleDriveHelpers {
     try {
       const res = await drive.files.get({
         fileId: fileId,
-        fields: 'id, name, mimeType, webViewLink, createdTime, modifiedTime, thumbnailLink'
+        fields: 'id, name, mimeType, size, webViewLink, createdTime, modifiedTime, thumbnailLink'
       });
       return res.data;
     } catch (error) {
       console.error("Error getting file:", error);
       throw error;
+    }
+  }
+
+  static async getFileSize(
+    drive: drive_v3.Drive,
+    fileId: string
+  ): Promise<number | undefined> {
+    const file = await this.getFile(drive, fileId);
+
+    if (file.size) {
+      // For non-Google docs (like PDF, image)
+      return parseInt(file.size);
+    } else if (file.mimeType && file.mimeType.startsWith("application/vnd.google-apps.")) {
+      // For Google Docs, export the file as PDF to estimate size
+      const exportedFile = await drive.files.export(
+        { fileId: fileId, mimeType: "application/pdf" }, 
+        { responseType: "arraybuffer" }
+      );
+      return Buffer.byteLength(exportedFile.data as ArrayBuffer);
+    } else {
+      return undefined;
     }
   }
 
@@ -212,14 +233,21 @@ export class GoogleDriveHelpers {
   ): Promise<string> {
     let textContent = '';
 
-    if (mimeType === 'application/pdf') {
-      const fileBuffer = await this.downloadFile(drive, fileId);
-      textContent = await this.parsePdf(fileBuffer);
-    } else if (mimeType === 'application/vnd.google-apps.document') {
-      textContent = await this.extractGoogleDocsText(drive, fileId);
-    } else if (mimeType === 'text/plain') {
-      const fileBuffer = await this.downloadFile(drive, fileId);
-      textContent = fileBuffer.toString('utf8');
+    // 5MB limit (5 * 1024 * 1024)
+    const sizeLimit = 5 * 1024 * 1024;
+    const fileSize = await this.getFileSize(drive, fileId);
+
+    if (fileSize !== undefined && fileSize <= sizeLimit) {
+      if (mimeType === 'application/pdf') {
+        const fileBuffer = await this.downloadFile(drive, fileId);
+        textContent = await this.parsePdf(fileBuffer);
+      } else if (mimeType === 'application/vnd.google-apps.document') {
+        textContent = await this.extractGoogleDocsText(drive, fileId);
+      } else if (mimeType === 'text/plain') {
+        const fileBuffer = await this.downloadFile(drive, fileId);
+        textContent = fileBuffer.toString('utf8');
+      }
+      
     }
     
     // Add more MIME types as needed (e.g., spreadsheets, presentations, etc.)
