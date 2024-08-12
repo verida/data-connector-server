@@ -182,7 +182,7 @@ export default class YouTubePost extends GoogleHandler {
                 uri: activityUri,
                 type: PostType.VIDEO,
                 content: description,
-                sourceId: postId,
+                sourceId: post.id,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),

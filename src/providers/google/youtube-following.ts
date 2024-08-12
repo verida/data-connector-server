@@ -159,7 +159,7 @@ export default class YouTubeFollowing extends GoogleHandler {
                 name: title,
                 icon: icon,
                 uri: uri,
-                sourceId: itemId,
+                sourceId: item.id,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
