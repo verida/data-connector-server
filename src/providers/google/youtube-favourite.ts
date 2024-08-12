@@ -1,6 +1,6 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-
+import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import {
     SyncResponse,
     SyncHandlerPosition,
@@ -129,6 +129,11 @@ export default class YouTubeFavourite extends GoogleHandler {
             const favouriteId = `${this.connection.profile.id}-${videoId}`;
     
             if (favouriteId == breakId) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break ID hit (${breakId})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
     
@@ -136,6 +141,11 @@ export default class YouTubeFavourite extends GoogleHandler {
             const insertedAt = snippet.publishedAt || "Unknown";
     
             if (breakTimestamp && insertedAt < breakTimestamp) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break timestamp hit (${breakTimestamp})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
     
