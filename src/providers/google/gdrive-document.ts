@@ -1,6 +1,6 @@
 import BaseSyncHandler from "../BaseSyncHandler";
 import CONFIG from "../../config";
-
+import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import {
     SyncResponse,
     SyncHandlerPosition,
@@ -144,12 +144,22 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
             const fileId = `${this.connection.profile.id}-${file.id}`;
 
             if (fileId == breakId) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break ID hit (${breakId})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
 
-            const modifiedTime = file.modifiedTime || "Unknown";
+            const createdTime = file.createdTime || "Unkown";
             
-            if (breakTimestamp && modifiedTime < breakTimestamp) {
+            if (breakTimestamp && createdTime < breakTimestamp) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break timestamp hit (${breakTimestamp})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
 
@@ -157,21 +167,21 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
             const link = file.webViewLink || "No link";
             const mimeType = file.mimeType || "Unknown";
             const thumbnail = file.thumbnailLink || "No thumbnail";
-
-            const textContent = await GoogleDriveHelpers.extractTextContent(drive, fileId, mimeType);
+            const size = await GoogleDriveHelpers.getFileSize(drive, file.id)
+            const textContent = await GoogleDriveHelpers.extractTextContent(drive, file.id, mimeType);
 
             results.push({
-                _id: `drive-${fileId}`,
+                _id: this.buildItemId(fileId),
                 name: title,
-                documentType: mimeType as DocumentType,
+                type: mimeType as DocumentType,
+                size: size,
                 uri: link,
-                thumbnail,
-                content: textContent,
+                icon: thumbnail,
+                contentText: textContent,
                 sourceData: file,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
-                modifiedTimestamp: modifiedTime,
-                insertedAt: modifiedTime,
+                insertedAt: createdTime,
             });
         }
 
