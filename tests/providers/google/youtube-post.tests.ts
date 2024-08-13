@@ -18,6 +18,10 @@ const providerName = "google";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
+let handlerName = "youtube-post";
+let testConfig: GenericTestConfig;
+let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
+
 
 describe(`${providerName} Youtube Post Tests`, function () {
   this.timeout(100000);
@@ -26,17 +30,16 @@ describe(`${providerName} Youtube Post Tests`, function () {
     network = await CommonUtils.getNetwork();
     connection = await CommonUtils.getConnection(providerName);
     provider = Providers(providerName, network.context, connection);
+  
+    testConfig = {
+      idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
+      timeOrderAttribute: "sentAt",
+      batchSizeLimitAttribute: "batchSize",
+    };
   });
 
   describe(`Fetch ${providerName} data`, () => {
-    const handlerName = "youtube-post";
-    const testConfig: GenericTestConfig = {
-      idPrefix: "youtube",
-      timeOrderAttribute: "insertedAt",
-      batchSizeLimitAttribute: "batchSize",
-    };
-    const providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
-
+   
     it(`Can pass basic tests: ${handlerName}`, async () => {
       await CommonTests.runGenericTests(
         providerName,

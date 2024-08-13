@@ -103,7 +103,7 @@ export default class YouTubePost extends GoogleHandler {
         serverResponse: GaxiosResponse<youtube_v3.Schema$ActivityListResponse>
     ): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && serverResponse.data.items.length) {
-            syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.items[0].id}`;
+            syncPosition.futureBreakId = serverResponse.data.items[0].id;
         }
 
         if (_.has(serverResponse, "data.nextPageToken")) {
@@ -128,7 +128,7 @@ export default class YouTubePost extends GoogleHandler {
         // filter post(upload, comment, bulletin)
         const posts = activities.filter(activity => [SchemaYoutubeActivityType.UPLOAD, SchemaYoutubeActivityType.COMMENT].includes(activity.snippet.type as SchemaYoutubeActivityType))
         for (const post of posts) {
-            const postId = `${this.connection.profile.id}-${post.id}`;
+            const postId = post.id;
             console.log(post)
 
             if (postId == breakId) {
