@@ -6,7 +6,7 @@ import {
     SyncHandlerPosition,
     SyncHandlerStatus,
 } from "../../interfaces";
-import { DocumentType, SchemaDocument } from "../../schemas";
+import { SchemaDocument } from "../../schemas";
 import { google, drive_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { GoogleDriveHelpers } from "./helpers";
@@ -120,7 +120,7 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
         serverResponse: GaxiosResponse<drive_v3.Schema$FileList>
     ): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && serverResponse.data.files.length) {
-            syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.files[0].id}`;
+            syncPosition.futureBreakId = serverResponse.data.files[0].id;
         }
 
         if (_.has(serverResponse, "data.nextPageToken")) {
@@ -141,7 +141,7 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
     ): Promise<SchemaDocument[]> {
         const results: SchemaDocument[] = [];
         for (const file of serverResponse.data.files) {
-            const fileId = `${this.connection.profile.id}-${file.id}`;
+            const fileId = file.id;
 
             if (fileId == breakId) {
                 const logEvent: SyncProviderLogEvent = {
