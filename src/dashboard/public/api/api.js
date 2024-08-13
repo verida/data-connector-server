@@ -14,6 +14,34 @@ const commonParams = {
 
 // Global JSON object with endpoint configurations
 const apiEndpoints = {
+    "/db/get": {
+        "method": "GET",
+        "path": "/api/v1/db/get",
+        "documentation": "Retrieves a list of available providers."
+    },
+    "/db/query": {
+        "method": "POST",
+        "path": "/api/v1/db/query",
+        "documentation": "Query a database",
+        "params": {
+            "query": {
+                "type": "string",
+                "required": false,
+                "documentation": "A <a href=\"https://pouchdb.com/api.html#query_index\">pouchdb style filter</a> ie: {name: \"John\"}"
+            },
+            "options": {
+                "type": "string",
+                "required": false,
+                "documentation": "Additional options provided as JSON. Available options are; sort, limit, skip as per the <a href=\"https://pouchdb.com/api.html#query_index\">pouchdb documentation</a>.",
+                "default": JSON.stringify({
+                    sort: [{
+                        _id: "desc"
+                    }],
+                    limit: 20
+                })
+            }
+        }
+    },
     "/providers": {
         "method": "GET",
         "path": "/api/v1/providers",
