@@ -1,6 +1,6 @@
 import express from 'express'
 import v1Routes from './api/v1/routes'
-import Controller from './api/v1/controller'
+import Controller from './api/v1/base/controller'
 
 const router = express.Router()
 router.use('/api/v1/', v1Routes)

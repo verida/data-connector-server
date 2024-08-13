@@ -1,17 +1,19 @@
 import express from 'express'
-import Controller from './controller'
+
+import DbRoutes from './db/routes'
+import DsRoutes from './ds/routes'
+import AdminRoutes from './admin/routes'
+import LLMRoutes from './llm/routes'
+import MiniSearchRoutes from './minisearch/routes'
+import BaseRoutes from './base/routes'
 
 const router = express.Router()
 
-router.get('/connect/:provider', Controller.connect)
-router.get('/disconnect/:provider', Controller.disconnect)
-router.get('/callback/:provider', Controller.callback)
-
-router.get('/sync', Controller.sync)
-router.get('/syncStatus', Controller.syncStatus)
-
-router.get('/providers', Controller.providers)
-router.get('/data', Controller.data)
-router.get('/logs', Controller.logs)
+router.use(BaseRoutes)
+router.use('/db', DbRoutes)
+router.use('/ds', DsRoutes)
+router.use('/admin', AdminRoutes)
+router.use('/llm', LLMRoutes)
+router.use('/minisearch', MiniSearchRoutes)
 
 export default router

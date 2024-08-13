@@ -1,10 +1,10 @@
 import { Request, Response } from 'express'
-import Providers from "../../providers"
-import SyncManager from '../../sync-manager'
-import { HandlerOption, SyncHandlerPosition, SyncSchemaPositionType, UniqueRequest } from '../../interfaces'
-import { Utils } from '../../utils'
-import CONFIG from '../../config'
-import { SchemaRecord } from '../../schemas'
+import Providers from "../../../providers"
+import SyncManager from '../../../sync-manager'
+import { HandlerOption, SyncHandlerPosition, SyncSchemaPositionType, UniqueRequest } from '../../../interfaces'
+import { Utils } from '../../../utils'
+import CONFIG from '../../../config'
+import { SchemaRecord } from '../../../schemas'
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
