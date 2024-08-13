@@ -64,6 +64,13 @@ export default class YouTubeFollowing extends GoogleHandler {
             };
         }
 
+        // Sort items by publishedAt timestamp in descending order (most recent first)
+        serverResponse.data.items.sort((a, b) => {
+            const dateA = new Date(a.snippet.publishedAt).getTime();
+            const dateB = new Date(b.snippet.publishedAt).getTime();
+            return dateB - dateA;
+        });
+
         const results = await this.buildResults(
             youtube,
             serverResponse,
@@ -104,7 +111,7 @@ export default class YouTubeFollowing extends GoogleHandler {
         serverResponse: GaxiosResponse<youtube_v3.Schema$SubscriptionListResponse>
     ): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && serverResponse.data.items.length) {
-            syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.items[0].id}`;
+            syncPosition.futureBreakId = serverResponse.data.items[0].id;
         }
 
         if (_.has(serverResponse, "data.nextPageToken")) {
@@ -125,7 +132,7 @@ export default class YouTubeFollowing extends GoogleHandler {
     ): Promise<SchemaFollowing[]> {
         const results: SchemaFollowing[] = [];
         for (const item of serverResponse.data.items) {
-            const itemId = `${this.connection.profile.id}-${item.id}`;
+            const itemId = item.id;
             console.log(item)
 
             if (itemId == breakId) {
@@ -159,7 +166,7 @@ export default class YouTubeFollowing extends GoogleHandler {
                 name: title,
                 icon: icon,
                 uri: uri,
-                sourceId: itemId,
+                sourceId: item.id,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),

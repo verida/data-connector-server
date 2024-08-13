@@ -18,6 +18,10 @@ const providerName = "google";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
+let handlerName = "youtube-post";
+let testConfig: GenericTestConfig;
+let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
+
 
 describe(`${providerName} Youtube Post Tests`, function () {
   this.timeout(100000);
@@ -26,17 +30,16 @@ describe(`${providerName} Youtube Post Tests`, function () {
     network = await CommonUtils.getNetwork();
     connection = await CommonUtils.getConnection(providerName);
     provider = Providers(providerName, network.context, connection);
-  });
-
-  describe(`Fetch ${providerName} data`, () => {
-    const handlerName = "youtube-post";
-    const testConfig: GenericTestConfig = {
-      idPrefix: "youtube",
+  
+    testConfig = {
+      idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
       timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     };
-    const providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
+  });
 
+  describe(`Fetch ${providerName} data`, () => {
+   
     it(`Can pass basic tests: ${handlerName}`, async () => {
       await CommonTests.runGenericTests(
         providerName,
@@ -61,7 +64,7 @@ describe(`${providerName} Youtube Post Tests`, function () {
         status: SyncHandlerStatus.ACTIVE,
       };
 
-      providerConfig.batchSize = 10;
+      providerConfig.batchSize = 5;
       providerConfig.metadata = {
         breakTimestamp: lastRecordTimestamp,
       };
@@ -99,7 +102,7 @@ describe(`${providerName} Youtube Post Tests`, function () {
         status: SyncHandlerStatus.ACTIVE,
       };
 
-      providerConfig.batchSize = 10;
+      providerConfig.batchSize = 5;
       providerConfig.metadata = {
         breakTimestamp: new Date().toISOString(),
       };

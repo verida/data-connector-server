@@ -117,7 +117,7 @@ export class CommonTests {
       connection
     );
 
-    const idPrefix = testConfig.idPrefix ? testConfig.idPrefix : providerName;
+    const idPrefix = testConfig.idPrefix ? testConfig.idPrefix : `${provider.getProviderName()}-${connection!.profile.id}`;
 
     const syncPosition: SyncHandlerPosition = {
       _id: `${providerName}-${schemaUri}`,

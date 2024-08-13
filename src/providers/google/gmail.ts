@@ -117,7 +117,7 @@ export default class Gmail extends GoogleHandler {
     serverResponse: GaxiosResponse<gmail_v1.Schema$ListMessagesResponse>
   ): SyncHandlerPosition {
     if (!syncPosition.futureBreakId && serverResponse.data.messages.length) {
-      syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.messages[0].id}`;
+      syncPosition.futureBreakId = serverResponse.data.messages[0].id;
     }
 
     if (_.has(serverResponse, "data.nextPageToken")) {
@@ -139,7 +139,7 @@ export default class Gmail extends GoogleHandler {
   ): Promise<SchemaEmail[]> {
     const results: SchemaEmail[] = [];
     for (const message of serverResponse.data.messages) {
-      const messageId = `${this.connection.profile.id}-${message.id}`;
+      const messageId = message.id;
 
       if (messageId == breakId) {
         break;

@@ -63,6 +63,13 @@ export default class YouTubeFavourite extends GoogleHandler {
             };
         }
     
+        // Sort items by publishedAt timestamp in descending order (most recent first)
+        serverResponse.data.items.sort((a, b) => {
+            const dateA = new Date(a.snippet.publishedAt).getTime();
+            const dateB = new Date(b.snippet.publishedAt).getTime();
+            return dateB - dateA;
+        });
+
         const results = await this.buildResults(
             serverResponse,
             syncPosition.breakId,
@@ -102,7 +109,7 @@ export default class YouTubeFavourite extends GoogleHandler {
         serverResponse: GaxiosResponse<youtube_v3.Schema$VideoListResponse>
     ): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && serverResponse.data.items.length) {
-            syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.items[0].id}`;
+            syncPosition.futureBreakId = serverResponse.data.items[0].id;
         }
 
         if (_.has(serverResponse, "data.nextPageToken")) {
@@ -126,7 +133,7 @@ export default class YouTubeFavourite extends GoogleHandler {
     
         for (const video of videos) {
             const videoId = video.id;
-            const favouriteId = `${this.connection.profile.id}-${videoId}`;
+            const favouriteId = videoId;
     
             if (favouriteId == breakId) {
                 const logEvent: SyncProviderLogEvent = {
@@ -162,7 +169,7 @@ export default class YouTubeFavourite extends GoogleHandler {
                 uri: activityUri,
                 favouriteType: FavouriteType.LIKE,
                 contentType: ContentType.VIDEO,
-                sourceId: favouriteId,
+                sourceId: videoId,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),

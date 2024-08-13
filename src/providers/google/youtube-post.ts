@@ -63,6 +63,13 @@ export default class YouTubePost extends GoogleHandler {
             };
         }
 
+        // Sort items by publishedAt timestamp in descending order (most recent first)
+        serverResponse.data.items.sort((a, b) => {
+            const dateA = new Date(a.snippet.publishedAt).getTime();
+            const dateB = new Date(b.snippet.publishedAt).getTime();
+            return dateB - dateA;
+        });
+
         const results = await this.buildResults(
             youtube,
             serverResponse,
@@ -103,7 +110,7 @@ export default class YouTubePost extends GoogleHandler {
         serverResponse: GaxiosResponse<youtube_v3.Schema$ActivityListResponse>
     ): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && serverResponse.data.items.length) {
-            syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.items[0].id}`;
+            syncPosition.futureBreakId = serverResponse.data.items[0].id;
         }
 
         if (_.has(serverResponse, "data.nextPageToken")) {
@@ -128,7 +135,7 @@ export default class YouTubePost extends GoogleHandler {
         // filter post(upload, comment, bulletin)
         const posts = activities.filter(activity => [SchemaYoutubeActivityType.UPLOAD, SchemaYoutubeActivityType.COMMENT].includes(activity.snippet.type as SchemaYoutubeActivityType))
         for (const post of posts) {
-            const postId = `${this.connection.profile.id}-${post.id}`;
+            const postId = post.id;
             console.log(post)
 
             if (postId == breakId) {
@@ -182,7 +189,7 @@ export default class YouTubePost extends GoogleHandler {
                 uri: activityUri,
                 type: PostType.VIDEO,
                 content: description,
-                sourceId: postId,
+                sourceId: post.id,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
