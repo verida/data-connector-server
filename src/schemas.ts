@@ -103,7 +103,8 @@ export enum DocumentType {
     XLS = "xls",
     XLSX = "xlsx",
     PPT = "ppt",
-    PPTX = "pptx"
+    PPTX = "pptx",
+    OTHER = "other"
 }
 
 export interface SchemaDocument extends SchemaRecord {

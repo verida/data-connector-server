@@ -1,5 +1,6 @@
 import { gmail_v1, drive_v3 } from "googleapis";
 import pdf from "pdf-parse";
+import { DocumentType } from "../../schemas";
 
 export class GmailHelpers {
   static async getMessage(
@@ -299,6 +300,29 @@ export class GoogleDriveHelpers {
       modifiedTime: file.modifiedTime || '',
       thumbnailLink: file.thumbnailLink,
     };
+  }
+
+  static getDocumentTypeFromMimeType(mimeType: string): DocumentType {
+    switch (mimeType) {
+        case 'text/plain':
+            return DocumentType.TXT;
+        case 'application/pdf':
+            return DocumentType.PDF;
+        case 'application/msword':
+            return DocumentType.DOC;
+        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+            return DocumentType.DOCX;
+        case 'application/vnd.ms-excel':
+            return DocumentType.XLS;
+        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            return DocumentType.XLSX;
+        case 'application/vnd.ms-powerpoint':
+            return DocumentType.PPT;
+        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+            return DocumentType.PPTX;
+        default:
+            return DocumentType.OTHER;
+    }
   }
 }
 

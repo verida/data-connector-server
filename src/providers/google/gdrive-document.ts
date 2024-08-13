@@ -152,9 +152,9 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
                 break;
             }
 
-            const createdTime = file.createdTime || "Unkown";
+            const modifiedTime = file.modifiedTime || "Unkown";
             
-            if (breakTimestamp && createdTime < breakTimestamp) {
+            if (breakTimestamp && modifiedTime < breakTimestamp) {
                 const logEvent: SyncProviderLogEvent = {
                     level: SyncProviderLogLevel.DEBUG,
                     message: `Break timestamp hit (${breakTimestamp})`
@@ -166,32 +166,27 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
             const title = file.name || "No title";
             const link = file.webViewLink || "No link";
             const mimeType = file.mimeType || "Unknown";
+            const type = GoogleDriveHelpers.getDocumentTypeFromMimeType(mimeType);
             const thumbnail = file.thumbnailLink || "No thumbnail";
             const size = await GoogleDriveHelpers.getFileSize(drive, file.id)
             const textContent = await GoogleDriveHelpers.extractTextContent(drive, file.id, mimeType);
-
+            
             results.push({
                 _id: this.buildItemId(fileId),
                 name: title,
-                type: mimeType as DocumentType,
+                type: type,
                 size: size,
                 uri: link,
                 icon: thumbnail,
                 contentText: textContent,
+                sourceId: file.id,
                 sourceData: file,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
-                insertedAt: createdTime,
+                insertedAt: modifiedTime,
             });
         }
 
         return results;
-    }
-
-    private async getDocumentText(drive: drive_v3.Drive, file: drive_v3.Schema$File): Promise<string> {
-        // Implement the logic to retrieve text content based on file type (Google Docs, PDF, etc.)
-        // Example: Download the file content and convert to text
-        let content = "Text content extraction logic goes here";
-        return content;
     }
 }
