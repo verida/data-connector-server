@@ -33,7 +33,7 @@ describe(`${providerName} Youtube Following Tests`, function () {
   
     testConfig = {
       idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
-      timeOrderAttribute: "sentAt",
+      timeOrderAttribute: "followedTimestamp",
       batchSizeLimitAttribute: "batchSize",
     };
   });
@@ -64,7 +64,7 @@ describe(`${providerName} Youtube Following Tests`, function () {
         status: SyncHandlerStatus.ACTIVE,
       };
 
-      providerConfig.batchSize = 10;
+      providerConfig.batchSize = 5;
       providerConfig.metadata = {
         breakTimestamp: lastRecordTimestamp,
       };
@@ -102,7 +102,7 @@ describe(`${providerName} Youtube Following Tests`, function () {
         status: SyncHandlerStatus.ACTIVE,
       };
 
-      providerConfig.batchSize = 10;
+      providerConfig.batchSize = 5;
       providerConfig.metadata = {
         breakTimestamp: new Date().toISOString(),
       };

@@ -32,7 +32,7 @@ describe(`${providerName} Youtube Favourite Tests`, function () {
   
     testConfig = {
       idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
-      timeOrderAttribute: "sentAt",
+      timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     };
   });
@@ -63,7 +63,7 @@ describe(`${providerName} Youtube Favourite Tests`, function () {
         status: SyncHandlerStatus.ACTIVE,
       };
 
-      providerConfig.batchSize = 10;
+      providerConfig.batchSize = 5;
       providerConfig.metadata = {
         breakTimestamp: lastRecordTimestamp,
       };
@@ -97,7 +97,7 @@ describe(`${providerName} Youtube Favourite Tests`, function () {
         status: SyncHandlerStatus.ACTIVE,
       };
 
-      providerConfig.batchSize = 10;
+      providerConfig.batchSize = 5;
       providerConfig.metadata = {
         breakTimestamp: new Date().toISOString(),
       };
