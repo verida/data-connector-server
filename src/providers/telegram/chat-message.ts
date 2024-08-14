@@ -9,19 +9,14 @@ import {
   ConnectionOptionType,
 } from "../../interfaces";
 import {
-  ContentType,
-  FavouriteType,
   SchemaChatMessageType,
-  SchemaFavourite,
   SchemaSocialChatGroup,
   SchemaSocialChatMessage,
-  SchemaYoutubeActivityType,
 } from "../../schemas";
-import { google, youtube_v3 } from "googleapis";
-import { GaxiosResponse } from "gaxios";
 import { TelegramApi } from "./api";
-import { TelegramChatGroupBacklog, TelegramChatGroupType, TelegramConfig } from "./interfaces";
-import config from "../../config";
+import { TelegramChatGroupType, TelegramConfig } from "./interfaces";
+import { CompletedRangeTracker } from "../../helpers/completedRangeTracker";
+import { CompletedItemsRange } from "../../helpers/interfaces";
 
 const _ = require("lodash");
 
@@ -51,6 +46,132 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     }]
   }
 
+  protected async buildChatGroupList(
+    api: TelegramApi,
+    syncPosition: SyncHandlerPosition): Promise<SchemaSocialChatGroup[]> {
+    let chatGroupIds: string[] = []
+    if (syncPosition.thisRef) {
+      // Load chat group list from current sync position
+      chatGroupIds = syncPosition.thisRef.split(',')
+    }
+
+    // Fetch all the latest chat groups, up to group limit
+    const latestChatGroupIds = await api.getChatGroupIds(this.config.groupLimit)
+
+    // Append the chat group list with any new chat groups so we don't miss any
+    for (const groupId of latestChatGroupIds) {
+      if (chatGroupIds.indexOf(groupId) === -1) {
+        chatGroupIds.push(groupId)
+      }
+    }
+
+    // Build chat group data for each group ID
+    const chatGroupResults = await this.buildChatGroupResults(api, chatGroupIds)
+
+    // Build a list of chat groups to process that includes the newest / oldest
+    // IDs from the database, if they exist
+    let chatGroupsBacklog: SchemaSocialChatGroup[] = []
+    if (this.config.useDbPos) {
+      const chatGroupDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_GROUP)
+      const chatGroupDbItems = <SchemaSocialChatGroup[]> await chatGroupDs.getMany({}, {
+        limit: this.config.groupLimit
+      })
+      for (const chatItem of chatGroupDbItems) {
+        if (chatGroupResults[chatItem._id]) {
+          chatGroupResults[chatItem._id].newestId = chatItem.newestId
+          chatGroupResults[chatItem._id].syncData = chatItem.syncData
+        } else {
+          chatGroupResults[chatItem._id] = chatItem
+        }
+
+        chatGroupsBacklog.push(chatGroupResults[chatItem._id])
+      }
+    } else {
+      chatGroupsBacklog = Object.values(chatGroupResults)
+    }
+
+    return chatGroupsBacklog
+  }
+
+  protected async fetchMessageRange(currentRange: CompletedItemsRange, chatGroup: SchemaSocialChatGroup, chatHistory: SchemaSocialChatMessage[], api: TelegramApi, messageCount: number): Promise<{
+    messagesAdded: number,
+    breakIdHit: boolean
+  }> {
+    let messagesAdded = 0
+    const startId = currentRange.startId ? parseInt(currentRange.startId) : undefined
+    const endId = currentRange.endId? parseInt(currentRange.endId) : undefined
+    const { messages: recentGroupMessageList, breakIdHit } = await api.getChatHistory(parseInt(chatGroup.sourceId!), this.config.messageBatchSize, startId, endId)
+    for (const messageData of recentGroupMessageList) {
+      // Respect message limit
+      // @todo use messageMaxAgeDays
+      if (messageCount >= this.config.messageLimit) {
+        break
+      }
+
+      const message = this.buildMessage(messageData, chatGroup._id)
+      chatHistory.push(message)
+      messageCount++
+      messagesAdded++
+    }
+
+    return {
+      messagesAdded,
+      breakIdHit
+    }
+  }
+
+  protected async processChatGroup(chatGroup: SchemaSocialChatGroup, api: TelegramApi, totalMessageCount: number): Promise<{
+    chatHistory: SchemaSocialChatMessage[]
+  }> {
+    console.log(`- Processing group: ${chatGroup.name} (${chatGroup.sourceId})`)
+    const chatHistory: SchemaSocialChatMessage[] = []
+    const rangeTracker = new CompletedRangeTracker(chatGroup.syncData)
+
+    // Fetch messages from now up until the newest
+    let currentRange = rangeTracker.newItemsRange()
+    let messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount)
+
+    rangeTracker.completedRange({
+      startId: chatHistory[0].sourceId!,
+      endId: chatHistory[chatHistory.length-1].sourceId
+    }, messagesResponse.breakIdHit)
+
+    console.log(`- ${chatGroup.name}: Completed new items range`)
+
+    while (!messagesResponse.breakIdHit && totalMessageCount < this.config.messageLimit) {
+      console.log(`- ${chatGroup.name}: Have more messages to fetch as limits not yet hit`)
+      // We have more messages to fetch
+      // Fetch messages from the last fetched, up until the message limit
+      currentRange = rangeTracker.nextBackfillRange()
+
+      const messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount)
+
+      rangeTracker.completedRange({
+        startId: chatHistory[0].sourceId!,
+        endId: chatHistory[chatHistory.length-1].sourceId
+      }, messagesResponse.breakIdHit)
+
+      console.log(`- ${chatGroup.name}: Completed next batch of ${messagesResponse.messagesAdded}`)
+
+      if (messagesResponse.messagesAdded == 0) {
+        // No more messages to fetch, so exit
+        console.log(`- ${chatGroup.name}: No more messages to fetch, so stop processing this group`)
+        break
+      }
+    }
+
+    if (chatHistory.length) {
+      chatGroup.newestId = chatHistory[0]._id
+      chatGroup.syncData = rangeTracker.export()
+    }
+
+    console.log(`- ${chatGroup.name}: Updated sync data: ${chatGroup.newestId}, ${chatGroup.syncData}`)
+
+    return {
+      chatHistory
+    }
+  }
+
   public async _sync(
     api: TelegramApi,
     syncPosition: SyncHandlerPosition
@@ -64,317 +185,53 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     // ../..................../.....---------------
     // first,last
 
+   
     try {
-      let chatGroupIds: string[] = []
-      if (syncPosition.thisRef) {
-        // Load chat group list from current sync position
-        chatGroupIds = syncPosition.thisRef.split(',')
-      }
-
-      // Fetch all the latest chat groups, up to group limit
-      const latestChatGroupIds = await api.getChatGroupIds(this.config.groupLimit)
-
-      // Append the chat group list with any new chat groups so we don't miss any
-      for (const groupId of latestChatGroupIds) {
-        if (chatGroupIds.indexOf(groupId) === -1) {
-          chatGroupIds.push(groupId)
-        }
-      }
-
-      // Build chat group data for each group ID
-      const chatGroupResults = await this.buildChatGroupResults(api, chatGroupIds)
-
-      // Build a list of chat groups to process that includes the newest / oldest
-      // IDs from the database, if they exist
-      let chatGroupsBacklog: SchemaSocialChatGroup[] = []
-      if (this.config.useDbPos) {
-        const chatGroupDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_GROUP)
-        const chatGroupDbItems = <SchemaSocialChatGroup[]> await chatGroupDs.getMany({}, {
-          limit: this.config.groupLimit
-        })
-        for (const chatItem of chatGroupDbItems) {
-          if (chatGroupResults[chatItem._id]) {
-            chatGroupResults[chatItem._id].newestId = chatItem.newestId
-            chatGroupResults[chatItem._id].backlogIds = chatItem.backlogIds
-          } else {
-            chatGroupResults[chatItem._id] = chatItem
-          }
-
-          chatGroupsBacklog.push(chatGroupResults[chatItem._id])
-        }
-      } else {
-        chatGroupsBacklog = Object.values(chatGroupResults)
-      }
-
       let groupCount = 0
-      const chatHistory: SchemaSocialChatMessage[] = []
+      let messageCount = 0
       const chatGroups: SchemaSocialChatGroup[] = []
+      const chatGroupsBacklog = await this.buildChatGroupList(api, syncPosition)
+      console.log(`- Fetched ${chatGroupsBacklog.length} chat groups as backlog`)
+      let chatHistory: SchemaSocialChatMessage[] = []
 
       // Process each chat group
+      let groupLimitHit = false
       for (const chatGroup of chatGroupsBacklog) {
-        let messageCount = 0
-        let groupBacklog: TelegramChatGroupBacklog[] = []
-        if (chatGroup.backlogIds) {
-          const backlogItems = chatGroup.backlogIds.split(',')
-          for (const item of backlogItems) {
-            const [ startId, endId ] = item.split(':')
-            groupBacklog.push[{
-              startId,
-              endId
-            }]
-          }
-        }
-
         // Respect group limit
         if (groupCount++ > this.config.groupLimit) {
+          console.log(`- Group limit hit`)
+          groupLimitHit = true
           break
         }
 
-        // Fetch messages from now up until the newest
-        const newestId = chatGroup.newestId ? parseInt(chatGroup.newestId) : undefined
-        const oldestId = chatGroup.oldestId ? parseInt(chatGroup.oldestId) : undefined
-        const recentGroupMessageList = await api.getChatHistory(parseInt(chatGroup.sourceId!), this.config.messageBatchSize, undefined, newestId)
-        for (const messageData of recentGroupMessageList) {
-          // Respect message limit
-          // @todo use messageMaxAgeDays
-          if (messageCount >= this.config.messageLimit) {
-            break
-          }
-
-          const message = this.buildMessage(messageData, chatGroup._id)
-          chatHistory.push(message)
-          messageCount++
-        }
-
-        if (messageCount < this.config.messageLimit) {
-          // Fetch messages from the last, up until the message limit
-          const oldGroupMessageList = await api.getChatHistory(parseInt(chatGroup.sourceId!), this.config.messageBatchSize, oldestId)
-
-          for (const messageData of oldGroupMessageList) {
-            // Respect message limit
-            if (messageCount >= this.config.messageLimit) {
-              break
-            }
-  
-            const message = this.buildMessage(messageData, chatGroup._id)
-            chatHistory.push(message)
-            messageCount++
-          }
-        }
-
-        if (chatHistory.length) {
-          chatGroup.oldestId = chatHistory[chatHistory.length-1]._id
-          chatGroup.newestId = chatHistory[0]._id
-        }
+        const chatGroupResponse = await this.processChatGroup(chatGroup, api, messageCount)
 
         // Include this chat group in the list of processed groups to save
         chatGroups.push(chatGroup)
+
+        // Include the chat history
+        chatHistory = chatHistory.concat(chatGroupResponse.chatHistory)
       }
 
       // Update sync position to have a list of the next set of groups to process
+      const chatGroupIds = chatGroups.map(group => parseInt(group.sourceId!))
       const nextBatchGroupIds = chatGroupIds.splice(0, groupCount)
       syncPosition.thisRef = nextBatchGroupIds.join(',')
 
-      return {
-        results: Object.values(chatGroupResults).concat(chatHistory),
-        position: syncPosition
+      this.config.messageBatchSize
+      if (!groupLimitHit && messageCount != this.config.messageLimit) {
+        // No limits hit for this batch, so we simply ran out of messages and we can stop the sync
+        syncPosition.status = SyncHandlerStatus.STOPPED
       }
 
-      //const chatHistory = await api.getChatHistory(chats[0], 3)
-      // id = id
-      // is_outgoing = isOutgoing
-      // sender_id.user_id = senderId
-      // date = unix timestamp?
-      // message_thread_id = ??
-      // content.text._ = 'formattedText'
-      // content.text.text = content -- how is markdown / formatting handled?
-
-
-      // console.log(chatDetail)
-      // console.log('---')
-
-    //   const chatId = chats.chat_ids[chatPos];
-
-    //   const chatDetail = await client.api.getChat({
-    //     chat_id: chatId,
-    //   });
-
-    //   const messages = await getChatHistory(client, chatId);
-    //   console.log(messages.length, "messages");
-
-    //   console.log("closing");
-    //   await client.api.close({});
-    //   console.log("closed");
-
-    //   res.send({
-    //     group: chatDetail,
-    //     messages,
-    //     success: true,
-    //   });
-    // } catch (error) {
-    //   console.log(error);
-    //   res.status(500).send({
-    //     error: error.message,
-    //   });
-    // }
+      return {
+        results: Object.values(chatGroups).concat(chatHistory),
+        position: syncPosition
+      }
     } catch (err: any) {
         console.log(err)
         throw err
     }
-
-    throw new Error("ending");
-
-    // const query: youtube_v3.Params$Resource$Activities$List = {
-    //     part: ["snippet", "contentDetails"],
-    //     mine: true,
-    //     maxResults: this.config.batchSize, // Google Docs: default = 5, max = 50
-    // };
-
-    // if (syncPosition.thisRef) {
-    //     query.pageToken = syncPosition.thisRef;
-    // }
-
-    // const serverResponse = await youtube.activities.list(query);
-
-    // if (
-    //     !_.has(serverResponse, "data.items") ||
-    //     !serverResponse.data.items.length
-    // ) {
-    //     // No results found, so stop sync
-    //     syncPosition = this.stopSync(syncPosition);
-
-    //     return {
-    //         position: syncPosition,
-    //         results: [],
-    //     };
-    // }
-
-    // const results = await this.buildResults(
-    //     youtube,
-    //     serverResponse,
-    //     syncPosition.breakId,
-    //     _.has(this.config, "metadata.breakTimestamp")
-    //         ? this.config.metadata.breakTimestamp
-    //         : undefined
-    // );
-
-    // syncPosition = this.setNextPosition(syncPosition, serverResponse);
-
-    // if (results.length != this.config.batchSize) {
-    //     // Not a full page of results, so stop sync
-    //     syncPosition = this.stopSync(syncPosition);
-    // }
-
-    // return {
-    //     results,
-    //     position: syncPosition,
-    // };
-  }
-
-  protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
-    if (syncPosition.status == SyncHandlerStatus.STOPPED) {
-      return syncPosition;
-    }
-
-    syncPosition.status = SyncHandlerStatus.STOPPED;
-    syncPosition.thisRef = undefined;
-    syncPosition.breakId = syncPosition.futureBreakId;
-    syncPosition.futureBreakId = undefined;
-
-    return syncPosition;
-  }
-
-  protected setNextPosition(
-    syncPosition: SyncHandlerPosition,
-    serverResponse: GaxiosResponse<youtube_v3.Schema$ActivityListResponse>
-  ): SyncHandlerPosition {
-    if (!syncPosition.futureBreakId && serverResponse.data.items.length) {
-      syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.items[0].id}`;
-    }
-
-    if (_.has(serverResponse, "data.nextPageToken")) {
-      // Have more results, so set the next page ready for the next request
-      syncPosition.thisRef = serverResponse.data.nextPageToken;
-    } else {
-      syncPosition = this.stopSync(syncPosition);
-    }
-
-    return syncPosition;
-  }
-
-  protected async buildResults(
-    youtube: youtube_v3.Youtube,
-    serverResponse: GaxiosResponse<youtube_v3.Schema$ActivityListResponse>,
-    breakId: string,
-    breakTimestamp?: string
-  ): Promise<SchemaFavourite[]> {
-    const results: SchemaFavourite[] = [];
-
-    const activities = serverResponse.data.items;
-    // filter favourite(like, favourite, recommendation)
-    const favourites = activities.filter((activity) =>
-      [
-        SchemaYoutubeActivityType.LIKE,
-        SchemaYoutubeActivityType.FAVOURITE,
-        SchemaYoutubeActivityType.RECOMMENDATION,
-      ].includes(activity.snippet.type as SchemaYoutubeActivityType)
-    );
-    for (const favourite of favourites) {
-      const favouriteId = `${this.connection.profile.id}-${favourite.id}`;
-
-      if (favouriteId == breakId) {
-        break;
-      }
-
-      const snippet = favourite.snippet;
-      const insertedAt = snippet.publishedAt || "Unknown";
-
-      if (breakTimestamp && insertedAt < breakTimestamp) {
-        break;
-      }
-
-      const title = snippet.title || "No title";
-      const description = snippet.description || "No description";
-      const contentDetails = favourite.contentDetails;
-
-      const activityType = snippet.type;
-      const iconUri = snippet.thumbnails.default.url;
-      // extract activity URI
-      let activityUri = "";
-      let videoId = "";
-      switch (activityType) {
-        case SchemaYoutubeActivityType.LIKE:
-          videoId = contentDetails.like.resourceId.videoId;
-          activityUri = "https://www.youtube.com/watch?v=" + videoId;
-          break;
-        case SchemaYoutubeActivityType.FAVOURITE:
-          videoId = contentDetails.favorite.resourceId.videoId;
-          activityUri = "https://www.youtube.com/watch?v=" + videoId;
-          break;
-        case SchemaYoutubeActivityType.RECOMMENDATION:
-          videoId = contentDetails.recommendation.resourceId.videoId;
-          activityUri = "https://www.youtube.com/watch?v=" + videoId;
-          break;
-        default:
-          activityUri = "Unknown activity type";
-          break;
-      }
-
-      results.push({
-        _id: `youtube-${favouriteId}`,
-        name: title,
-        icon: iconUri,
-        uri: activityUri,
-        favouriteType: activityType as FavouriteType,
-        contentType: ContentType.VIDEO,
-        sourceData: snippet,
-        sourceAccountId: this.provider.getProviderId(),
-        sourceApplication: this.getProviderApplicationUrl(),
-        insertedAt: insertedAt,
-      });
-    }
-
-    return results;
   }
 
   protected buildMessage(rawMessage: any, chatGroupId: string): SchemaSocialChatMessage {
@@ -430,10 +287,4 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
 
     return results
   }
-
 }
-
-// type._i = chatTypeSupergroup
-      // title = name
-      // photo.minithumbnail.data = image/icon
-      // photo.minithumbnail.has_animation

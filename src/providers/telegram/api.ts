@@ -112,12 +112,15 @@ export class TelegramApi {
         return chatDetail
     }
 
-    public async getChatHistory(chatId: number, limit: number=100, fromMessageId: number=0, toMessageId?: number): Promise<any[]> {
+    public async getChatHistory(chatId: number, limit: number=100, fromMessageId: number=0, toMessageId?: number): Promise<{
+        messages: any[]
+        breakIdHit: boolean
+    }> {
         const client = await this.getClient()
         const messages: any[] = []
     
+        let breakIdHit = false
         while (messages.length < limit) {
-            console.log('loop')
             const chatHistory = await client.api.getChatHistory({
                 chat_id: chatId,
                 from_message_id: fromMessageId,
@@ -132,6 +135,7 @@ export class TelegramApi {
                 messages.push(message)
                 fromMessageId = message.id
                 if (fromMessageId == toMessageId) {
+                    breakIdHit = true
                     break
                 }
     
@@ -141,7 +145,10 @@ export class TelegramApi {
             }
         }
     
-        return messages
+        return {
+            messages,
+            breakIdHit
+        }
     }
 
     public async downloadFile(file_id: number): Promise<string> {

@@ -83,7 +83,7 @@ export interface SchemaFavourite extends SchemaRecord {
 
 export interface SchemaSocialChatGroup extends SchemaRecord {
     newestId?: string
-    backlogIds?: string
+    syncData?: string
 }
 
 export enum SchemaChatMessageType {

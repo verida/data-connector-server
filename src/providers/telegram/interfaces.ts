@@ -16,5 +16,7 @@ export interface TelegramConfig {
     messageMaxAgeDays: number,
     // How many messages per batch
     messageBatchSize: number
+    // Maximum number of messages to process in a given batch
+    messageLimit: number
     useDbPos: boolean
 }
