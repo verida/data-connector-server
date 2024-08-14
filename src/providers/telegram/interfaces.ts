@@ -18,8 +18,3 @@ export interface TelegramConfig {
     messageBatchSize: number
     useDbPos: boolean
 }
-
-export interface TelegramChatGroupBacklogRange {
-    startId?: string
-    endId?: string
-}
