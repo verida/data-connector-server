@@ -23,19 +23,19 @@ let handlerName = "chat-message";
 let testConfig: GenericTestConfig;
 let providerConfig: Omit<TelegramConfig, "sbtImage" | "label" | "apiId" | "apiHash"> = {
   maxSyncLoops: 1,
-  groupLimit: 1,
+  groupLimit: 2,
   messageMaxAgeDays: 7,
-  messageBatchSize: 10,
+  messageBatchSize: 20,
   messagesPerGroupLimit: 10,
-  supportedChatGroupTypes: [TelegramChatGroupType.BASIC, TelegramChatGroupType.PRIVATE],
+  maxGroupSize: 100,
   useDbPos: false
 };
 
 // Tests:
-// - group limit respected
+// - group limit respected (y)
 // - max age days respected
-// - message batch size respected
-// - messages per group limit respected
+// - message batch size respected (y)
+// - messages per group limit respected (y)
 
 describe(`${providerName} chat tests`, function () {
   this.timeout(100000);

@@ -18,6 +18,7 @@ export interface TelegramConfig {
     messageBatchSize: number
     // Maximum number of messages to process in a group
     messagesPerGroupLimit: number
-    supportedChatGroupTypes: TelegramChatGroupType[]
+    // Maximum number of members in a group for it to be processed
+    maxGroupSize: number
     useDbPos: boolean
 }

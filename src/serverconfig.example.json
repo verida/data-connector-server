@@ -66,12 +66,11 @@
             "apiId": 0,
             "apiHash": "",
             "maxSyncLoops": 1,
-            "groupLimit": 3,
+            "groupLimit": 10,
             "messageMaxAgeDays": 7,
-            "messageBatchSize": 10,
-            "messageLimit": 1000,
-            "messagePerGroupLimit": 10,
-            "supportedChatGroupTypes": ["chatTypeBasicGroup", "chatTypePrivate"],
+            "messageBatchSize": 500,
+            "messagePerGroupLimit": 100,
+            "maxGroupSize": 100,
             "useDbPos": false
         }
     },

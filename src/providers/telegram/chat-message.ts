@@ -58,7 +58,8 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     // Fetch all the latest chat groups
     // Note: Groups with large numbers of members will be excluded
     // so fetch 3x the number of limit groups so we get them all
-    const latestChatGroupIds = await api.getChatGroupIds(this.config.groupLimit * 3)
+    const chatGroupIdLimit = Math.max(this.config.groupLimit * 4, 20)
+    const latestChatGroupIds = await api.getChatGroupIds(chatGroupIdLimit)
 
     // Append the chat group list with any new chat groups so we don't miss any
     for (const groupId of latestChatGroupIds) {
@@ -141,17 +142,15 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     groupMessageCount += messagesResponse.messagesAdded
     totalMessageCount = messagesResponse.messagesAdded
 
-    rangeTracker.completedRange({
-      startId: chatHistory[0].sourceId!,
-      endId: chatHistory[chatHistory.length-1].sourceId
-    }, messagesResponse.breakIdHit)
+    if (chatHistory.length) {
+      rangeTracker.completedRange({
+        startId: chatHistory[0].sourceId!,
+        endId: chatHistory[chatHistory.length-1].sourceId
+      }, messagesResponse.breakIdHit)
+    }
 
     console.log(`- ${chatGroup.name}: Completed new items range`, chatHistory.length)
     console.log(messagesResponse.breakIdHit, totalMessageCount, this.config.messageBatchSize, groupMessageCount)
-    console.log({
-      startId: chatHistory[0].sourceId!,
-      endId: chatHistory[chatHistory.length-1].sourceId
-    })
 
     while (!messagesResponse.breakIdHit && totalMessageCount < this.config.messageBatchSize && groupMessageCount < this.config.messagesPerGroupLimit) {
       console.log(`- ${chatGroup.name}: Have more messages to fetch as limits not yet hit`)
@@ -289,19 +288,16 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     return message
   }
 
-  protected async buildChatGroupResults(api: TelegramApi, chatGroupIds: string[]): Promise<Record<number, SchemaSocialChatGroup>> {
-    const results: Record<number, SchemaSocialChatGroup> = {}
+  protected async buildChatGroupResults(api: TelegramApi, chatGroupIds: string[]): Promise<Record<string, SchemaSocialChatGroup>> {
+    const results: Record<string, SchemaSocialChatGroup> = {}
+    const now = (new Date()).toISOString()
 
     for (const groupId of chatGroupIds) {
       const groupDetails = await api.getChatGroup(parseInt(groupId))
-      const channelMaxMembers = 50
       if (groupDetails.type._ == TelegramChatGroupType.SUPERGROUP) {
         const supergroupDetails = await api.getSupergroup(groupDetails.type.supergroup_id)
-        if (supergroupDetails.member_count > channelMaxMembers) {
-          console.log(`skipping supergroup (${groupDetails.title}) as it has too many members (${supergroupDetails.member_count}`)
+        if (supergroupDetails.member_count > this.config.maxGroupSize) {
           continue
-        } else {
-          console.log(`NOT skipping supergroup (${groupDetails.title}) as it has too many members`)
         }
       }
 
@@ -317,6 +313,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         sourceId: groupId.toString(),
         schema: CONFIG.verida.schemas.CHAT_GROUP,
         name: groupDetails.title,
+        insertedAt: now
       }
 
       if (groupDetails.photo && groupDetails.photo.minithumbnail && groupDetails.photo.minithumbnail.data) {

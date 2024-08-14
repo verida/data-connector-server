@@ -3,6 +3,7 @@ import Base from "../BaseProvider"
 
 import { BaseProviderConfig, ConnectionProfile, PassportPhoto, PassportProfile } from '../../interfaces'
 import { TelegramApi } from './api'
+import TelegramChatMessageHandler from './chat-message'
 
 export interface TelegramProviderConfig extends BaseProviderConfig {
     apiId: number
@@ -37,11 +38,11 @@ export default class TelegramProvider extends Base {
         this.config = config
     }
 
-    // public syncHandlers(): any[] {
-    //     return [
-    //         Post
-    //     ]
-    // }
+    public syncHandlers(): any[] {
+        return [
+            TelegramChatMessageHandler
+        ]
+    }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
         return res.redirect('/provider/telegram')

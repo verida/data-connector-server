@@ -8,6 +8,7 @@ import {
   SyncHandlerPosition,
   SyncHandlerStatus,
   HandlerOption,
+  ConnectionOptionType,
 } from "../../interfaces";
 import { SchemaEmail, SchemaEmailType } from "../../schemas";
 import { GmailHelpers } from "./helpers";
@@ -40,7 +41,7 @@ export default class Gmail extends GoogleHandler {
     return [{
       name: 'backdate',
       label: 'Backdate history',
-      type: 'enum',
+      type: ConnectionOptionType.ENUM,
       enumOptions: ['1 month', '3 months', '6 months', '12 months'],
       defaultValue: '3 months'
     }]

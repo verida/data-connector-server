@@ -207,7 +207,9 @@ $(document).ready(function() {
             "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
             "Social Following": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
             "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
-            "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json"
+            "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
+            "Chat Group": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
+            "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
         };
 
         // Clear previous list
