@@ -8,15 +8,16 @@ export enum TelegramChatGroupType {
 
 export interface TelegramConfig {
     apiId: number
-    apiHas: string
+    apiHash: string
     maxSyncLoops: number
     // Maximum number of groups to process
     groupLimit: number,
     // What is the maximum number of days to backdate
     messageMaxAgeDays: number,
-    // How many messages per batch
-    messageBatchSize: number
     // Maximum number of messages to process in a given batch
-    messageLimit: number
+    messageBatchSize: number
+    // Maximum number of messages to process in a group
+    messagesPerGroupLimit: number
+    supportedChatGroupTypes: TelegramChatGroupType[]
     useDbPos: boolean
 }

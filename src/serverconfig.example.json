@@ -69,6 +69,9 @@
             "groupLimit": 3,
             "messageMaxAgeDays": 7,
             "messageBatchSize": 10,
+            "messageLimit": 1000,
+            "messagePerGroupLimit": 10,
+            "supportedChatGroupTypes": ["chatTypeBasicGroup", "chatTypePrivate"],
             "useDbPos": false
         }
     },

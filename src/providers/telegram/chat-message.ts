@@ -55,8 +55,10 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       chatGroupIds = syncPosition.thisRef.split(',')
     }
 
-    // Fetch all the latest chat groups, up to group limit
-    const latestChatGroupIds = await api.getChatGroupIds(this.config.groupLimit)
+    // Fetch all the latest chat groups
+    // Note: Groups with large numbers of members will be excluded
+    // so fetch 3x the number of limit groups so we get them all
+    const latestChatGroupIds = await api.getChatGroupIds(this.config.groupLimit * 3)
 
     // Append the chat group list with any new chat groups so we don't miss any
     for (const groupId of latestChatGroupIds) {
@@ -93,26 +95,31 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     return chatGroupsBacklog
   }
 
-  protected async fetchMessageRange(currentRange: CompletedItemsRange, chatGroup: SchemaSocialChatGroup, chatHistory: SchemaSocialChatMessage[], api: TelegramApi, messageCount: number): Promise<{
+  protected async fetchMessageRange(currentRange: CompletedItemsRange, chatGroup: SchemaSocialChatGroup, chatHistory: SchemaSocialChatMessage[], api: TelegramApi, totalMessageCount: number, groupMessageCount: number): Promise<{
     messagesAdded: number,
     breakIdHit: boolean
   }> {
     let messagesAdded = 0
     const startId = currentRange.startId ? parseInt(currentRange.startId) : undefined
     const endId = currentRange.endId? parseInt(currentRange.endId) : undefined
-    const { messages: recentGroupMessageList, breakIdHit } = await api.getChatHistory(parseInt(chatGroup.sourceId!), this.config.messageBatchSize, startId, endId)
+
+    // Set a maximum message limit that restricts on total message and the max group message count
+    const messageLimit = Math.min(this.config.messageBatchSize - totalMessageCount, this.config.messagesPerGroupLimit - groupMessageCount)
+    const { messages: recentGroupMessageList, breakIdHit } = await api.getChatHistory(parseInt(chatGroup.sourceId!), messageLimit, startId, endId)
     for (const messageData of recentGroupMessageList) {
       // Respect message limit
       // @todo use messageMaxAgeDays
-      if (messageCount >= this.config.messageLimit) {
+      if (messagesAdded >= messageLimit) {
+        console.log(' -fetchMessageRange hit messageLimit ', messageLimit)
         break
       }
 
       const message = this.buildMessage(messageData, chatGroup._id)
       chatHistory.push(message)
-      messageCount++
       messagesAdded++
     }
+
+    console.log('fetchMessageRange added messages ', messagesAdded)
 
     return {
       messagesAdded,
@@ -126,25 +133,36 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     console.log(`- Processing group: ${chatGroup.name} (${chatGroup.sourceId})`)
     const chatHistory: SchemaSocialChatMessage[] = []
     const rangeTracker = new CompletedRangeTracker(chatGroup.syncData)
+    let groupMessageCount = 0
 
     // Fetch messages from now up until the newest
     let currentRange = rangeTracker.newItemsRange()
-    let messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount)
+    let messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount, groupMessageCount)
+    groupMessageCount += messagesResponse.messagesAdded
+    totalMessageCount = messagesResponse.messagesAdded
 
     rangeTracker.completedRange({
       startId: chatHistory[0].sourceId!,
       endId: chatHistory[chatHistory.length-1].sourceId
     }, messagesResponse.breakIdHit)
 
-    console.log(`- ${chatGroup.name}: Completed new items range`)
+    console.log(`- ${chatGroup.name}: Completed new items range`, chatHistory.length)
+    console.log(messagesResponse.breakIdHit, totalMessageCount, this.config.messageBatchSize, groupMessageCount)
+    console.log({
+      startId: chatHistory[0].sourceId!,
+      endId: chatHistory[chatHistory.length-1].sourceId
+    })
 
-    while (!messagesResponse.breakIdHit && totalMessageCount < this.config.messageLimit) {
+    while (!messagesResponse.breakIdHit && totalMessageCount < this.config.messageBatchSize && groupMessageCount < this.config.messagesPerGroupLimit) {
       console.log(`- ${chatGroup.name}: Have more messages to fetch as limits not yet hit`)
+      console.log(messagesResponse.breakIdHit, totalMessageCount, this.config.messageBatchSize, groupMessageCount)
       // We have more messages to fetch
       // Fetch messages from the last fetched, up until the message limit
       currentRange = rangeTracker.nextBackfillRange()
 
-      const messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount)
+      messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount, groupMessageCount)
+      groupMessageCount += messagesResponse.messagesAdded
+      totalMessageCount = messagesResponse.messagesAdded
 
       rangeTracker.completedRange({
         startId: chatHistory[0].sourceId!,
@@ -198,7 +216,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       let groupLimitHit = false
       for (const chatGroup of chatGroupsBacklog) {
         // Respect group limit
-        if (groupCount++ > this.config.groupLimit) {
+        if (groupCount++ >= this.config.groupLimit) {
           console.log(`- Group limit hit`)
           groupLimitHit = true
           break
@@ -218,8 +236,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       const nextBatchGroupIds = chatGroupIds.splice(0, groupCount)
       syncPosition.thisRef = nextBatchGroupIds.join(',')
 
-      this.config.messageBatchSize
-      if (!groupLimitHit && messageCount != this.config.messageLimit) {
+      if (!groupLimitHit && messageCount != this.config.messageBatchSize) {
         // No limits hit for this batch, so we simply ran out of messages and we can stop the sync
         syncPosition.status = SyncHandlerStatus.STOPPED
       }
@@ -235,30 +252,39 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
   }
 
   protected buildMessage(rawMessage: any, chatGroupId: string): SchemaSocialChatMessage {
-    const timestamp = (new Date(rawMessage.date * 1000)).toString()
+    const timestamp = (new Date(rawMessage.date * 1000)).toISOString()
 
-    console.log(rawMessage)
+    let content = ""
+    if (rawMessage.content['text']) {
+      content = rawMessage.content.text.text
+    } else if (rawMessage.content['caption']) {
+      content = rawMessage.content.caption.text
+    }
+
+    if (content == "") {
+      console.log('empty content')
+      console.log(rawMessage.content)
+    }
+
+    // @todo: better support all message types https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1_message_content.html
+    // switch (rawMessage.content._) {
+    //   case ""
+    // }
 
     const message: SchemaSocialChatMessage = {
       _id: `${this.provider.getProviderName()}-${this.connection.profile.id}-${rawMessage.id}`,
-      name: rawMessage.content.text.text.substring(0,30),
+      name: content.substring(0,30),
       chatGroupId,
       type: rawMessage.is_outgoing ? SchemaChatMessageType.SEND : SchemaChatMessageType.SEND,
       senderId: rawMessage.sender_id.user_id.toString(),
-      messageText: rawMessage.content.text.text,
+      messageText: content,
+      sourceId: rawMessage.id,
       insertedAt: timestamp,
       sentAt: timestamp
     }
 
-    console.log(message)
-
-    // id = id
-      // is_outgoing = isOutgoing
-      // sender_id.user_id = senderId
-      // date = unix timestamp?
-      // message_thread_id = ??
-      // content.text._ = 'formattedText'
-      // content.text.text = content -- how is markdown / formatting handled?
+    // console.log('built message: ')
+    // console.log(message)
 
     return message
   }
@@ -268,6 +294,23 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
 
     for (const groupId of chatGroupIds) {
       const groupDetails = await api.getChatGroup(parseInt(groupId))
+      const channelMaxMembers = 50
+      if (groupDetails.type._ == TelegramChatGroupType.SUPERGROUP) {
+        const supergroupDetails = await api.getSupergroup(groupDetails.type.supergroup_id)
+        if (supergroupDetails.member_count > channelMaxMembers) {
+          console.log(`skipping supergroup (${groupDetails.title}) as it has too many members (${supergroupDetails.member_count}`)
+          continue
+        } else {
+          console.log(`NOT skipping supergroup (${groupDetails.title}) as it has too many members`)
+        }
+      }
+
+
+      // if (this.config.supportedChatGroupTypes.indexOf(groupDetails.type._) === -1) {
+      //   console.log(`skipping group (${groupDetails.title}) as it is wrong type: ${groupDetails.type._}`)
+      //   console.log(groupDetails)
+      //   continue
+      // }
 
       const item: SchemaSocialChatGroup = {
         _id: `${this.provider.getProviderName()}-${this.connection.profile.id}-${groupId.toString()}`,
@@ -276,7 +319,6 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         name: groupDetails.title,
       }
 
-      console.log(groupDetails.photo)
       if (groupDetails.photo && groupDetails.photo.minithumbnail && groupDetails.photo.minithumbnail.data) {
         const smallPhoto = await api.downloadFile(groupDetails.photo.small.id)
         item.icon = `data:image/jpeg;base64,` + smallPhoto

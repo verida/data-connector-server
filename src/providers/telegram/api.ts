@@ -63,7 +63,6 @@ export class TelegramApi {
     }
 
     public async closeClient(deleteSession: boolean = true): Promise<string> {
-        console.log('closing client')
         // Close the Telegram socket connection
         const client = await this.getClient()
         await client.api.close({})
@@ -81,12 +80,11 @@ export class TelegramApi {
         return binFile
     }
 
-    public async getChatGroupIds(limit: number=100): Promise<string[]> {
+    public async getChatGroupIds(limit: number=500): Promise<string[]> {
         const client = await this.getClient()
         const chatGroups: string[] = []
         
         while (chatGroups.length < limit) {
-            console.log('loop')
             const response = await client.api.getChats({
                 limit
               });
@@ -110,6 +108,13 @@ export class TelegramApi {
         });
 
         return chatDetail
+    }
+
+    public async getSupergroup(supergroup_id: number) {
+        const client = await this.getClient()
+        return await client.api.getSupergroup({
+            supergroup_id
+        })
     }
 
     public async getChatHistory(chatId: number, limit: number=100, fromMessageId: number=0, toMessageId?: number): Promise<{
@@ -165,7 +170,6 @@ export class TelegramApi {
     }
 
     public restoreBinFile(binFile: string) {
-        console.log('restoring bin file')
         const path = `${tdPathPrefix}/${this.clientId}/db/td.binlog`
         this.ensureDirectoryExists(path)
 
@@ -180,13 +184,11 @@ export class TelegramApi {
     }
 
     public getBinFile() {
-        console.log('getting bin file')
         const path = `${tdPathPrefix}/${this.clientId}/db/td.binlog`
 
         try {
             const data = fs.readFileSync(path)
             const base64 = data.toString('base64');
-            console.log(base64.length)
             return base64
         } catch (err: any) {
             throw new Error(`Error reading telegram binlog file: ${err.message}`)
