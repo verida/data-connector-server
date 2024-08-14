@@ -1,4 +1,5 @@
-import { gmail_v1, drive_v3 } from "googleapis";
+import { drive_v3, gmail_v1, google } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
 import pdf from "pdf-parse";
 import { DocumentType } from "../../schemas";
 
@@ -173,7 +174,6 @@ export class GmailHelpers {
 }
 
 export class GoogleDriveHelpers {
-  
   static async getFile(
     drive: drive_v3.Drive,
     fileId: string
@@ -200,9 +200,9 @@ export class GoogleDriveHelpers {
       // For non-Google docs (like PDF, image)
       return parseInt(file.size);
     } else if (file.mimeType && file.mimeType.startsWith("application/vnd.google-apps.")) {
-      // For Google Docs, export the file as PDF to estimate size
+      // For Google Docs, export the file as plain text to estimate size
       const exportedFile = await drive.files.export(
-        { fileId: fileId, mimeType: "application/pdf" }, 
+        { fileId: fileId, mimeType: "text/plain" }, 
         { responseType: "arraybuffer" }
       );
       return Buffer.byteLength(exportedFile.data as ArrayBuffer);
@@ -211,26 +211,11 @@ export class GoogleDriveHelpers {
     }
   }
 
-  static async downloadFile(
-    drive: drive_v3.Drive,
-    fileId: string
-  ): Promise<Buffer> {
-    try {
-      const res = await drive.files.get(
-        { fileId: fileId, alt: 'media' },
-        { responseType: 'arraybuffer' }
-      );
-      return Buffer.from(res.data as ArrayBuffer);
-    } catch (error) {
-      console.error("Error downloading file:", error);
-      throw error;
-    }
-  }
-
-  static async extractTextContent(
+  static async extractIndexableText(
     drive: drive_v3.Drive,
     fileId: string,
-    mimeType: string
+    mimeType: string,
+    auth: OAuth2Client
   ): Promise<string> {
     let textContent = '';
 
@@ -244,15 +229,19 @@ export class GoogleDriveHelpers {
         textContent = await this.parsePdf(fileBuffer);
       } else if (mimeType === 'application/vnd.google-apps.document') {
         textContent = await this.extractGoogleDocsText(drive, fileId);
+      } else if (mimeType === 'application/vnd.google-apps.spreadsheet') {
+        textContent = await this.extractGoogleSheetsText(fileId, auth);
+      } else if (mimeType === 'application/vnd.google-apps.presentation') {
+        textContent = await this.extractGoogleSlidesText(fileId, auth);
       } else if (mimeType === 'text/plain') {
         const fileBuffer = await this.downloadFile(drive, fileId);
         textContent = fileBuffer.toString('utf8');
       }
       
+    } else {
+      console.warn('File size exceeds the limit or unsupported file type.');
     }
     
-    // Add more MIME types as needed (e.g., spreadsheets, presentations, etc.)
-
     return textContent;
   }
 
@@ -269,6 +258,61 @@ export class GoogleDriveHelpers {
     } catch (error) {
       console.error("Error extracting text from Google Docs:", error);
       return "";
+    }
+  }
+
+  static async extractGoogleSheetsText(
+    fileId: string,
+    auth: OAuth2Client
+  ): Promise<string> {
+    try {
+      const sheets = google.sheets({ version: 'v4', auth: auth });
+      const res = await sheets.spreadsheets.values.get({
+        spreadsheetId: fileId,
+        range: 'A1:Z1000'  // You can adjust the range as needed
+      });
+      return res.data.values?.map(row => row.join('\t')).join('\n') || '';
+    } catch (error) {
+      console.error("Error extracting text from Google Sheets:", error);
+      return "";
+    }
+  }
+
+  static async extractGoogleSlidesText(
+    fileId: string,
+    auth: OAuth2Client
+  ): Promise<string> {
+    try {
+
+      const slides = google.slides({ version: 'v1', auth: auth });
+      const res = await slides.presentations.get({
+        presentationId: fileId,
+      });
+      const slidesContent = res.data.slides || [];
+      return slidesContent.map(slide =>
+        slide.pageElements?.map(element =>
+          element.shape?.text?.textElements?.map(te => te.textRun?.content).join('')
+        ).join('\n')
+      ).join('\n');
+    } catch (error) {
+      console.error("Error extracting text from Google Slides:", error);
+      return "";
+    }
+  }
+
+  static async downloadFile(
+    drive: drive_v3.Drive,
+    fileId: string
+  ): Promise<Buffer> {
+    try {
+      const res = await drive.files.get(
+        { fileId: fileId, alt: 'media' },
+        { responseType: 'arraybuffer' }
+      );
+      return Buffer.from(res.data as ArrayBuffer);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      throw error;
     }
   }
 
@@ -325,4 +369,3 @@ export class GoogleDriveHelpers {
     }
   }
 }
-

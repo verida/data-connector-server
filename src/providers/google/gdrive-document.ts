@@ -8,6 +8,7 @@ import {
 } from "../../interfaces";
 import { SchemaDocument } from "../../schemas";
 import { google, drive_v3 } from "googleapis";
+import { OAuth2Client } from 'google-auth-library';
 import { GaxiosResponse } from "gaxios";
 import { GoogleDriveHelpers } from "./helpers";
 
@@ -26,8 +27,8 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
     public getProviderApplicationUrl(): string {
         return "https://drive.google.com";
     }
-
-    public getGoogleDrive(): drive_v3.Drive {
+    
+    public getGoogleAuth(): OAuth2Client {
         const TOKEN = {
             access_token: this.connection.accessToken,
             refresh_token: this.connection.refreshToken,
@@ -45,7 +46,14 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
 
         oAuth2Client.setCredentials(TOKEN);
 
-        const drive = google.drive({ version: "v3", auth: oAuth2Client });
+        return oAuth2Client;
+    }
+
+    public getGoogleDrive(): drive_v3.Drive {
+        
+        const auth = this.getGoogleAuth();
+
+        const drive = google.drive({ version: "v3", auth: auth });
         return drive;
     }
 
@@ -54,6 +62,7 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
         syncPosition: SyncHandlerPosition
     ): Promise<SyncResponse> {
         const drive = this.getGoogleDrive();
+        const auth = this.getGoogleAuth();
 
         const query: drive_v3.Params$Resource$Files$List = {
             pageSize: this.config.batchSize,
@@ -82,6 +91,7 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
 
         const results = await this.buildResults(
             drive,
+            auth,
             serverResponse,
             syncPosition.breakId,
             _.has(this.config, "metadata.breakTimestamp")
@@ -135,6 +145,7 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
 
     protected async buildResults(
         drive: drive_v3.Drive,
+        auth: OAuth2Client,
         serverResponse: GaxiosResponse<drive_v3.Schema$FileList>,
         breakId: string,
         breakTimestamp?: string
@@ -169,7 +180,7 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
             const type = GoogleDriveHelpers.getDocumentTypeFromMimeType(mimeType);
             const thumbnail = file.thumbnailLink || "No thumbnail";
             const size = await GoogleDriveHelpers.getFileSize(drive, file.id)
-            const textContent = await GoogleDriveHelpers.extractTextContent(drive, file.id, mimeType);
+            const textContent = await GoogleDriveHelpers.extractIndexableText(drive, file.id, mimeType, auth);
             
             results.push({
                 _id: this.buildItemId(fileId),
