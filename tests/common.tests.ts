@@ -246,7 +246,7 @@ export class CommonTests {
       );
 
       // Close the provider connection
-      console.log('clsoing provider')
+      console.log('closing provider')
       await provider.close()
 
       return {
