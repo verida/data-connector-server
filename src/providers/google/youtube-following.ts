@@ -133,7 +133,6 @@ export default class YouTubeFollowing extends GoogleHandler {
         const results: SchemaFollowing[] = [];
         for (const item of serverResponse.data.items) {
             const itemId = item.id;
-            console.log(item)
 
             if (itemId == breakId) {
                 const logEvent: SyncProviderLogEvent = {
@@ -157,7 +156,7 @@ export default class YouTubeFollowing extends GoogleHandler {
             }
             
             const title = snippet.title || "No title";
-            // const description = snippet.description || "No description";
+            const description = snippet.description || "No description";
             const uri = "https://www.youtube.com/channel/" + snippet.resourceId.channelId;
             const icon = snippet.thumbnails.default.url;
 
@@ -166,6 +165,7 @@ export default class YouTubeFollowing extends GoogleHandler {
                 name: title,
                 icon: icon,
                 uri: uri,
+                summary: description,
                 sourceId: item.id,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),

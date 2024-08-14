@@ -6,7 +6,7 @@ import {
     SyncHandlerPosition,
     SyncHandlerStatus,
 } from "../../interfaces";
-import { ContentType, FavouriteType, SchemaFavourite, SchemaYoutubeActivityType } from "../../schemas";
+import { SchemaFavouriteContentType, SchemaFavouriteType, SchemaFavourite } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 
@@ -165,10 +165,10 @@ export default class YouTubeFavourite extends GoogleHandler {
                 _id: this.buildItemId(favouriteId),
                 name: title,
                 icon: iconUri,
-                description: description,
                 uri: activityUri,
-                favouriteType: FavouriteType.LIKE,
-                contentType: ContentType.VIDEO,
+                summary: description,
+                favouriteType: SchemaFavouriteType.LIKE,
+                contentType: SchemaFavouriteContentType.VIDEO,
                 sourceId: videoId,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),

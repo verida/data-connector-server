@@ -6,9 +6,10 @@ import {
     SyncHandlerPosition,
     SyncHandlerStatus,
 } from "../../interfaces";
-import { PostType, SchemaPost, SchemaYoutubeActivityType } from "../../schemas";
+import { SchemaPostType, SchemaPost } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
+import { YoutubeActivityType } from "./interfaces";
 
 const _ = require("lodash");
 
@@ -132,11 +133,10 @@ export default class YouTubePost extends GoogleHandler {
         const results: SchemaPost[] = [];
 
         const activities = serverResponse.data.items;
-        // filter post(upload, comment, bulletin)
-        const posts = activities.filter(activity => [SchemaYoutubeActivityType.UPLOAD, SchemaYoutubeActivityType.COMMENT].includes(activity.snippet.type as SchemaYoutubeActivityType))
+        // filter post(upload)
+        const posts = activities.filter(activity => activity.snippet.type == YoutubeActivityType.UPLOAD)
         for (const post of posts) {
             const postId = post.id;
-            console.log(post)
 
             if (postId == breakId) {
                 const logEvent: SyncProviderLogEvent = {
@@ -168,12 +168,8 @@ export default class YouTubePost extends GoogleHandler {
             // extract activity URI
             let activityUri = "";
             switch (activityType) {
-                case SchemaYoutubeActivityType.UPLOAD:
+                case YoutubeActivityType.UPLOAD:
                     var videoId = contentDetails.upload.videoId;
-                    activityUri = 'https://www.youtube.com/watch?v=' + videoId;
-                    break;
-                case SchemaYoutubeActivityType.COMMENT:
-                    var videoId = contentDetails.comment.resourceId.videoId;
                     activityUri = 'https://www.youtube.com/watch?v=' + videoId;
                     break;
                 default:
@@ -187,7 +183,7 @@ export default class YouTubePost extends GoogleHandler {
                 name: title,
                 icon: iconUri,
                 uri: activityUri,
-                type: PostType.VIDEO,
+                type: SchemaPostType.VIDEO,
                 content: description,
                 sourceId: post.id,
                 sourceData: snippet,
