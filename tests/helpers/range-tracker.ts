@@ -47,7 +47,31 @@ describe(`Range tracker tests`, function () {
         assert.deepEqual(next, {}, "Next backfill range is empty")
     })
 
-    it.skip(`Can handle an unchanged list, in multiple batches`, () => {
+    it(`Can handle completing all`, () => {
+        const tracker = new CompletedRangeTracker()
+        const batch1 = buildBatch(40)
+        let messages: number[] = []
+
+        // message list is 40-49
+        messages = messages.concat(batch1)
+
+        // Process the first 20 items (there's only 10, so it will effectively process all)
+        const range1 = tracker.newItemsRange()
+        const [ processedBatch1, batch1Remainder ] = processItems(messages, 20, range1.endId, range1.startId)
+        assert.deepEqual([40, 41, 42, 43, 44, 45, 46, 47, 48, 49], processedBatch1, 'First batch returned correct items')
+        assert.equal(0, batch1Remainder.length, 'First batch has correct number of remaining items')
+
+        // Update the tracker on the items that have been processed
+        tracker.completedRange({
+            startId: processedBatch1[0].toString(),
+            endId: processedBatch1[processedBatch1.length-1].toString(),
+        }, false)
+
+        const trackerExport = tracker.export()
+        assert.equal(trackerExport, "40:49", "Tracker has correct exported value after processing all")
+    })
+
+    it(`Can handle an unchanged list, in multiple batches`, () => {
         const batch1 = buildBatch(40)
 
         const tracker = new CompletedRangeTracker()
