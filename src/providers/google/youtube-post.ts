@@ -1,12 +1,12 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-
+import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import {
     SyncResponse,
     SyncHandlerPosition,
     SyncHandlerStatus,
 } from "../../interfaces";
-import { SchemaPost, SchemaYoutubeActivityType } from "../../schemas";
+import { PostType, SchemaPost, SchemaYoutubeActivityType } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 
@@ -23,7 +23,7 @@ export default class YouTubePost extends GoogleHandler {
     }
 
     public getProviderApplicationUrl(): string {
-        return "https://youtube.com";
+        return "https://youtube.com/";
     }
 
     public getYouTube(): youtube_v3.Youtube {
@@ -132,6 +132,11 @@ export default class YouTubePost extends GoogleHandler {
             console.log(post)
 
             if (postId == breakId) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break ID hit (${breakId})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
 
@@ -139,6 +144,11 @@ export default class YouTubePost extends GoogleHandler {
             const insertedAt = snippet.publishedAt || "Unknown";
 
             if (breakTimestamp && insertedAt < breakTimestamp) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break timestamp hit (${breakTimestamp})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
 
@@ -166,12 +176,13 @@ export default class YouTubePost extends GoogleHandler {
 
 
             results.push({
-                _id: `youtube-${postId}`,
+                _id: this.buildItemId(postId),
                 name: title,
                 icon: iconUri,
                 uri: activityUri,
-                type: activityType,
+                type: PostType.VIDEO,
                 content: description,
+                sourceId: post.id,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),

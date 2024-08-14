@@ -18,6 +18,9 @@ const providerName = "google";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
+let handlerName = "gmail";
+let testConfig: GenericTestConfig;
+let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
 
 describe(`${providerName} Tests`, function () {
   this.timeout(100000);
@@ -26,16 +29,15 @@ describe(`${providerName} Tests`, function () {
     network = await CommonUtils.getNetwork();
     connection = await CommonUtils.getConnection(providerName);
     provider = Providers(providerName, network.context, connection);
-  });
-
-  describe(`Fetch ${providerName} data`, () => {
-    const handlerName = "gmail";
-    const testConfig: GenericTestConfig = {
-      idPrefix: "gmail",
+    
+    testConfig = {
+      idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
       timeOrderAttribute: "sentAt",
       batchSizeLimitAttribute: "batchSize",
     };
-    const providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
+  });
+
+  describe(`Fetch ${providerName} data`, () => {
 
     it(`Can pass basic tests: ${handlerName}`, async () => {
       await CommonTests.runGenericTests(

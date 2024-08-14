@@ -33,9 +33,9 @@ Other considerations:
 
 #### Handler Class
 
-
 The data source handler must populate the appopriate schema with relant fields sourced from the API. While the fields may vary, at a minimum the connector must populate the following fields:
 
+- `_id` - A unique ID of this record that includes the provider name, profile identifier and the item identifier. This guarantees uniqueness even if the user connects the same source twice. Use `Handler.buildItemId(itemId: string)` to build the `_id` correctly.
 - `name` - A human readable name that best represents the record
 - `sourceApplication` - URL of the application the data was sourced from. Remove any `www` prefix. Use `https` if available.
 - `sourceId` - Unique ID of the record sourced from the API
@@ -48,6 +48,12 @@ Some common optional fields include:
 - `icon` - A small icon representing the data
 - `summary` - A brief summary of the recrod
 - `uri` - A public link to the unique record in the application (ie: Tweet URL)
+**Token Expiry / Refresh Tokens**
+
+It's essential handlers catch any errors relating to token expiry and handles them appropriately:
+
+1. Expired access token, refresh token available. Obtain a new access token and call `provider.updateConnection()` to set the new access token, which will then be automatically saved
+2. Expired refresh token. Throw a TokenExpiredError()
 
 #### Configuration
 
@@ -61,6 +67,9 @@ Some common optional fields include:
 ### Unit Tests
 
 6. `/test/<provider-name>.ts` file that contains appropriate unit tests that demonstrates succesful fetching of data and succesful handling of API errors
+
+
+Specify a specific providerId if multiple connections `--providerId=<12345>` 
 
 ### Documentation
 

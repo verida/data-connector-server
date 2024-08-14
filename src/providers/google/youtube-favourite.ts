@@ -1,6 +1,6 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-
+import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import {
     SyncResponse,
     SyncHandlerPosition,
@@ -23,7 +23,7 @@ export default class YouTubeFavourite extends GoogleHandler {
     }
 
     public getProviderApplicationUrl(): string {
-        return "https://youtube.com";
+        return "https://youtube.com/";
     }
 
     public getYouTube(): youtube_v3.Youtube {
@@ -37,54 +37,53 @@ export default class YouTubeFavourite extends GoogleHandler {
         syncPosition: SyncHandlerPosition
     ): Promise<SyncResponse> {
         const youtube = this.getYouTube();
-
-        const query: youtube_v3.Params$Resource$Activities$List = {
+    
+        const query: youtube_v3.Params$Resource$Videos$List = {
             part: ["snippet", "contentDetails"],
-            mine: true,
+            myRating: "like",
             maxResults: this.config.batchSize, // Google Docs: default = 5, max = 50
         };
-
+    
         if (syncPosition.thisRef) {
             query.pageToken = syncPosition.thisRef;
         }
-
-        const serverResponse = await youtube.activities.list(query);
-
+    
+        const serverResponse = await youtube.videos.list(query);
+    
         if (
             !_.has(serverResponse, "data.items") ||
             !serverResponse.data.items.length
         ) {
             // No results found, so stop sync
             syncPosition = this.stopSync(syncPosition);
-
+    
             return {
                 position: syncPosition,
                 results: [],
             };
         }
-
+    
         const results = await this.buildResults(
-            youtube,
             serverResponse,
             syncPosition.breakId,
             _.has(this.config, "metadata.breakTimestamp")
                 ? this.config.metadata.breakTimestamp
                 : undefined
         );
-
+    
         syncPosition = this.setNextPosition(syncPosition, serverResponse);
-
+    
         if (results.length != this.config.batchSize) {
             // Not a full page of results, so stop sync
             syncPosition = this.stopSync(syncPosition);
         }
-
+    
         return {
             results,
             position: syncPosition,
         };
     }
-
+    
     protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
         if (syncPosition.status == SyncHandlerStatus.STOPPED) {
             return syncPosition;
@@ -100,7 +99,7 @@ export default class YouTubeFavourite extends GoogleHandler {
 
     protected setNextPosition(
         syncPosition: SyncHandlerPosition,
-        serverResponse: GaxiosResponse<youtube_v3.Schema$ActivityListResponse>
+        serverResponse: GaxiosResponse<youtube_v3.Schema$VideoListResponse>
     ): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && serverResponse.data.items.length) {
             syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.items[0].id}`;
@@ -117,71 +116,61 @@ export default class YouTubeFavourite extends GoogleHandler {
     }
 
     protected async buildResults(
-        youtube: youtube_v3.Youtube,
-        serverResponse: GaxiosResponse<youtube_v3.Schema$ActivityListResponse>,
+        serverResponse: GaxiosResponse<youtube_v3.Schema$VideoListResponse>,
         breakId: string,
         breakTimestamp?: string
     ): Promise<SchemaFavourite[]> {
         const results: SchemaFavourite[] = [];
-
-        const activities = serverResponse.data.items;
-        // filter favourite(like, favourite, recommendation)
-        const favourites = activities.filter(activity => [SchemaYoutubeActivityType.LIKE, SchemaYoutubeActivityType.FAVOURITE, SchemaYoutubeActivityType.RECOMMENDATION].includes(activity.snippet.type as SchemaYoutubeActivityType))
-        for (const favourite of favourites) {
-            const favouriteId = `${this.connection.profile.id}-${favourite.id}`;
-
+    
+        const videos = serverResponse.data.items;
+    
+        for (const video of videos) {
+            const videoId = video.id;
+            const favouriteId = `${this.connection.profile.id}-${videoId}`;
+    
             if (favouriteId == breakId) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break ID hit (${breakId})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
-
-            const snippet = favourite.snippet;
+    
+            const snippet = video.snippet;
             const insertedAt = snippet.publishedAt || "Unknown";
-
+    
             if (breakTimestamp && insertedAt < breakTimestamp) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break timestamp hit (${breakTimestamp})`
+                }
+                this.emit('log', logEvent)
                 break;
             }
-
+    
             const title = snippet.title || "No title";
             const description = snippet.description || "No description";
-            const contentDetails = favourite.contentDetails;
-
-            const activityType = snippet.type;
             const iconUri = snippet.thumbnails.default.url;
-            // extract activity URI
-            let activityUri = "";
-            let videoId = "";
-            switch (activityType) {
-                case SchemaYoutubeActivityType.LIKE:
-                    videoId = contentDetails.like.resourceId.videoId;
-                    activityUri = 'https://www.youtube.com/watch?v=' + videoId;
-                    break;
-                case SchemaYoutubeActivityType.FAVOURITE:
-                    videoId = contentDetails.favorite.resourceId.videoId;
-                    activityUri = 'https://www.youtube.com/watch?v=' + videoId;
-                    break;
-                case SchemaYoutubeActivityType.RECOMMENDATION:
-                    videoId = contentDetails.recommendation.resourceId.videoId;
-                    activityUri = 'https://www.youtube.com/watch?v=' + videoId;
-                    break;
-                default:
-                    activityUri = 'Unknown activity type';
-                    break;
-            }
-
+            const activityUri = `https://www.youtube.com/watch?v=${videoId}`;
+    
             results.push({
-                _id: `youtube-${favouriteId}`,
+                _id: this.buildItemId(favouriteId),
                 name: title,
                 icon: iconUri,
+                description: description,
                 uri: activityUri,
-                favouriteType: activityType as FavouriteType,
+                favouriteType: FavouriteType.LIKE,
                 contentType: ContentType.VIDEO,
+                sourceId: videoId,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 insertedAt: insertedAt,
             });
         }
-
+    
         return results;
     }
+    
 }

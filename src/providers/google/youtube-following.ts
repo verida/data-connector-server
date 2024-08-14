@@ -24,7 +24,7 @@ export default class YouTubeFollowing extends GoogleHandler {
     }
 
     public getProviderApplicationUrl(): string {
-        return "https://youtube.com";
+        return "https://youtube.com/";
     }
 
     public getYouTube(): youtube_v3.Youtube {
@@ -150,15 +150,16 @@ export default class YouTubeFollowing extends GoogleHandler {
             }
             
             const title = snippet.title || "No title";
-            const description = snippet.description || "No description"; 
+            // const description = snippet.description || "No description";
             const uri = "https://www.youtube.com/channel/" + snippet.resourceId.channelId;
             const icon = snippet.thumbnails.default.url;
 
             results.push({
-                _id: `youtube-${itemId}`,
+                _id: this.buildItemId(itemId),
                 name: title,
                 icon: icon,
                 uri: uri,
+                sourceId: item.id,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),

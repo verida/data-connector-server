@@ -209,4 +209,7 @@ export default class BaseSyncHandler extends EventEmitter {
         return syncPosition
     }
 
+    protected buildItemId(itemId: string) {
+        return `${this.provider.getProviderName()}-${this.connection.profile.id}-${itemId}`
+    }
 }
