@@ -153,7 +153,7 @@ export default class BaseSyncHandler extends EventEmitter {
                 })
                 if (!success) {
                     // @ts-ignore
-                    const message = `Unable to save item: ${Utils.datastoreErorrsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
+                    const message = `Unable to save item: ${Utils.datastoreErrorsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
 
                     this.emit('log', {
                         level: SyncProviderLogLevel.ERROR,
