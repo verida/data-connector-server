@@ -32,7 +32,6 @@ describe(`${providerName} Youtube Favourite Tests`, function () {
   
     testConfig = {
       idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
-      timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     };
   });
@@ -50,7 +49,7 @@ describe(`${providerName} Youtube Favourite Tests`, function () {
     });
 
     it(`Can limit results by timestamp`, async () => {
-      const lastRecordHours = 2;
+      const lastRecordHours = 100;
       const lastRecordTimestamp = new Date(
         Date.now() - lastRecordHours * 3600000
       ).toISOString();

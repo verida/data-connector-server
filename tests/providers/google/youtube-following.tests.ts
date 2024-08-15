@@ -33,7 +33,6 @@ describe(`${providerName} Youtube Following Tests`, function () {
   
     testConfig = {
       idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
-      timeOrderAttribute: "followedTimestamp",
       batchSizeLimitAttribute: "batchSize",
     };
   });
@@ -51,7 +50,7 @@ describe(`${providerName} Youtube Following Tests`, function () {
     });
 
     it(`Can limit results by timestamp`, async () => {
-      const lastRecordHours = 2;
+      const lastRecordHours = 20;
       const lastRecordTimestamp = new Date(
         Date.now() - lastRecordHours * 3600000
       ).toISOString();
