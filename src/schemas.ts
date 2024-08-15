@@ -15,6 +15,7 @@ export interface SchemaRecord {
 }
 
 export interface SchemaFollowing extends SchemaRecord {
+    description?: string
     followedTimestamp?: string
     insertedAt: string
 }
@@ -82,4 +83,5 @@ export enum SchemaFavouriteContentType {
 export interface SchemaFavourite extends SchemaRecord {
     favouriteType?: SchemaFavouriteType
     contentType?: SchemaFavouriteContentType
+    description?: string
 }
