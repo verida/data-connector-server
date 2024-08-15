@@ -38,20 +38,30 @@ export class CompletedRangeTracker {
             // breakId of the current range.
             // In this case we need to build a merged range that incorporates the
             // recently completed range with the previously completed range
-            const previousRange = this.completedRanges.splice(0, 1)
+            const previousRangeSplit = this.completedRanges.splice(0, 1)
+            const previousRange = previousRangeSplit[0]
             const newRange = {
-                startId: previousRange[0].startId,
+                startId: previousRange.startId,
                 endId: item.endId
             }
 
-            if (this.completedRanges.length && newRange.endId == this.completedRanges[0].startId) {
+            if (previousRange && newRange.endId == previousRange.startId) {
+                // Merge new items
                 // Merge ranges
                 this.completedRanges[0] = {
-                    startId: newRange.startId,
-                    endId: this.completedRanges[0].endId
+                    startId: item.startId,
+                    endId: previousRange.endId
                 }
             } else {
                 this.completedRanges.unshift(newRange)
+            }
+
+            if (this.completedRanges.length >=2) {
+                // Check if we need to merge backfill items
+                if (this.completedRanges[0].endId == this.completedRanges[1].startId) {
+                    this.completedRanges[1].startId = this.completedRanges[0].startId
+                    this.completedRanges.splice(0,1)
+                }
             }
         } else {
             if (this.completedRanges.length && item.startId == this.completedRanges[0].endId) {
