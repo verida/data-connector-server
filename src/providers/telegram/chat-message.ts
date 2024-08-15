@@ -274,16 +274,13 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       _id: `${this.provider.getProviderName()}-${this.connection.profile.id}-${rawMessage.id}`,
       name: content.substring(0,30),
       chatGroupId,
-      type: rawMessage.is_outgoing ? SchemaChatMessageType.SEND : SchemaChatMessageType.SEND,
+      type: rawMessage.is_outgoing ? SchemaChatMessageType.SEND : SchemaChatMessageType.RECEIVE,
       senderId: rawMessage.sender_id.user_id.toString(),
       messageText: content,
-      sourceId: rawMessage.id,
+      sourceId: rawMessage.id.toString(),
       insertedAt: timestamp,
       sentAt: timestamp
     }
-
-    // console.log('built message: ')
-    // console.log(message)
 
     return message
   }
