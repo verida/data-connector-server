@@ -19,7 +19,7 @@ const assert = require("assert");
 
 export interface GenericTestConfig {
   // Attribute in the results that is used for time ordering (ie: insertedAt)
-  timeOrderAttribute: string;
+  timeOrderAttribute?: string; // Made optional
   // Attribute used to limit the batch size (ie: batchLimit)
   batchSizeLimitAttribute: string;
   // Prefix used for record ID's (override default which is providerName)
@@ -131,72 +131,48 @@ export class CommonTests {
     const response = await handler._sync(api, syncPosition);
 
     const results = <SchemaRecord[]>response.results;
-
     assert.ok(results && results.length, "Have results returned");
-    assert.equal(3, results.length,
-      "Have correct number of results returned on page 1"
-    );
+    assert.equal(3, results.length, "Have correct number of results returned on page 1");
 
-    assert.ok(
-      results[0][testConfig.timeOrderAttribute] >
-        results[1][testConfig.timeOrderAttribute],
-      "Results are most recent first"
-    );
+    if (testConfig.timeOrderAttribute) {
+      assert.ok(
+        results[0][testConfig.timeOrderAttribute] > results[1][testConfig.timeOrderAttribute],
+        "Results are most recent first"
+      );
+    }
 
-    assert.equal(results[0].sourceApplication, handler.getProviderApplicationUrl(), "Items have correct source application")
-    assert.equal(results[0].sourceAccountId, provider.getProviderId(), "Items have correct source account / provider id")
-    assert.ok(results[0].sourceId, "Items have sourceId set")
-    assert.ok(results[0].sourceData, "Items have sourceData set")
+    assert.equal(results[0].sourceApplication, handler.getProviderApplicationUrl(), "Items have correct source application");
+    assert.equal(results[0].sourceAccountId, provider.getProviderId(), "Items have correct source account / provider id");
+    assert.ok(results[0].sourceId, "Items have sourceId set");
+    assert.ok(results[0].sourceData, "Items have sourceData set");
 
-    assert.equal(
-      SyncHandlerStatus.ACTIVE,
-      response.position.status,
-      "Sync is set to connected"
-    );
+    assert.equal(SyncHandlerStatus.ACTIVE, response.position.status, "Sync is set to connected");
     assert.ok(response.position.thisRef, "Have a next page reference");
     assert.equal(response.position.breakId, undefined, "Break ID is undefined");
-    assert.equal(
-      `${idPrefix}-${response.position.futureBreakId}`,
-      results[0]._id,
-      "Future break ID matches the first result ID"
-    );
+    assert.equal(`${idPrefix}-${response.position.futureBreakId}`, results[0]._id, "Future break ID matches the first result ID");
 
     // Snapshot: Page 2
     const response2 = await handler._sync(api, syncPosition);
     const results2 = <SchemaRecord[]>response2.results;
 
-    assert.ok(
-      results2 && results2.length,
-      "Have second page of results returned"
-    );
-    assert.ok(
-      results2 && results2.length == 3,
-      "Have correct number of results returned in second page"
-    );
-    assert.ok(
-      results2[0][testConfig.timeOrderAttribute] >
-        results2[1][testConfig.timeOrderAttribute],
-      "Results are most recent first"
-    );
-    assert.ok(
-      results2[0][testConfig.timeOrderAttribute] <
-        results[2][testConfig.timeOrderAttribute],
-      "First item on second page of results have earlier timestamp than last item on first page"
-    );
+    assert.ok(results2 && results2.length, "Have second page of results returned");
+    assert.ok(results2 && results2.length == 3, "Have correct number of results returned in second page");
 
-    assert.equal(
-      response.position.status,
-      SyncHandlerStatus.ACTIVE,
-      "Sync is still active"
-    );
+    if (testConfig.timeOrderAttribute) {
+      assert.ok(
+        results2[0][testConfig.timeOrderAttribute] > results2[1][testConfig.timeOrderAttribute],
+        "Results are most recent first"
+      );
+      assert.ok(
+        results2[0][testConfig.timeOrderAttribute] < results[2][testConfig.timeOrderAttribute],
+        "First item on second page of results have earlier timestamp than last item on first page"
+      );
+    }
+
+    assert.equal(response.position.status, SyncHandlerStatus.ACTIVE, "Sync is still active");
     assert.ok(response.position.thisRef, "Have a next page reference");
-    // assert.equal(PostSyncRefTypes.Url, response.position.thisRefType, 'This position reference type is URL fetch')
     assert.equal(response.position.breakId, undefined, "Break ID is undefined");
-    assert.equal(
-      results[0]._id,
-      `${idPrefix}-${response.position.futureBreakId}`,
-      "Future break ID matches the first result ID"
-    );
+    assert.equal(results[0]._id, `${idPrefix}-${response.position.futureBreakId}`, "Future break ID matches the first result ID");
 
     // Update: Page 1 (ensure 1 result only)
     // Fetch the update set of results to confirm `position.pos` is correct
@@ -212,26 +188,10 @@ export class CommonTests {
     assert.equal(results3.length, 1, "1 result returned");
     assert.equal(results3[0]._id, results[0]._id, "Correct ID returned");
 
-    assert.equal(
-      response.position.status,
-      SyncHandlerStatus.STOPPED,
-      "Sync is stopped"
-    );
-    assert.equal(
-      response.position.thisRef,
-      undefined,
-      "No next page reference"
-    );
+    assert.equal(response.position.status, SyncHandlerStatus.STOPPED, "Sync is stopped");
+    assert.equal(response.position.thisRef, undefined, "No next page reference");
     // assert.equal(PostSyncRefTypes.Api, response.position.thisRefType, 'This position reference type is API fetch')
-    assert.equal(
-      response.position.breakId,
-      results3[0]._id.replace(`${idPrefix}-`, ""),
-      "Break ID is the first result"
-    );
-    assert.equal(
-      response.position.futureBreakId,
-      undefined,
-      "Future break ID is undefined"
-    );
+    assert.equal(response.position.breakId, results3[0]._id.replace(`${idPrefix}-`, ""), "Break ID is the first result");
+    assert.equal(response.position.futureBreakId, undefined, "Future break ID is undefined");
   }
 }
