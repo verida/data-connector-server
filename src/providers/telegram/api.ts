@@ -125,7 +125,7 @@ export class TelegramApi {
         const messages: any[] = []
     
         let breakIdHit = false
-        while (messages.length < limit) {
+        while (messages.length < limit && !breakIdHit) {
             const chatHistory = await client.api.getChatHistory({
                 chat_id: chatId,
                 from_message_id: fromMessageId,
@@ -137,12 +137,13 @@ export class TelegramApi {
             }
     
             for (const message of chatHistory.messages) {
-                messages.push(message)
                 fromMessageId = message.id
                 if (fromMessageId == toMessageId) {
                     breakIdHit = true
                     break
                 }
+
+                messages.push(message)
     
                 if (messages.length >= limit) {
                     break

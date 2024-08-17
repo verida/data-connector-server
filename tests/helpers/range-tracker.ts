@@ -12,6 +12,10 @@ function processItems(items: number[], limit: number, breakId?: string, startId?
     const resultItems: number[] = []
     let started = false
     for (const item of items) {
+        if (resultItems.length >= limit) {
+            break
+        }
+
         if (breakId && item == parseInt(breakId)) {
             break
         }
@@ -23,10 +27,6 @@ function processItems(items: number[], limit: number, breakId?: string, startId?
 
         if (startId && !started) {
             continue
-        }
-
-        if (resultItems.length >= limit) {
-            break
         }
 
         resultItems.push(item)
@@ -263,6 +263,44 @@ describe(`Range tracker tests`, function () {
 
         trackerExport = tracker.export()
         assert.equal(trackerExport, "39:45", "Tracker has correct exported value after processing two batches")
+
+        const range3 = tracker.nextBackfillRange()
+        assert.deepEqual({
+            startId: "45",
+            endId: undefined
+        }, range3, "Next backfill range is the expected value")
+
+        // Add three messages to the start
+        messages = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45]
+
+        // Process 2/3 new items
+        const range4 = tracker.newItemsRange()
+        const [ processedBatch4, batch4Remainder ] = processItems(messages, 2, range4.endId, range4.startId)
+        assert.deepEqual([36, 37], processedBatch4, 'Fourth batch returned correct items')
+
+        tracker.completedRange({
+            startId: processedBatch4[0].toString(),    // Use the start ID so merging works
+            endId: processedBatch4[processedBatch4.length-1].toString(),
+        }, false)
+
+        trackerExport = tracker.export()
+        assert.equal(trackerExport, "36:37,39:45", "Tracker has correct exported value after processing four batches")
+
+        // Reset messages
+        messages = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45]
+
+        // Process 1 remaining next backfill range
+        const range5 = tracker.nextBackfillRange()
+        const [ processedBatch5, batch5Remainder ] = processItems(messages, 2, range5.endId, range5.startId)
+        assert.deepEqual([38], processedBatch5, 'Fifth batch returned correct items')
+
+        tracker.completedRange({
+            startId: range5.startId,    // Use the start ID so merging works
+            endId: range5.endId,
+        }, true)
+
+        trackerExport = tracker.export()
+        assert.equal(trackerExport, "36:45", "Tracker has correct exported value after processing five batches")
     })
 
 })
