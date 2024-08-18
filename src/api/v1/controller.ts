@@ -44,6 +44,12 @@ export default class Controller {
         const key = query.key ? query.key.toString() : undefined
         const did = await Utils.getDidFromKey(key)
 
+        if (!key) {
+            return res.status(400).send({
+                error: `Missing key in query parameters`
+            });
+        }
+
         // Session data isn't retained if using localhost, so use 127.0.0.1
         // @ts-ignore Session is injected as middleware
         req.session.redirect = redirect

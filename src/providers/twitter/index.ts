@@ -113,7 +113,10 @@ export default class TwitterProvider extends Base {
                         refreshToken: newRefreshToken
                     } = await client.refreshOAuth2Token(refreshToken);
 
-                    this.setAccountAuth(newAccessToken, newRefreshToken)
+                    this.updateConnection({
+                        accessToken: newAccessToken,
+                        refreshToken: newRefreshToken
+                    })
                     client = refreshedClient
 
                     me = await client.v2.me({
@@ -137,7 +140,9 @@ export default class TwitterProvider extends Base {
             username: me.data.username,
             description: me.data.description,
             link: me.data.url,
-            avatarUrl: me.data.profile_image_url,
+            avatar: {
+                uri: me.data.profile_image_url
+            },
             createdAt
         }
 

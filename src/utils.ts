@@ -165,11 +165,11 @@ export class Utils {
         return `${providerName}:${providerId}:${handlerName}:${type}`
     }
 
-    public static datastoreErorrsToString(errors: any): string {
+    public static datastoreErrorsToString(errors: any): string {
         let result = ''
         for (let e in errors) {
             const error = errors[e]
-            result += `${error.keyword}: ${error.message}`
+            result += `[${error.keyword} error] ${error.instancePath} ${error.message}`
         }
 
         return result

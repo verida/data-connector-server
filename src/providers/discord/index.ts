@@ -120,7 +120,10 @@ export default class DiscordProvider extends Base {
                     })
 
                     const { access_token, refresh_token } = newTokenResponse.data
-                    this.setAccountAuth(access_token, refresh_token)
+                    this.updateConnection({
+                        accessToken: access_token,
+                        refreshToken: refresh_token
+                    })
 
                     client = new REST({ version: '10', authPrefix: 'Bearer' }).setToken(access_token);
                     me = await client.get('/users/@me')
@@ -146,7 +149,9 @@ export default class DiscordProvider extends Base {
             name: me.display_name ? me.display_name : me.username,
             username: me.username,
             // use user custom avatar if set, otherwise use default discord avatar
-            avatarUrl: me.avatar ? client.cdn.avatar(me.id, me.avatar) : client.cdn.defaultAvatar(me.discriminator % 5),
+            avatar: {
+                uri: me.avatar ? client.cdn.avatar(me.id, me.avatar) : client.cdn.defaultAvatar(me.discriminator % 5)
+            },
             createdAt
         }
 
