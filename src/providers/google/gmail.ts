@@ -1,7 +1,5 @@
-import BaseSyncHandler from "../BaseSyncHandler";
+import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-// import Imap from 'node-imap'
-// import { simpleParser } from 'mailparser'
 import { google, gmail_v1 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 
@@ -10,6 +8,7 @@ import {
   SyncHandlerPosition,
   SyncHandlerStatus,
   HandlerOption,
+  ConnectionOptionType,
 } from "../../interfaces";
 import { SchemaEmail, SchemaEmailType } from "../../schemas";
 import { GmailHelpers } from "./helpers";
@@ -17,7 +16,7 @@ import { GmailSyncSchemaPosition } from "./interfaces";
 
 const _ = require("lodash");
 
-export default class Gmail extends BaseSyncHandler {
+export default class Gmail extends GoogleHandler {
 
   public getName(): string {
     return 'gmail'
@@ -32,22 +31,7 @@ export default class Gmail extends BaseSyncHandler {
 }
 
   public getGmail(): gmail_v1.Gmail {
-    const TOKEN = {
-      access_token: this.connection.accessToken,
-      refresh_token: this.connection.refreshToken,
-      scope: "https://www.googleapis.com/auth/gmail.readonly",
-      token_type: "Bearer",
-    };
-
-    const redirectUrl = "";
-
-    const oAuth2Client = new google.auth.OAuth2(
-      this.config.clientId,
-      this.config.clientSecret,
-      redirectUrl
-    );
-
-    oAuth2Client.setCredentials(TOKEN);
+    const oAuth2Client = this.getGoogleAuth()
 
     const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
     return gmail;
@@ -57,10 +41,10 @@ export default class Gmail extends BaseSyncHandler {
     return [{
       name: 'backdate',
       label: 'Backdate history',
-      type: 'enum',
+      type: ConnectionOptionType.ENUM,
       enumOptions: ['1 month', '3 months', '6 months', '12 months'],
       defaultValue: '3 months'
-  }]
+    }]
   }
 
   public async _sync(
@@ -134,7 +118,7 @@ export default class Gmail extends BaseSyncHandler {
     serverResponse: GaxiosResponse<gmail_v1.Schema$ListMessagesResponse>
   ): SyncHandlerPosition {
     if (!syncPosition.futureBreakId && serverResponse.data.messages.length) {
-      syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.messages[0].id}`;
+      syncPosition.futureBreakId = serverResponse.data.messages[0].id;
     }
 
     if (_.has(serverResponse, "data.nextPageToken")) {
@@ -156,7 +140,7 @@ export default class Gmail extends BaseSyncHandler {
   ): Promise<SchemaEmail[]> {
     const results: SchemaEmail[] = [];
     for (const message of serverResponse.data.messages) {
-      const messageId = `${this.connection.profile.id}-${message.id}`;
+      const messageId = message.id;
 
       if (messageId == breakId) {
         break;

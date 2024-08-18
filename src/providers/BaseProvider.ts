@@ -1,26 +1,26 @@
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import serverconfig from '../config'
-import { AccountAuth, BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderErrorEvent, SyncProviderLogEntry, SyncProviderLogLevel, SyncHandlerPosition, SyncSchemaPositionType, SyncStatus } from '../interfaces'
+import { BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderLogEntry, SyncProviderLogLevel, SyncHandlerPosition, SyncSchemaPositionType, SyncStatus, SyncProviderLogEvent } from '../interfaces'
 import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 import { SchemaRecord } from '../schemas'
+import EventEmitter from 'events'
 
 const SCHEMA_SYNC_POSITIONS = serverconfig.verida.schemas.SYNC_POSITION
 const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
 const SCHEMA_CONNECTION = serverconfig.verida.schemas.DATA_CONNECTIONS
-const SYNC_REQUEST = serverconfig.verida.schemas.SYNC_REQUEST
 
-export default class BaseProvider {
+export default class BaseProvider extends EventEmitter {
 
     protected config: BaseProviderConfig
     protected vault: IContext
     protected connection?: Connection
     protected connectionDs?: IDatastore
     protected syncPositionsDs?: IDatastore
-    protected newAuth?: AccountAuth
     
     public constructor(config: BaseProviderConfig, vault?: IContext, connection?: Connection) {
+        super()
         this.config = config
         this.connection = connection
         this.vault = vault
@@ -123,6 +123,8 @@ export default class BaseProvider {
             if (!result) {
                 console.error(`Error logging message: ${syncLog.errors}`)
             }
+
+            this.emit('logMessage', logEntry)
         } catch (err: any) {
             console.error(`Error logging message: ${err.message}`)
         }
@@ -240,8 +242,8 @@ export default class BaseProvider {
             const backfillPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.BACKFILL, syncPositionsDs)
             backfillPosition.status = SyncHandlerStatus.ACTIVE
 
-            handler.on('error', async (syncError: SyncProviderErrorEvent) => {
-                await providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncError.message, handler.getName(), schemaUri)
+            handler.on('log', async (syncLog: SyncProviderLogEvent) => {
+                await providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncLog.message, handler.getName(), schemaUri)
             })
 
             await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(),schemaUri)
@@ -265,15 +267,11 @@ export default class BaseProvider {
             }
         }
 
-        // Add account auth info if it has changed
-        const newAuth = this.getAccountAuth()
-        if (newAuth) {
-            this.connection.accessToken = newAuth.accessToken
-            this.connection.refreshToken = newAuth.refreshToken
-        }
-
         // Add latest profile info
         this.connection.profile = await this.getProfile()
+
+        // Close any connections
+        await this.close()
 
         this.connection.syncStatus = SyncStatus.CONNECTED
         this.connection.syncEnd = Utils.nowTimestamp()
@@ -349,16 +347,11 @@ export default class BaseProvider {
         return syncHandlers
     }
 
-    // Set new authentication credentials for this provider instance, if they changed
-    protected setAccountAuth(accessToken: string, refreshToken: string) {
-        this.newAuth = {
-            accessToken,
-            refreshToken
+    public updateConnection(connectionParams: object) {
+        this.connection = {
+            ...this.connection,
+            ...connectionParams
         }
-    }
-
-    public getAccountAuth(): AccountAuth {
-        return this.newAuth
     }
 
     /**
@@ -372,6 +365,11 @@ export default class BaseProvider {
     public async getApi(accessToken?: string, refreshToken?: string): Promise<any> {
         throw new Error('Not implemented')
     }
+
+    /**
+     * Close any connections
+     */
+    public async close(): Promise<void> {}
 
     /**
      * Override this with a list of sync handlers supported by this provider.

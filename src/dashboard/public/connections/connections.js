@@ -66,7 +66,7 @@ $(document).ready(function() {
                 const row = $(`
                     <tr>
                         <td><img src="${providerDetails.icon}" alt="${providerDetails.label}" style="width: 30px; height: 30px;"> ${providerDetails.label}</td>
-                        <td>${connection.profile.name} ${connection.profile.email ? '('+ connection.profile.email +')' : ''}</td>
+                        <td>${connection.profile.name} ${connection.profile.email ? '('+ connection.profile.email +')' : ''} (${connection.providerId})</td>
                         <td>${connection.syncStatus}<br>${formattedSyncTimes}</td>
                         <td><ul>${handlers.map(handler => `<li>${handler.handlerName} (${handler.status})</li>`).join('')}</ul></td>
                         <td>
