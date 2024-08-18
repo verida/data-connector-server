@@ -66,12 +66,12 @@
             "apiId": 0,
             "apiHash": "",
             "maxSyncLoops": 1,
-            "groupLimit": 10,
+            "groupLimit": 20,
             "messageMaxAgeDays": 7,
             "messageBatchSize": 500,
-            "messagePerGroupLimit": 100,
-            "maxGroupSize": 100,
-            "useDbPos": false
+            "messagesPerGroupLimit": 100,
+            "maxGroupSize": 50,
+            "useDbPos": true
         }
     },
     "providerDefaults": {

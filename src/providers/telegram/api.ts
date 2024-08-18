@@ -117,6 +117,14 @@ export class TelegramApi {
         })
     }
 
+    public async getChatMessage(chatGroupId: string, messageId: string): Promise<any> {
+        const client = await this.getClient()
+        return await client.api.getMessage({
+            chat_id: parseInt(chatGroupId),
+            message_id: parseInt(messageId)
+        })
+    }
+
     public async getChatHistory(chatId: number, limit: number=100, fromMessageId: number=0, toMessageId?: number): Promise<{
         messages: any[]
         breakIdHit: boolean

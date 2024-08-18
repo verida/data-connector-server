@@ -55,11 +55,8 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       chatGroupIds = syncPosition.thisRef.split(',')
     }
 
-    // Fetch all the latest chat groups
-    // Note: Groups with large numbers of members will be excluded
-    // so fetch 3x the number of limit groups so we get them all
-    const chatGroupIdLimit = Math.max(this.config.groupLimit * 4, 20)
-    const latestChatGroupIds = await api.getChatGroupIds(chatGroupIdLimit)
+    // Fetch all the latest chat groups, fetches 500 by default
+    const latestChatGroupIds = await api.getChatGroupIds()
 
     // Append the chat group list with any new chat groups so we don't miss any
     for (const groupId of latestChatGroupIds) {
@@ -69,15 +66,19 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     }
 
     // Build chat group data for each group ID
-    const chatGroupResults = await this.buildChatGroupResults(api, chatGroupIds)
+    const chatGroupResults = await this.buildChatGroupResults(api, chatGroupIds, this.config.groupLimit)
 
     // Build a list of chat groups to process that includes the newest / oldest
     // IDs from the database, if they exist
-    let chatGroupsBacklog: SchemaSocialChatGroup[] = []
+    // let chatGroupsBacklog: SchemaSocialChatGroup[] = []
     if (this.config.useDbPos) {
       const chatGroupDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_GROUP)
-      const chatGroupDbItems = <SchemaSocialChatGroup[]> await chatGroupDs.getMany({}, {
-        limit: this.config.groupLimit
+      const chatGroupDbItems = <SchemaSocialChatGroup[]> await chatGroupDs.getMany({
+        "sourceId": {
+          "$in": chatGroupIds
+        }
+      }, {
+        limit: chatGroupIds.length
       })
       for (const chatItem of chatGroupDbItems) {
         if (chatGroupResults[chatItem._id]) {
@@ -86,14 +87,80 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         } else {
           chatGroupResults[chatItem._id] = chatItem
         }
-
-        chatGroupsBacklog.push(chatGroupResults[chatItem._id])
       }
-    } else {
-      chatGroupsBacklog = Object.values(chatGroupResults)
     }
 
-    return chatGroupsBacklog
+    return Object.values(chatGroupResults)
+  }
+
+  /**
+   * The anchor items in a range (startId, endId) may have been deleted, so we
+   * need to detet that and lookup in the database new anchor items
+   * 
+   * @param api 
+   * @param range 
+   */
+  protected async validateRange(api: TelegramApi, range: CompletedItemsRange, chatGroupId: string, chatSourceId: string): Promise<CompletedItemsRange> {
+    const validatedRange: CompletedItemsRange = {
+      startId: range.startId,
+      endId: range. endId
+    }
+
+    const handler = this
+    async function getNextMessageId(chatGroupId: string, messageId: string, direction: string): Promise<string | undefined> {
+      // Find the previous message
+      const chatMessageDs = await handler.provider.getDatastore(CONFIG.verida.schemas.CHAT_MESSAGE)
+
+      const query: any = {
+        "sourceApplication": handler.getProviderApplicationUrl(),
+        "chatGroupId": chatGroupId,
+        "_id": {}
+      }
+      query._id[`$${direction == "desc" ? "lt" : "gt"}`] = handler.buildItemId(messageId)
+
+      const messageResult = <SchemaSocialChatMessage[]> await chatMessageDs.getMany(query, {
+        limit: 1,
+        sort: [
+          { _id: direction }
+        ]
+      })
+
+      if (!messageResult.length) {
+        return
+      }
+
+      return messageResult[0].sourceId
+    }
+
+    let messageDeleted = false
+
+    if (range.startId) {
+      try {
+        await api.getChatMessage(chatSourceId, range.startId)
+      } catch (err: any) {
+        messageDeleted = true
+        // Message not found, so fetch next from database
+        validatedRange.startId = await getNextMessageId(chatGroupId, range.startId, "asc")
+      }
+    }
+
+    if (range.endId) {
+      try {
+        await api.getChatMessage(chatSourceId, range.endId)
+      } catch (err: any) {
+        messageDeleted = true
+        // Message not found, so fetch next from database
+        validatedRange.endId = await getNextMessageId(chatGroupId, range.endId, "desc")
+      }
+    }
+
+    if (messageDeleted) {
+      // If a messsage was deleted, we need to verify the new range
+      // as there may have been more than one message deleted
+      return this.validateRange(api, validatedRange, chatGroupId, chatSourceId)
+    }
+
+    return validatedRange
   }
 
   protected async fetchMessageRange(currentRange: CompletedItemsRange, chatGroup: SchemaSocialChatGroup, chatHistory: SchemaSocialChatMessage[], api: TelegramApi, totalMessageCount: number, groupMessageCount: number): Promise<{
@@ -111,16 +178,20 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       // Respect message limit
       // @todo use messageMaxAgeDays
       if (messagesAdded >= messageLimit) {
-        console.log(' -fetchMessageRange hit messageLimit ', messageLimit)
+        // console.log(' -fetchMessageRange hit messageLimit ', messageLimit)
         break
       }
 
+      // console.log(`chatGroupId for message: ${chatGroup._id} / ${chatGroup.sourceId}`)
       const message = this.buildMessage(messageData, chatGroup._id)
-      chatHistory.push(message)
-      messagesAdded++
+
+      if (message) {
+        chatHistory.push(message)
+        messagesAdded++
+      }
     }
 
-    console.log('fetchMessageRange added messages ', messagesAdded)
+    // console.log('fetchMessageRange added messages ', messagesAdded)
 
     return {
       messagesAdded,
@@ -129,52 +200,58 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
   }
 
   protected async processChatGroup(chatGroup: SchemaSocialChatGroup, api: TelegramApi, totalMessageCount: number): Promise<{
+    chatGroup: SchemaSocialChatGroup,
     chatHistory: SchemaSocialChatMessage[]
   }> {
-    console.log(`- Processing group: ${chatGroup.name} (${chatGroup.sourceId})`)
+    console.log(`- Processing group: ${chatGroup.name} (${chatGroup.sourceId}) - ${chatGroup.syncData}`)
     const chatHistory: SchemaSocialChatMessage[] = []
     const rangeTracker = new CompletedRangeTracker(chatGroup.syncData)
     let groupMessageCount = 0
 
-    // Fetch messages from now up until the newest
-    let currentRange = rangeTracker.newItemsRange()
-    let messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount, groupMessageCount)
-    groupMessageCount += messagesResponse.messagesAdded
-    totalMessageCount = messagesResponse.messagesAdded
-
-    if (chatHistory.length) {
-      rangeTracker.completedRange({
-        startId: chatHistory[0].sourceId!,
-        endId: chatHistory[chatHistory.length-1].sourceId
-      }, messagesResponse.breakIdHit)
-    }
-
-    console.log(`- ${chatGroup.name}: Completed new items range`, chatHistory.length)
-    console.log(messagesResponse.breakIdHit, totalMessageCount, this.config.messageBatchSize, groupMessageCount)
-
-    while (!messagesResponse.breakIdHit && totalMessageCount < this.config.messageBatchSize && groupMessageCount < this.config.messagesPerGroupLimit) {
-      console.log(`- ${chatGroup.name}: Have more messages to fetch as limits not yet hit`)
-      console.log(messagesResponse.breakIdHit, totalMessageCount, this.config.messageBatchSize, groupMessageCount)
+    let newItems = true
+    while (true) {
+      // console.log(`- ${chatGroup.name}: Processing next batch`)
       // We have more messages to fetch
       // Fetch messages from the last fetched, up until the message limit
-      currentRange = rangeTracker.nextBackfillRange()
+      const fetchedRange = rangeTracker.nextRange()
 
-      messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount, groupMessageCount)
+      const currentRange = await this.validateRange(api, fetchedRange, chatGroup._id, chatGroup.sourceId!)
+
+      rangeTracker.updateRange(currentRange)
+
+      const messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount, groupMessageCount)
       groupMessageCount += messagesResponse.messagesAdded
       totalMessageCount = messagesResponse.messagesAdded
 
-      rangeTracker.completedRange({
-        startId: chatHistory[0].sourceId!,
-        endId: chatHistory[chatHistory.length-1].sourceId
-      }, messagesResponse.breakIdHit)
+      if (chatHistory.length) {
+        rangeTracker.completedRange({
+          startId: chatHistory[0].sourceId,
+          endId: chatHistory[chatHistory.length-1].sourceId
+        }, messagesResponse.breakIdHit)
+      } else {
+        rangeTracker.completedRange({
+          startId: undefined,
+          endId: undefined
+        }, messagesResponse.breakIdHit)
+      }
 
-      console.log(`- ${chatGroup.name}: Completed next batch of ${messagesResponse.messagesAdded}`)
+      // console.log(`- ${chatGroup.name}: Completed next batch of ${messagesResponse.messagesAdded}`, chatHistory.length)
 
-      if (messagesResponse.messagesAdded == 0) {
+      if (!newItems && messagesResponse.messagesAdded == 0) {
         // No more messages to fetch, so exit
-        console.log(`- ${chatGroup.name}: No more messages to fetch, so stop processing this group`)
+        // console.log(`- ${chatGroup.name}: No more messages to fetch, so stop processing this group`)
         break
       }
+
+      if (groupMessageCount >= this.config.messagesPerGroupLimit) {
+        break
+      }
+
+      if (totalMessageCount >= this.config.messageBatchSize) {
+        break
+      }
+
+      newItems = false
     }
 
     if (chatHistory.length) {
@@ -182,9 +259,10 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       chatGroup.syncData = rangeTracker.export()
     }
 
-    console.log(`- ${chatGroup.name}: Updated sync data: ${chatGroup.newestId}, ${chatGroup.syncData}`)
+    // console.log(`- ${chatGroup.name}: Updated sync data: ${chatGroup.newestId}, ${chatGroup.syncData}`)
 
     return {
+      chatGroup,
       chatHistory
     }
   }
@@ -193,15 +271,14 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     api: TelegramApi,
     syncPosition: SyncHandlerPosition
   ): Promise<SyncResponse> {
-    // syncPosition.thisRef = groupIds
-    // syncPosition.futureBreakId = unused
+    // const chatGroupDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_GROUP)
+    // const db2 = await chatGroupDs.getDb()
+    // await db2.destroy({})
 
-    // --/.....---------------/.....---------------
-    // first:last,first:last,
-    // 0-first,last-first,last-limit
-    // ../..................../.....---------------
-    // first,last
-
+    // const chatMessageDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_MESSAGE)
+    // const db = await chatMessageDs.getDb()
+    // await db.destroy({})
+    // throw new Error('destroyed')
    
     try {
       let groupCount = 0
@@ -224,7 +301,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         const chatGroupResponse = await this.processChatGroup(chatGroup, api, messageCount)
 
         // Include this chat group in the list of processed groups to save
-        chatGroups.push(chatGroup)
+        chatGroups.push(chatGroupResponse.chatGroup)
 
         // Include the chat history
         chatHistory = chatHistory.concat(chatGroupResponse.chatHistory)
@@ -250,7 +327,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     }
   }
 
-  protected buildMessage(rawMessage: any, chatGroupId: string): SchemaSocialChatMessage {
+  protected buildMessage(rawMessage: any, chatGroupId: string): SchemaSocialChatMessage | undefined {
     const timestamp = (new Date(rawMessage.date * 1000)).toISOString()
 
     let content = ""
@@ -263,6 +340,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     if (content == "") {
       console.log('empty content')
       console.log(rawMessage.content)
+      return
     }
 
     // @todo: better support all message types https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1_message_content.html
@@ -271,13 +349,15 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     // }
 
     const message: SchemaSocialChatMessage = {
-      _id: `${this.provider.getProviderName()}-${this.connection.profile.id}-${rawMessage.id}`,
+      _id: this.buildItemId(rawMessage.id),
       name: content.substring(0,30),
       chatGroupId,
       type: rawMessage.is_outgoing ? SchemaChatMessageType.SEND : SchemaChatMessageType.RECEIVE,
       senderId: rawMessage.sender_id.user_id.toString(),
       messageText: content,
+      sourceApplication: this.getProviderApplicationUrl(),
       sourceId: rawMessage.id.toString(),
+      sourceData: rawMessage,
       insertedAt: timestamp,
       sentAt: timestamp
     }
@@ -285,29 +365,31 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     return message
   }
 
-  protected async buildChatGroupResults(api: TelegramApi, chatGroupIds: string[]): Promise<Record<string, SchemaSocialChatGroup>> {
+  protected async buildChatGroupResults(api: TelegramApi, chatGroupIds: string[], limit: number): Promise<Record<string, SchemaSocialChatGroup>> {
     const results: Record<string, SchemaSocialChatGroup> = {}
     const now = (new Date()).toISOString()
 
+    let groupCount = 0
     for (const groupId of chatGroupIds) {
+      if (groupCount >= limit) {
+        break
+      }
+
       const groupDetails = await api.getChatGroup(parseInt(groupId))
+      console.log(groupDetails.title, groupDetails.type._)
       if (groupDetails.type._ == TelegramChatGroupType.SUPERGROUP) {
         const supergroupDetails = await api.getSupergroup(groupDetails.type.supergroup_id)
         if (supergroupDetails.member_count > this.config.maxGroupSize) {
+          console.log('group too big')
           continue
         }
       }
 
-
-      // if (this.config.supportedChatGroupTypes.indexOf(groupDetails.type._) === -1) {
-      //   console.log(`skipping group (${groupDetails.title}) as it is wrong type: ${groupDetails.type._}`)
-      //   console.log(groupDetails)
-      //   continue
-      // }
-
       const item: SchemaSocialChatGroup = {
-        _id: `${this.provider.getProviderName()}-${this.connection.profile.id}-${groupId.toString()}`,
+        _id: this.buildItemId(groupId.toString()),
+        sourceApplication: this.getProviderApplicationUrl(),
         sourceId: groupId.toString(),
+        sourceData: groupDetails,
         schema: CONFIG.verida.schemas.CHAT_GROUP,
         name: groupDetails.title,
         insertedAt: now
@@ -318,6 +400,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         item.icon = `data:image/jpeg;base64,` + smallPhoto
       }
 
+      groupCount++
       results[item._id] = item
     }
 

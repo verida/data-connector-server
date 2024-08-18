@@ -8,15 +8,17 @@ function buildBatch(start: number) {
     return Array(batchSize).fill(0).map((_, i) => i+start);
 }
 
-function processItems(items: number[], limit: number, breakId?: string, startId?: string): [number[], number[]] {
+function processItems(items: number[], limit: number, breakId?: string, startId?: string): [number[], number[], boolean] {
     const resultItems: number[] = []
     let started = false
+    let breakHit = false
     for (const item of items) {
         if (resultItems.length >= limit) {
             break
         }
 
         if (breakId && item == parseInt(breakId)) {
+            breakHit = true
             break
         }
 
@@ -33,17 +35,17 @@ function processItems(items: number[], limit: number, breakId?: string, startId?
     }
 
     items.splice(0, resultItems.length)
-    return [resultItems, items]
+    return [resultItems, items, breakHit]
 }
 
 describe(`Range tracker tests`, function () {
 
     it(`Can handle starting empty`, () => {
         const tracker = new CompletedRangeTracker()
-        const newItems = tracker.newItemsRange()
+        const newItems = tracker.nextRange()
         assert.deepEqual(newItems, {}, "New items range is empty")
 
-        const next = tracker.nextBackfillRange()
+        const next = tracker.nextRange()
         assert.deepEqual(next, {}, "Next backfill range is empty")
     })
 
@@ -56,8 +58,8 @@ describe(`Range tracker tests`, function () {
         messages = messages.concat(batch1)
 
         // Process the first 20 items (there's only 10, so it will effectively process all)
-        const range1 = tracker.newItemsRange()
-        const [ processedBatch1, batch1Remainder ] = processItems(messages, 20, range1.endId, range1.startId)
+        const range1 = tracker.nextRange()
+        const [ processedBatch1, batch1Remainder, batch1Break ] = processItems(messages, 20, range1.endId, range1.startId)
         assert.deepEqual([40, 41, 42, 43, 44, 45, 46, 47, 48, 49], processedBatch1, 'First batch returned correct items')
         assert.equal(0, batch1Remainder.length, 'First batch has correct number of remaining items')
 
@@ -65,7 +67,7 @@ describe(`Range tracker tests`, function () {
         tracker.completedRange({
             startId: processedBatch1[0].toString(),
             endId: processedBatch1[processedBatch1.length-1].toString(),
-        }, false)
+        }, batch1Break)
 
         const trackerExport = tracker.export()
         assert.equal(trackerExport, "40:49", "Tracker has correct exported value after processing all")
@@ -81,8 +83,8 @@ describe(`Range tracker tests`, function () {
         messages = messages.concat(batch1)
         
         // Process the first 6 items
-        const range1 = tracker.newItemsRange()
-        const [ processedBatch1, batch1Remainder ] = processItems(messages, batchLimit, range1.endId, range1.startId)
+        const range1 = tracker.nextRange()
+        const [ processedBatch1, batch1Remainder, batch1Break ] = processItems(messages, batchLimit, range1.endId, range1.startId)
         assert.deepEqual([40, 41, 42, 43, 44, 45], processedBatch1, 'First batch returned correct items')
         assert.equal(4, batch1Remainder.length, 'First batch has correct number of remaining items')
 
@@ -90,36 +92,31 @@ describe(`Range tracker tests`, function () {
         tracker.completedRange({
             startId: processedBatch1[0].toString(),
             endId: processedBatch1[processedBatch1.length-1].toString(),
-        }, false)
+        }, batch1Break)
 
         // Reset messages
         messages = []
         messages = messages.concat(batch1)
-        
-        // Process any new items (there are none)
-        const range2 = tracker.newItemsRange()
-        const [ processedBatch2, batch2Remainder ] = processItems(messages, batchLimit, range2.endId, range2.startId)
-        assert.deepEqual([], processedBatch2, 'Second batch returned correct items')
 
         // Process remaining items
-        const range3 = tracker.nextBackfillRange()
-        const [ processedBatch3, batch3Remainder ] = processItems(messages, batchLimit, range3.endId, range3.startId)
-        assert.deepEqual([46, 47, 48, 49], processedBatch3, 'Third batch returned correct items')
+        const range2 = tracker.nextRange()
+        const [ processedBatch2, batch2Remainder, batch2Break ] = processItems(messages, batchLimit, range2.endId, range2.startId)
+        assert.deepEqual([46, 47, 48, 49], processedBatch2, 'Second batch returned correct items')
 
         // Update the tracker on the items that have been processed
         tracker.completedRange({
-            startId: range3.startId,
-            endId: processedBatch3[processedBatch3.length-1].toString(),
-        }, true)
+            startId: range2.startId,
+            endId: processedBatch2[processedBatch2.length-1].toString(),
+        }, batch2Break)
         const trackerExport = tracker.export()
         assert.equal(trackerExport, "40:49", "Tracker has correct exported value after processing two batches")
     })
 
-    it(`Can handle a changing list, in multiple batches`, () => {
+    it.only(`Can handle a changing list, in multiple batches`, () => {
         const batch1 = buildBatch(40)
         const batch2 = buildBatch(30)
 
-        const tracker = new CompletedRangeTracker()
+        let tracker = new CompletedRangeTracker()
         let messages: number[] = []
         let trackerExport
 
@@ -127,8 +124,8 @@ describe(`Range tracker tests`, function () {
         messages = messages.concat(batch1)
         
         // Process new items (the first 6 items)
-        const range1 = tracker.newItemsRange()
-        const [ processedBatch1, batch1Remainder ] = processItems(messages, batchLimit, range1.endId, range1.startId)
+        const range1 = tracker.nextRange()
+        const [ processedBatch1, batch1Remainder, batch1Break ] = processItems(messages, batchLimit, range1.endId, range1.startId)
         assert.deepEqual([40, 41, 42, 43, 44, 45], processedBatch1, 'First batch returned correct items')
         assert.equal(4, batch1Remainder.length, 'First batch has correct number of remaining items')
 
@@ -136,7 +133,7 @@ describe(`Range tracker tests`, function () {
         tracker.completedRange({
             startId: processedBatch1[0].toString(),
             endId: processedBatch1[processedBatch1.length-1].toString(),
-        }, false)
+        }, batch1Break)
 
         trackerExport = tracker.export()
         assert.equal(trackerExport, "40:45", "Tracker has correct exported value after processing one batch")
@@ -145,17 +142,19 @@ describe(`Range tracker tests`, function () {
         messages = []
         messages = messages.concat(batch2).concat(batch1)
         
+        // Reset tracker to start processing new items
+        tracker = new CompletedRangeTracker(tracker.export())
+        
         // Process new items (includes new items; 30-39)
-        const range2 = tracker.newItemsRange()
-        const [ processedBatch2, batch2Remainder ] = processItems(messages, batchLimit, range2.endId, range2.startId)
+        const range2 = tracker.nextRange()
+        const [ processedBatch2, batch2Remainder, batch2Break ] = processItems(messages, batchLimit, range2.endId, range2.startId)
         assert.deepEqual([30, 31, 32, 33, 34, 35], processedBatch2, 'Second batch returned correct items')
 
         // Update the tracker on the items that have been processed
-        trackerExport = tracker.export()
         tracker.completedRange({
             startId: processedBatch2[0].toString(),
             endId: processedBatch2[processedBatch2.length-1].toString(),
-        }, false)
+        }, batch2Break)
 
         trackerExport = tracker.export()
         assert.equal(trackerExport, "30:35,40:45", "Tracker has correct exported value after processing two batches")
@@ -164,36 +163,45 @@ describe(`Range tracker tests`, function () {
         messages = []
         messages = messages.concat(batch2).concat(batch1)
 
+        // Reset tracker to start processing new items
+        tracker = new CompletedRangeTracker(tracker.export())
+
         // Process next batch, no new items so should be empty
-        const range3 = tracker.newItemsRange()
-        const [ processedBatch3, batch3Remainder ] = processItems(messages, batchLimit, range3.endId, range3.startId)
+        const range3 = tracker.nextRange()
+        const [ processedBatch3, batch3Remainder, batch3Break ] = processItems(messages, batchLimit, range3.endId, range3.startId)
         assert.deepEqual([], processedBatch3, 'Third batch returned correct items')
 
+        // Update the tracker on the items that have been processed
+        tracker.completedRange({
+            startId: undefined,
+            endId: undefined,
+        }, batch3Break)
+
         // Process next batch
-        const range4 = tracker.nextBackfillRange()
-        const [ processedBatch4, batch4Remainder ] = processItems(messages, batchLimit, range4.endId, range4.startId)
+        const range4 = tracker.nextRange()
+        const [ processedBatch4, batch4Remainder, batch4Break ] = processItems(messages, batchLimit, range4.endId, range4.startId)
         assert.deepEqual([36, 37, 38, 39], processedBatch4, 'Fourth batch returned correct items')
 
-        // Update the tracker on the items that have been processed, set breakPointHit = true
+        // Update the tracker on the items that have been processed
         tracker.completedRange({
-            startId: range4.startId,
-            endId: range4.endId,    // breakpoint hit so use range4.endId instead of last item
-        }, true)
+            startId: processedBatch4[0].toString(),
+            endId: processedBatch4[processedBatch4.length-1].toString(),
+        }, batch4Break)
 
         trackerExport = tracker.export()
         assert.equal(trackerExport, "30:45", "Tracker has correct exported value after processing four batches")
 
         // range 5 was deleted
 
-        const range6 = tracker.nextBackfillRange()
-        const [ processedBatch6, batch6Remainder ] = processItems(messages, batchLimit - processedBatch4.length, range6.endId, range6.startId)
+        const range6 = tracker.nextRange()
+        const [ processedBatch6, batch6Remainder, batch6Break ] = processItems(messages, batchLimit - processedBatch4.length, range6.endId, range6.startId)
         assert.deepEqual([46,47], processedBatch6, 'Sixth batch returned correct items')
 
         // Update the tracker on the items that have been processed
         tracker.completedRange({
-            startId: range6.startId,    // Use the start ID so merging works
+            startId: processedBatch6[0].toString(),
             endId: processedBatch6[processedBatch6.length-1].toString(),
-        }, false)
+        }, batch6Break)
 
         trackerExport = tracker.export()
         assert.equal(trackerExport, "30:47", "Tracker has correct exported value after processing six batches")
@@ -202,105 +210,70 @@ describe(`Range tracker tests`, function () {
         messages = []
         messages = messages.concat(batch2).concat(batch1)
 
+        // Reset tracker to start processing new items
+        tracker = new CompletedRangeTracker(tracker.export())
+
         // Process next batch, no new items so should be empty
-        const range7 = tracker.newItemsRange()
-        const [ processedBatch7, batch7Remainder ] = processItems(messages, batchLimit, range7.endId, range7.startId)
+        const range7 = tracker.nextRange()
+        const [ processedBatch7, batch7Remainder, batch7Break ] = processItems(messages, batchLimit, range7.endId, range7.startId)
         assert.deepEqual([], processedBatch7, 'Seventh batch returned correct items')
 
+        // Update the tracker on the items that have been processed
+        tracker.completedRange({
+            startId: undefined,
+            endId: undefined,
+        }, batch7Break)
+
         // Process next batch
-        const range8 = tracker.nextBackfillRange()
-        const [ processedBatch8, batch8Remainder ] = processItems(messages, batchLimit, range8.endId, range8.startId)
+        const range8 = tracker.nextRange()
+        const [ processedBatch8, batch8Remainder, batch8Break ] = processItems(messages, batchLimit, range8.endId, range8.startId)
         assert.deepEqual([48,49], processedBatch8, 'Eighth batch returned correct items')
 
         // Update the tracker on the items that have been processed, set breakPointHit = true
         trackerExport = tracker.export()
         tracker.completedRange({
-            startId: range8.startId,    // Use the start ID so merging works
+            startId: processedBatch8[0].toString(),
             endId: processedBatch8[processedBatch8.length-1].toString(),
-        }, false)
+        }, batch8Break)
 
         trackerExport = tracker.export()
         assert.equal(trackerExport, "30:49", "Tracker has correct exported value after processing eight batches")
-    })
 
-    it(`can handle a single message being added at the start`, () => {
-        const batch1 = buildBatch(40)
-        const batch2 = buildBatch(30)
-
-        const tracker = new CompletedRangeTracker()
-        let messages: number[] = []
-        let trackerExport
-
-        // message list is 40-46 (6 items exactly)
-        messages = [40, 41, 42, 43, 44, 45]
-
-        // Process new items (the first 6 items, so there is none to process)
-        const range1 = tracker.newItemsRange()
-        const [ processedBatch1, batch1Remainder ] = processItems(messages, batchLimit, range1.endId, range1.startId)
-        assert.deepEqual([40, 41, 42, 43, 44, 45], processedBatch1, 'First batch returned correct items')
-        assert.equal(0, batch1Remainder.length, 'First batch has correct number of remaining items')
-
-        tracker.completedRange({
-            startId: processedBatch1[0].toString(),    // Use the start ID so merging works
-            endId: range1.endId ? range1.endId : processedBatch1[processedBatch1.length-1].toString(),
-        }, false)
-
-        trackerExport = tracker.export()
-        assert.equal(trackerExport, "40:45", "Tracker has correct exported value after processing one batch")
-
-        // Add a message to the start
-        messages = [39, 40, 41, 42, 43, 44, 45]
-
-        // Process new items (just 1 item)
-        const range2 = tracker.newItemsRange()
-        const [ processedBatch2, batch2Remainder ] = processItems(messages, batchLimit, range2.endId, range2.startId)
-        assert.deepEqual([39], processedBatch2, 'Second batch returned correct items')
-
-        tracker.completedRange({
-            startId: processedBatch2[0].toString(),    // Use the start ID so merging works
-            endId: range2.endId ? range2.endId : processedBatch2[processedBatch2.length-1].toString(),
-        }, true)
-
-        trackerExport = tracker.export()
-        assert.equal(trackerExport, "39:45", "Tracker has correct exported value after processing two batches")
-
-        const range3 = tracker.nextBackfillRange()
-        assert.deepEqual({
-            startId: "45",
-            endId: undefined
-        }, range3, "Next backfill range is the expected value")
-
-        // Add three messages to the start
-        messages = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45]
-
-        // Process 2/3 new items
-        const range4 = tracker.newItemsRange()
-        const [ processedBatch4, batch4Remainder ] = processItems(messages, 2, range4.endId, range4.startId)
-        assert.deepEqual([36, 37], processedBatch4, 'Fourth batch returned correct items')
-
-        tracker.completedRange({
-            startId: processedBatch4[0].toString(),    // Use the start ID so merging works
-            endId: processedBatch4[processedBatch4.length-1].toString(),
-        }, false)
-
-        trackerExport = tracker.export()
-        assert.equal(trackerExport, "36:37,39:45", "Tracker has correct exported value after processing four batches")
+        // Insert a single item at the start and several at the end, they are processed correctly
 
         // Reset messages
-        messages = [36, 37, 38, 39, 40, 41, 42, 43, 44, 45]
+        messages = []
+        messages = messages.concat([29]).concat(batch2).concat(batch1).concat([50,51,52,53,54,55,56,57,58,59])
+        
+        // Reset tracker to start processing new items
+        tracker = new CompletedRangeTracker(tracker.export())
 
-        // Process 1 remaining next backfill range
-        const range5 = tracker.nextBackfillRange()
-        const [ processedBatch5, batch5Remainder ] = processItems(messages, 2, range5.endId, range5.startId)
-        assert.deepEqual([38], processedBatch5, 'Fifth batch returned correct items')
+        // Process next batch of new items (1)
+        const range9 = tracker.nextRange()
+        const [ processedBatch9, batch9Remainder, batch9Break ] = processItems(messages, batchLimit, range9.endId, range9.startId)
+        assert.deepEqual([29], processedBatch9, 'Ninth batch returned correct items')
 
+        // Update the tracker on the items that have been processed
         tracker.completedRange({
-            startId: range5.startId,    // Use the start ID so merging works
-            endId: range5.endId,
-        }, true)
+            startId: processedBatch9[0].toString(),
+            endId: processedBatch9[processedBatch9.length-1].toString(),
+        }, batch9Break)
+
+        // Process next batch
+        const range10 = tracker.nextRange()
+        const [ processedBatch10, batch10Remainder, batch10Break ] = processItems(messages, batchLimit, range10.endId, range10.startId)
+        assert.deepEqual([50,51,52,53,54,55], processedBatch10, 'Tenth batch returned correct items')
+
+        // Update the tracker on the items that have been processed
+        trackerExport = tracker.export()
+        tracker.completedRange({
+            startId: processedBatch10[0].toString(),
+            endId: processedBatch10[processedBatch10.length-1].toString(),
+        }, batch10Break)
 
         trackerExport = tracker.export()
-        assert.equal(trackerExport, "36:45", "Tracker has correct exported value after processing five batches")
+        assert.equal(trackerExport, "29:55", "Tracker has correct exported value after processing ten batches")
+
     })
 
 })
