@@ -3,7 +3,7 @@ import * as CryptoJS from 'crypto-js';
 import { EventEmitter } from 'events'
 import MiniSearch from 'minisearch';
 
-export const indexCache: Record<string, any> = {}
+export const indexCache: Record<string, MiniSearch<any>> = {}
 
 export interface SchemaConfig {
     label: string
@@ -27,22 +27,27 @@ export interface HotLoadProgress {
 const schemas: Record<string, SchemaConfig> = {
     "https://common.schemas.verida.io/social/following/v0.1.0/schema.json": {
         label: "Social Following",
-        storeFields: ['name','uri','description','insertedAt','followedTimestamp'],
+        storeFields: ['_id', 'name','uri','description','insertedAt','followedTimestamp'],
         indexFields: ['name','description']
     },
     "https://common.schemas.verida.io/social/post/v0.1.0/schema.json": {
         label: "Social Posts",
-        storeFields: ['name','content','type','uri','insertedAt'],
+        storeFields: ['_id', 'name','content','type','uri','insertedAt'],
         indexFields: ['name', 'content']
     },
     "https://common.schemas.verida.io/social/email/v0.1.0/schema.json": {
         label: "Email",
-        storeFields: [],
+        storeFields: ['_id'],
         indexFields: ['name','fromName','fromEmail','messageText','attachments_0.textContent','attachments_1.textContent','attachments_2.textContent']
+    },
+    "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json": {
+        label: "Chat History",
+        storeFields: ['_id'],
+        indexFields: ['messageText', 'senderHandle', 'sentAt']
     }
 }
 
-export class Data extends EventEmitter {
+export class DataService extends EventEmitter {
 
     protected did: string
     protected context: IContext
@@ -71,7 +76,7 @@ export class Data extends EventEmitter {
         this.emit('progress', progress)
     }
 
-    public async getIndex(schemaUri: string) {
+    public async getIndex(schemaUri: string): Promise<MiniSearch<any>> {
         const schemaConfig = schemas[schemaUri]
         const indexFields = schemaConfig.indexFields
         let storeFields = schemaConfig.storeFields
@@ -147,7 +152,7 @@ export class Data extends EventEmitter {
                 docs.push(row)
             }
 
-            console.log('Creating index', indexFields, storeFields)
+            console.log(`Creating index for ${schemaUri}`, indexFields, storeFields)
             const miniSearch = new MiniSearch({
                 fields: indexFields, // fields to index for full-text search
                 storeFields,
@@ -167,6 +172,8 @@ export class Data extends EventEmitter {
             this.stepCount += 2
             this.emitProgress(schemaConfig.label, HotLoadStatus.Complete, 10)
         }
+
+        return indexCache[cacheKey]
     }
 
     public async hotLoad(): Promise<void> {

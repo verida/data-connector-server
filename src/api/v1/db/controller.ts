@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
-import Common from "../common";
-import { IContext, IDatabase, IDatastore } from "@verida/types";
+import { Utils } from "../../../utils";
 
 /**
  * 
@@ -9,9 +8,9 @@ export class DbController {
     
     public async get(req: Request, res: Response) {
         try {
-            const { context } = await Common.getNetworkFromRequest(req)
+            const { context } = await Utils.getNetworkFromRequest(req)
             const dbName = req.params[0]
-            const permissions = Common.buildPermissions(req)
+            const permissions = Utils.buildPermissions(req)
         
             const db = await context.openDatabase(dbName, {
                 // @ts-ignore
@@ -31,10 +30,10 @@ export class DbController {
 
     public async getById(req: Request, res: Response) {
         try {
-            const { context } = await Common.getNetworkFromRequest(req)
+            const { context } = await Utils.getNetworkFromRequest(req)
             const dbName = req.params[0]
             const rowId = req.params[1]
-            const permissions = Common.buildPermissions(req)
+            const permissions = Utils.buildPermissions(req)
 
             console.log(rowId)
             console.log(req)
@@ -52,10 +51,10 @@ export class DbController {
 
     public async query(req: Request, res: Response) {
         try {
-            const { context } = await Common.getNetworkFromRequest(req)
+            const { context } = await Utils.getNetworkFromRequest(req)
             const dbName = req.params[0]
 
-            const permissions = Common.buildPermissions(req)
+            const permissions = Utils.buildPermissions(req)
             const db = await context.openDatabase(dbName, {
                 // @ts-ignore
                 permissions

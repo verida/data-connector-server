@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Common from "../common";
 import { IContext, IDatabase, IDatastore } from "@verida/types";
+import { Utils } from "../../../utils";
 
 /**
  * 
@@ -9,9 +10,9 @@ export class DsController {
     
     public async get(req: Request, res: Response) {
         try {
-            const { context } = await Common.getNetworkFromRequest(req)
-            const schemaName = Common.getSchemaFromParams(req.params[0])
-            const permissions = Common.buildPermissions(req)
+            const { context } = await Utils.getNetworkFromRequest(req)
+            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const permissions = Utils.buildPermissions(req)
         
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore
@@ -31,9 +32,9 @@ export class DsController {
 
     public async getById(req: Request, res: Response) {
         try {
-            const { context } = await Common.getNetworkFromRequest(req)
-            const permissions = Common.buildPermissions(req)
-            const schemaName = Common.getSchemaFromParams(req.params[0])
+            const { context } = await Utils.getNetworkFromRequest(req)
+            const permissions = Utils.buildPermissions(req)
+            const schemaName = Utils.getSchemaFromParams(req.params[0])
             const rowId = req.params[1]
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore
@@ -49,9 +50,9 @@ export class DsController {
 
     public async query(req: Request, res: Response) {
         try {
-            const { context } = await Common.getNetworkFromRequest(req)
-            const permissions = Common.buildPermissions(req)
-            const schemaName = Common.getSchemaFromParams(req.params[0])
+            const { context } = await Utils.getNetworkFromRequest(req)
+            const permissions = Utils.buildPermissions(req)
+            const schemaName = Utils.getSchemaFromParams(req.params[0])
 
             console.log(schemaName, permissions)
             const ds = await context.openDatastore(schemaName, {
