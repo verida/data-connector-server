@@ -29,25 +29,26 @@ export enum SearchTypes {
 
 export class SearchService extends VeridaService {
 
-    protected async rankAndMergeResults(schemaResults: SearchServiceSchemaResult[], limit: number): Promise<SchemaRecord[]> {
+    protected async rankAndMergeResults(schemaResults: SearchServiceSchemaResult[], limit: number, minResultsPerType: number = 10): Promise<SchemaRecord[]> {
         const unsortedResults: Record<string, SortedResult> = {}
+        const guaranteedResults: Record<string, SortedResult> = {}
 
         const datastores: IDatastore[] = []
         for (const schemaResult of schemaResults) {
-            // Merge results into a single list of emails (removes duplicates) and sum scores across all searches
-            const emailRows: Record<string, any> = {}
+            let schemaResultCount = 0
             for (const row of schemaResult.rows) {
-                console.log(row.id, row.score)
-
-                if (!unsortedResults[row.id]) {
-                    unsortedResults[row.id] = {
-                        id: row.id,
-                        schemaId: datastores.length,
-                        score: 0
-                    }
+                // console.log(row.id, row.score)
+                const result = {
+                    id: row.id,
+                    schemaId: datastores.length,
+                    score: row.score
                 }
 
-                unsortedResults[row.id].score += row.score
+                if (schemaResultCount++ < minResultsPerType) {
+                    guaranteedResults[row.id] = result
+                } else {
+                    unsortedResults[row.id] = result
+                }
             }
 
             datastores.push(await this.context.openDatastore(schemaResult.schemaUri))
@@ -63,10 +64,12 @@ export class SearchService extends VeridaService {
         const sortedResults = Object.values(unsortedResults)
         sortedResults.sort((a: any, b: any) => b.score - a.score)
 
+        const queuedResults = Object.values(guaranteedResults).concat(sortedResults)
+
         // Fetch actual results and limit them
         const results = []
         for (let i = 0; i < limit; i++) {
-            const result = sortedResults[i]
+            const result = queuedResults[i]
             const datastore = datastores[result.schemaId]
             const row = await datastore.get(result.id, {})
             row._score = result.score
@@ -106,7 +109,7 @@ export class SearchService extends VeridaService {
         }], limit)
     }
 
-    public async multi(searchTypes: SearchTypes[], keywordsList: string[], limit: number = 20) {
+    public async multi(searchTypes: SearchTypes[], keywordsList: string[], limit: number = 20, minResultsPerType: number = 10) {
         const query = keywordsList.join(' ')
         const dataService = new DataService(this.did, this.context)
 
@@ -122,7 +125,7 @@ export class SearchService extends VeridaService {
             })
         }
 
-        return this.rankAndMergeResults(searchResults, limit)
+        return this.rankAndMergeResults(searchResults, limit, minResultsPerType)
     }
 
 }

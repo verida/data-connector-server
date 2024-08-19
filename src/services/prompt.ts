@@ -2,14 +2,17 @@ import Axios from 'axios'
 import { stripHtml } from "string-strip-html"
 const _ = require('lodash')
 import { LLMServices } from "../services/llm"
-import { SearchService } from "../services/search"
+import { SearchService, SearchTypes } from "../services/search"
 import { VeridaService } from './veridaService'
+import { SchemaEmail, SchemaEmailType, SchemaSocialChatMessage } from '../schemas'
 
 const llm = LLMServices.bedrock
 
 const MAX_EMAIL_LENGTH = 500
 const MAX_ATTACHMENT_LENGTH = 1000
 const MAX_CONTEXT_LENGTH = 20000
+
+// "You are a personal assistant with the ability to search the following categories; emails, chat_history and documents. You receive a prompt and generate a JSON response (with no other text) that provides search queries that will source useful information to help answer the prompt. Search queries for each category should contain three properties; \"terms\" (an array of 10 individual words), \"beforeDate\" (results must be before this date), \"afterDate\" (results must be after this date), \"resultType\" (either \"count\" to count results or \"results\" to return the search results), \"filter\" (an array of key, value pairs of fields to filter the results). Categories can be empty if not relevant to the prompt. The current date is 2024-08-12.\n\nHere is an example JSON response:\n{\"email\": {\"terms\": [\"golf\", \"tennis\", \"soccer\"], \"beforeDate\": \"2024-06-01\", \"afterDate\": \"2024-01-10\" \"filter\": {\"from\": \"dave\"}, \"resultType\": \"results}}\n\nHere is the prompt:\nWhat subscriptions do I currently pay for?"
 
 export class PromptService extends VeridaService {
 
@@ -41,21 +44,31 @@ export class PromptService extends VeridaService {
         console.log(entities)
 
         const searchService = new SearchService(this.did, this.context)
-        const emails = await searchService.emails(keywords.concat(entities))
+        const messages = await searchService.multi([
+            SearchTypes.EMAILS,
+            SearchTypes.CHAT_MESSAGES
+        ], keywords.concat(entities), 40, 15)
 
-        let finalPrompt = `Answer this prompt:\n${prompt}\nHere are some recent emails that may help you provide a relevant answer.\n`
+        let finalPrompt = `Answer this prompt:\n${prompt}\nHere are some recent messages that may help you provide a relevant answer.\n`
         let contextString = ''
-        for (const email of emails) {
-            let body = stripHtml(email.messageText).result.substring(0, MAX_EMAIL_LENGTH)
-            if (email.attachments) {
-                for (const attachment of email.attachments) {
-                    body += attachment.textContent.substring(0, MAX_ATTACHMENT_LENGTH)
+        for (const message of messages) {
+            let extraContext = ""
+            if (message.schema == SearchTypes.EMAILS) {
+                const email = <SchemaEmail> message
+                let body = stripHtml(email.messageText).result.substring(0, MAX_EMAIL_LENGTH)
+                if (email.attachments) {
+                    for (const attachment of email.attachments) {
+                        body += attachment.textContent.substring(0, MAX_ATTACHMENT_LENGTH)
+                    }
                 }
-            }
 
-            const extraContext = `${email.fromName} <${email.fromEmail}> (${email.name})\n${body}\n\n`
-            if ((extraContext.length + contextString.length + finalPrompt.length) > MAX_CONTEXT_LENGTH) {
-                break
+                extraContext = `From: ${email.fromName} <${email.fromEmail}> (${email.name})\nBody: ${body}\n\n`
+                if ((extraContext.length + contextString.length + finalPrompt.length) > MAX_CONTEXT_LENGTH) {
+                    break
+                }
+            } else if (message.schema == SearchTypes.CHAT_MESSAGES) {
+                const chatMessage = <SchemaSocialChatMessage> message
+                contextString += `From: ${chatMessage.fromName} <${chatMessage.fromHandle}> (${chatMessage.groupName})\nBody: ${chatMessage.messageText}\n\n`
             }
             
             contextString += extraContext
@@ -65,6 +78,8 @@ export class PromptService extends VeridaService {
         console.log('Running final prompt', finalPrompt.length)
         const finalResponse = await llm(finalPrompt)
         const duration = Date.now() - start
+
+        console.log(contextString)
 
         return {
             result: finalResponse,

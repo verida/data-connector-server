@@ -33,17 +33,17 @@ const schemas: Record<string, SchemaConfig> = {
     "https://common.schemas.verida.io/social/post/v0.1.0/schema.json": {
         label: "Social Posts",
         storeFields: ['_id', 'name','content','type','uri','insertedAt'],
-        indexFields: ['name', 'content']
+        indexFields: ['name', 'content', 'indexableText']
     },
     "https://common.schemas.verida.io/social/email/v0.1.0/schema.json": {
         label: "Email",
         storeFields: ['_id'],
-        indexFields: ['name','fromName','fromEmail','messageText','attachments_0.textContent','attachments_1.textContent','attachments_2.textContent']
+        indexFields: ['name','fromName','fromEmail','messageText','attachments_0.textContent','attachments_1.textContent','attachments_2.textContent', 'indexableText', 'sentAt']
     },
     "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json": {
         label: "Chat History",
         storeFields: ['_id'],
-        indexFields: ['messageText', 'senderHandle', 'sentAt']
+        indexFields: ['messageText', 'fromHandle', 'fromName', 'groupName', 'indexableText', 'sentAt']
     }
 }
 
