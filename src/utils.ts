@@ -6,9 +6,10 @@ import fs from 'fs'
 import serverconfig from './config'
 import { AutoAccount } from '@verida/account-node'
 import { SyncSchemaPositionType } from './interfaces'
+import { Request } from 'express'
 
+const VAULT_CONTEXT_NAME = 'Verida: Vault'
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
-
 const SBT_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/token/sbt/credential/v0.1.0/schema.json'
 
 export {
@@ -33,13 +34,20 @@ export class Utils {
 
     protected static networkCache: Record<string, NetworkConnectionCache> = {}
 
+    public static async getNetworkFromRequest(req: Request): Promise<NetworkConnection> {
+        const headers = req.headers
+        const key = headers["key"] ? headers["key"].toString() : req.query.key.toString()
+        const contextName = headers["context-name"] ? headers["context-name"].toString() : VAULT_CONTEXT_NAME
+
+        return Utils.getNetwork(key)
+    }
+
     /**
      * Get a network, context and account instance
      * 
      * @returns 
      */
     public static async getNetwork(contextSignature: string, requestId: string = 'none'): Promise<NetworkConnection> {
-        const VAULT_CONTEXT_NAME = 'Verida: Vault'
         const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
         const network = new Client({
             network: VERIDA_ENVIRONMENT
@@ -191,6 +199,25 @@ export class Utils {
 
     public static nowTimestamp() {
         return (new Date()).toISOString()
+    }
+
+    public static buildPermissions(req: Request) {
+        const permissionsHeader = req.headers['permissions'] ? req.headers['permissions'].toString().toLowerCase() : 'write=owner,read=owner'
+        const permissions: Record<string,string> = {}
+        const permissionEntries = permissionsHeader.split(',')
+        permissionEntries.forEach(item => {
+            const splitResults = item.split('=')
+            const permission = splitResults[0]
+            const userType = splitResults[1]
+            permissions[permission] = userType
+        })
+
+        return permissions
+    }
+
+    public static getSchemaFromParams(base64Schema: string) {
+        const buffer = Buffer.from(base64Schema, 'base64')
+        return buffer.toString('utf-8')
     }
 }
 

@@ -84,6 +84,10 @@ export class CompletedRangeTracker {
                 const firstRange = this.completedRanges[0]
                 const secondRange = this.completedRanges.length > 1 ? this.completedRanges[1] : {}
 
+                if (!firstRange) {
+                    break
+                }
+
                 if (breakPointHit) {
                     this.completedRanges[1] = {
                         startId: firstRange.startId,
