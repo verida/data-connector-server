@@ -62,13 +62,18 @@ $(document).ready(function() {
                 const formattedSyncTimes = `Start: ${new Date(connection.syncStart).toLocaleString()}<br>End: ${new Date(connection.syncEnd).toLocaleString()}`;
 
                 const providerDetails = getProviderDetails(connection.provider);
+                const avatar = connection.profile.avatarUrl ? `<img src="${connection.profile.avatarUrl}" alt="${connection.profile.name}" style="width: 30px; height: 30px;"></img>` : ''
 
                 const row = $(`
                     <tr>
-                        <td><img src="${providerDetails.icon}" alt="${providerDetails.label}" style="width: 30px; height: 30px;"> ${providerDetails.label}</td>
-                        <td>${connection.profile.name} ${connection.profile.email ? '('+ connection.profile.email +')' : ''} (${connection.providerId})</td>
-                        <td>${connection.syncMessage ? connection.syncMessage : ""} (${connection.syncStatus})<br>${formattedSyncTimes}</td>
-                        <td><ul>${handlers.map(handler => `<li>${handler.handlerName} (${handler.status})</li>`).join('')}</ul></td>
+                        <td>
+                            <img src="${providerDetails.icon}" alt="${providerDetails.label}" style="width: 30px; height: 30px;">
+                            ${providerDetails.label}</td>
+                        <td>
+                            ${avatar}
+                            ${connection.profile.name}<br />${connection.profile.email ? '('+ connection.profile.email +')' : ''} (${connection.providerId})</td>
+                        <td>${connection.syncStatus}<br>${formattedSyncTimes}</td>
+                        <td>${handlers.map(handler => `[${handler.handlerName}] ${handler.syncMessage ? handler.syncMessage : ""} (${handler.status})<br/>`).join('')}</td>
                         <td>
                             <button class="btn btn-success sync-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Sync Now</button>
                             <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Full Logs</button>
