@@ -62,13 +62,6 @@ export default class YouTubeFavourite extends GoogleHandler {
                 results: [],
             };
         }
-        
-        // Sort items by publishedAt timestamp in descending order (most recent first)
-        serverResponse.data.items.sort((a, b) => {
-            const dateA = new Date(a.snippet.publishedAt).getTime();
-            const dateB = new Date(b.snippet.publishedAt).getTime();
-            return dateB - dateA;
-        });
 
         const results = await this.buildResults(
             serverResponse,
