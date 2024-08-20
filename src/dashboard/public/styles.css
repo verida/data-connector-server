@@ -9,6 +9,10 @@
     margin-bottom: 5px;
 }
 
+.nav-link.active {
+    border-bottom: 2px solid;
+}
+
 .modal-dialog {
     max-height: 80vh; /* Adjust as needed */
     margin: 30px auto;

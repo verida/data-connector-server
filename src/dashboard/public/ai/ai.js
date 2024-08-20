@@ -44,7 +44,7 @@ $(document).ready(function() {
         const body = { prompt: prompt, key: veridaKey };
 
         $.ajax({
-            url: 'http://localhost:5022/llm/personal',
+            url: `/api/v1/llm/personal?key=${veridaKey}`,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(body),
@@ -74,7 +74,7 @@ $(document).ready(function() {
     });
 
     // Hotload data
-    const eventSource = new EventSource(`http://localhost:5022/minisearch/hotload?key=${savedVeridaKey}`);
+    const eventSource = new EventSource(`/api/v1/minisearch/hotload?key=${savedVeridaKey}`);
     
     let loadComplete = false
     eventSource.onmessage = function(event) {

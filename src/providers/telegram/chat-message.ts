@@ -17,6 +17,7 @@ import { TelegramApi } from "./api";
 import { TelegramChatGroupType, TelegramConfig } from "./interfaces";
 import { CompletedRangeTracker } from "../../helpers/completedRangeTracker";
 import { CompletedItemsRange } from "../../helpers/interfaces";
+import { UsersCache } from "./usersCache";
 
 const _ = require("lodash");
 
@@ -163,7 +164,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     return validatedRange
   }
 
-  protected async fetchMessageRange(currentRange: CompletedItemsRange, chatGroup: SchemaSocialChatGroup, chatHistory: SchemaSocialChatMessage[], api: TelegramApi, totalMessageCount: number, groupMessageCount: number): Promise<{
+  protected async fetchMessageRange(currentRange: CompletedItemsRange, chatGroup: SchemaSocialChatGroup, chatHistory: SchemaSocialChatMessage[], api: TelegramApi, userCache: UsersCache, totalMessageCount: number, groupMessageCount: number): Promise<{
     messagesAdded: number,
     breakIdHit: boolean
   }> {
@@ -183,7 +184,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       }
 
       // console.log(`chatGroupId for message: ${chatGroup._id} / ${chatGroup.sourceId}`)
-      const message = this.buildMessage(messageData, chatGroup._id)
+      const message = await this.buildMessage(messageData, chatGroup, userCache)
 
       if (message) {
         chatHistory.push(message)
@@ -199,7 +200,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     }
   }
 
-  protected async processChatGroup(chatGroup: SchemaSocialChatGroup, api: TelegramApi, totalMessageCount: number): Promise<{
+  protected async processChatGroup(chatGroup: SchemaSocialChatGroup, api: TelegramApi, userCache: UsersCache, totalMessageCount: number): Promise<{
     chatGroup: SchemaSocialChatGroup,
     chatHistory: SchemaSocialChatMessage[]
   }> {
@@ -219,7 +220,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
 
       rangeTracker.updateRange(currentRange)
 
-      const messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, totalMessageCount, groupMessageCount)
+      const messagesResponse = await this.fetchMessageRange(currentRange, chatGroup, chatHistory, api, userCache, totalMessageCount, groupMessageCount)
       groupMessageCount += messagesResponse.messagesAdded
       totalMessageCount = messagesResponse.messagesAdded
 
@@ -283,6 +284,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     try {
       let groupCount = 0
       let messageCount = 0
+      const userCache = new UsersCache(api)
       const chatGroups: SchemaSocialChatGroup[] = []
       const chatGroupsBacklog = await this.buildChatGroupList(api, syncPosition)
       console.log(`- Fetched ${chatGroupsBacklog.length} chat groups as backlog`)
@@ -298,7 +300,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
           break
         }
 
-        const chatGroupResponse = await this.processChatGroup(chatGroup, api, messageCount)
+        const chatGroupResponse = await this.processChatGroup(chatGroup, api, userCache, messageCount)
 
         // Include this chat group in the list of processed groups to save
         chatGroups.push(chatGroupResponse.chatGroup)
@@ -327,7 +329,8 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     }
   }
 
-  protected buildMessage(rawMessage: any, chatGroupId: string): SchemaSocialChatMessage | undefined {
+  protected async buildMessage(rawMessage: any, chatGroup: SchemaSocialChatGroup, userCache: UsersCache): Promise<SchemaSocialChatMessage | undefined> {
+    const groupId = chatGroup._id
     const timestamp = (new Date(rawMessage.date * 1000)).toISOString()
 
     let content = ""
@@ -343,17 +346,19 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       return
     }
 
-    // @todo: better support all message types https://core.telegram.org/tdlib/docs/classtd_1_1td__api_1_1_message_content.html
-    // switch (rawMessage.content._) {
-    //   case ""
-    // }
+    const user = await userCache.getUser(rawMessage.sender_id.user_id)
+    const fromName = user.fullName
+    const fromHandle = user.username
 
     const message: SchemaSocialChatMessage = {
       _id: this.buildItemId(rawMessage.id),
       name: content.substring(0,30),
-      chatGroupId,
+      groupId,
+      groupName: chatGroup.name,
       type: rawMessage.is_outgoing ? SchemaChatMessageType.SEND : SchemaChatMessageType.RECEIVE,
-      senderId: rawMessage.sender_id.user_id.toString(),
+      fromId: rawMessage.sender_id.user_id.toString(),
+      fromHandle,
+      fromName,
       messageText: content,
       sourceApplication: this.getProviderApplicationUrl(),
       sourceId: rawMessage.id.toString(),

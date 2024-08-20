@@ -1,4 +1,5 @@
 declare module 'pdf-parse'
+declare module 'crypto-js'
 // declare module 'xoauth2'
 // declare module 'node-imap'
 // declare module 'mailparser'
