@@ -2,7 +2,7 @@ import { Request } from "express";
 import { SchemaRecord } from "./schemas"
 
 export interface UniqueRequest extends Request {
-    requestId?: string;
+    requestId: string;
 }
 
 export interface AccountAuth {
@@ -10,28 +10,67 @@ export interface AccountAuth {
     refreshToken: string
 }
 
+export enum ConnectionOptionType {
+    ENUM = "enum",
+    ENUM_MULTI = "enumMulti",
+    BOOLEAN = "boolean"
+}
+
 export interface ConnectionOption {
     name: string
     label: string
-    type: 'enum' | 'boolean'
+    type: ConnectionOptionType
     enumOptions?: string[]
     defaultValue: string
 }
 
+export interface PassportName {
+    givenName?: string
+    familyName?: string
+    middleName?: string
+}
+
+export interface PassportEmail {
+    type?: string
+    value: string
+}
+
+export interface PassportPhoto {
+    value: string
+}
+
+export interface PassportProfile {
+    id: string,
+    provider: string,
+    displayName?: string
+    name?: PassportName
+    emails?: PassportEmail[]
+    photos?: PassportPhoto[]
+    connectionProfile?: Partial<ConnectionProfile>
+}
+
 export interface HandlerOption extends ConnectionOption {}
+
+export interface AvatarObject extends Object {
+    uri: string
+}
 
 export interface ConnectionProfile {
     id: string
     name: string
-    avatarUrl?: string
+    description?: string
+    avatar?: AvatarObject
     link?: string
     givenName?: string
     familyName?: string
     email?: string
     emailVerified?: boolean
+    phone?: string
+    phoneVerified?: boolean
+    verified?: boolean
     username?: string
-    description?: string
     createdAt?: string
+    sourceData?: object
 }
 
 export enum SyncFrequency {

@@ -143,7 +143,13 @@ export default class BaseSyncHandler extends EventEmitter {
                 continue
             }
 
-            const schemaDatastore = await this.provider.getDatastore(this.getSchemaUri())
+            // Load schema specified in item, fallback to default schema for this sync handler
+            // This allows a sync handler to return results of different schema types
+            if (!item.schema) {
+                item.schema = this.getSchemaUri()
+            }
+            
+            const schemaDatastore = await this.provider.getDatastore(item.schema)
 
             try {
                 const success = await schemaDatastore.save(item, {
@@ -151,7 +157,7 @@ export default class BaseSyncHandler extends EventEmitter {
                 })
                 if (!success) {
                     // @ts-ignore
-                    const message = `Unable to save item: ${Utils.datastoreErorrsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
+                    const message = `Unable to save item: ${Utils.datastoreErrorsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
 
                     this.emit('log', {
                         level: SyncProviderLogLevel.ERROR,

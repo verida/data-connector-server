@@ -166,7 +166,7 @@ export default class YouTubeFavourite extends GoogleHandler {
                 name: title,
                 icon: iconUri,
                 uri: activityUri,
-                summary: description.substring(0, 256),
+                // summary: description.substring(0, 256),
                 description: description,
                 favouriteType: SchemaFavouriteType.LIKE,
                 contentType: SchemaFavouriteContentType.VIDEO,

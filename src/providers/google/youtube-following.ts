@@ -165,7 +165,7 @@ export default class YouTubeFollowing extends GoogleHandler {
                 name: title,
                 icon: icon,
                 uri: uri,
-                summary: description.substring(0, 256),
+                // summary: description.substring(0, 256),
                 description: description,
                 sourceId: item.id,
                 sourceData: snippet,

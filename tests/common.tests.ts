@@ -66,7 +66,12 @@ export class CommonTests {
     handlerType: typeof BaseSyncHandler,
     providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">,
     connection?: Connection
-  ) {
+  ): Promise<{
+    api: any,
+    provider: BaseProvider,
+    handler: BaseSyncHandler,
+    schemaUri: string
+  }> {
     const network = await CommonUtils.getNetwork();
     if (!connection) {
       connection = await CommonUtils.getConnection(providerName);
@@ -92,6 +97,7 @@ export class CommonTests {
 
     return {
       api,
+      provider,
       handler,
       schemaUri,
     };
@@ -106,11 +112,15 @@ export class CommonTests {
     },
     providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {},
     connection?: Connection
-  ) {
+  ): Promise<{
+    api: any,
+    handler: BaseSyncHandler,
+    provider: BaseProvider
+  }> {
     // Set result limit to 3 results so page tests can work correctly
     providerConfig[testConfig.batchSizeLimitAttribute] = 3;
 
-    const { api, handler, schemaUri } = await this.buildTestObjects(
+    const { api, handler, schemaUri, provider } = await this.buildTestObjects(
       providerName,
       handlerType,
       providerConfig,
@@ -119,16 +129,17 @@ export class CommonTests {
 
     const idPrefix = testConfig.idPrefix ? testConfig.idPrefix : `${provider.getProviderName()}-${connection!.profile.id}`;
 
-    const syncPosition: SyncHandlerPosition = {
-      _id: `${providerName}-${schemaUri}`,
-      type: SyncSchemaPositionType.SYNC,
-      providerName,
-      handlerName: handler.getName(),
-      providerId: provider.getProviderId(),
-      status: SyncHandlerStatus.ACTIVE,
-    };
-    // Snapshot: Page 1
-    const response = await handler._sync(api, syncPosition);
+    try {
+      const syncPosition: SyncHandlerPosition = {
+        _id: `${providerName}-${schemaUri}`,
+        type: SyncSchemaPositionType.SYNC,
+        providerName,
+        handlerName: handler.getName(),
+        providerId: provider.getProviderId(),
+        status: SyncHandlerStatus.ACTIVE,
+      };
+      // Snapshot: Page 1
+      const response = await handler._sync(api, syncPosition);
 
     const results = <SchemaRecord[]>response.results;
     assert.ok(results && results.length, "Have results returned");
@@ -151,9 +162,9 @@ export class CommonTests {
     assert.equal(response.position.breakId, undefined, "Break ID is undefined");
     assert.equal(`${idPrefix}-${response.position.futureBreakId}`, results[0]._id, "Future break ID matches the first result ID");
 
-    // Snapshot: Page 2
-    const response2 = await handler._sync(api, syncPosition);
-    const results2 = <SchemaRecord[]>response2.results;
+      // Snapshot: Page 2
+      const response2 = await handler._sync(api, syncPosition);
+      const results2 = <SchemaRecord[]>response2.results;
 
     assert.ok(results2 && results2.length, "Have second page of results returned");
     assert.ok(results2 && results2.length == providerConfig[testConfig.batchSizeLimitAttribute], "Have correct number of results returned in second page");
@@ -174,19 +185,19 @@ export class CommonTests {
     assert.equal(response.position.breakId, undefined, "Break ID is undefined");
     assert.equal(results[0]._id, `${idPrefix}-${response.position.futureBreakId}`, "Future break ID matches the first result ID");
 
-    // Update: Page 1 (ensure 1 result only)
-    // Fetch the update set of results to confirm `position.pos` is correct
-    // Make sure we fetch the first post only, by setting the break to the second item
-    const position = response2.position;
-    position.thisRef = undefined;
-    // position.thisRefType = PostSyncRefTypes.Api
-    position.breakId = results[1]._id.replace(`${idPrefix}-`, "");
-    position.futureBreakId = undefined;
+      // Update: Page 1 (ensure 1 result only)
+      // Fetch the update set of results to confirm `position.pos` is correct
+      // Make sure we fetch the first post only, by setting the break to the second item
+      const position = response2.position;
+      position.thisRef = undefined;
+      // position.thisRefType = PostSyncRefTypes.Api
+      position.breakId = results[1]._id.replace(`${idPrefix}-`, "");
+      position.futureBreakId = undefined;
 
-    const response3 = await handler._sync(api, position);
-    const results3 = <SchemaRecord[]>response3.results;
-    assert.equal(results3.length, 1, "1 result returned");
-    assert.equal(results3[0]._id, results[0]._id, "Correct ID returned");
+      const response3 = await handler._sync(api, position);
+      const results3 = <SchemaRecord[]>response3.results;
+      assert.equal(results3.length, 1, "1 result returned");
+      assert.equal(results3[0]._id, results[0]._id, "Correct ID returned");
 
     assert.equal(response.position.status, SyncHandlerStatus.STOPPED, "Sync is stopped");
     assert.equal(response.position.thisRef, undefined, "No next page reference");

@@ -3,7 +3,7 @@ export interface SchemaRecord {
     _rev?: string
     schema?: string
     name: string
-    summary?: string
+    description?: string
     insertedAt?: string
     modifiedAt?: string
     icon?: string
@@ -18,6 +18,20 @@ export interface SchemaFollowing extends SchemaRecord {
     description?: string
     followedTimestamp?: string
     insertedAt: string
+}
+
+export enum PostType {
+    LINK = "link",
+    STATUS = "status",
+    PHOTO = "photo",
+    VIDEO = "video",
+    MUSIC = "music",
+    EVENT = "event",
+    OFFER = "offer",
+    QUESTION = "question",
+    NOTE = "note",
+    ALBUM = "album",
+    LIFE_EVENT = "life_event"
 }
 
 export enum SchemaPostType {
