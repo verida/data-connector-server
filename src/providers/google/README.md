@@ -6,3 +6,7 @@
 ## Refresh Tokens
 
 Google only provides a `refreshToken` when a user first connects their account. If the user attempts to reconnect, the second OAuth process will only return an `accessToken`.
+
+# Known issues
+
+1. Emails are processed in batches, up until the expiry date, then starts to fetch new again. Need to refactor to use range tracker helper.
