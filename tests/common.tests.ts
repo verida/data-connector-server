@@ -132,7 +132,7 @@ export class CommonTests {
 
     const results = <SchemaRecord[]>response.results;
     assert.ok(results && results.length, "Have results returned");
-    assert.equal(3, results.length, "Have correct number of results returned on page 1");
+    assert.equal(providerConfig[testConfig.batchSizeLimitAttribute], results.length, "Have correct number of results returned on page 1");
 
     if (testConfig.timeOrderAttribute) {
       assert.ok(
@@ -156,7 +156,7 @@ export class CommonTests {
     const results2 = <SchemaRecord[]>response2.results;
 
     assert.ok(results2 && results2.length, "Have second page of results returned");
-    assert.ok(results2 && results2.length == 3, "Have correct number of results returned in second page");
+    assert.ok(results2 && results2.length == providerConfig[testConfig.batchSizeLimitAttribute], "Have correct number of results returned in second page");
 
     if (testConfig.timeOrderAttribute) {
       assert.ok(
