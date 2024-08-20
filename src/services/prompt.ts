@@ -2,7 +2,7 @@ import Axios from 'axios'
 import { stripHtml } from "string-strip-html"
 const _ = require('lodash')
 import { LLMServices } from "../services/llm"
-import { SearchService, SearchTypes } from "../services/search"
+import { ChatThreadResult, SearchService, SearchTypes } from "../services/search"
 import { VeridaService } from './veridaService'
 import { SchemaEmail, SchemaEmailType, SchemaSocialChatMessage } from '../schemas'
 
@@ -44,31 +44,36 @@ export class PromptService extends VeridaService {
         console.log(entities)
 
         const searchService = new SearchService(this.did, this.context)
-        const messages = await searchService.multi([
-            SearchTypes.EMAILS,
-            SearchTypes.CHAT_MESSAGES
-        ], keywords.concat(entities), 40, 15)
+        const messages = await searchService.emails(keywords.concat(entities), 20)
+        const chatThreads = await searchService.chatThreads(keywords.concat(entities), 10, 10)
 
         let finalPrompt = `Answer this prompt:\n${prompt}\nHere are some recent messages that may help you provide a relevant answer.\n`
         let contextString = ''
-        for (const message of messages) {
-            let extraContext = ""
-            if (message.schema == SearchTypes.EMAILS) {
-                const email = <SchemaEmail> message
-                let body = stripHtml(email.messageText).result.substring(0, MAX_EMAIL_LENGTH)
-                if (email.attachments) {
-                    for (const attachment of email.attachments) {
-                        body += attachment.textContent.substring(0, MAX_ATTACHMENT_LENGTH)
-                    }
-                }
 
-                extraContext = `From: ${email.fromName} <${email.fromEmail}> (${email.name})\nBody: ${body}\n\n`
-                if ((extraContext.length + contextString.length + finalPrompt.length) > MAX_CONTEXT_LENGTH) {
+        let maxChatMessages = 50
+        for (const chatThread of chatThreads) {
+            for (const chatMessage of chatThread.messages) {
+                contextString += `From: ${chatMessage.fromName} <${chatMessage.fromHandle}> (${chatMessage.groupName})\nBody: ${chatMessage.messageText}\n\n`
+
+                if (maxChatMessages-- <= 0) {
                     break
                 }
-            } else if (message.schema == SearchTypes.CHAT_MESSAGES) {
-                const chatMessage = <SchemaSocialChatMessage> message
-                contextString += `From: ${chatMessage.fromName} <${chatMessage.fromHandle}> (${chatMessage.groupName})\nBody: ${chatMessage.messageText}\n\n`
+            }
+        }
+
+        for (const message of messages) {
+            let extraContext = ""
+            const email = <SchemaEmail> message
+            let body = stripHtml(email.messageText).result.substring(0, MAX_EMAIL_LENGTH)
+            if (email.attachments) {
+                for (const attachment of email.attachments) {
+                    body += attachment.textContent.substring(0, MAX_ATTACHMENT_LENGTH)
+                }
+            }
+
+            extraContext = `From: ${email.fromName} <${email.fromEmail}> (${email.name})\nBody: ${body}\n\n`
+            if ((extraContext.length + contextString.length + finalPrompt.length) > MAX_CONTEXT_LENGTH) {
+                break
             }
             
             contextString += extraContext

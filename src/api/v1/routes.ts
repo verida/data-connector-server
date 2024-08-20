@@ -7,6 +7,7 @@ import LLMRoutes from './llm/routes'
 import MiniSearchRoutes from './minisearch/routes'
 import BaseRoutes from './base/routes'
 import TelegramRoutes from './telegram/routes'
+import Search from "./search/routes"
 
 const router = express.Router()
 
@@ -16,6 +17,7 @@ router.use('/ds', DsRoutes)
 router.use('/admin', AdminRoutes)
 router.use('/llm', LLMRoutes)
 router.use('/minisearch', MiniSearchRoutes)
+router.use('/search', Search)
 
 router.use('/telegram', TelegramRoutes)
 
