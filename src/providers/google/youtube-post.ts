@@ -129,7 +129,6 @@ export default class YouTubePost extends GoogleHandler {
         const posts = activities.filter(activity => [SchemaYoutubeActivityType.UPLOAD, SchemaYoutubeActivityType.COMMENT].includes(activity.snippet.type as SchemaYoutubeActivityType))
         for (const post of posts) {
             const postId = `${this.connection.profile.id}-${post.id}`;
-            console.log(post)
 
             if (postId == breakId) {
                 const logEvent: SyncProviderLogEvent = {

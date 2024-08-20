@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Providers from "../../../providers"
 import SyncManager from '../../../sync-manager'
-import { HandlerOption, SyncHandlerPosition, SyncSchemaPositionType, UniqueRequest } from '../../../interfaces'
+import { HandlerOption, SyncHandlerPosition, UniqueRequest } from '../../../interfaces'
 import { Utils } from '../../../utils'
 import CONFIG from '../../../config'
 import { SchemaRecord } from '../../../schemas'
@@ -250,7 +250,7 @@ export default class Controller {
                 const handlerPositions: SyncHandlerPosition[] = []
 
                 for (const handler of await connection.getSyncHandlers()) {
-                    handlerPositions.push(await connection.getSyncPosition(handler.getName(), SyncSchemaPositionType.SYNC))
+                    handlerPositions.push(await connection.getSyncPosition(handler.getName()))
                 }
 
                 const redactedConnection = connection.getConnection()

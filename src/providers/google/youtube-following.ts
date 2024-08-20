@@ -126,7 +126,6 @@ export default class YouTubeFollowing extends GoogleHandler {
         const results: SchemaFollowing[] = [];
         for (const item of serverResponse.data.items) {
             const itemId = `${this.connection.profile.id}-${item.id}`;
-            console.log(item)
 
             if (itemId == breakId) {
                 const logEvent: SyncProviderLogEvent = {

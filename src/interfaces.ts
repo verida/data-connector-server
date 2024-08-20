@@ -130,16 +130,10 @@ export enum SyncHandlerStatus {
     SYNCING = "syncing",
 }
 
-export enum SyncSchemaPositionType {
-    SYNC = "sync",
-    BACKFILL = "backfill"
-}
-
 export interface SyncHandlerPosition {
     // id = `${providerName}:${handlerName]}:${status}`
     _id: string
     _rev?: string
-    type: SyncSchemaPositionType
     providerName: string
     providerId: string
     handlerName: string
@@ -191,6 +185,4 @@ export interface SyncProviderLogEvent {
 export interface SyncHandlerResponse {
     syncPosition: SyncHandlerPosition
     syncResults: SchemaRecord[]
-    backfillPosition: SyncHandlerPosition
-    backfillResults: SchemaRecord[]
 }
