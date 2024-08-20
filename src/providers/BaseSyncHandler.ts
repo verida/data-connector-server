@@ -61,35 +61,16 @@ export default class BaseSyncHandler extends EventEmitter {
     public async sync(
         api: any,
         syncPosition: SyncHandlerPosition,
-        backfillPosition: SyncHandlerPosition,
-        syncSchemaPositionDs: IDatastore,
-        schemaDatastore: IDatastore): Promise<SyncHandlerResponse> {
-        const promises = []
-        promises.push(this._sync(api, syncPosition))
-        promises.push(this._backfill(api, backfillPosition))
-
-        const promiseResults = await Promise.allSettled(promises)
-        const syncResult = promiseResults[0]
-        const backfillResult = promiseResults[1]
-
-        let syncResults: SchemaRecord[] = []
-        let backfillResults: SchemaRecord[] = []
-        if (syncResult.status == 'fulfilled')  {
-            syncResults = <SchemaRecord[]> syncResult.value.results
-            await this.handleResults(syncResult.value.position, syncResults, syncSchemaPositionDs)
-        } else {
-            const message = `Unknown error handling sync results: ${syncResult.reason}`
-            this.emit('log', {
-                level: SyncProviderLogLevel.ERROR,
-                message
-            })
+        syncSchemaPositionDs: IDatastore): Promise<SyncHandlerResponse> {
+        
+        let syncResults
+        try {
+            const syncResult = await this._sync(api, syncPosition)
+            syncResults = <SchemaRecord[]> syncResult.results
+            await this.handleResults(syncResult.position, syncResults, syncSchemaPositionDs)
         }
-
-        if (backfillResult.status == 'fulfilled')  {
-            backfillResults = <SchemaRecord[]> backfillResult.value.results
-            await this.handleResults(backfillResult.value.position, backfillResults, syncSchemaPositionDs)
-        } else {
-            const message = `Unknown error handling backfill results: ${backfillResult.reason}`
+        catch (err: any) {
+            const message = `Unknown error handling sync results: ${err.message}`
             this.emit('log', {
                 level: SyncProviderLogLevel.ERROR,
                 message
@@ -98,9 +79,7 @@ export default class BaseSyncHandler extends EventEmitter {
 
         return {
             syncPosition,
-            backfillPosition,
-            syncResults,
-            backfillResults
+            syncResults
         }
     }
 
@@ -135,7 +114,7 @@ export default class BaseSyncHandler extends EventEmitter {
         for (let i in items) {
             const item = items[i]
             if (!item.insertedAt) {
-                const message = `Unable to save item: insertedAt field is missing (${JSON.stringify(item, null, 2)})`
+                const message = `Unable to save item: insertedAt field is missing (${item._id}})`
                 this.emit('log', {
                     level: SyncProviderLogLevel.ERROR,
                     message
@@ -157,7 +136,7 @@ export default class BaseSyncHandler extends EventEmitter {
                 })
                 if (!success) {
                     // @ts-ignore
-                    const message = `Unable to save item: ${Utils.datastoreErrorsToString(schemaDatastore.errors)} (${JSON.stringify(item, null, 2)})`
+                    const message = `Unable to save item: ${Utils.datastoreErrorsToString(schemaDatastore.errors)} (${item._id} / ${item._rev})`
 
                     this.emit('log', {
                         level: SyncProviderLogLevel.ERROR,
@@ -165,7 +144,7 @@ export default class BaseSyncHandler extends EventEmitter {
                     })
                 }
             } catch (err: any) {
-                const message = `Unable to save item: ${err.message} (${JSON.stringify(item, null, 2)})`
+                const message = `Unable to save item: ${err.message} (${item._id} / ${item._rev})`
                 this.emit('log', {
                     level: SyncProviderLogLevel.ERROR,
                     message
@@ -193,7 +172,7 @@ export default class BaseSyncHandler extends EventEmitter {
      * @returns SyncResponse Array of results that need to be saved and the updated syncPosition
      */
     protected async _backfill(api: any, backfillPosition: SyncHandlerPosition): Promise<SyncResponse> {
-        backfillPosition.status = SyncHandlerStatus.STOPPED
+        backfillPosition.status = SyncHandlerStatus.ENABLED
 
         return {
             position: backfillPosition,

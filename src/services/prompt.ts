@@ -1,5 +1,4 @@
 import Axios from 'axios'
-import { stripHtml } from "string-strip-html"
 const _ = require('lodash')
 import { LLMServices } from "../services/llm"
 import { ChatThreadResult, SearchService, SearchTypes } from "../services/search"
@@ -64,7 +63,7 @@ export class PromptService extends VeridaService {
         for (const message of messages) {
             let extraContext = ""
             const email = <SchemaEmail> message
-            let body = stripHtml(email.messageText).result.substring(0, MAX_EMAIL_LENGTH)
+            let body = email.messageText.substring(0, MAX_EMAIL_LENGTH)
             if (email.attachments) {
                 for (const attachment of email.attachments) {
                     body += attachment.textContent.substring(0, MAX_ATTACHMENT_LENGTH)

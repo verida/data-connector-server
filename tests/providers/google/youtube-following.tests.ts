@@ -18,6 +18,10 @@ const providerName = "google";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
+let handlerName = "youtube-following";
+let testConfig: GenericTestConfig;
+let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
+
 
 describe(`${providerName} Youtube Following Tests`, function () {
   this.timeout(100000);
@@ -26,17 +30,15 @@ describe(`${providerName} Youtube Following Tests`, function () {
     network = await CommonUtils.getNetwork();
     connection = await CommonUtils.getConnection(providerName);
     provider = Providers(providerName, network.context, connection);
+  
+    testConfig = {
+      idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
+      batchSizeLimitAttribute: "batchSize",
+    };
   });
 
   describe(`Fetch ${providerName} data`, () => {
-    const handlerName = "youtube-following";
-    const testConfig: GenericTestConfig = {
-      idPrefix: "youtube",
-      timeOrderAttribute: "insertedAt",
-      batchSizeLimitAttribute: "batchSize",
-    };
-    const providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
-
+   
     it(`Can pass basic tests: ${handlerName}`, async () => {
       await CommonTests.runGenericTests(
         providerName,
@@ -48,7 +50,7 @@ describe(`${providerName} Youtube Following Tests`, function () {
     });
 
     it(`Can limit results by timestamp`, async () => {
-      const lastRecordHours = 2;
+      const lastRecordHours = 24;
       const lastRecordTimestamp = new Date(
         Date.now() - lastRecordHours * 3600000
       ).toISOString();
@@ -61,7 +63,7 @@ describe(`${providerName} Youtube Following Tests`, function () {
         status: SyncHandlerStatus.ACTIVE,
       };
 
-      providerConfig.batchSize = 10;
+      providerConfig.batchSize = 5;
       providerConfig.metadata = {
         breakTimestamp: lastRecordTimestamp,
       };
@@ -76,7 +78,7 @@ describe(`${providerName} Youtube Following Tests`, function () {
       );
       assert.ok(
         syncResponse.results && syncResponse.results.length,
-        "Have results (You may not have been subscribed in the testing timeframe)"
+        `Have results (You may not have activities in the testing timeframe of ${lastRecordHours} hours)`
       );
 
       const results = <SchemaFollowing[]>syncResponse.results;
@@ -99,7 +101,7 @@ describe(`${providerName} Youtube Following Tests`, function () {
         status: SyncHandlerStatus.ACTIVE,
       };
 
-      providerConfig.batchSize = 10;
+      providerConfig.batchSize = 5;
       providerConfig.metadata = {
         breakTimestamp: new Date().toISOString(),
       };

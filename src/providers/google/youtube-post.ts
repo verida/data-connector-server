@@ -6,9 +6,10 @@ import {
     SyncHandlerPosition,
     SyncHandlerStatus,
 } from "../../interfaces";
-import { PostType, SchemaPost, SchemaYoutubeActivityType } from "../../schemas";
+import { SchemaPostType, SchemaPost } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
+import { YoutubeActivityType } from "./interfaces";
 
 const _ = require("lodash");
 
@@ -55,6 +56,7 @@ export default class YouTubePost extends GoogleHandler {
             !serverResponse.data.items.length
         ) {
             // No results found, so stop sync
+            syncPosition.syncMessage = "Stopping. No more results.";
             syncPosition = this.stopSync(syncPosition);
 
             return {
@@ -76,6 +78,7 @@ export default class YouTubePost extends GoogleHandler {
 
         if (results.length != this.config.batchSize) {
             // Not a full page of results, so stop sync
+            syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`;
             syncPosition = this.stopSync(syncPosition);
         }
 
@@ -86,11 +89,11 @@ export default class YouTubePost extends GoogleHandler {
     }
 
     protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
-        if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+        if (syncPosition.status == SyncHandlerStatus.ENABLED) {
             return syncPosition;
         }
 
-        syncPosition.status = SyncHandlerStatus.STOPPED;
+        syncPosition.status = SyncHandlerStatus.ENABLED;
         syncPosition.thisRef = undefined;
         syncPosition.breakId = syncPosition.futureBreakId;
         syncPosition.futureBreakId = undefined;
@@ -103,13 +106,15 @@ export default class YouTubePost extends GoogleHandler {
         serverResponse: GaxiosResponse<youtube_v3.Schema$ActivityListResponse>
     ): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && serverResponse.data.items.length) {
-            syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.items[0].id}`;
+            syncPosition.futureBreakId = serverResponse.data.items[0].id;
         }
 
         if (_.has(serverResponse, "data.nextPageToken")) {
             // Have more results, so set the next page ready for the next request
+            syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`;
             syncPosition.thisRef = serverResponse.data.nextPageToken;
         } else {
+            syncPosition.syncMessage = "Stopping. No more results.";
             syncPosition = this.stopSync(syncPosition);
         }
 
@@ -125,11 +130,10 @@ export default class YouTubePost extends GoogleHandler {
         const results: SchemaPost[] = [];
 
         const activities = serverResponse.data.items;
-        // filter post(upload, comment, bulletin)
-        const posts = activities.filter(activity => [SchemaYoutubeActivityType.UPLOAD, SchemaYoutubeActivityType.COMMENT].includes(activity.snippet.type as SchemaYoutubeActivityType))
+        // filter post(upload)
+        const posts = activities.filter(activity => activity.snippet.type == YoutubeActivityType.UPLOAD)
         for (const post of posts) {
-            const postId = `${this.connection.profile.id}-${post.id}`;
-            console.log(post)
+            const postId = post.id;
 
             if (postId == breakId) {
                 const logEvent: SyncProviderLogEvent = {
@@ -161,12 +165,8 @@ export default class YouTubePost extends GoogleHandler {
             // extract activity URI
             let activityUri = "";
             switch (activityType) {
-                case SchemaYoutubeActivityType.UPLOAD:
+                case YoutubeActivityType.UPLOAD:
                     var videoId = contentDetails.upload.videoId;
-                    activityUri = 'https://www.youtube.com/watch?v=' + videoId;
-                    break;
-                case SchemaYoutubeActivityType.COMMENT:
-                    var videoId = contentDetails.comment.resourceId.videoId;
                     activityUri = 'https://www.youtube.com/watch?v=' + videoId;
                     break;
                 default:
@@ -180,7 +180,8 @@ export default class YouTubePost extends GoogleHandler {
                 name: title,
                 icon: iconUri,
                 uri: activityUri,
-                type: PostType.VIDEO,
+                type: SchemaPostType.VIDEO,
+                // summary: description.substring(0, 256),
                 content: description,
                 sourceId: post.id,
                 sourceData: snippet,

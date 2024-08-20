@@ -56,6 +56,7 @@ export default class YouTubeFollowing extends GoogleHandler {
             !serverResponse.data.items.length
         ) {
             // No results found, so stop sync
+            syncPosition.syncMessage = "Stopping. No more results.";
             syncPosition = this.stopSync(syncPosition);
 
             return {
@@ -77,6 +78,7 @@ export default class YouTubeFollowing extends GoogleHandler {
 
         if (results.length != this.config.batchSize) {
             // Not a full page of results, so stop sync
+            syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`;
             syncPosition = this.stopSync(syncPosition);
         }
 
@@ -87,11 +89,11 @@ export default class YouTubeFollowing extends GoogleHandler {
     }
 
     protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
-        if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+        if (syncPosition.status == SyncHandlerStatus.ENABLED) {
             return syncPosition;
         }
 
-        syncPosition.status = SyncHandlerStatus.STOPPED;
+        syncPosition.status = SyncHandlerStatus.ENABLED;
         syncPosition.thisRef = undefined;
         syncPosition.breakId = syncPosition.futureBreakId;
         syncPosition.futureBreakId = undefined;
@@ -104,13 +106,15 @@ export default class YouTubeFollowing extends GoogleHandler {
         serverResponse: GaxiosResponse<youtube_v3.Schema$SubscriptionListResponse>
     ): SyncHandlerPosition {
         if (!syncPosition.futureBreakId && serverResponse.data.items.length) {
-            syncPosition.futureBreakId = `${this.connection.profile.id}-${serverResponse.data.items[0].id}`;
+            syncPosition.futureBreakId = serverResponse.data.items[0].id;
         }
 
         if (_.has(serverResponse, "data.nextPageToken")) {
             // Have more results, so set the next page ready for the next request
+            syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`;
             syncPosition.thisRef = serverResponse.data.nextPageToken;
         } else {
+            syncPosition.syncMessage = "Stopping. No more results.";
             syncPosition = this.stopSync(syncPosition);
         }
 
@@ -125,8 +129,7 @@ export default class YouTubeFollowing extends GoogleHandler {
     ): Promise<SchemaFollowing[]> {
         const results: SchemaFollowing[] = [];
         for (const item of serverResponse.data.items) {
-            const itemId = `${this.connection.profile.id}-${item.id}`;
-            console.log(item)
+            const itemId = item.id;
 
             if (itemId == breakId) {
                 const logEvent: SyncProviderLogEvent = {
@@ -150,7 +153,7 @@ export default class YouTubeFollowing extends GoogleHandler {
             }
             
             const title = snippet.title || "No title";
-            // const description = snippet.description || "No description";
+            const description = snippet.description || "No description";
             const uri = "https://www.youtube.com/channel/" + snippet.resourceId.channelId;
             const icon = snippet.thumbnails.default.url;
 
@@ -159,6 +162,8 @@ export default class YouTubeFollowing extends GoogleHandler {
                 name: title,
                 icon: icon,
                 uri: uri,
+                // summary: description.substring(0, 256),
+                description: description,
                 sourceId: item.id,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),

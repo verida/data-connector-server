@@ -16,11 +16,12 @@ export interface SchemaRecord {
 }
 
 export interface SchemaFollowing extends SchemaRecord {
+    description?: string
     followedTimestamp?: string
     insertedAt: string
 }
 
-export enum PostType {
+export enum SchemaPostType {
     LINK = "link",
     STATUS = "status",
     PHOTO = "photo",
@@ -35,10 +36,9 @@ export enum PostType {
 }
 
 export interface SchemaPost extends SchemaRecord {
-    type?: PostType
+    type?: SchemaPostType
     content?: string
     contentHtml? :string
-    summary?: string
     insertedAt: string
 }
 
@@ -67,24 +67,14 @@ export interface SchemaEmail extends SchemaRecord {
     threadId?: string
 }
 
-export enum SchemaYoutubeActivityType {
-    UPLOAD = "upload", // post
-    LIKE = "like", // favourite
-    SUBSCRIPTION = "subscription", // following
-    FAVOURITE = "favourite", // favourite
-    COMMENT = "comment", // post
-    PLAYLIST_ITEM = "playlistItem", //ignored
-    RECOMMENDATION = "recommendation", // favourite
-}
-
-export enum FavouriteType {
+export enum SchemaFavouriteType {
     LIKE = "like",
     FAVOURITE = "favourite",
     RECOMMENDATION = "recommendation",
     SHARE = "share"
 }
 
-export enum ContentType {
+export enum SchemaFavouriteContentType {
     VIDEO = "video",
     AUDIO = "audio",
     DOCUMENT = "document",
@@ -92,8 +82,8 @@ export enum ContentType {
 }
 
 export interface SchemaFavourite extends SchemaRecord {
-    favouriteType: FavouriteType
-    contentType: ContentType
+    favouriteType?: SchemaFavouriteType
+    contentType?: SchemaFavouriteContentType
     description?: string
 }
 

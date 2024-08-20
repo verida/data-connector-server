@@ -5,7 +5,6 @@ import Providers from "./providers"
 import fs from 'fs'
 import serverconfig from './config'
 import { AutoAccount } from '@verida/account-node'
-import { SyncSchemaPositionType } from './interfaces'
 import { Request } from 'express'
 
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
@@ -169,8 +168,8 @@ export class Utils {
         }, credentialData.name, credentialData.description, credentialData.image)
     }
 
-    public static buildSyncHandlerId(providerName: string, providerId: string, handlerName: string, type: SyncSchemaPositionType) {
-        return `${providerName}:${providerId}:${handlerName}:${type}`
+    public static buildSyncHandlerId(providerName: string, providerId: string, handlerName: string) {
+        return `${providerName}:${providerId}:${handlerName}`
     }
 
     public static datastoreErrorsToString(errors: any): string {
