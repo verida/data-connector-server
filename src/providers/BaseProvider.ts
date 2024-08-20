@@ -227,45 +227,15 @@ export default class BaseProvider extends EventEmitter {
         const syncHandlers = await this.getSyncHandlers()
         const api = await this.getApi(accessToken, refreshToken)
         const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
-        const providerInstance = this
-
-        let totalSyncItems = 0
-        let totalBackfillItems = 0
+        const syncPromises = []
+        const syncHandlerNames = []
         for (let h in syncHandlers) {
-            let syncCount = 0
             const handler = syncHandlers[h]
-            const schemaUri = handler.getSchemaUri()
-            const datastore = await this.vault.openDatastore(schemaUri)
-
-            const syncPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.SYNC, syncPositionsDs)
-            syncPosition.status = SyncHandlerStatus.ACTIVE
-            const backfillPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.BACKFILL, syncPositionsDs)
-            backfillPosition.status = SyncHandlerStatus.ACTIVE
-
-            handler.on('log', async (syncLog: SyncProviderLogEvent) => {
-                await providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncLog.message, handler.getName(), schemaUri)
-            })
-
-            await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(),schemaUri)
-            let syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
-            totalSyncItems += syncResults.syncResults.length
-            totalBackfillItems += syncResults.backfillResults.length
-            await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
-            syncCount++
-
-            while (!this.config.maxSyncLoops || syncCount < this.config.maxSyncLoops) {
-                if (syncResults.syncPosition.status == SyncHandlerStatus.ACTIVE || syncResults.backfillPosition.status == SyncHandlerStatus.ACTIVE) {
-                    // sync again
-                    await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(), schemaUri)
-                    syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
-                    totalSyncItems += syncResults.syncResults.length
-                    totalBackfillItems += syncResults.backfillResults.length
-                    await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
-                }
-
-                syncCount++
-            }
+            syncHandlerNames.push(handler.getName())
+            syncPromises.push(this._syncHandler(handler, api, syncPositionsDs))
         }
+
+        await Promise.allSettled(syncPromises)
 
         // Add latest profile info
         this.connection.profile = await this.getProfile()
@@ -276,9 +246,41 @@ export default class BaseProvider extends EventEmitter {
         this.connection.syncStatus = SyncStatus.CONNECTED
         this.connection.syncEnd = Utils.nowTimestamp()
         await this.saveConnection()
-        await this.logMessage(SyncProviderLogLevel.INFO, `Sync complete (${totalSyncItems} sync items, ${totalBackfillItems} backfill items)`)
+        await this.logMessage(SyncProviderLogLevel.INFO, `Sync complete for ${this.getProviderName()} (${syncHandlerNames.join(', ')})`)
 
         return this.connection
+    }
+
+    protected async _syncHandler(handler: BaseSyncHandler, api: any, syncPositionsDs: IDatastore) {
+        const providerInstance = this
+        let syncCount = 0
+        const schemaUri = handler.getSchemaUri()
+        const datastore = await this.vault.openDatastore(schemaUri)
+
+        const syncPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.SYNC, syncPositionsDs)
+        syncPosition.status = SyncHandlerStatus.ACTIVE
+        const backfillPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.BACKFILL, syncPositionsDs)
+        backfillPosition.status = SyncHandlerStatus.ACTIVE
+
+        handler.on('log', async (syncLog: SyncProviderLogEvent) => {
+            await providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncLog.message, handler.getName(), schemaUri)
+        })
+
+        await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(),schemaUri)
+        let syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
+        await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
+        syncCount++
+
+        while (!this.config.maxSyncLoops || syncCount < this.config.maxSyncLoops) {
+            if (syncResults.syncPosition.status == SyncHandlerStatus.ACTIVE || syncResults.backfillPosition.status == SyncHandlerStatus.ACTIVE) {
+                // sync again
+                await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(), schemaUri)
+                syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
+                await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items and ${syncResults.backfillResults.length} backfill items`, handler.getName(), schemaUri)
+            }
+
+            syncCount++
+        }
     }
 
     protected async getConnectionDs() {
