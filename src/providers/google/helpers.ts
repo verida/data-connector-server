@@ -1,5 +1,6 @@
 import { gmail_v1 } from "googleapis";
 import pdf from "pdf-parse";
+import { stripHtml } from "string-strip-html";
 
 export class GmailHelpers {
   static async getMessage(
@@ -37,7 +38,7 @@ export class GmailHelpers {
         }
       }
     }
-    return text;
+    return stripHtml(text).result;
   }
 
   static getHtmlContent(

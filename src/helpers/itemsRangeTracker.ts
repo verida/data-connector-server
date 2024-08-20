@@ -5,15 +5,15 @@
     // ../..................../.....---------------
     // first,last
 
-import { CompletedItemsRange, RangeStatus } from "./interfaces"
+import { ItemsRange, ItemsRangeStatus } from "./interfaces"
 
 /**
  * Track the messages in a group that have or haven't been fetched
  */
-export class CompletedRangeTracker {
+export class ItemsRangeTracker {
 
-    private completedRanges: CompletedItemsRange[] = []
-    private status: RangeStatus = RangeStatus.NEW
+    private completedRanges: ItemsRange[] = []
+    private status: ItemsRangeStatus = ItemsRangeStatus.NEW
 
     constructor(completedRangesString?: string) {
         if (completedRangesString) {
@@ -32,12 +32,12 @@ export class CompletedRangeTracker {
      * 
      * @param item 
      */
-    public updateRange(range: CompletedItemsRange) {
+    public updateRange(range: ItemsRange) {
         if (!this.completedRanges.length) {
             return
         }
 
-        if (this.status == RangeStatus.NEW) {
+        if (this.status == ItemsRangeStatus.NEW) {
             this.completedRanges[0].startId = range.endId 
         } else {
             if (range.startId == range.endId) {
@@ -60,10 +60,10 @@ export class CompletedRangeTracker {
      * 
      * @param item 
      */
-    public completedRange(item: CompletedItemsRange, breakPointHit: boolean) {
+    public completedRange(item: ItemsRange, breakPointHit: boolean) {
         // console.log("completedRange()", item, breakPointHit)
         switch (this.status) {
-            case RangeStatus.NEW:
+            case ItemsRangeStatus.NEW:
                 if (!item.startId && !item.endId) {
                     // No items processed, so do nothing
                 } else if (breakPointHit) {
@@ -78,9 +78,9 @@ export class CompletedRangeTracker {
                     this.completedRanges.unshift(item)
                 }
                 
-                this.status = RangeStatus.BACKFILL
+                this.status = ItemsRangeStatus.BACKFILL
                 break
-            case RangeStatus.BACKFILL:
+            case ItemsRangeStatus.BACKFILL:
                 const firstRange = this.completedRanges[0]
                 const secondRange = this.completedRanges.length > 1 ? this.completedRanges[1] : {}
 
@@ -106,18 +106,18 @@ export class CompletedRangeTracker {
         }
     }
 
-    public nextRange(): CompletedItemsRange {
+    public nextRange(): ItemsRange {
         if (!this.completedRanges || this.completedRanges.length == 0) {
             return {}
         }
 
         switch (this.status) {
-            case RangeStatus.NEW:
+            case ItemsRangeStatus.NEW:
                 return {
                     startId: undefined,
                     endId: this.completedRanges[0].startId
                 }
-            case RangeStatus.BACKFILL:
+            case ItemsRangeStatus.BACKFILL:
                 const firstRange = this.completedRanges[0]
                 const secondRange = this.completedRanges.length > 1 ? this.completedRanges[1] : {}
 

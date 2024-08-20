@@ -1,10 +1,10 @@
 
-export interface CompletedItemsRange {
+export interface ItemsRange {
     startId?: string
     endId?: string
 }
 
-export enum RangeStatus {
+export enum ItemsRangeStatus {
     NEW = "new",
     BACKFILL = "backfill"
 }

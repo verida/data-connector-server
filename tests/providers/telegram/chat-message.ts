@@ -1,6 +1,5 @@
 const assert = require("assert");
 import {
-  BaseProviderConfig,
   Connection,
   SyncHandlerPosition,
   SyncHandlerStatus,
@@ -12,7 +11,7 @@ import CommonUtils, { NetworkInstance } from "../../common.utils";
 import TelegramChatMessageHandler from "../../../src/providers/telegram/chat-message";
 import BaseProvider from "../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../common.tests";
-import { TelegramChatGroupType, TelegramConfig } from "../../../src/providers/telegram/interfaces";
+import { TelegramConfig } from "../../../src/providers/telegram/interfaces";
 import { SchemaRecord, SchemaSocialChatGroup, SchemaSocialChatMessage } from "../../../src/schemas";
 
 const providerName = "telegram";

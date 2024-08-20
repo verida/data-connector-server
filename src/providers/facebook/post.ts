@@ -50,7 +50,7 @@ export default class Posts extends BaseSyncHandler {
         }
 
         if (!pageResults || !pageResults.data.length) {
-            // No results found, so stop sync
+            syncPosition.syncMessage = `Stopping. No results found.`
             syncPosition = this.stopSync(syncPosition, pageResults)
 
             return {
@@ -63,7 +63,7 @@ export default class Posts extends BaseSyncHandler {
         syncPosition = this.setNextPosition(syncPosition, pageResults)
 
         if (results.length != this.config.postBatchSize) {
-            // Not a full page of results, so stop sync
+            syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`
             syncPosition = this.stopSync(syncPosition, pageResults)
         }
 
@@ -74,7 +74,7 @@ export default class Posts extends BaseSyncHandler {
     }
 
     protected stopSync(syncPosition: SyncHandlerPosition, serverResponse: any): SyncHandlerPosition {
-        if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+        if (syncPosition.status == SyncHandlerStatus.ENABLED) {
             return syncPosition
         }
         
@@ -84,18 +84,19 @@ export default class Posts extends BaseSyncHandler {
         }
 
         syncPosition.thisRefType = PostSyncRefTypes.Api
-        syncPosition.status = SyncHandlerStatus.STOPPED
+        syncPosition.status = SyncHandlerStatus.ENABLED
         syncPosition.futureBreakId = undefined
         return syncPosition
     }
 
     protected setNextPosition(syncPosition: SyncHandlerPosition, serverResponse: any): SyncHandlerPosition {
         if (_.has(serverResponse, 'paging.next')) {
+            syncPosition.syncMessage = `Batch complete (${this.config.postBatchSize}). More results pending.`
             // We have a next page of results, so set that for the next page
             syncPosition.thisRef = serverResponse.paging.next
             syncPosition.thisRefType = PostSyncRefTypes.Url
         } else {
-            // No next page of results, so clear the current value
+            syncPosition.syncMessage = `Stopping. No more results.`
             syncPosition.thisRef = undefined
             syncPosition.thisRefType = PostSyncRefTypes.Api
         }
