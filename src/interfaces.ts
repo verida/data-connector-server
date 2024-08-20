@@ -145,6 +145,9 @@ export interface SyncHandlerPosition {
     handlerName: string
     status: SyncHandlerStatus
 
+    // Message describing the status of the sync
+    syncMessage?: string
+
     // Reference point for the current sync
     thisRef?: string
 
