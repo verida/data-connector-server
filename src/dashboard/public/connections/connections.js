@@ -67,7 +67,7 @@ $(document).ready(function() {
                     <tr>
                         <td><img src="${providerDetails.icon}" alt="${providerDetails.label}" style="width: 30px; height: 30px;"> ${providerDetails.label}</td>
                         <td>${connection.profile.name} ${connection.profile.email ? '('+ connection.profile.email +')' : ''} (${connection.providerId})</td>
-                        <td>${connection.syncStatus}<br>${formattedSyncTimes}</td>
+                        <td>${connection.syncMessage ? connection.syncMessage : ""} (${connection.syncStatus})<br>${formattedSyncTimes}</td>
                         <td><ul>${handlers.map(handler => `<li>${handler.handlerName} (${handler.status})</li>`).join('')}</ul></td>
                         <td>
                             <button class="btn btn-success sync-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Sync Now</button>
@@ -103,8 +103,10 @@ $(document).ready(function() {
                 // Start tailing logs
                 const eventSource = new EventSource(`/api/v1/logs?key=${veridaKey}`);
 
+                const tableBody = $('#eventTableBody');
+                tableBody.empty()
+
                 function addEventRow(eventData) {
-                    const tableBody = $('#eventTableBody');
                     const rowHtml = `
                       <tr>
                         <td>${eventData.level}</td>
