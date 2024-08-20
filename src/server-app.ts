@@ -26,8 +26,9 @@ const app = express();
 app.use(requestIdMiddleware)
 app.use('/assets', express.static(path.join(__dirname, 'assets')))
 app.use('/dashboard', express.static(path.join(__dirname, 'dashboard')))
+app.use('/provider', express.static(path.join(__dirname, 'provider')))
 app.use(session({
-  secret: 'c20n498n720489t729amx9 8es',
+  secret: CONFIG.verida.sessionSecret,
   resave: false,
   saveUninitialized: true,
   // Enable this if HTTPS is enabled (ie: production)

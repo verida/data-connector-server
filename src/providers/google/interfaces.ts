@@ -23,3 +23,13 @@ export interface GmailSyncSchemaPositionMetadata {
 export interface GmailSyncSchemaPosition extends SyncHandlerPosition {
   metadata?: GmailSyncSchemaPositionMetadata;
 }
+
+export enum YoutubeActivityType {
+  UPLOAD = "upload", // post
+  LIKE = "like", // favourite
+  SUBSCRIPTION = "subscription", // following
+  FAVOURITE = "favourite", // favourite
+  COMMENT = "comment", // ingored
+  PLAYLIST_ITEM = "playlistItem", //ignored
+  RECOMMENDATION = "recommendation", // favourite
+}

@@ -7,6 +7,7 @@
         "environment": "banksia",
         "testVeridaKey": "0x...",
         "testVeridaNetwork": "banksia",
+        "sessionSecret": "empty",
         "didClientConfig": {
             "callType": "web3",
             "network": "banksia",
@@ -21,6 +22,9 @@
             "FOLLOWING": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
             "POST": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
             "EMAIL": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
+            "FAVOURITE": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
+            "CHAT_GROUP": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
+            "CHAT_MESSAGE": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
             "FAVOURITE": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
             "DOCUMENT": "https://common.schemas.verida.io/document/v0.1.0/schema.json"
         }
@@ -58,6 +62,18 @@
         "google": {
             "clientId": "",
             "clientSecret": ""
+        },
+        "telegram": {
+            "label": "Telegram",
+            "apiId": 0,
+            "apiHash": "",
+            "maxSyncLoops": 1,
+            "groupLimit": 20,
+            "messageMaxAgeDays": 7,
+            "messageBatchSize": 500,
+            "messagesPerGroupLimit": 100,
+            "maxGroupSize": 50,
+            "useDbPos": true
         }
     },
     "providerDefaults": {

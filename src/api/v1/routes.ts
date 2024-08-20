@@ -1,5 +1,6 @@
 import express from 'express'
 import Controller from './controller'
+import TelegramRoutes from './telegram/routes'
 
 const router = express.Router()
 
@@ -13,5 +14,7 @@ router.get('/syncStatus', Controller.syncStatus)
 router.get('/providers', Controller.providers)
 router.get('/data', Controller.data)
 router.get('/logs', Controller.logs)
+
+router.use('/telegram', TelegramRoutes)
 
 export default router
