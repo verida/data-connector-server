@@ -218,11 +218,11 @@ export class GoogleDriveHelpers {
     auth: OAuth2Client
   ): Promise<string> {
     let textContent = '';
-
+  
     // 5MB limit (5 * 1024 * 1024)
     const sizeLimit = 5 * 1024 * 1024;
     const fileSize = await this.getFileSize(drive, fileId);
-
+  
     if (fileSize !== undefined && fileSize <= sizeLimit) {
       if (mimeType === 'application/pdf') {
         const fileBuffer = await this.downloadFile(drive, fileId);
@@ -236,13 +236,58 @@ export class GoogleDriveHelpers {
       } else if (mimeType === 'text/plain') {
         const fileBuffer = await this.downloadFile(drive, fileId);
         textContent = fileBuffer.toString('utf8');
+      } else if (mimeType === 'application/msword' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const fileBuffer = await this.downloadFile(drive, fileId);
+        textContent = await this.parseDocx(fileBuffer);
+      } else if (mimeType === 'application/vnd.ms-excel' || mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        const fileBuffer = await this.downloadFile(drive, fileId);
+        textContent = await this.parseXlsx(fileBuffer);
+      } else if (mimeType === 'application/vnd.ms-powerpoint' || mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+        const fileBuffer = await this.downloadFile(drive, fileId);
+        textContent = await this.parsePptx(fileBuffer);
       }
-      
     } else {
       console.warn('File size exceeds the limit or unsupported file type.');
     }
-    
+  
     return textContent;
+  }
+  
+  static async parseDocx(docxBuffer: Buffer): Promise<string> {
+    const mammoth = require('mammoth');
+    try {
+      const result = await mammoth.extractRawText({ buffer: docxBuffer });
+      return result.value;
+    } catch (error) {
+      console.error("Error parsing DOCX file:", error);
+      return "";
+    }
+  }
+  
+  static async parseXlsx(xlsxBuffer: Buffer): Promise<string> {
+    const XLSX = require('xlsx');
+    try {
+      const workbook = XLSX.read(xlsxBuffer, { type: 'buffer' });
+      const text = workbook.SheetNames.map((sheetName: string) => {
+        const sheet = workbook.Sheets[sheetName];
+        return XLSX.utils.sheet_to_csv(sheet);
+      }).join('\n');
+      return text;
+    } catch (error) {
+      console.error("Error parsing XLSX file:", error);
+      return "";
+    }
+  }
+  
+  static async parsePptx(pptxBuffer: Buffer): Promise<string> {
+    const PptxParser = require('pptx-parser');
+    try {
+      const result = await PptxParser(pptxBuffer);
+      return result.text;
+    } catch (error) {
+      console.error("Error parsing PPTX file:", error);
+      return "";
+    }
   }
 
   static async extractGoogleDocsText(
