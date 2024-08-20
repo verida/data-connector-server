@@ -15,8 +15,8 @@ import {
 } from "../../schemas";
 import { TelegramApi } from "./api";
 import { TelegramChatGroupType, TelegramConfig } from "./interfaces";
-import { CompletedRangeTracker } from "../../helpers/completedRangeTracker";
-import { CompletedItemsRange } from "../../helpers/interfaces";
+import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
+import { ItemsRange } from "../../helpers/interfaces";
 import { UsersCache } from "./usersCache";
 
 const _ = require("lodash");
@@ -101,8 +101,8 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
    * @param api 
    * @param range 
    */
-  protected async validateRange(api: TelegramApi, range: CompletedItemsRange, chatGroupId: string, chatSourceId: string): Promise<CompletedItemsRange> {
-    const validatedRange: CompletedItemsRange = {
+  protected async validateRange(api: TelegramApi, range: ItemsRange, chatGroupId: string, chatSourceId: string): Promise<ItemsRange> {
+    const validatedRange: ItemsRange = {
       startId: range.startId,
       endId: range. endId
     }
@@ -164,7 +164,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     return validatedRange
   }
 
-  protected async fetchMessageRange(currentRange: CompletedItemsRange, chatGroup: SchemaSocialChatGroup, chatHistory: SchemaSocialChatMessage[], api: TelegramApi, userCache: UsersCache, totalMessageCount: number, groupMessageCount: number): Promise<{
+  protected async fetchMessageRange(currentRange: ItemsRange, chatGroup: SchemaSocialChatGroup, chatHistory: SchemaSocialChatMessage[], api: TelegramApi, userCache: UsersCache, totalMessageCount: number, groupMessageCount: number): Promise<{
     messagesAdded: number,
     breakIdHit: boolean
   }> {
@@ -206,7 +206,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
   }> {
     console.log(`- Processing group: ${chatGroup.name} (${chatGroup.sourceId}) - ${chatGroup.syncData}`)
     const chatHistory: SchemaSocialChatMessage[] = []
-    const rangeTracker = new CompletedRangeTracker(chatGroup.syncData)
+    const rangeTracker = new ItemsRangeTracker(chatGroup.syncData)
     let groupMessageCount = 0
 
     let newItems = true
