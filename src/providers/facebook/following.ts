@@ -29,6 +29,7 @@ export default class Following extends BaseSyncHandler {
 
         if (!pageResults || !pageResults.data.length) {
             // No results found, so stop sync
+            syncPosition.syncMessage = `Stopping. No results found.`
             syncPosition = this.stopSync(syncPosition)
 
             return {
@@ -41,7 +42,7 @@ export default class Following extends BaseSyncHandler {
         syncPosition = this.setNextPosition(syncPosition, pageResults)
 
         if (results.length != this.config.followingBatchSize) {
-            // Not a full page of results, so stop sync
+            syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`
             syncPosition = this.stopSync(syncPosition)
         }
 
@@ -70,12 +71,13 @@ export default class Following extends BaseSyncHandler {
         }
 
         if (_.has(serverResponse, 'paging.next')) {
+            syncPosition.syncMessage = `Batch complete (${this.config.followingBatchSize}). More results pending.`
             // Have more results, so set the next page ready for the next request
             const next = serverResponse.paging.next
             const urlParts = url.parse(next, true)
             syncPosition.thisRef = `${this.apiEndpoint}${urlParts.search}`
         } else {
-            console.log('following: stopping, no next page')
+            syncPosition.syncMessage = `Stopping. No more results.`
             syncPosition = this.stopSync(syncPosition)
         }
 
