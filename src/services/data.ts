@@ -42,7 +42,7 @@ const schemas: Record<string, SchemaConfig> = {
     },
     "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json": {
         label: "Chat History",
-        storeFields: ['_id'],
+        storeFields: ['_id', 'groupId'],
         indexFields: ['messageText', 'fromHandle', 'fromName', 'groupName', 'indexableText', 'sentAt']
     }
 }
