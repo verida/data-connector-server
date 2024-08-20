@@ -316,7 +316,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
 
       if (!groupLimitHit && messageCount != this.config.messageBatchSize) {
         // No limits hit for this batch, so we simply ran out of messages and we can stop the sync
-        syncPosition.status = SyncHandlerStatus.STOPPED
+        syncPosition.status = SyncHandlerStatus.ENABLED
       }
 
       return {

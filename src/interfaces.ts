@@ -83,9 +83,7 @@ export enum SyncStatus {
     CONNECTED = "connected",    // sync is connected, but not currently running
     ERROR = "error",            // sync had an error on its last run
     PAUSED = "paused",          // sync is temporarily paused
-    SYNC_REQUESTED = "sync-requested",  // sync has been requested, but not yet started (deprecated?)
-    SYNC_ACTIVE = "sync-active",        // sync is currently running
-    DISABLED = "disabled"               // sync is permanently disabled
+    ACTIVE = "active",        // sync is currently running
 }
 
 export interface ConnectionHandler {
@@ -126,8 +124,10 @@ export interface DatastoreSaveResponse {
 }
 
 export enum SyncHandlerStatus {
-    STOPPED = "stopped",
-    ACTIVE = "active"
+    ENABLED = "enabled",
+    ERROR = "error",
+    DISABLED = "disabled",
+    SYNCING = "syncing",
 }
 
 export enum SyncSchemaPositionType {

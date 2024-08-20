@@ -220,7 +220,7 @@ export default class BaseProvider extends EventEmitter {
             }
         }
 
-        this.connection.syncStatus = SyncStatus.SYNC_ACTIVE
+        this.connection.syncStatus = SyncStatus.ACTIVE
         this.connection.syncStart = Utils.nowTimestamp()
         await this.saveConnection()
 
@@ -258,9 +258,9 @@ export default class BaseProvider extends EventEmitter {
         const datastore = await this.vault.openDatastore(schemaUri)
 
         const syncPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.SYNC, syncPositionsDs)
-        syncPosition.status = SyncHandlerStatus.ACTIVE
+        syncPosition.status = SyncHandlerStatus.SYNCING
         const backfillPosition = await this.getSyncPosition(handler.getName(), SyncSchemaPositionType.BACKFILL, syncPositionsDs)
-        backfillPosition.status = SyncHandlerStatus.ACTIVE
+        backfillPosition.status = SyncHandlerStatus.SYNCING
 
         handler.on('log', async (syncLog: SyncProviderLogEvent) => {
             await providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncLog.message, handler.getName(), schemaUri)
@@ -272,7 +272,7 @@ export default class BaseProvider extends EventEmitter {
         syncCount++
 
         while (!this.config.maxSyncLoops || syncCount < this.config.maxSyncLoops) {
-            if (syncResults.syncPosition.status == SyncHandlerStatus.ACTIVE || syncResults.backfillPosition.status == SyncHandlerStatus.ACTIVE) {
+            if (syncResults.syncPosition.status == SyncHandlerStatus.SYNCING || syncResults.backfillPosition.status == SyncHandlerStatus.SYNCING) {
                 // sync again
                 await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(), schemaUri)
                 syncResults = await handler.sync(api, syncPosition, backfillPosition, syncPositionsDs, datastore)
@@ -317,7 +317,7 @@ export default class BaseProvider extends EventEmitter {
                     providerName: this.getProviderName(),
                     providerId: this.getProviderId(),
                     handlerName,
-                    status: SyncHandlerStatus.ACTIVE
+                    status: SyncHandlerStatus.SYNCING
                 }
             }
 

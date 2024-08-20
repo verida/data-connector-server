@@ -193,7 +193,7 @@ export default class BaseSyncHandler extends EventEmitter {
      * @returns SyncResponse Array of results that need to be saved and the updated syncPosition
      */
     protected async _backfill(api: any, backfillPosition: SyncHandlerPosition): Promise<SyncResponse> {
-        backfillPosition.status = SyncHandlerStatus.STOPPED
+        backfillPosition.status = SyncHandlerStatus.ENABLED
 
         return {
             position: backfillPosition,

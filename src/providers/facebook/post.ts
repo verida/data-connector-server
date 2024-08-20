@@ -74,7 +74,7 @@ export default class Posts extends BaseSyncHandler {
     }
 
     protected stopSync(syncPosition: SyncHandlerPosition, serverResponse: any): SyncHandlerPosition {
-        if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+        if (syncPosition.status == SyncHandlerStatus.ENABLED) {
             return syncPosition
         }
         
@@ -84,7 +84,7 @@ export default class Posts extends BaseSyncHandler {
         }
 
         syncPosition.thisRefType = PostSyncRefTypes.Api
-        syncPosition.status = SyncHandlerStatus.STOPPED
+        syncPosition.status = SyncHandlerStatus.ENABLED
         syncPosition.futureBreakId = undefined
         return syncPosition
     }
