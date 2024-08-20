@@ -50,7 +50,7 @@ describe(`${providerName} Youtube Post Tests`, function () {
     });
 
     it(`Can limit results by timestamp`, async () => {
-      const lastRecordHours = 20;
+      const lastRecordHours = 24;
       const lastRecordTimestamp = new Date(
         Date.now() - lastRecordHours * 3600000
       ).toISOString();
@@ -78,7 +78,7 @@ describe(`${providerName} Youtube Post Tests`, function () {
       );
       assert.ok(
         syncResponse.results && syncResponse.results.length,
-        "Have results (You may not have activities in the testing timeframe)"
+        `Have results (You may not have activities in the testing timeframe of ${lastRecordHours} hours)`
       );
 
       const results = <SchemaPost[]>syncResponse.results;
