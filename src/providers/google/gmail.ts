@@ -1,5 +1,6 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
+import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import { google, gmail_v1 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 
@@ -144,6 +145,11 @@ export default class Gmail extends GoogleHandler {
       const messageId = message.id;
 
       if (messageId == breakId) {
+        const logEvent: SyncProviderLogEvent = {
+          level: SyncProviderLogLevel.DEBUG,
+          message: `Break ID hit (${breakId})`
+        }
+        this.emit('log', logEvent)
         break;
       }
 
@@ -153,6 +159,11 @@ export default class Gmail extends GoogleHandler {
         : "Unknown";
 
       if (breakTimestamp && internalDate < breakTimestamp) {
+        const logEvent: SyncProviderLogEvent = {
+          level: SyncProviderLogLevel.DEBUG,
+          message: `Break timestamp hit (${breakTimestamp})`
+        }
+        this.emit('log', logEvent)
         break;
       }
 
