@@ -184,7 +184,7 @@ export default class YouTubePost extends GoogleHandler {
                 icon: iconUri,
                 uri: activityUri,
                 type: SchemaPostType.VIDEO,
-                summary: description.substring(0, 256),
+                // summary: description.substring(0, 256),
                 content: description,
                 sourceId: post.id,
                 sourceData: snippet,

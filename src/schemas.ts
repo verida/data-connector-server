@@ -20,20 +20,6 @@ export interface SchemaFollowing extends SchemaRecord {
     insertedAt: string
 }
 
-export enum PostType {
-    LINK = "link",
-    STATUS = "status",
-    PHOTO = "photo",
-    VIDEO = "video",
-    MUSIC = "music",
-    EVENT = "event",
-    OFFER = "offer",
-    QUESTION = "question",
-    NOTE = "note",
-    ALBUM = "album",
-    LIFE_EVENT = "life_event"
-}
-
 export enum SchemaPostType {
     LINK = "link",
     STATUS = "status",
@@ -98,4 +84,24 @@ export interface SchemaFavourite extends SchemaRecord {
     favouriteType?: SchemaFavouriteType
     contentType?: SchemaFavouriteContentType
     description?: string
+}
+
+export interface SchemaSocialChatGroup extends SchemaRecord {
+    newestId?: string
+    syncData?: string
+}
+
+export enum SchemaChatMessageType {
+    SEND = "send",
+    RECEIVE = "receive"
+}
+
+export interface SchemaSocialChatMessage extends SchemaRecord {
+    chatGroupId: string
+    type: SchemaChatMessageType
+    messageText: string
+    messageHTML?: string
+    senderId: string
+    senderHandle?: string
+    sentAt: string
 }
