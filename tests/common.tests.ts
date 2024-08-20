@@ -27,10 +27,10 @@ export interface GenericTestConfig {
 }
 
 // info,debug,error
-const logLevelArg = process.argv.find(arg => arg.startsWith('--logLevel='))
-const logLevel = logLevelArg ? logLevelArg.split('=')[1] : undefined
+const logLevelArg = process.argv.find((arg) => arg.startsWith("--logLevel="));
+const logLevel = logLevelArg ? logLevelArg.split("=")[1] : undefined;
 
-let provider: BaseProvider, connection: Connection
+let provider: BaseProvider, connection: Connection;
 
 export class CommonTests {
   static async runSyncTest(
@@ -42,7 +42,7 @@ export class CommonTests {
       batchSizeLimitAttribute: "batchSize",
     },
     syncPositionConfig: Omit<SyncHandlerPosition, "_id">,
-    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">,
+    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
   ): Promise<SyncResponse> {
     const { api, handler, schemaUri } = await this.buildTestObjects(
       providerName,
@@ -56,7 +56,7 @@ export class CommonTests {
       ...syncPositionConfig,
     };
 
-    CommonUtils.setupHandlerLogging(handler, <SyncProviderLogLevel> logLevel)
+    CommonUtils.setupHandlerLogging(handler, <SyncProviderLogLevel>logLevel);
 
     return handler._sync(api, syncPosition);
   }
@@ -67,10 +67,10 @@ export class CommonTests {
     providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">,
     connection?: Connection
   ): Promise<{
-    api: any,
-    provider: BaseProvider,
-    handler: BaseSyncHandler,
-    schemaUri: string
+    api: any;
+    provider: BaseProvider;
+    handler: BaseSyncHandler;
+    schemaUri: string;
   }> {
     const network = await CommonUtils.getNetwork();
     if (!connection) {
@@ -82,7 +82,7 @@ export class CommonTests {
     const handler = await provider.getSyncHandler(handlerType);
     const schemaUri = handler.getSchemaUri();
 
-    CommonUtils.setupHandlerLogging(handler, <SyncProviderLogLevel> logLevel)
+    CommonUtils.setupHandlerLogging(handler, <SyncProviderLogLevel>logLevel);
 
     const api = await provider.getApi(
       connection.accessToken,
@@ -113,9 +113,9 @@ export class CommonTests {
     providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {},
     connection?: Connection
   ): Promise<{
-    api: any,
-    handler: BaseSyncHandler,
-    provider: BaseProvider
+    api: any;
+    handler: BaseSyncHandler;
+    provider: BaseProvider;
   }> {
     // Set result limit to 3 results so page tests can work correctly
     providerConfig[testConfig.batchSizeLimitAttribute] = 3;
@@ -127,7 +127,9 @@ export class CommonTests {
       connection
     );
 
-    const idPrefix = testConfig.idPrefix ? testConfig.idPrefix : `${provider.getProviderName()}-${connection!.profile.id}`;
+    const idPrefix = testConfig.idPrefix
+      ? testConfig.idPrefix
+      : `${provider.getProviderName()}-${connection!.profile.id}`;
 
     try {
       const syncPosition: SyncHandlerPosition = {
@@ -141,49 +143,95 @@ export class CommonTests {
       // Snapshot: Page 1
       const response = await handler._sync(api, syncPosition);
 
-    const results = <SchemaRecord[]>response.results;
-    assert.ok(results && results.length, "Have results returned");
-    assert.equal(providerConfig[testConfig.batchSizeLimitAttribute], results.length, "Have correct number of results returned on page 1");
-
-    if (testConfig.timeOrderAttribute) {
-      assert.ok(
-        results[0][testConfig.timeOrderAttribute] > results[1][testConfig.timeOrderAttribute],
-        "Results are most recent first"
+      const results = <SchemaRecord[]>response.results;
+      assert.ok(results && results.length, "Have results returned");
+      assert.equal(
+        providerConfig[testConfig.batchSizeLimitAttribute],
+        results.length,
+        "Have correct number of results returned on page 1"
       );
-    }
 
-    assert.equal(results[0].sourceApplication, handler.getProviderApplicationUrl(), "Items have correct source application");
-    assert.equal(results[0].sourceAccountId, provider.getProviderId(), "Items have correct source account / provider id");
-    assert.ok(results[0].sourceId, "Items have sourceId set");
-    assert.ok(results[0].sourceData, "Items have sourceData set");
+      if (testConfig.timeOrderAttribute) {
+        assert.ok(
+          results[0][testConfig.timeOrderAttribute] >
+            results[1][testConfig.timeOrderAttribute],
+          "Results are most recent first"
+        );
+      }
 
-    assert.equal(SyncHandlerStatus.ACTIVE, response.position.status, "Sync is set to connected");
-    assert.ok(response.position.thisRef, "Have a next page reference");
-    assert.equal(response.position.breakId, undefined, "Break ID is undefined");
-    assert.equal(`${idPrefix}-${response.position.futureBreakId}`, results[0]._id, "Future break ID matches the first result ID");
+      assert.equal(
+        results[0].sourceApplication,
+        handler.getProviderApplicationUrl(),
+        "Items have correct source application"
+      );
+      assert.equal(
+        results[0].sourceAccountId,
+        provider.getProviderId(),
+        "Items have correct source account / provider id"
+      );
+      assert.ok(results[0].sourceId, "Items have sourceId set");
+      assert.ok(results[0].sourceData, "Items have sourceData set");
+
+      assert.equal(
+        SyncHandlerStatus.ACTIVE,
+        response.position.status,
+        "Sync is set to connected"
+      );
+      assert.ok(response.position.thisRef, "Have a next page reference");
+      assert.equal(
+        response.position.breakId,
+        undefined,
+        "Break ID is undefined"
+      );
+      assert.equal(
+        `${idPrefix}-${response.position.futureBreakId}`,
+        results[0]._id,
+        "Future break ID matches the first result ID"
+      );
 
       // Snapshot: Page 2
       const response2 = await handler._sync(api, syncPosition);
       const results2 = <SchemaRecord[]>response2.results;
 
-    assert.ok(results2 && results2.length, "Have second page of results returned");
-    assert.ok(results2 && results2.length == providerConfig[testConfig.batchSizeLimitAttribute], "Have correct number of results returned in second page");
-
-    if (testConfig.timeOrderAttribute) {
       assert.ok(
-        results2[0][testConfig.timeOrderAttribute] > results2[1][testConfig.timeOrderAttribute],
-        "Results are most recent first"
+        results2 && results2.length,
+        "Have second page of results returned"
       );
       assert.ok(
-        results2[0][testConfig.timeOrderAttribute] < results[2][testConfig.timeOrderAttribute],
-        "First item on second page of results have earlier timestamp than last item on first page"
+        results2 &&
+          results2.length == providerConfig[testConfig.batchSizeLimitAttribute],
+        "Have correct number of results returned in second page"
       );
-    }
 
-    assert.equal(response.position.status, SyncHandlerStatus.ACTIVE, "Sync is still active");
-    assert.ok(response.position.thisRef, "Have a next page reference");
-    assert.equal(response.position.breakId, undefined, "Break ID is undefined");
-    assert.equal(results[0]._id, `${idPrefix}-${response.position.futureBreakId}`, "Future break ID matches the first result ID");
+      if (testConfig.timeOrderAttribute) {
+        assert.ok(
+          results2[0][testConfig.timeOrderAttribute] >
+            results2[1][testConfig.timeOrderAttribute],
+          "Results are most recent first"
+        );
+        assert.ok(
+          results2[0][testConfig.timeOrderAttribute] <
+            results[2][testConfig.timeOrderAttribute],
+          "First item on second page of results have earlier timestamp than last item on first page"
+        );
+      }
+
+      assert.equal(
+        response.position.status,
+        SyncHandlerStatus.ACTIVE,
+        "Sync is still active"
+      );
+      assert.ok(response.position.thisRef, "Have a next page reference");
+      assert.equal(
+        response.position.breakId,
+        undefined,
+        "Break ID is undefined"
+      );
+      assert.equal(
+        results[0]._id,
+        `${idPrefix}-${response.position.futureBreakId}`,
+        "Future break ID matches the first result ID"
+      );
 
       // Update: Page 1 (ensure 1 result only)
       // Fetch the update set of results to confirm `position.pos` is correct
@@ -199,10 +247,41 @@ export class CommonTests {
       assert.equal(results3.length, 1, "1 result returned");
       assert.equal(results3[0]._id, results[0]._id, "Correct ID returned");
 
-    assert.equal(response.position.status, SyncHandlerStatus.STOPPED, "Sync is stopped");
-    assert.equal(response.position.thisRef, undefined, "No next page reference");
-    // assert.equal(PostSyncRefTypes.Api, response.position.thisRefType, 'This position reference type is API fetch')
-    assert.equal(response.position.breakId, results3[0]._id.replace(`${idPrefix}-`, ""), "Break ID is the first result");
-    assert.equal(response.position.futureBreakId, undefined, "Future break ID is undefined");
+      assert.equal(
+        response.position.status,
+        SyncHandlerStatus.STOPPED,
+        "Sync is stopped"
+      );
+      assert.equal(
+        response.position.thisRef,
+        undefined,
+        "No next page reference"
+      );
+      // assert.equal(PostSyncRefTypes.Api, response.position.thisRefType, 'This position reference type is API fetch')
+      assert.equal(
+        response.position.breakId,
+        results3[0]._id.replace(`${idPrefix}-`, ""),
+        "Break ID is the first result"
+      );
+      assert.equal(
+        response.position.futureBreakId,
+        undefined,
+        "Future break ID is undefined"
+      );
+      // Close the provider connection
+      console.log("closing provider");
+      await provider.close();
+
+      return {
+        api,
+        handler,
+        provider,
+      };
+    } catch (err) {
+      // ensure provider closes even if there's an error
+      await provider.close();
+
+      throw err;
+    }
   }
 }
