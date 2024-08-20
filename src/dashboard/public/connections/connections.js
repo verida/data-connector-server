@@ -109,7 +109,7 @@ $(document).ready(function() {
                       <tr>
                         <td>${eventData.level}</td>
                         <td>${eventData.insertedAt}</td>
-                        <td>${eventData.providerName}</td>
+                        <td>${eventData.providerName} (${eventData.handlerName})</td>
                         <td>${eventData.providerId}</td>
                         <td>${eventData.message}</td>
                       </tr>
