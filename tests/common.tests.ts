@@ -4,7 +4,6 @@ import {
   SyncHandlerStatus,
   SyncResponse,
   SyncHandlerPosition,
-  SyncSchemaPositionType,
   SyncStatus,
   SyncProviderLogEntry,
   SyncProviderLogLevel,
@@ -134,11 +133,10 @@ export class CommonTests {
     try {
       const syncPosition: SyncHandlerPosition = {
         _id: `${providerName}-${schemaUri}`,
-        type: SyncSchemaPositionType.SYNC,
         providerName,
         handlerName: handler.getName(),
         providerId: provider.getProviderId(),
-        status: SyncHandlerStatus.ACTIVE,
+        status: SyncHandlerStatus.ENABLED,
       };
       // Snapshot: Page 1
       const response = await handler._sync(api, syncPosition);
@@ -173,7 +171,7 @@ export class CommonTests {
       assert.ok(results[0].sourceData, "Items have sourceData set");
 
       assert.equal(
-        SyncHandlerStatus.ACTIVE,
+        SyncHandlerStatus.ENABLED,
         response.position.status,
         "Sync is set to connected"
       );
@@ -218,7 +216,7 @@ export class CommonTests {
 
       assert.equal(
         response.position.status,
-        SyncHandlerStatus.ACTIVE,
+        SyncHandlerStatus.ENABLED,
         "Sync is still active"
       );
       assert.ok(response.position.thisRef, "Have a next page reference");
@@ -249,7 +247,7 @@ export class CommonTests {
 
       assert.equal(
         response.position.status,
-        SyncHandlerStatus.STOPPED,
+        SyncHandlerStatus.DISABLED,
         "Sync is stopped"
       );
       assert.equal(
