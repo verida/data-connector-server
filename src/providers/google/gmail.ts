@@ -1,21 +1,27 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
+import { SyncItemsBreak, SyncItemsResult, SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import { google, gmail_v1 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
+import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker"
 
 import {
   SyncResponse,
-  SyncHandlerPosition,
   SyncHandlerStatus,
   HandlerOption,
   ConnectionOptionType,
 } from "../../interfaces";
-import { SchemaEmail, SchemaEmailType } from "../../schemas";
+import { SchemaEmail, SchemaEmailType, SchemaRecord } from "../../schemas";
 import { GmailHelpers } from "./helpers";
 import { GmailSyncSchemaPosition } from "./interfaces";
 
 const _ = require("lodash");
+
+const MAX_BATCH_SIZE = 500
+
+export interface SyncEmailItemsResult extends SyncItemsResult {
+  items: SchemaEmail[]
+}
 
 export default class Gmail extends GoogleHandler {
 
@@ -52,85 +58,118 @@ export default class Gmail extends GoogleHandler {
     api: any,
     syncPosition: GmailSyncSchemaPosition
   ): Promise<SyncResponse> {
-    const gmail = this.getGmail();
+    if (this.config.batchSize > MAX_BATCH_SIZE) {
+      throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`)
+    }
 
-    const query: gmail_v1.Params$Resource$Users$Messages$List = {
+    const gmail = this.getGmail();
+    // Range tracker is used where completed startId = item ID, endId = pageToken
+    // And conversely, pending startId = page token, endId = item ID
+    const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef)
+
+    let items: SchemaEmail[] = []
+
+    /**
+     * Fetch any new items
+     */
+    // Current range has `startId` = undefined, `endId` = breakId
+    let currentRange = rangeTracker.nextRange()
+
+    let query: gmail_v1.Params$Resource$Users$Messages$List = {
       userId: "me",
-      maxResults: this.config.batchSize, // Google Docs: default = 100, max = 500
+      maxResults: this.config.batchSize, // default = 100, max = 500
     };
 
-    if (syncPosition.thisRef) {
-      query.pageToken = syncPosition.thisRef;
+    if (currentRange.startId) {
+      query.pageToken = currentRange.startId
     }
 
-    const serverResponse = await gmail.users.messages.list(query);
-
-    if (
-      !_.has(serverResponse, "data.messages") ||
-      !serverResponse.data.messages.length
-    ) {
-      syncPosition.syncMessage = `Stopping. No results found.`
-      syncPosition = this.stopSync(syncPosition);
-
-      return {
-        position: syncPosition,
-        results: [],
-      };
-    }
-
-    const results = await this.buildResults(
+    const latestResponse = await gmail.users.messages.list(query);
+    const latestResult = await this.buildResults(
       gmail,
-      serverResponse,
-      syncPosition.breakId,
+      latestResponse,
+      currentRange.endId,
       SchemaEmailType.RECEIVE,
       _.has(this.config, "metadata.breakTimestamp")
         ? this.config.metadata.breakTimestamp
         : undefined
     );
 
-    syncPosition = this.setNextPosition(syncPosition, serverResponse);
+    items = latestResult.items
 
-    if (results.length != this.config.batchSize) {
-      syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`
-      syncPosition = this.stopSync(syncPosition);
+    let nextPageToken = _.has(latestResponse, "data.nextPageToken") ? latestResponse.data.nextPageToken : undefined
+
+    if (items.length) {
+      rangeTracker.completedRange({
+        startId: items[0].sourceId,
+        endId: nextPageToken
+      }, latestResult.breakHit == SyncItemsBreak.ID)
+    } else {
+      rangeTracker.completedRange({
+        startId: undefined,
+        endId: undefined
+      }, false) // No results and first batch, so break ID couldn't have been hit
     }
+
+    if (items.length != this.config.batchSize) {
+      // Not enough items, fetch more from the next page of results
+      currentRange = rangeTracker.nextRange()
+
+      query = {
+        userId: "me",
+        maxResults: this.config.batchSize - items.length, // only fetch enough items needed to complete the batch size
+      };
+  
+      if (currentRange.startId) {
+        query.pageToken = currentRange.startId
+      }
+
+      const backfillResponse = await gmail.users.messages.list(query);
+      const backfillResult = await this.buildResults(
+        gmail,
+        backfillResponse,
+        currentRange.endId,
+        SchemaEmailType.RECEIVE,
+        _.has(this.config, "metadata.breakTimestamp")
+          ? this.config.metadata.breakTimestamp
+          : undefined
+      );
+
+      items = items.concat(backfillResult.items)
+
+      nextPageToken = _.has(backfillResponse, "data.nextPageToken") ? backfillResponse.data.nextPageToken : undefined
+  
+      if (backfillResult.items.length) {
+        rangeTracker.completedRange({
+          startId: backfillResult.items[0].sourceId,
+          endId: nextPageToken
+        }, backfillResult.breakHit == SyncItemsBreak.ID)
+      } else {
+        rangeTracker.completedRange({
+          startId: undefined,
+          endId: undefined
+        },  backfillResult.breakHit == SyncItemsBreak.ID)
+      }
+    }
+
+    if (!items.length) {
+      syncPosition.syncMessage = `Stopping. No results found.`
+      syncPosition.status = SyncHandlerStatus.ENABLED
+    } else {
+      if (items.length != this.config.batchSize && !nextPageToken) {
+        syncPosition.syncMessage = `Processed ${items.length} items. Stopping. No more results.`
+        syncPosition.status = SyncHandlerStatus.ENABLED
+      } else {
+        syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`
+      }
+    }
+
+    syncPosition.thisRef = rangeTracker.export()
 
     return {
-      results,
+      results: items,
       position: syncPosition,
     };
-  }
-
-  protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
-    if (syncPosition.status == SyncHandlerStatus.ENABLED) {
-      return syncPosition;
-    }
-
-    syncPosition.status = SyncHandlerStatus.ENABLED;
-    syncPosition.thisRef = undefined;
-    syncPosition.breakId = syncPosition.futureBreakId;
-    syncPosition.futureBreakId = undefined;
-
-    return syncPosition;
-  }
-
-  protected setNextPosition(
-    syncPosition: SyncHandlerPosition,
-    serverResponse: GaxiosResponse<gmail_v1.Schema$ListMessagesResponse>
-  ): SyncHandlerPosition {
-    if (!syncPosition.futureBreakId && serverResponse.data.messages.length) {
-      syncPosition.futureBreakId = serverResponse.data.messages[0].id;
-    }
-
-    if (_.has(serverResponse, "data.nextPageToken")) {
-      syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`
-      syncPosition.thisRef = serverResponse.data.nextPageToken;
-    } else {
-      syncPosition.syncMessage = `Stopping. No more results.`
-      syncPosition = this.stopSync(syncPosition);
-    }
-
-    return syncPosition;
   }
 
   protected async buildResults(
@@ -139,8 +178,9 @@ export default class Gmail extends GoogleHandler {
     breakId: string,
     messageType: SchemaEmailType,
     breakTimestamp?: string
-  ): Promise<SchemaEmail[]> {
+  ): Promise<SyncEmailItemsResult> {
     const results: SchemaEmail[] = [];
+    let breakHit: SyncItemsBreak
     for (const message of serverResponse.data.messages) {
       const messageId = message.id;
 
@@ -150,6 +190,7 @@ export default class Gmail extends GoogleHandler {
           message: `Break ID hit (${breakId})`
         }
         this.emit('log', logEvent)
+        breakHit = SyncItemsBreak.ID
         break;
       }
 
@@ -164,6 +205,7 @@ export default class Gmail extends GoogleHandler {
           message: `Break timestamp hit (${breakTimestamp})`
         }
         this.emit('log', logEvent)
+        breakHit = SyncItemsBreak.TIMESTAMP
         break;
       }
 
@@ -199,6 +241,9 @@ export default class Gmail extends GoogleHandler {
       });
     }
 
-    return results;
+    return {
+      items: results,
+      breakHit
+    }
   }
 }

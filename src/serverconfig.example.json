@@ -63,7 +63,12 @@
         },
         "google": {
             "clientId": "",
-            "clientSecret": ""
+            "clientSecret": "",
+            "batchSize": 100,
+            "maxSyncLoops": 1,
+            "metadata": {
+                "breakTimestamp": "2000-07-21T12:07:11.000Z"
+            }
         },
         "telegram": {
             "label": "Telegram",
