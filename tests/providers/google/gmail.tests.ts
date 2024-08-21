@@ -4,7 +4,6 @@ import {
   Connection,
   SyncHandlerStatus,
   SyncHandlerPosition,
-  SyncSchemaPositionType,
 } from "../../../src/interfaces";
 import Providers from "../../../src/providers";
 import CommonUtils, { NetworkInstance } from "../../common.utils";
@@ -56,11 +55,10 @@ describe(`${providerName} Tests`, function () {
       ).toISOString();
 
       const syncPosition: Omit<SyncHandlerPosition, "_id"> = {
-        type: SyncSchemaPositionType.SYNC,
         providerName,
         providerId: provider.getProviderId(),
         handlerName,
-        status: SyncHandlerStatus.ACTIVE,
+        status: SyncHandlerStatus.ENABLED,
       };
 
       providerConfig.batchSize = 10;
