@@ -113,11 +113,11 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
     }
 
     protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
-        if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+        if (syncPosition.status == SyncHandlerStatus.ENABLED) {
             return syncPosition;
         }
 
-        syncPosition.status = SyncHandlerStatus.STOPPED;
+        syncPosition.status = SyncHandlerStatus.ENABLED;
         syncPosition.thisRef = undefined;
         syncPosition.breakId = syncPosition.futureBreakId;
         syncPosition.futureBreakId = undefined;
