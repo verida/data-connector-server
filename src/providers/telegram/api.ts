@@ -110,6 +110,15 @@ export class TelegramApi {
         return chatDetail
     }
 
+    public async getUser(user_id: number): Promise<any> {
+        const client = await this.getClient()
+        const user = await client.api.getUser({
+            user_id,
+        });
+
+        return user
+    }
+
     public async getSupergroup(supergroup_id: number) {
         const client = await this.getClient()
         return await client.api.getSupergroup({

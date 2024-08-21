@@ -55,6 +55,7 @@ export default class YouTubeFavourite extends GoogleHandler {
             !serverResponse.data.items.length
         ) {
             // No results found, so stop sync
+            syncPosition.syncMessage = "Stopping. No results found.";
             syncPosition = this.stopSync(syncPosition);
     
             return {
@@ -75,6 +76,7 @@ export default class YouTubeFavourite extends GoogleHandler {
     
         if (results.length != this.config.batchSize) {
             // Not a full page of results, so stop sync
+            syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`;
             syncPosition = this.stopSync(syncPosition);
         }
     
@@ -85,11 +87,11 @@ export default class YouTubeFavourite extends GoogleHandler {
     }
     
     protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
-        if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+        if (syncPosition.status == SyncHandlerStatus.ENABLED) {
             return syncPosition;
         }
 
-        syncPosition.status = SyncHandlerStatus.STOPPED;
+        syncPosition.status = SyncHandlerStatus.ENABLED;
         syncPosition.thisRef = undefined;
         syncPosition.breakId = syncPosition.futureBreakId;
         syncPosition.futureBreakId = undefined;
@@ -107,8 +109,10 @@ export default class YouTubeFavourite extends GoogleHandler {
 
         if (_.has(serverResponse, "data.nextPageToken")) {
             // Have more results, so set the next page ready for the next request
+            syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`;
             syncPosition.thisRef = serverResponse.data.nextPageToken;
         } else {
+            syncPosition.syncMessage = "Stopping. No more results.";
             syncPosition = this.stopSync(syncPosition);
         }
 

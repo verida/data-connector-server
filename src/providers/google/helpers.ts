@@ -1,6 +1,7 @@
 import { drive_v3, gmail_v1, google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import pdf from "pdf-parse";
+import { stripHtml } from "string-strip-html";
 import { DocumentType } from "../../schemas";
 
 export class GmailHelpers {
@@ -39,7 +40,7 @@ export class GmailHelpers {
         }
       }
     }
-    return text;
+    return stripHtml(text).result;
   }
 
   static getHtmlContent(

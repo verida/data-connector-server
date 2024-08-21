@@ -1,5 +1,6 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
+import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import { google, gmail_v1 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 
@@ -68,7 +69,7 @@ export default class Gmail extends GoogleHandler {
       !_.has(serverResponse, "data.messages") ||
       !serverResponse.data.messages.length
     ) {
-      // No results found, so stop sync
+      syncPosition.syncMessage = `Stopping. No results found.`
       syncPosition = this.stopSync(syncPosition);
 
       return {
@@ -90,7 +91,7 @@ export default class Gmail extends GoogleHandler {
     syncPosition = this.setNextPosition(syncPosition, serverResponse);
 
     if (results.length != this.config.batchSize) {
-      // Not a full page of results, so stop sync
+      syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`
       syncPosition = this.stopSync(syncPosition);
     }
 
@@ -101,11 +102,11 @@ export default class Gmail extends GoogleHandler {
   }
 
   protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
-    if (syncPosition.status == SyncHandlerStatus.STOPPED) {
+    if (syncPosition.status == SyncHandlerStatus.ENABLED) {
       return syncPosition;
     }
 
-    syncPosition.status = SyncHandlerStatus.STOPPED;
+    syncPosition.status = SyncHandlerStatus.ENABLED;
     syncPosition.thisRef = undefined;
     syncPosition.breakId = syncPosition.futureBreakId;
     syncPosition.futureBreakId = undefined;
@@ -122,9 +123,10 @@ export default class Gmail extends GoogleHandler {
     }
 
     if (_.has(serverResponse, "data.nextPageToken")) {
-      // Have more results, so set the next page ready for the next request
+      syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`
       syncPosition.thisRef = serverResponse.data.nextPageToken;
     } else {
+      syncPosition.syncMessage = `Stopping. No more results.`
       syncPosition = this.stopSync(syncPosition);
     }
 
@@ -143,6 +145,11 @@ export default class Gmail extends GoogleHandler {
       const messageId = message.id;
 
       if (messageId == breakId) {
+        const logEvent: SyncProviderLogEvent = {
+          level: SyncProviderLogLevel.DEBUG,
+          message: `Break ID hit (${breakId})`
+        }
+        this.emit('log', logEvent)
         break;
       }
 
@@ -152,6 +159,11 @@ export default class Gmail extends GoogleHandler {
         : "Unknown";
 
       if (breakTimestamp && internalDate < breakTimestamp) {
+        const logEvent: SyncProviderLogEvent = {
+          level: SyncProviderLogLevel.DEBUG,
+          message: `Break timestamp hit (${breakTimestamp})`
+        }
+        this.emit('log', logEvent)
         break;
       }
 

@@ -12,6 +12,7 @@ export interface SchemaRecord {
     sourceAccountId?: string
     sourceId?: string
     sourceData?: object
+    indexableText?: string
 }
 
 export interface SchemaFollowing extends SchemaRecord {
@@ -97,12 +98,14 @@ export enum SchemaChatMessageType {
 }
 
 export interface SchemaSocialChatMessage extends SchemaRecord {
-    chatGroupId: string
+    groupId: string
+    groupName?: string
     type: SchemaChatMessageType
     messageText: string
     messageHTML?: string
-    senderId: string
-    senderHandle?: string
+    fromId: string
+    fromHandle?: string
+    fromName?: string
     sentAt: string
 }
 
