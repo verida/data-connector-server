@@ -140,7 +140,7 @@ export class CommonTests {
         providerName,
         handlerName: handler.getName(),
         providerId: provider.getProviderId(),
-        status: SyncHandlerStatus.SYNCING,
+        status: SyncHandlerStatus.ENABLED,
       };
       
       // 1. Test new items are processed
@@ -168,7 +168,7 @@ export class CommonTests {
       CommonTests.checkItem(results[0], handler, provider)
 
       assert.equal(
-        SyncHandlerStatus.SYNCING,
+        SyncHandlerStatus.ENABLED,
         response.position.status,
         "Sync is active"
       );
@@ -212,7 +212,7 @@ export class CommonTests {
 
       assert.equal(
         response2.position.status,
-        SyncHandlerStatus.SYNCING,
+        SyncHandlerStatus.ENABLED,
         "Sync is active"
       );
 
@@ -261,7 +261,7 @@ export class CommonTests {
 
       assert.equal(
         response3.position.status,
-        SyncHandlerStatus.SYNCING,
+        SyncHandlerStatus.ENABLED,
         "Sync is active"
       );
 

@@ -70,7 +70,7 @@ describe(`${providerName} Tests`, function () {
         providerName,
         providerId: provider.getProviderId(),
         handlerName,
-        status: SyncHandlerStatus.SYNCING,
+        status: SyncHandlerStatus.ENABLED,
       };
 
       providerConfig.batchSize = 20;
