@@ -4,7 +4,6 @@ import {
   Connection,
   SyncHandlerStatus,
   SyncHandlerPosition,
-  SyncSchemaPositionType,
 } from "../../../src/interfaces";
 import Providers from "../../../src/providers";
 import CommonUtils, { NetworkInstance } from "../../common.utils";
@@ -21,6 +20,8 @@ let provider: BaseProvider;
 let handlerName = "gmail";
 let testConfig: GenericTestConfig;
 let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
+
+console.log(`WARNING: Sometimes these tests fail because the Google API doesnt return inbox messages in the correct time order. This is a bug in the Google API and there's not much we can do about it.`)
 
 describe(`${providerName} Tests`, function () {
   this.timeout(100000);
@@ -40,6 +41,16 @@ describe(`${providerName} Tests`, function () {
   describe(`Fetch ${providerName} data`, () => {
 
     it(`Can pass basic tests: ${handlerName}`, async () => {
+      /**
+       * Things to test:
+       * 
+       * - New items are processed
+       * - Backfill items are processed
+       * - Not enough new items? Process backfill
+       * - Backfill twice doesn't process the same items
+       * - No more backfill produces empty rangeTracker
+       */
+
       await CommonTests.runGenericTests(
         providerName,
         Gmail,
@@ -50,20 +61,19 @@ describe(`${providerName} Tests`, function () {
     });
 
     it(`Can limit results by timestamp`, async () => {
-      const lastRecordHours = 2;
+      const lastRecordHours = 1;
       const lastRecordTimestamp = new Date(
         Date.now() - lastRecordHours * 3600000
       ).toISOString();
 
       const syncPosition: Omit<SyncHandlerPosition, "_id"> = {
-        type: SyncSchemaPositionType.SYNC,
         providerName,
         providerId: provider.getProviderId(),
         handlerName,
-        status: SyncHandlerStatus.ACTIVE,
+        status: SyncHandlerStatus.SYNCING,
       };
 
-      providerConfig.batchSize = 10;
+      providerConfig.batchSize = 20;
       providerConfig.metadata = {
         breakTimestamp: lastRecordTimestamp,
       }
@@ -86,9 +96,10 @@ describe(`${providerName} Tests`, function () {
         results[results.length - 1].sentAt > lastRecordTimestamp,
         "Last result is within expected date/time range"
       );
+
       assert.ok(
         results.length < providerConfig.batchSize,
-        `Results reached the expected timestamp within the current batch size (try increating the test batch size or reducing the break timetamp)`
+        `Results reached the expected timestamp within the current batch size (try increasing the test batch size or reducing the break timetamp)`
       );
     });
   });
