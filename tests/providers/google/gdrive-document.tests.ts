@@ -4,7 +4,6 @@ import {
   Connection,
   SyncHandlerStatus,
   SyncHandlerPosition,
-  SyncSchemaPositionType,
 } from "../../../src/interfaces";
 import Providers from "../../../src/providers";
 import CommonUtils, { NetworkInstance } from "../../common.utils";
@@ -57,11 +56,10 @@ describe(`${providerName} GDrive Document Tests`, function () {
       ).toISOString();
 
       const syncPosition: Omit<SyncHandlerPosition, "_id"> = {
-        type: SyncSchemaPositionType.SYNC,
         providerName,
         providerId: provider.getProviderId(),
         handlerName,
-        status: SyncHandlerStatus.ACTIVE,
+        status: SyncHandlerStatus.ENABLED,
       };
 
       providerConfig.batchSize = 5;
@@ -95,11 +93,10 @@ describe(`${providerName} GDrive Document Tests`, function () {
 
     it(`Can handle empty results`, async () => {
       const syncPosition: Omit<SyncHandlerPosition, "_id"> = {
-        type: SyncSchemaPositionType.SYNC,
         providerName,
         providerId: provider.getProviderId(),
         handlerName,
-        status: SyncHandlerStatus.ACTIVE,
+        status: SyncHandlerStatus.ENABLED,
       };
 
       providerConfig.batchSize = 5;
