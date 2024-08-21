@@ -140,7 +140,7 @@ export class CommonTests {
         providerName,
         handlerName: handler.getName(),
         providerId: provider.getProviderId(),
-        status: SyncHandlerStatus.ENABLED,
+        status: SyncHandlerStatus.SYNCING,
       };
       
       // 1. Test new items are processed
@@ -168,7 +168,7 @@ export class CommonTests {
       CommonTests.checkItem(results[0], handler, provider)
 
       assert.equal(
-        SyncHandlerStatus.ENABLED,
+        SyncHandlerStatus.SYNCING,
         response.position.status,
         "Sync is active"
       );
@@ -212,7 +212,7 @@ export class CommonTests {
 
       assert.equal(
         response2.position.status,
-        SyncHandlerStatus.ENABLED,
+        SyncHandlerStatus.SYNCING,
         "Sync is active"
       );
 
@@ -261,7 +261,7 @@ export class CommonTests {
 
       assert.equal(
         response3.position.status,
-        SyncHandlerStatus.ENABLED,
+        SyncHandlerStatus.SYNCING,
         "Sync is active"
       );
 
@@ -318,7 +318,7 @@ export class CommonTests {
       assert.ok(currentRangeParts4.length == 2, "Have correct number of parts for the processing range");
       assert.ok(currentRangeParts4[1].length, "Have an end range");
 
-      // No more backfill produces empty rangeTracker
+      // @todo: No more backfill produces empty rangeTracker and SyncHandlerStatus.CONNECTED
 
 
       // Close the provider connection
