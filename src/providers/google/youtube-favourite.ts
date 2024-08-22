@@ -1,16 +1,24 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-import { SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
+import { SyncHandlerPosition, SyncItemsBreak, SyncItemsResult, SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces';
 import {
     SyncResponse,
-    SyncHandlerPosition,
     SyncHandlerStatus,
+    HandlerOption,
+    ConnectionOptionType,
 } from "../../interfaces";
 import { SchemaFavouriteContentType, SchemaFavouriteType, SchemaFavourite } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
+import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 
 const _ = require("lodash");
+
+const MAX_BATCH_SIZE = 50;
+
+export interface SyncFavouriteItemsResult extends SyncItemsResult {
+    items: SchemaFavourite[];
+}
 
 export default class YouTubeFavourite extends GoogleHandler {
 
@@ -27,143 +35,173 @@ export default class YouTubeFavourite extends GoogleHandler {
     }
 
     public getYouTube(): youtube_v3.Youtube {
-        const oAuth2Client = this.getGoogleAuth()
+        const oAuth2Client = this.getGoogleAuth();
         const youtube = google.youtube({ version: "v3", auth: oAuth2Client });
         return youtube;
+    }
+
+    public getOptions(): HandlerOption[] {
+        return [{
+            name: 'backdate',
+            label: 'Backdate history',
+            type: ConnectionOptionType.ENUM,
+            enumOptions: ['1 month', '3 months', '6 months', '12 months'],
+            defaultValue: '3 months'
+        }];
     }
 
     public async _sync(
         api: any,
         syncPosition: SyncHandlerPosition
     ): Promise<SyncResponse> {
-        const youtube = this.getYouTube();
-    
-        const query: youtube_v3.Params$Resource$Videos$List = {
-            part: ["snippet", "contentDetails"],
-            myRating: "like",
-            maxResults: this.config.batchSize, // Google Docs: default = 5, max = 50
-        };
-    
-        if (syncPosition.thisRef) {
-            query.pageToken = syncPosition.thisRef;
-        }
-    
-        const serverResponse = await youtube.videos.list(query);
-    
-        if (
-            !_.has(serverResponse, "data.items") ||
-            !serverResponse.data.items.length
-        ) {
-            // No results found, so stop sync
-            syncPosition.syncMessage = "Stopping. No results found.";
-            syncPosition = this.stopSync(syncPosition);
-    
-            return {
-                position: syncPosition,
-                results: [],
-            };
+        if (this.config.batchSize > MAX_BATCH_SIZE) {
+            throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`);
         }
 
-        const results = await this.buildResults(
-            serverResponse,
-            syncPosition.breakId,
+        const youtube = this.getYouTube();
+        const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
+
+        let items: SchemaFavourite[] = [];
+
+        // Fetch any new items
+        let currentRange = rangeTracker.nextRange();
+        let query: youtube_v3.Params$Resource$Videos$List = {
+            part: ["snippet", "contentDetails"],
+            myRating: "like",
+            maxResults: this.config.batchSize,
+        };
+
+        if (currentRange.startId) {
+            query.pageToken = currentRange.startId;
+        }
+
+        const latestResponse = await youtube.videos.list(query);
+        const latestResult = await this.buildResults(
+            latestResponse,
+            currentRange.endId,
             _.has(this.config, "metadata.breakTimestamp")
                 ? this.config.metadata.breakTimestamp
                 : undefined
         );
-    
-        syncPosition = this.setNextPosition(syncPosition, serverResponse);
-    
-        if (results.length != this.config.batchSize) {
-            // Not a full page of results, so stop sync
-            syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`;
-            syncPosition = this.stopSync(syncPosition);
+
+        items = latestResult.items;
+
+        let nextPageToken = _.has(latestResponse, "data.nextPageToken") ? latestResponse.data.nextPageToken : undefined;
+
+        if (items.length) {
+            rangeTracker.completedRange({
+                startId: items[0].sourceId,
+                endId: nextPageToken
+            }, latestResult.breakHit == SyncItemsBreak.ID);
+        } else {
+            rangeTracker.completedRange({
+                startId: undefined,
+                endId: undefined
+            }, false);
         }
-    
+
+        if (items.length != this.config.batchSize) {
+            currentRange = rangeTracker.nextRange();
+            query = {
+                part: ["snippet", "contentDetails"],
+                myRating: "like",
+                maxResults: this.config.batchSize - items.length,
+            };
+
+            if (currentRange.startId) {
+                query.pageToken = currentRange.startId;
+            }
+
+            const backfillResponse = await youtube.videos.list(query);
+            const backfillResult = await this.buildResults(
+                backfillResponse,
+                currentRange.endId,
+                _.has(this.config, "metadata.breakTimestamp")
+                    ? this.config.metadata.breakTimestamp
+                    : undefined
+            );
+
+            items = items.concat(backfillResult.items);
+            nextPageToken = _.has(backfillResponse, "data.nextPageToken") ? backfillResponse.data.nextPageToken : undefined;
+
+            if (backfillResult.items.length) {
+                rangeTracker.completedRange({
+                    startId: backfillResult.items[0].sourceId,
+                    endId: nextPageToken
+                }, backfillResult.breakHit == SyncItemsBreak.ID);
+            } else {
+                rangeTracker.completedRange({
+                    startId: undefined,
+                    endId: undefined
+                }, backfillResult.breakHit == SyncItemsBreak.ID);
+            }
+        }
+
+        if (!items.length) {
+            syncPosition.syncMessage = `Stopping. No results found.`;
+            syncPosition.status = SyncHandlerStatus.ENABLED;
+        } else {
+            if (items.length != this.config.batchSize && !nextPageToken) {
+                syncPosition.syncMessage = `Processed ${items.length} items. Stopping. No more results.`;
+                syncPosition.status = SyncHandlerStatus.ENABLED;
+            } else {
+                syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`;
+            }
+        }
+
+        syncPosition.thisRef = rangeTracker.export();
+
         return {
-            results,
+            results: items,
             position: syncPosition,
         };
-    }
-    
-    protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
-        if (syncPosition.status == SyncHandlerStatus.ENABLED) {
-            return syncPosition;
-        }
-
-        syncPosition.status = SyncHandlerStatus.ENABLED;
-        syncPosition.thisRef = undefined;
-        syncPosition.breakId = syncPosition.futureBreakId;
-        syncPosition.futureBreakId = undefined;
-
-        return syncPosition;
-    }
-
-    protected setNextPosition(
-        syncPosition: SyncHandlerPosition,
-        serverResponse: GaxiosResponse<youtube_v3.Schema$VideoListResponse>
-    ): SyncHandlerPosition {
-        if (!syncPosition.futureBreakId && serverResponse.data.items.length) {
-            syncPosition.futureBreakId = serverResponse.data.items[0].id;
-        }
-
-        if (_.has(serverResponse, "data.nextPageToken")) {
-            // Have more results, so set the next page ready for the next request
-            syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`;
-            syncPosition.thisRef = serverResponse.data.nextPageToken;
-        } else {
-            syncPosition.syncMessage = "Stopping. No more results.";
-            syncPosition = this.stopSync(syncPosition);
-        }
-
-        return syncPosition;
     }
 
     protected async buildResults(
         serverResponse: GaxiosResponse<youtube_v3.Schema$VideoListResponse>,
         breakId: string,
         breakTimestamp?: string
-    ): Promise<SchemaFavourite[]> {
+    ): Promise<SyncFavouriteItemsResult> {
         const results: SchemaFavourite[] = [];
-    
-        const videos = serverResponse.data.items;
-    
-        for (const video of videos) {
+        let breakHit: SyncItemsBreak;
+
+        for (const video of serverResponse.data.items) {
             const videoId = video.id;
             const favouriteId = videoId;
-    
+
             if (favouriteId == breakId) {
                 const logEvent: SyncProviderLogEvent = {
                     level: SyncProviderLogLevel.DEBUG,
                     message: `Break ID hit (${breakId})`
-                }
-                this.emit('log', logEvent)
+                };
+                this.emit('log', logEvent);
+                breakHit = SyncItemsBreak.ID;
                 break;
             }
-    
+
             const snippet = video.snippet;
             const insertedAt = snippet.publishedAt || "Unknown";
-    
+
             if (breakTimestamp && insertedAt < breakTimestamp) {
                 const logEvent: SyncProviderLogEvent = {
                     level: SyncProviderLogLevel.DEBUG,
                     message: `Break timestamp hit (${breakTimestamp})`
-                }
-                this.emit('log', logEvent)
+                };
+                this.emit('log', logEvent);
+                breakHit = SyncItemsBreak.TIMESTAMP;
                 break;
             }
-    
+
             const title = snippet.title || "No title";
             const description = snippet.description || "No description";
             const iconUri = snippet.thumbnails.default.url;
             const activityUri = `https://www.youtube.com/watch?v=${videoId}`;
-    
+
             results.push({
                 _id: this.buildItemId(favouriteId),
                 name: title,
                 icon: iconUri,
                 uri: activityUri,
-                // summary: description.substring(0, 256),
                 description: description,
                 favouriteType: SchemaFavouriteType.LIKE,
                 contentType: SchemaFavouriteContentType.VIDEO,
@@ -174,8 +212,10 @@ export default class YouTubeFavourite extends GoogleHandler {
                 insertedAt: insertedAt,
             });
         }
-    
-        return results;
+
+        return {
+            items: results,
+            breakHit,
+        };
     }
-    
 }
