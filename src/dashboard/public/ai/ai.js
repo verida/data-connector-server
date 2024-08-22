@@ -41,10 +41,19 @@ $(document).ready(function() {
         addMessage(prompt, 'user');
         showTypingIndicator();
 
+        const userInput = $('#privateData-input').val();
+
+        let urlType = "prompt"
+        if (userInput == "on") {
+            urlType = "personal"
+        }
+
+        console.log(urlType)
+
         const body = { prompt: prompt, key: veridaKey };
 
         $.ajax({
-            url: `/api/v1/llm/personal?key=${veridaKey}`,
+            url: `/api/v1/llm/${urlType}?key=${veridaKey}`,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(body),
