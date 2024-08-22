@@ -186,3 +186,13 @@ export interface SyncHandlerResponse {
     syncPosition: SyncHandlerPosition
     syncResults: SchemaRecord[]
 }
+
+export interface SyncItemsResult {
+    items: SchemaRecord[]
+    breakHit?: SyncItemsBreak
+}
+
+export enum SyncItemsBreak {
+    ID = "id",
+    TIMESTAMP = "timestamp"
+}

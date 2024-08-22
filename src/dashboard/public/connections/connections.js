@@ -75,7 +75,17 @@ $(document).ready(function() {
                         <td>${connection.syncStatus}<br>${formattedSyncTimes}</td>
                         <td>${handlers.map(handler => `[${handler.handlerName}] ${handler.syncMessage ? handler.syncMessage : ""} (${handler.status})<br/>`).join('')}</td>
                         <td>
-                            <button class="btn btn-success sync-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Sync Now</button>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-success sync-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">
+                                    Sync Now
+                                    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-expanded="false">
+                                        <span class="sr-only">Toggle Dropdown</span>
+                                    </button>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="#" class="sync-btn" data-sync-type="force">Force</a>
+                                </div>
+                            </div>
                             <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Full Logs</button>
                             <button class="btn btn-danger disconnect-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Disconnect</button>
                         </td>
@@ -104,6 +114,7 @@ $(document).ready(function() {
                 const providerId = $(this).data('provider-id');
                 $button.text('Syncing...')
                 $button.prop('disabled', true);
+                const syncType = $(this).data('sync-type');
 
                 // Start tailing logs
                 const eventSource = new EventSource(`/api/v1/logs?key=${veridaKey}`);
@@ -138,7 +149,7 @@ $(document).ready(function() {
                   });
 
                 // Initialize sync
-                $.getJSON(`/api/v1/sync?key=${veridaKey}&provider=${provider}&providerId=${providerId}&force=true`, function(response) {
+                $.getJSON(`/api/v1/sync?key=${veridaKey}&provider=${provider}&providerId=${providerId}&${syncType == 'force' ? 'force=true' : ''}`, function(response) {
                     $button.prop('disabled', false);
                     $button.text('Sync Now')
 
