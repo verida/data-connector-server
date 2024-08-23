@@ -1,3 +1,5 @@
+import { String$Input } from "tdlib-native/dist/types"
+
 export interface SchemaRecord {
     _id: string
     _rev?: string
@@ -121,16 +123,12 @@ export enum DocumentType {
     OTHER = "other"
 }
 
-export interface SchemaDocument extends SchemaRecord {
-    type: DocumentType
+export interface SchemaFile extends SchemaRecord {
+    extension: string
+    mimeType: string
     size: number
-    contentText: string
-    contentRaw?: string
-}
+    contentText?: string
+    fileDataId?: string
+    uri?: string
 
-export interface SchemaDocument extends SchemaRecord {
-    type: DocumentType
-    size: number
-    contentText: string
-    contentRaw?: string
 }
