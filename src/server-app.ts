@@ -25,8 +25,7 @@ const app = express();
 
 app.use(requestIdMiddleware)
 app.use('/assets', express.static(path.join(__dirname, 'assets')))
-app.use('/dashboard', express.static(path.join(__dirname, 'dashboard')))
-app.use('/provider', express.static(path.join(__dirname, 'provider')))
+app.use('/', express.static(path.join(__dirname, 'web')))
 app.use(session({
   secret: CONFIG.verida.sessionSecret,
   resave: false,
