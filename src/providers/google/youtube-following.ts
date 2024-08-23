@@ -67,10 +67,7 @@ export default class YouTubeFollowing extends GoogleHandler {
         const latestResponse = await youtube.subscriptions.list(query);
         const latestResult = await this.buildResults(
             latestResponse,
-            currentRange.endId,
-            _.has(this.config, "metadata.breakTimestamp")
-                ? this.config.metadata.breakTimestamp
-                : undefined
+            currentRange.endId
         );
 
         items = latestResult.items;
@@ -104,10 +101,7 @@ export default class YouTubeFollowing extends GoogleHandler {
             const backfillResponse = await youtube.subscriptions.list(query);
             const backfillResult = await this.buildResults(
                 backfillResponse,
-                currentRange.endId,
-                _.has(this.config, "metadata.breakTimestamp")
-                    ? this.config.metadata.breakTimestamp
-                    : undefined
+                currentRange.endId
             );
 
             items = items.concat(backfillResult.items);
@@ -148,16 +142,15 @@ export default class YouTubeFollowing extends GoogleHandler {
 
     protected async buildResults(
         serverResponse: GaxiosResponse<youtube_v3.Schema$SubscriptionListResponse>,
-        breakId: string,
-        breakTimestamp?: string
+        breakId: string
     ): Promise<{ items: SchemaFollowing[], breakHit?: SyncItemsBreak }> {
         const results: SchemaFollowing[] = [];
         let breakHit: SyncItemsBreak;
-
-        for (const item of serverResponse.data.items) {
-            const itemId = item.id;
-
-            if (itemId == breakId) {
+    
+        for (const item of serverResponse.data.items ?? []) {
+            const itemId = item.id ?? '';
+    
+            if (itemId === breakId) {
                 const logEvent: SyncProviderLogEvent = {
                     level: SyncProviderLogLevel.DEBUG,
                     message: `Break ID hit (${breakId})`
@@ -166,32 +159,22 @@ export default class YouTubeFollowing extends GoogleHandler {
                 breakHit = SyncItemsBreak.ID;
                 break;
             }
-
-            const snippet = item.snippet;
-            const insertedAt = snippet.publishedAt || "Unknown";
-
-            if (breakTimestamp && insertedAt < breakTimestamp) {
-                const logEvent: SyncProviderLogEvent = {
-                    level: SyncProviderLogLevel.DEBUG,
-                    message: `Break timestamp hit (${breakTimestamp})`
-                };
-                this.emit('log', logEvent);
-                breakHit = SyncItemsBreak.TIMESTAMP;
-                break;
-            }
-
-            const title = snippet.title || "No title";
-            const description = snippet.description || "No description";
-            const uri = "https://www.youtube.com/channel/" + snippet.resourceId.channelId;
-            const icon = snippet.thumbnails.default.url;
-
+    
+            const snippet = item.snippet ?? {};
+            const insertedAt = snippet.publishedAt ?? new Date().toISOString();
+    
+            const title = snippet.title ?? 'No title';
+            const description = snippet.description ?? 'No description';
+            const uri = `https://www.youtube.com/channel/${snippet.resourceId?.channelId ?? ''}`;
+            const icon = snippet.thumbnails?.default?.url ?? '';
+    
             results.push({
                 _id: this.buildItemId(itemId),
                 name: title,
                 icon: icon,
                 uri: uri,
                 description: description,
-                sourceId: item.id,
+                sourceId: itemId,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
@@ -199,7 +182,7 @@ export default class YouTubeFollowing extends GoogleHandler {
                 insertedAt: insertedAt,
             });
         }
-
+    
         return { items: results, breakHit };
-    }
+    }    
 }

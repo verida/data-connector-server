@@ -78,10 +78,7 @@ export default class YouTubePost extends GoogleHandler {
         const latestResponse = await youtube.activities.list(query);
         const latestResult = await this.buildResults(
             latestResponse,
-            currentRange.endId,
-            _.has(this.config, "metadata.breakTimestamp")
-                ? this.config.metadata.breakTimestamp
-                : undefined
+            currentRange.endId
         );
 
         items = latestResult.items;
@@ -115,10 +112,7 @@ export default class YouTubePost extends GoogleHandler {
             const backfillResponse = await youtube.activities.list(query);
             const backfillResult = await this.buildResults(
                 backfillResponse,
-                currentRange.endId,
-                _.has(this.config, "metadata.breakTimestamp")
-                    ? this.config.metadata.breakTimestamp
-                    : undefined
+                currentRange.endId
             );
 
             items = items.concat(backfillResult.items);
@@ -159,19 +153,18 @@ export default class YouTubePost extends GoogleHandler {
 
     protected async buildResults(
         serverResponse: GaxiosResponse<youtube_v3.Schema$ActivityListResponse>,
-        breakId: string,
-        breakTimestamp?: string
+        breakId: string
     ): Promise<SyncPostItemsResult> {
         const results: SchemaPost[] = [];
         let breakHit: SyncItemsBreak;
-
-        const activities = serverResponse.data.items;
-        const posts = activities.filter(activity => activity.snippet.type == YoutubeActivityType.UPLOAD);
-
+    
+        const activities = serverResponse.data.items ?? [];
+        const posts = activities.filter(activity => activity.snippet?.type === YoutubeActivityType.UPLOAD);
+    
         for (const post of posts) {
-            const postId = post.id;
-
-            if (postId == breakId) {
+            const postId = post.id ?? '';
+    
+            if (postId === breakId) {
                 const logEvent: SyncProviderLogEvent = {
                     level: SyncProviderLogLevel.DEBUG,
                     message: `Break ID hit (${breakId})`
@@ -180,26 +173,16 @@ export default class YouTubePost extends GoogleHandler {
                 breakHit = SyncItemsBreak.ID;
                 break;
             }
-
-            const snippet = post.snippet;
-            const insertedAt = snippet.publishedAt || "Unknown";
-
-            if (breakTimestamp && insertedAt < breakTimestamp) {
-                const logEvent: SyncProviderLogEvent = {
-                    level: SyncProviderLogLevel.DEBUG,
-                    message: `Break timestamp hit (${breakTimestamp})`
-                };
-                this.emit('log', logEvent);
-                breakHit = SyncItemsBreak.TIMESTAMP;
-                break;
-            }
-
-            const title = snippet.title || "No title";
-            const description = snippet.description || "No description";
-            const iconUri = snippet.thumbnails.default.url;
-            const videoId = post.contentDetails.upload.videoId;
+    
+            const snippet = post.snippet ?? {};
+            const insertedAt = snippet.publishedAt ?? new Date().toISOString();
+    
+            const title = snippet.title ?? 'No title';
+            const description = snippet.description ?? 'No description';
+            const iconUri = snippet.thumbnails?.default?.url ?? '';
+            const videoId = post.contentDetails?.upload?.videoId ?? '';
             const activityUri = `https://www.youtube.com/watch?v=${videoId}`;
-
+    
             results.push({
                 _id: this.buildItemId(postId),
                 name: title,
@@ -207,17 +190,18 @@ export default class YouTubePost extends GoogleHandler {
                 uri: activityUri,
                 type: SchemaPostType.VIDEO,
                 content: description,
-                sourceId: post.id,
+                sourceId: postId,
                 sourceData: snippet,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 insertedAt: insertedAt,
             });
         }
-
+    
         return {
             items: results,
             breakHit,
         };
     }
+    
 }
