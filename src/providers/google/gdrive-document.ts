@@ -1,12 +1,11 @@
-import BaseSyncHandler from "../BaseSyncHandler";
 import CONFIG from "../../config";
 import { SyncProviderLogEvent, SyncProviderLogLevel, SyncHandlerPosition, SyncItemsBreak, SyncResponse, SyncHandlerStatus, SyncItemsResult, HandlerOption, ConnectionOptionType } from '../../interfaces';
 import { SchemaDocument } from "../../schemas";
 import { google, drive_v3 } from "googleapis";
-import { OAuth2Client } from 'google-auth-library';
 import { GaxiosResponse } from "gaxios";
 import { GoogleDriveHelpers } from "./helpers";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
+import GoogleHandler from "./GoogleHandler";
 
 const _ = require("lodash");
 
@@ -16,7 +15,7 @@ export interface SyncDocumentItemsResult extends SyncItemsResult {
     items: SchemaDocument[];
 }
 
-export default class GoogleDriveDocument extends BaseSyncHandler {
+export default class GoogleDriveDocument extends GoogleHandler {
 
     public getName(): string {
         return "google-drive-documents";
@@ -28,27 +27,6 @@ export default class GoogleDriveDocument extends BaseSyncHandler {
 
     public getProviderApplicationUrl(): string {
         return "https://drive.google.com";
-    }
-
-    public getGoogleAuth(): OAuth2Client {
-        const TOKEN = {
-            access_token: this.connection.accessToken,
-            refresh_token: this.connection.refreshToken,
-            scope: "https://www.googleapis.com/auth/drive.readonly",
-            token_type: "Bearer",
-        };
-
-        const redirectUrl = "";
-
-        const oAuth2Client = new google.auth.OAuth2(
-            this.config.clientId,
-            this.config.clientSecret,
-            redirectUrl
-        );
-
-        oAuth2Client.setCredentials(TOKEN);
-
-        return oAuth2Client;
     }
 
     public getGoogleDrive(): drive_v3.Drive {
