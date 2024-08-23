@@ -1,6 +1,6 @@
 import CONFIG from "../../config";
 import { SyncProviderLogEvent, SyncProviderLogLevel, SyncHandlerPosition, SyncItemsBreak, SyncResponse, SyncHandlerStatus, SyncItemsResult, HandlerOption, ConnectionOptionType } from '../../interfaces';
-import { SchemaDocument } from "../../schemas";
+import { SchemaFile } from "../../schemas";
 import { google, drive_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { GoogleDriveHelpers } from "./helpers";
@@ -9,10 +9,10 @@ import GoogleHandler from "./GoogleHandler";
 
 const _ = require("lodash");
 
-const MAX_BATCH_SIZE = 50;
+const MAX_BATCH_SIZE = 1000;
 
 export interface SyncDocumentItemsResult extends SyncItemsResult {
-    items: SchemaDocument[];
+    items: SchemaFile[];
 }
 
 export default class GoogleDriveDocument extends GoogleHandler {
@@ -51,22 +51,23 @@ export default class GoogleDriveDocument extends GoogleHandler {
         if (this.config.batchSize > MAX_BATCH_SIZE) {
             throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`);
         }
-
+    
         const drive = this.getGoogleDrive();
         const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
-
-        let items: SchemaDocument[] = [];
+    
+        let items: SchemaFile[] = [];
         let currentRange = rangeTracker.nextRange();
         let query: drive_v3.Params$Resource$Files$List = {
             pageSize: this.config.batchSize,
             fields: 'nextPageToken, files(id, name, mimeType, modifiedTime, webViewLink, thumbnailLink)',
-            q: "mimeType='application/vnd.google-apps.document' or mimeType='application/vnd.google-apps.spreadsheet' or mimeType='application/vnd.google-apps.presentation' or mimeType='application/pdf' or mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document'"
+            q: "", // Fetch all files without restricting mimeType
+            orderBy: "modifiedTime desc", // Fetch files ordered by modifiedTime descending
         };
-
+    
         if (currentRange.startId) {
             query.pageToken = currentRange.startId;
         }
-
+    
         const latestResponse = await drive.files.list(query);
         const latestResult = await this.buildResults(
             drive,
@@ -76,10 +77,10 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 ? this.config.metadata.breakTimestamp
                 : undefined
         );
-
+    
         items = latestResult.items;
         let nextPageToken = _.get(latestResponse, "data.nextPageToken");
-
+    
         if (items.length) {
             rangeTracker.completedRange({
                 startId: items[0].sourceId,
@@ -91,18 +92,18 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 endId: undefined
             }, false);
         }
-
+    
         if (items.length != this.config.batchSize) {
             currentRange = rangeTracker.nextRange();
             query = {
                 ...query,
                 pageSize: this.config.batchSize - items.length,
             };
-
+    
             if (currentRange.startId) {
                 query.pageToken = currentRange.startId;
             }
-
+    
             const backfillResponse = await drive.files.list(query);
             const backfillResult = await this.buildResults(
                 drive,
@@ -112,10 +113,10 @@ export default class GoogleDriveDocument extends GoogleHandler {
                     ? this.config.metadata.breakTimestamp
                     : undefined
             );
-
+    
             items = items.concat(backfillResult.items);
             nextPageToken = _.get(backfillResponse, "data.nextPageToken");
-
+    
             if (backfillResult.items.length) {
                 rangeTracker.completedRange({
                     startId: backfillResult.items[0].sourceId,
@@ -128,7 +129,7 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 }, backfillResult.breakHit === SyncItemsBreak.ID);
             }
         }
-
+    
         if (!items.length) {
             syncPosition.syncMessage = `Stopping. No results found.`;
             syncPosition.status = SyncHandlerStatus.ENABLED;
@@ -137,22 +138,22 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 ? `Processed ${items.length} items. Stopping. No more results.`
                 : `Batch complete (${this.config.batchSize}). More results pending.`;
         }
-
+    
         syncPosition.thisRef = rangeTracker.export();
-
+    
         return {
             results: items,
             position: syncPosition,
         };
     }
-
+   
     protected async buildResults(
         drive: drive_v3.Drive,
         serverResponse: GaxiosResponse<drive_v3.Schema$FileList>,
         breakId: string,
         breakTimestamp?: string
     ): Promise<SyncDocumentItemsResult> {
-        const results: SchemaDocument[] = [];
+        const results: SchemaFile[] = [];
         let breakHit: SyncItemsBreak;
 
         for (const file of serverResponse.data.files) {
@@ -193,8 +194,7 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 this.emit('log', logEvent);
                 continue;
             }
-
-            const type = GoogleDriveHelpers.getDocumentTypeFromMimeType(mimeType);
+            const extension = await GoogleDriveHelpers.getFileExtension(this.getGoogleDrive(), fileId)
             const thumbnail = file.thumbnailLink || undefined;
             const size = await GoogleDriveHelpers.getFileSize(drive, file.id);
             const textContent = await GoogleDriveHelpers.extractIndexableText(drive, file.id, mimeType, this.getGoogleAuth());
@@ -202,7 +202,8 @@ export default class GoogleDriveDocument extends GoogleHandler {
             results.push({
                 _id: this.buildItemId(fileId),
                 name: title,
-                type,
+                mimeType: mimeType,
+                extension: extension,
                 size,
                 uri: link,
                 icon: thumbnail,

@@ -4,6 +4,98 @@ import pdf from "pdf-parse";
 import { stripHtml } from "string-strip-html";
 import { DocumentType } from "../../schemas";
 
+export const mimeExtensions: {[key: string]: string} = {
+  // Google Drive MIME types
+  'application/vnd.google-apps.document': '.gdoc',
+  'application/vnd.google-apps.spreadsheet': '.gsheet',
+  'application/vnd.google-apps.presentation': '.gslides',
+  'application/vnd.google-apps.drawing': '.gdraw',
+  'application/vnd.google-apps.form': '.gform',
+  'application/vnd.google-apps.script': '.gs',
+  'application/vnd.google-apps.site': '.site',
+  'application/vnd.google-apps.folder': '',  // Folders don't have extensions
+
+  // Common document formats
+  'application/pdf': '.pdf',
+  'application/msword': '.doc',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.template': '.dotx',
+  'application/vnd.ms-word.document.macroEnabled.12': '.docm',
+  'application/vnd.ms-word.template.macroEnabled.12': '.dotm',
+
+  // Spreadsheet formats
+  'application/vnd.ms-excel': '.xls',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.template': '.xltx',
+  'application/vnd.ms-excel.sheet.macroEnabled.12': '.xlsm',
+  'application/vnd.ms-excel.template.macroEnabled.12': '.xltm',
+  'application/vnd.ms-excel.addin.macroEnabled.12': '.xlam',
+  'application/vnd.ms-excel.sheet.binary.macroEnabled.12': '.xlsb',
+
+  // Presentation formats
+  'application/vnd.ms-powerpoint': '.ppt',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+  'application/vnd.openxmlformats-officedocument.presentationml.template': '.potx',
+  'application/vnd.openxmlformats-officedocument.presentationml.slideshow': '.ppsx',
+  'application/vnd.ms-powerpoint.addin.macroEnabled.12': '.ppam',
+  'application/vnd.ms-powerpoint.presentation.macroEnabled.12': '.pptm',
+  'application/vnd.ms-powerpoint.template.macroEnabled.12': '.potm',
+  'application/vnd.ms-powerpoint.slideshow.macroEnabled.12': '.ppsm',
+
+  // Image formats
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'image/bmp': '.bmp',
+  'image/webp': '.webp',
+  'image/svg+xml': '.svg',
+  'image/tiff': '.tif',
+  'image/vnd.microsoft.icon': '.ico',
+
+  // Audio formats
+  'audio/mpeg': '.mp3',
+  'audio/wav': '.wav',
+  'audio/ogg': '.ogg',
+  'audio/mp4': '.m4a',
+  'audio/x-wav': '.wav',
+
+  // Video formats
+  'video/mp4': '.mp4',
+  'video/x-msvideo': '.avi',
+  'video/x-ms-wmv': '.wmv',
+  'video/mpeg': '.mpeg',
+  'video/webm': '.webm',
+  'video/ogg': '.ogv',
+
+  // Text formats
+  'text/plain': '.txt',
+  'text/html': '.html',
+  'text/css': '.css',
+  'text/csv': '.csv',
+  'text/javascript': '.js',
+  'application/json': '.json',
+  'application/xml': '.xml',
+
+  // Compressed formats
+  'application/zip': '.zip',
+  'application/x-7z-compressed': '.7z',
+  'application/x-rar-compressed': '.rar',
+  'application/x-tar': '.tar',
+  'application/gzip': '.gz',
+
+  // Other formats
+  'application/octet-stream': '',  // Binary files, often used as a fallback
+  'application/rtf': '.rtf',
+  'application/x-shockwave-flash': '.swf',
+  'application/vnd.ms-project': '.mpp',
+  'application/x-iso9660-image': '.iso',
+  'application/x-bittorrent': '.torrent',
+  'application/vnd.oasis.opendocument.text': '.odt',
+  'application/vnd.oasis.opendocument.spreadsheet': '.ods',
+  'application/vnd.oasis.opendocument.presentation': '.odp',
+  'application/vnd.oasis.opendocument.graphics': '.odg'
+};
+
 export class GmailHelpers {
   static async getMessage(
     gmail: gmail_v1.Gmail,
@@ -392,26 +484,31 @@ export class GoogleDriveHelpers {
     };
   }
 
-  static getDocumentTypeFromMimeType(mimeType: string): DocumentType {
-    switch (mimeType) {
-        case 'text/plain':
-            return DocumentType.TXT;
-        case 'application/pdf':
-            return DocumentType.PDF;
-        case 'application/msword':
-            return DocumentType.DOC;
-        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-            return DocumentType.DOCX;
-        case 'application/vnd.ms-excel':
-            return DocumentType.XLS;
-        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-            return DocumentType.XLSX;
-        case 'application/vnd.ms-powerpoint':
-            return DocumentType.PPT;
-        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-            return DocumentType.PPTX;
-        default:
-            return DocumentType.OTHER;
+  static async getFileExtension(drive: drive_v3.Drive, fileId: string): Promise<string | undefined> {
+
+    try {
+        const response = await drive.files.get({
+            fileId: fileId,
+            fields: 'name, mimeType' // Requesting name and MIME type
+        });
+
+        const fileName = response.data.name;
+        const mimeType = response.data.mimeType;
+
+        // Determine extension from file name
+        const extension = fileName.slice((fileName.lastIndexOf(".") - 1 >>> 0) + 2);
+        
+        // Fallback if extension is not in file name (based on MIME type)
+        if (!extension) {
+            
+            return mimeExtensions[mimeType] || '';
+        }
+
+        return extension;
+    } catch (error) {
+        console.error('Error retrieving file metadata:', error);
+        throw error;
     }
-  }
+}
+
 }
