@@ -78,10 +78,7 @@ export default class YouTubeFavourite extends GoogleHandler {
         const latestResponse = await youtube.videos.list(query);
         const latestResult = await this.buildResults(
             latestResponse,
-            currentRange.endId,
-            _.has(this.config, "metadata.breakTimestamp")
-                ? this.config.metadata.breakTimestamp
-                : undefined
+            currentRange.endId
         );
 
         items = latestResult.items;
@@ -115,10 +112,7 @@ export default class YouTubeFavourite extends GoogleHandler {
             const backfillResponse = await youtube.videos.list(query);
             const backfillResult = await this.buildResults(
                 backfillResponse,
-                currentRange.endId,
-                _.has(this.config, "metadata.breakTimestamp")
-                    ? this.config.metadata.breakTimestamp
-                    : undefined
+                currentRange.endId
             );
 
             items = items.concat(backfillResult.items);
@@ -159,44 +153,33 @@ export default class YouTubeFavourite extends GoogleHandler {
 
     protected async buildResults(
         serverResponse: GaxiosResponse<youtube_v3.Schema$VideoListResponse>,
-        breakId: string,
-        breakTimestamp?: string
+        breakId: string
     ): Promise<SyncFavouriteItemsResult> {
         const results: SchemaFavourite[] = [];
         let breakHit: SyncItemsBreak;
-
-        for (const video of serverResponse.data.items) {
-            const videoId = video.id;
+    
+        for (const video of serverResponse.data.items ?? []) {
+            const videoId = video.id ?? '';
             const favouriteId = videoId;
-
-            if (favouriteId == breakId) {
+    
+            if (favouriteId === breakId) {
                 const logEvent: SyncProviderLogEvent = {
                     level: SyncProviderLogLevel.DEBUG,
-                    message: `Break ID hit (${breakId})`
+                    message: `Break ID hit (${breakId})`,
                 };
                 this.emit('log', logEvent);
                 breakHit = SyncItemsBreak.ID;
                 break;
             }
-
-            const snippet = video.snippet;
-            const insertedAt = snippet.publishedAt || "Unknown";
-
-            if (breakTimestamp && insertedAt < breakTimestamp) {
-                const logEvent: SyncProviderLogEvent = {
-                    level: SyncProviderLogLevel.DEBUG,
-                    message: `Break timestamp hit (${breakTimestamp})`
-                };
-                this.emit('log', logEvent);
-                breakHit = SyncItemsBreak.TIMESTAMP;
-                break;
-            }
-
-            const title = snippet.title || "No title";
-            const description = snippet.description || "No description";
-            const iconUri = snippet.thumbnails.default.url;
+    
+            const snippet = video.snippet ?? {};
+            const insertedAt = snippet.publishedAt ?? new Date().toISOString();
+    
+            const title = snippet.title ?? 'No title';
+            const description = snippet.description ?? 'No description';
+            const iconUri = snippet.thumbnails?.default?.url ?? '';
             const activityUri = `https://www.youtube.com/watch?v=${videoId}`;
-
+    
             results.push({
                 _id: this.buildItemId(favouriteId),
                 name: title,
@@ -212,10 +195,11 @@ export default class YouTubeFavourite extends GoogleHandler {
                 insertedAt: insertedAt,
             });
         }
-
+    
         return {
             items: results,
             breakHit,
         };
     }
+    
 }
