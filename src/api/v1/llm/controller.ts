@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { LLMServices } from '../../../services/llm'
-import { PromptService } from '../../../services/prompt'
+import { bedrock } from '../../../services/llm'
+import { PromptSearchService } from '../../../services/assistants/search'
 import { Utils } from "../../../utils";
 const _ = require('lodash')
 
 
-const llm = LLMServices.bedrock
+const llm = bedrock
 
 /**
  * 
@@ -15,7 +15,7 @@ export class LLMController {
     public async prompt(req: Request, res: Response) {
         try {
             const prompt = req.body.prompt
-            const serverResponse = await llm(prompt)
+            const serverResponse = await llm.prompt(prompt)
 
             return res.json({
                 result: serverResponse
@@ -32,8 +32,8 @@ export class LLMController {
             const did = await account.did()
             const prompt = req.body.prompt
 
-            const promptService = new PromptService(did, context)
-            const promptResult = await promptService.personalPrompt(prompt)
+            const promptService = new PromptSearchService(did, context)
+            const promptResult = await promptService.prompt(prompt)
 
             return res.json(promptResult)
         } catch (error) {
