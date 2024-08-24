@@ -1,76 +1,48 @@
-const commonParams = {
-    "provider": {
-        "type": "string",
-        "required": true,
-        "documentation": "The name of the provider to connect to, ie: `google`",
-        "default": "google"
-    },
-    "providerId": {
-        "type": "string",
-        "required": false,
-        "documentation": "The unique provider ID to use. For example, if you have two Google accounts connected, you can specify which account. The provider ID is listed in the /dashboard/connections table.",
-    },
+
+function saveState() {
+    const state = {
+        selectedEndpoint: $('#endpointSelect').val(),
+        urlVariables: {},
+        queryParams: {},
+        selectedLanguage: $('#codeExampleTabs .nav-link.active').attr('id').replace('-tab', '')
+    };
+
+    // Save URL variables
+    $('.url-variable').each(function() {
+        state.urlVariables[$(this).attr('id')] = $(this).val();
+    });
+
+    // Save query parameters
+    $('#endpointOptions input, #endpointOptions textarea').each(function() {
+        state.queryParams[$(this).attr('name')] = $(this).val();
+    });
+
+    localStorage.setItem('apiTestState', JSON.stringify(state));
 }
 
-// Global JSON object with endpoint configurations
-const apiEndpoints = {
-    "/db/get": {
-        "method": "GET",
-        "path": "/api/v1/db/get",
-        "documentation": "Retrieves a list of available providers."
-    },
-    "/db/query": {
-        "method": "POST",
-        "path": "/api/v1/db/query",
-        "documentation": "Query a database",
-        "params": {
-            "query": {
-                "type": "string",
-                "required": false,
-                "documentation": "A <a href=\"https://pouchdb.com/api.html#query_index\">pouchdb style filter</a> ie: {name: \"John\"}"
-            },
-            "options": {
-                "type": "string",
-                "required": false,
-                "documentation": "Additional options provided as JSON. Available options are; sort, limit, skip as per the <a href=\"https://pouchdb.com/api.html#query_index\">pouchdb documentation</a>.",
-                "default": JSON.stringify({
-                    sort: [{
-                        _id: "desc"
-                    }],
-                    limit: 20
-                })
-            }
+function loadState() {
+    const savedState = localStorage.getItem('apiTestState');
+    if (savedState) {
+        const state = JSON.parse(savedState);
+
+        // Set selected endpoint
+        $('#endpointSelect').val(state.selectedEndpoint).change();
+
+        // Set URL variables
+        for (let id in state.urlVariables) {
+            $(`#${id}`).val(state.urlVariables[id]);
         }
-    },
-    "/providers": {
-        "method": "GET",
-        "path": "/api/v1/providers",
-        "documentation": "Retrieves a list of available providers."
-    },
-    "/sync": {
-        "method": "GET",
-        "path": "/api/v1/sync",
-        "documentation": "Start syncing data for a given provider",
-        "params": {
-            "provider": commonParams.provider,
-            "providerId": commonParams.providerId,
-            "force": {
-                "type": "boolean",
-                "required": false,
-                "documentation": "Force the sync to occur, ignoring the current status of the connection."
-            }
+
+        // Set query parameters
+        for (let name in state.queryParams) {
+            $(`#endpointOptions [name="${name}"]`).val(state.queryParams[name]);
         }
-    },
-    "/syncStatus": {
-        "method": "GET",
-        "path": "/api/v1/syncStatus",
-        "params": {
-            "provider": commonParams.provider,
-            "providerId": commonParams.providerId,
-        },
-        "documentation": "Get the status of the current sync connection for a provider."
+
+        // Set selected language
+        $(`.code-example`).removeClass('active');
+        $(`#codeExampleTabs a[href="#${state.selectedLanguage}"]`).tab('show');
     }
-};
+}
 
 $(document).ready(function() {
     // Load the private key from local storage
@@ -91,21 +63,13 @@ $(document).ready(function() {
         }));
     }
 
-    // Update endpoint options when selection changes
-    $('#endpointSelect').change(function() {
-        updateEndpointOptions($(this).val());
-    });
-
-    // Initial update of endpoint options
-    updateEndpointOptions($('#endpointSelect').val());
-
     // Run endpoint button click handler
     $('#runEndpoint').click(function() {
         runEndpoint();
     });
 
     // Update code examples when any input changes
-    $(document).on('input', 'input, select', function() {
+    $(document).on('input', 'input, select, textarea', function() {
         updateCodeExamples();
     });
 
@@ -118,46 +82,143 @@ $(document).ready(function() {
     if (!$('#privateKey').val()) {
         $('#settingsPanel').show();
     }
+
+    // Add event listeners for code example toggles
+    $('#codeExampleTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        console.log('Tab clicked:', $(e.target).attr('href'));
+        saveState();
+    });
+
+    $('#showPrivateKey').change(function() {
+        updateCodeExamples();
+    });
+
+    // Load saved state
+    loadState();
+
+    // Save state when inputs change
+    $(document).on('input', 'input, select, textarea', function() {
+        saveState();
+        updateCodeExamples();
+    });
+
+    // Save state when endpoint selection changes
+    $('#endpointSelect').change(function() {
+        updateEndpointOptions($(this).val());
+        saveState();
+    });
+
+    // Save state when language selection changes
+    $(document).on('click', '.code-example-toggle', function(e) {
+        e.preventDefault();
+        console.log('toggle');
+        $('.code-example').removeClass('active');
+        $($(this).attr('href')).addClass('active');
+        saveState();
+    });
+
+    // Initial update of endpoint options
+    updateEndpointOptions($('#endpointSelect').val());
 });
 
 function updateEndpointOptions(endpoint) {
     const endpointConfig = apiEndpoints[endpoint];
+    let urlVariablesHtml = '';
     let optionsHtml = '';
 
     // Add endpoint documentation
-    $('#endpointDocumentation').html(`<p><strong>Documentation:</strong> ${endpointConfig.documentation}</p>`);
+    $('#endpointDocumentation').html(`
+        <div class="alert alert-secondary endpoint-docs" role="alert">
+            <div id="docContent"></div>
+        </div>
+    `);
 
-    if (endpointConfig.params) {
-        for (let param in endpointConfig.params) {
-            const paramConfig = endpointConfig.params[param];
-            optionsHtml += `
-                <div class="form-group">
-                    <label for="${param}">${param}${paramConfig.required ? ' *' : ''}:</label>
-                    <input type="${paramConfig.type}" class="form-control" id="${param}" name="${param}" 
-                           value="${paramConfig.default || ''}" 
-                           ${paramConfig.required ? 'required' : ''}>
-                    <small class="form-text text-muted">${paramConfig.documentation}</small>
+    $('#docContent').html(marked.parse(endpointConfig.documentation));
+
+    // Handle URL variables
+    if (endpointConfig.urlVariables) {
+        // urlVariablesHtml += '<h4>URL Variables:</h4>';
+        for (let variable in endpointConfig.urlVariables) {
+            const variableConfig = endpointConfig.urlVariables[variable];
+            urlVariablesHtml += `
+                <div class="param-row">
+                    <div class="param-input">
+                        <label for="${variable}">${variable}${variableConfig.required ? ' *' : ''}:</label>
+                        <input type="${variableConfig.type}" class="form-control url-variable" id="${variable}" name="${variable}" 
+                               ${variableConfig.required ? 'required' : ''}>
+                    </div>
+                    <div class="param-docs">
+                        <small class="form-text text-muted">${marked.parse(variableConfig.documentation)}</small>
+                    </div>
                 </div>
             `;
         }
     }
 
+    // Handle regular parameters
+    if (endpointConfig.params) {
+        for (let param in endpointConfig.params) {
+            const paramConfig = endpointConfig.params[param];
+            optionsHtml += `
+                <div class="param-row">
+                    <div class="param-input">
+                        <label for="${param}">${param}${paramConfig.required ? ' *' : ''}:</label>
+                        ${paramConfig.type === 'object' ?
+                            `<textarea class="form-control" id="${param}" name="${param}" rows="5"
+                                ${paramConfig.required ? 'required' : ''}>${paramConfig.default || ''}</textarea>` :
+                            `<input type="${paramConfig.type}" class="form-control" id="${param}" name="${param}" 
+                                value="${paramConfig.default || ''}" 
+                                ${paramConfig.required ? 'required' : ''}>`
+                        }
+                    </div>
+                    <div class="param-docs">
+                        <small class="form-text text-muted">${marked.parse(paramConfig.documentation)}</small>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    $('#urlVariables').html(urlVariablesHtml);
     $('#endpointOptions').html(optionsHtml);
+
+    // Initialize JSON formatting for the 'options' parameter
+    if (endpointConfig.params && endpointConfig.params.options) {
+        const optionsTextArea = $('#options');
+        optionsTextArea.val(JSON.stringify(JSON.parse(optionsTextArea.val()), null, 2));
+    }
+
     updateCodeExamples();
 }
 
 function updateCodeExamples() {
     const endpoint = $('#endpointSelect').val();
-    const privateKey = '<privateKey>'// $('#privateKey').val();
+    const privateKey = $('#showPrivateKey').is(':checked') ? $('#privateKey').val() : '<privateKey>';
     const baseUrl = $('#baseUrl').val();
     const endpointConfig = apiEndpoints[endpoint];
-    const url = `${baseUrl}${endpointConfig.path}`;
+    let url = `${baseUrl}${endpointConfig.path}`;
     const method = endpointConfig.method;
     const data = {};
 
-    $('#endpointOptions input').each(function() {
+    // Handle URL variables
+    $('.url-variable').each(function() {
+        const variableName = $(this).attr('name');
+        const variableValue = $(this).val() || `{${variableName}}`;
+        url = url.replace(`{${variableName}}`, variableValue);
+    });
+
+    $('#endpointOptions input, #endpointOptions textarea').each(function() {
         const paramName = $(this).attr('name');
-        const paramValue = $(this).val() || (endpointConfig.params && endpointConfig.params[paramName] ? endpointConfig.params[paramName].default : '');
+        let paramValue = $(this).val() || (endpointConfig.params && endpointConfig.params[paramName] ? endpointConfig.params[paramName].default : '');
+        
+        if (paramName === 'options') {
+            try {
+                paramValue = JSON.parse(paramValue);
+            } catch (e) {
+                console.error('Invalid JSON in options field');
+            }
+        }
+        
         if (paramValue) {
             data[paramName] = paramValue;
         }
@@ -166,7 +227,7 @@ function updateCodeExamples() {
     // Update cURL example
     let curlCommand = `curl -X ${method} `;
     if (privateKey) {
-        curlCommand += `-H "Authorization: Bearer ${privateKey}" `;
+        curlCommand += `-H "key: ${privateKey}" `;
     }
     curlCommand += `"${url}`;
     if (method === 'GET' && Object.keys(data).length > 0) {
@@ -190,7 +251,7 @@ async function makeRequest() {
       url: '${url}',
       ${method === 'GET' ? `params: ${JSON.stringify(data)}` : `data: ${JSON.stringify(data)}`},
       headers: {
-        ${privateKey ? `'Authorization': 'Bearer ${privateKey}',` : ''}
+        ${privateKey ? `'key': '${privateKey}',` : ''}
         'Content-Type': 'application/json'
       }
     });
@@ -210,7 +271,7 @@ makeRequest();`;
   ${method === 'GET' ? `data: ${JSON.stringify(data)},` : `data: JSON.stringify(${JSON.stringify(data)}),`}
   contentType: 'application/json',
   headers: {
-    ${privateKey ? `'Authorization': 'Bearer ${privateKey}'` : ''}
+    ${privateKey ? `'key': '${privateKey}'` : ''}
   },
   success: function(response) {
     console.log(response);
@@ -236,7 +297,7 @@ curl_setopt_array($curl, array(
   ${method === 'POST' ? `CURLOPT_POSTFIELDS => '${JSON.stringify(data)}',` : ''}
   CURLOPT_HTTPHEADER => array(
     "content-type: application/json"${privateKey ? `,
-    "authorization: Bearer ${privateKey}"` : ''}
+    "key: ${privateKey}"` : ''}
   ),
 ));
 
@@ -258,7 +319,7 @@ if ($err) {
 url = "${url}"
 headers = {
     "Content-Type": "application/json"${privateKey ? `,
-    "Authorization": "Bearer ${privateKey}"` : ''}
+    "key": "${privateKey}"` : ''}
 }
 ${method === 'GET' ? `params = ${JSON.stringify(data)}` : `data = ${JSON.stringify(data)}`}
 
@@ -273,40 +334,61 @@ function runEndpoint() {
     const privateKey = $('#privateKey').val();
     const baseUrl = $('#baseUrl').val();
     const endpointConfig = apiEndpoints[endpoint];
-    const url = `${baseUrl}${endpointConfig.path}`;
+    let url = `${baseUrl}${endpointConfig.path}`;
     const method = endpointConfig.method;
     const data = {};
 
-    $('#endpointOptions input').each(function() {
+    // Handle URL variables
+    if (endpointConfig.urlVariables) {
+        for (let variable in endpointConfig.urlVariables) {
+            let inputValue = $(`#${variable}`).val();
+            if (inputValue) {
+                if (endpointConfig.urlVariables[variable].preProcessing) {
+                    inputValue = endpointConfig.urlVariables[variable].preProcessing(inputValue)
+                }
+
+                url = url.replace(`{${variable}}`, encodeURIComponent(inputValue));
+            }
+        }
+    }
+
+    // Handle other parameters
+    $('#endpointOptions input, #endpointOptions textarea').each(function() {
         const paramName = $(this).attr('name');
-        const paramValue = $(this).val() || (endpointConfig.params && endpointConfig.params[paramName] ? endpointConfig.params[paramName].default : '');
+        let paramValue = $(this).val() || (endpointConfig.params && endpointConfig.params[paramName] ? endpointConfig.params[paramName].default : '');
+        
+        if ($(this).is("textarea")) {
+            try {
+                paramValue = paramValue ? JSON.parse(paramValue) : {}
+            } catch (e) {
+                console.error(`Invalid JSON in ${paramName} field`);
+            }
+        }
+        
         if (paramValue) {
             data[paramName] = paramValue;
         }
     });
 
-    data.key = privateKey
+    const headers = {
+        key: privateKey
+    }
+
+    $('#result').text('Request sent... waiting...')
 
     $.ajax({
         url: url,
         method: method,
         data: method === 'GET' ? data : JSON.stringify(data),
+        headers,
         contentType: 'application/json',
-        /*headers: {
-            'Authorization': `Bearer ${privateKey}`
-        },*/
         success: function(response) {
-            $('#result').text(JSON.stringify(response, null, 2));
+            const $customElement = $(`<pretty-json expand="2">${JSON.stringify(response)}</pretty-json>`);
+            $('#result').empty()
+            $('#result').append($customElement)
         },
         error: function(xhr, status, error) {
             $('#result').text(`Error: ${error}\n\nResponse: ${xhr.responseText}`);
         }
     });
 }
-
-// Check private key on input change
-$('#privateKey').on('input', function() {
-    if (!$(this).val()) {
-        $('#settingsPanel').show();
-    }
-});
