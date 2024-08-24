@@ -60,11 +60,12 @@ export class DbController {
                 permissions
             })
 
-            const selector = req.body.query
+            const filter = req.body.query || {}
             const options = req.body.options || {}
-            const results = await (await db).getMany(selector, options)
+            const results = await db.getMany(filter, options)
             res.json(results)
         } catch (error) {
+            console.log(error)
             res.status(500).send(error.message);
         }
     }
