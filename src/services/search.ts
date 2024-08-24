@@ -174,7 +174,7 @@ export class SearchService extends VeridaService {
      * @param mergeOverlaps If there is an overlap of messages within the same chat group, they will be merged into a single thread.
      * @returns 
      */
-    public async chatThreadsByKeywords(keywordsList: string[], threadSize: 10, limit: number = 20, mergeOverlaps: boolean = true): Promise<ChatThreadResult[]> {
+    public async chatThreadsByKeywords(keywordsList: string[], threadSize: number = 10, limit: number = 20, mergeOverlaps: boolean = true): Promise<ChatThreadResult[]> {
         const query = keywordsList.join(' ')
         const messageSchemaUri = "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
         const groupSchemaUri = "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json"

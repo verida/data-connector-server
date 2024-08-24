@@ -16,13 +16,14 @@ export class DsController {
             const did = await account.did()
 
             const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const query = req.query.q.toString()
+            const query = req.query.keywords.toString()
+            const searchOptions = req.query.options ? JSON.parse(req.query.options.toString()) : {}
             const indexFields = req.query.fields ? req.query.fields.toString().split(',') : []
             let storeFields = req.query.store ? req.query.store.toString().split(',') : []
             const permissions = Utils.buildPermissions(req)
             const limit = req.query.limit ? parseInt(req.query.limit.toString()) : MAX_RESULTS
 
-            const result = await MinisearchService.searchDs(context, did, schemaName, query, indexFields, storeFields, limit, permissions)
+            const result = await MinisearchService.searchDs(context, did, schemaName, query, searchOptions, indexFields, storeFields, limit, permissions)
             return res.json(result)
         } catch (error) {
             console.log(error)

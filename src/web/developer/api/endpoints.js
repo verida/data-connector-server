@@ -132,7 +132,7 @@ const apiEndpoints = {
         }
     },
     "/search/universal": {
-        "method": "POST",
+        "method": "GET",
         "path": `${apiPrefix}/search/universal`,
         "documentation": "Universal keyword search across multiple datastores",
         "params": {
@@ -165,6 +165,86 @@ const apiEndpoints = {
 Defaults to \`"emails,chat-messages"\`.
 `,
                 "default": `emails,chat-messages`
+            }
+        }
+    },
+    "/search/chatThreads": {
+        "method": "GET",
+        "path": `${apiPrefix}/search/chatThreads`,
+        "documentation": `Search chat messages by keyword and return matching chat threads to ensure the full message context is available.
+
+Each result contains the chat group and an array of messages.`,
+        "params": {
+            "keywords": {
+                "type": "string",
+                "documentation": "List of keywords to search for",
+                "default": "robert gray",
+                "required": true
+            },
+            "limit": {
+                "type": "number",
+                "documentation": "Limit how many chat threads to return. Defaults to `20`.",
+                "default": 5
+            },
+            "merge": {
+                "type": "boolean",
+                "documentation": "Merge overlapping threads. If two messages match within the same chat group, they are merged to produce a single chat group.",
+                "default": true
+            }
+        }
+    },
+    "/minisearch/ds/{schemaUrl}": {
+        "method": "GET",
+        "path": `${apiPrefix}/minisearch/ds/{schemaUrl}`,
+        "documentation": `Execute a keyword search on a datastore.
+
+It's possible to define the fields to index on and the fields to be stored in the search index which is then returned with results.
+
+The index is cached for the user, until the user cache times out.
+
+Requests with the exact same list of indexed and stored fields will re-use the same index. If there is any difference in the indexed or stored fields, a new index is created, which increases the memory footprint.`,
+        "urlVariables": {
+            "schemaUrl": commonUrlVariables.schemaUrl,
+        },
+        "params": {
+            "keywords": {
+                "type": "string",
+                "documentation": "List of keywords to search for",
+                "default": "robert gray",
+                "required": true
+            },
+            "options": {
+                "type": "object",
+                "documentation": `Search options that match the options availalbe from the [minisearch documentation](https://www.npmjs.com/package/minisearch).
+
+**Example:**
+
+\`\`\`
+{
+    fields: ['title', 'text'],
+    searchOptions: {
+        boost: { title: 2 },
+        fuzzy: 0.2
+    }
+}
+\`\`\`,
+`,
+                "default": "{}"
+            },
+            "limit": {
+                "type": "number",
+                "documentation": "Limit how many chat threads to return. Defaults to `20`.",
+                "default": 20
+            },
+            "fields": {
+                "type": "string",
+                "documentation": "Comma separated list of fields to inlude in search index (ie: `name,description`)",
+                "default": "name,description"
+            },
+            "store": {
+                "type": "string",
+                "documentation": "Comma separated list of fields to store in the index and return with results (ie: `name,description`)",
+                "default": "name,description"
             }
         }
     },

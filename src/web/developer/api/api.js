@@ -4,7 +4,7 @@ function saveState() {
         selectedEndpoint: $('#endpointSelect').val(),
         urlVariables: {},
         queryParams: {},
-        selectedLanguage: $('#codeExampleTabs .nav-link.active').attr('id').replace('-tab', '')
+        selectedLanguage: $('#codeExampleDropdown').text().trim().toLowerCase()
     };
 
     // Save URL variables
@@ -39,8 +39,11 @@ function loadState() {
         }
 
         // Set selected language
-        $(`.code-example`).removeClass('active');
-        $(`#codeExampleTabs a[href="#${state.selectedLanguage}"]`).tab('show');
+        const $dropdownItem = $(`.dropdown-item[data-language="${state.selectedLanguage}"]`);
+        if ($dropdownItem.length) {
+            $('#codeExampleDropdown').text($dropdownItem.text());
+            updateCodeExample(state.selectedLanguage);
+        }
     }
 }
 
@@ -84,10 +87,14 @@ $(document).ready(function() {
     }
 
     // Add event listeners for code example toggles
-    $('#codeExampleTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        console.log('Tab clicked:', $(e.target).attr('href'));
+    $('.code-examples .dropdown-item').on('click', function (e) {
+        e.preventDefault();
+        const selectedLanguage = $(this).data('language');
+        $('#codeExampleDropdown').text($(this).text());
+        updateCodeExamples();
         saveState();
     });
+
 
     $('#showPrivateKey').change(function() {
         updateCodeExamples();
@@ -111,7 +118,6 @@ $(document).ready(function() {
     // Save state when language selection changes
     $(document).on('click', '.code-example-toggle', function(e) {
         e.preventDefault();
-        console.log('toggle');
         $('.code-example').removeClass('active');
         $($(this).attr('href')).addClass('active');
         saveState();
@@ -119,6 +125,16 @@ $(document).ready(function() {
 
     // Initial update of endpoint options
     updateEndpointOptions($('#endpointSelect').val());
+
+    // Function to initialize the code examples
+    function initializeCodeExamples() {
+        // Set initial selection to cURL
+        $('#codeExampleDropdown').text('cURL');
+        updateCodeExample('curl');
+    }
+
+    // Call the initialization function
+    initializeCodeExamples();
 });
 
 function updateEndpointOptions(endpoint) {
@@ -189,6 +205,28 @@ function updateEndpointOptions(endpoint) {
     }
 
     updateCodeExamples();
+}
+
+function updateCodeExample(language) {
+    let codeContent = '';
+    switch (language) {
+        case 'curl':
+            codeContent = $('#curlCommand').text();
+            break;
+        case 'node.js':
+            codeContent = $('#nodejsCode').text();
+            break;
+        case 'jquery':
+            codeContent = $('#jqueryCode').text();
+            break;
+        case 'php':
+            codeContent = $('#phpCode').text();
+            break;
+        case 'python':
+            codeContent = $('#pythonCode').text();
+            break;
+    }
+    $('#codeExample').text(codeContent);
 }
 
 function updateCodeExamples() {
@@ -327,6 +365,9 @@ response = requests.${method.toLowerCase()}(url, ${method === 'GET' ? 'params=pa
 
 print(response.json())`;
     $('#pythonCode').text(pythonCode);
+
+    const currentLanguage = $('#codeExampleDropdown').text().trim().toLowerCase();
+    updateCodeExample(currentLanguage);
 }
 
 function runEndpoint() {
