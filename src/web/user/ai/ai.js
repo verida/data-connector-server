@@ -48,8 +48,6 @@ $(document).ready(function() {
             urlType = "personal"
         }
 
-        console.log(urlType)
-
         const body = { prompt: prompt, key: veridaKey };
 
         $.ajax({
@@ -101,6 +99,7 @@ $(document).ready(function() {
         if (data.status === 'Load Complete' && data.totalProgress >= 1) {
             loadComplete = true
             $('#loading-overlay').fadeOut();
+            eventSource.close()
         }
     };
 
