@@ -19,7 +19,7 @@ export class PromptSearchService extends VeridaService {
     public async prompt(prompt: string): Promise<{
         result: string,
         duration: number,
-        promptSearchResult: PromptSearchLLMResponse
+        process: PromptSearchLLMResponse
     }> {
         const start = Date.now()
         // // Get queries that can help answer the prompt
@@ -111,16 +111,16 @@ export class PromptSearchService extends VeridaService {
         const now = (new Date()).toISOString()
         finalPrompt += `${contextString}\nThe current time is: ${now}`
 
-        console.log('Running final prompt', finalPrompt.length)
+        // console.log('Running final prompt', finalPrompt.length)
         const finalResponse = await llm.prompt(finalPrompt, undefined, false)
         const duration = Date.now() - start
 
-        console.log(contextString)
+        // console.log(contextString)
 
         return {
             result: finalResponse.choices[0].message.content,
             duration,
-            promptSearchResult
+            process: promptSearchResult
         }
     }
 

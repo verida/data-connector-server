@@ -297,5 +297,47 @@ Each result contains the chat group and an array of messages.`,
 
 **arrayBuffers:** This is the memory allocated for ArrayBuffer and SharedArrayBuffer instances in JavaScript. It indicates how much memory is consumed specifically by array buffer-backed objects.
 `
+    },
+    "/llm/hotload": {
+        "method": "GET",
+        "path": `${apiPrefix}/llm/hotload`,
+        "documentation": `Hot load into memory all the data necessary for fast presonal LLM requests.
+
+This is not a typical HTTP request, it uses EventSource to stream the loading progress.
+
+**Example code:**
+
+\`\`\`
+const eventSource = new EventSource(\`/api/v1/llm/hotload?key=<key>\`);
+    
+eventSource.onmessage = function(event) {
+    console.log(event)
+}
+\`\`\`
+`
+    },
+    "/llm/prompt": {
+        "method": "POST",
+        "path": `${apiPrefix}/llm/prompt`,
+        "documentation": `Send a LLM prompt request to a pre-configured LLM.`,
+        "params": {
+            "prompt": {
+                "type": "string",
+                "required": true,
+                "documentation": `User prompt (ie: \`Who hosted the 2000 olympics?\`)`
+            }
+        }
+    },
+    "/llm/personal": {
+        "method": "POST",
+        "path": `${apiPrefix}/llm/personal`,
+        "documentation": `Send a LLM prompt request to the built-in personal AI LLM.`,
+        "params": {
+            "prompt": {
+                "type": "string",
+                "required": true,
+                "documentation": `User prompt (ie: \`How much have I spent on software this quarter?\`)`
+            }
+        }
     }
 };
