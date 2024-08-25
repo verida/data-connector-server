@@ -81,7 +81,7 @@ $(document).ready(function() {
     });
 
     // Hotload data
-    const eventSource = new EventSource(`/api/v1/minisearch/hotload?key=${savedVeridaKey}`);
+    const eventSource = new EventSource(`/api/v1/llm/hotload?key=${savedVeridaKey}`);
     
     let loadComplete = false
     eventSource.onmessage = function(event) {
