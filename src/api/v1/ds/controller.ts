@@ -1,6 +1,4 @@
 import { Request, Response } from "express";
-import Common from "../common";
-import { IContext, IDatabase, IDatastore } from "@verida/types";
 import { Utils } from "../../../utils";
 
 /**

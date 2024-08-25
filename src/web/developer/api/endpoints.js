@@ -41,7 +41,8 @@ const commonParams = {
     sort: [{
         _id: "desc"
     }],
-    limit: 20
+    limit: 20,
+    skip: 0
 }
 \`\`\`
 `,
@@ -49,7 +50,8 @@ const commonParams = {
             sort: [{
                 _id: "desc"
             }],
-            limit: 20
+            limit: 20,
+            skip: 0
         })
     }
 }
@@ -273,13 +275,27 @@ Each result contains the chat group and an array of messages.`,
             }
         }
     },
-    "/syncStatus": {
+    "/sync/status": {
         "method": "GET",
-        "path": "/api/v1/syncStatus",
-        "params": {
-            "provider": commonParams.provider,
-            "providerId": commonParams.providerId,
-        },
+        "path": "/api/v1/sync/status",
+        "documentation": `Live stream of the sync logs.
+
+This is not a typical HTTP request, it uses EventSource to stream the loading progress.
+
+**Example code:**
+
+\`\`\`
+const eventSource = new EventSource(\`/api/v1/llm/hotload?key=<key>\`);
+    
+eventSource.onmessage = function(event) {
+    console.log(event)
+}
+\`\`\`
+`
+    },
+    "/sync/logs": {
+        "method": "GET",
+        "path": "/api/v1/sync/logs",
         "documentation": "Get the status of the current sync connection for a provider."
     },
     "/admin/memory": {

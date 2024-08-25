@@ -82,7 +82,9 @@ export default class Controller {
             const key = req.session.key
             const redirect = req.session.redirect
 
-            const syncManager = new SyncManager(did, key, req.requestId)
+            const networkInstance = await Utils.getNetwork(key, req.requestId)
+
+            const syncManager = new SyncManager(networkInstance.context, req.requestId)
             await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
             if (redirect) {
@@ -181,16 +183,13 @@ export default class Controller {
      */
     public static async sync(req: UniqueRequest, res: Response, next: any) {
         const query = req.query
-        const vaultSeedPhrase = query.key.toString()
-        const did = await Utils.getDidFromKey(vaultSeedPhrase)
         const providerName = query.provider ? query.provider.toString() : undefined
         const providerId = query.providerId ? query.providerId.toString() : undefined
         const forceSync = query.force ? query.force == 'true' : undefined
 
-        const syncManager = new SyncManager(did, vaultSeedPhrase, req.requestId)
+        const networkInstance = await Utils.getNetworkFromRequest(req)
+        const syncManager = new SyncManager(networkInstance.context, req.requestId)
         const connections = await syncManager.sync(providerName, providerId, forceSync)
-
-        Utils.closeConnection(did, req.requestId)
 
         // @todo: catch and send errors
         return res.send({
@@ -233,12 +232,11 @@ export default class Controller {
     public static async syncStatus(req: UniqueRequest, res: Response, next: any) {
         try {
             const query = req.query
-            const vaultSeedPhrase = query.key.toString()
-            const did = await Utils.getDidFromKey(vaultSeedPhrase)
             const providerName = query.provider ? query.provider.toString() : undefined
             const providerId = query.providerId ? query.providerId.toString() : undefined
 
-            const syncManager = new SyncManager(did, vaultSeedPhrase, req.requestId)
+            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const syncManager = new SyncManager(networkInstance.context, req.requestId)
             const connections = await syncManager.getProviders(providerName, providerId)
 
             const result: Record<string, {
@@ -264,8 +262,6 @@ export default class Controller {
                 }
             }
 
-            Utils.closeConnection(did, req.requestId)
-
             // @todo: catch and send errors
             return res.send({
                 result,
@@ -281,11 +277,10 @@ export default class Controller {
         try {
             const providerName = req.params.provider
             const query = req.query
-            const vaultSeedPhrase = query.key.toString()
-            const did = await Utils.getDidFromKey(vaultSeedPhrase)
             const providerId = query.providerId ? query.providerId.toString() : undefined
 
-            const syncManager = new SyncManager(did, vaultSeedPhrase, req.requestId)
+            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const syncManager = new SyncManager(networkInstance.context, req.requestId)
             const connections = await syncManager.getProviders(providerName, providerId)
             if (!connections.length) {
                 throw new Error(`Unable to locate connection: ${providerName} (${providerId})`)
@@ -294,70 +289,12 @@ export default class Controller {
             const connection = connections[0]
             await connection.reset(false, true, true)
 
-            Utils.closeConnection(did, req.requestId)
-
             return res.send({
                 success: true
             })
         } catch (error) {
             console.log(error)
             res.status(500).send(error.message);
-        }
-    }
-
-    public static async data(req: UniqueRequest, res: Response, next: any) {
-        try {
-            const query = req.query
-            const privateKey = query.key.toString()
-            const schema = query.schema.toString()
-            const limit = query.limit ? query.limit.toString() : "20"
-            const offset = query.offset ? query.offset.toString() : "0"
-            const filterParams = query.filter ? query.filter.toString() : ''
-            const sortParams = query.sort ? query.sort.toString() : '_id:desc'
-
-            const sort: Record<string, string> = {};
-            const [ sortField, sortDirection ] = sortParams.split(':')
-            sort[sortField] = sortDirection ? sortDirection : 'asc'
-
-            const networkInstance = await Utils.getNetwork(privateKey, req.requestId)
-
-            const filter: Record<string, string> = {}
-            if (filterParams) {
-                const filterAttributes = filterParams ? filterParams.split(",") : [];
-                for (const attribute of filterAttributes) {
-                    const [key, value] = attribute.split(':')
-                    filter[key] = value
-                }
-            }
-
-            const options = {
-                sort: [sort],
-                limit: parseInt(limit),
-                skip: parseInt(offset)
-              }
-
-            const datastore = await networkInstance.context.openDatastore(schema)
-            const results = <SchemaRecord[]> await datastore.getMany(
-                filter,
-                options
-              )
-            
-              Utils.closeConnection(networkInstance.did, req.requestId)
-
-            return res.send({
-                results,
-                filter,
-                options: {
-                    sort,
-                    limit: options.limit,
-                    offset: options.skip
-                }
-            })
-        } catch (error) {
-            console.log(error)
-            res.status(400).send({
-                error: error.message
-            });
         }
     }
 
@@ -371,8 +308,7 @@ export default class Controller {
             res.write('retry: 10000\n\n')
 
             const query = req.query
-            const privateKey = query.key.toString()
-            const networkInstance = await Utils.getNetwork(privateKey, req.requestId)
+            const networkInstance = await Utils.getNetworkFromRequest(req)
 
             const logsDs = await networkInstance.context.openDatastore(SCHEMA_SYNC_LOG)
             const logsDb = await logsDs.getDb()
