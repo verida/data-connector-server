@@ -18,8 +18,10 @@ export class DsController {
                 // @ts-ignore
                 permissions
             })
-            const results = await (await ds).getMany()
-            res.json(results)
+            const items = await (await ds).getMany()
+            res.json({
+                items
+            })
         } catch (error) {
             let message = error.message
             if (error.message.match('invalid encoding')) {
@@ -41,8 +43,10 @@ export class DsController {
                 permissions
             })
         
-            const results = await (await ds).get(rowId, {})
-            res.json(results)
+            const item = await ds.get(rowId, {})
+            res.json({
+                item: item
+            })
         } catch (error) {
             res.status(500).send(error.message);
         }
@@ -54,7 +58,6 @@ export class DsController {
             const permissions = Utils.buildPermissions(req)
             const schemaName = Utils.getSchemaFromParams(req.params[0])
 
-            console.log(schemaName, permissions)
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore
                 permissions
@@ -62,8 +65,10 @@ export class DsController {
         
             const selector = req.body.query
             const options = req.body.options || {}
-            const results = await (await ds).getMany(selector, options)
-            res.json(results)
+            const items = await ds.getMany(selector, options)
+            res.json({
+                items
+            })
         } catch (error) {
             res.status(500).send(error.message);
         }

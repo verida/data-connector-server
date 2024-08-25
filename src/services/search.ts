@@ -7,6 +7,7 @@ const _ = require('lodash')
 
 export interface MinisearchResult {
     id: string
+    schemaUrl?: string
     score: number
     terms: string[]
     queryTerms: string[]
@@ -18,11 +19,6 @@ export interface SearchServiceSchemaResult {
     rows: MinisearchResult[]
 }
 
-export interface SortedResult {
-    id: string
-    schemaId: number
-    score: number
-}
 
 export enum SearchSortType {
     RECENT = "recent",
@@ -55,18 +51,17 @@ export interface ChatThreadResult {
 export class SearchService extends VeridaService {
 
     protected async rankAndMergeResults(schemaResults: SearchServiceSchemaResult[], limit: number, minResultsPerType: number = 10): Promise<SchemaRecord[]> {
-        const unsortedResults: Record<string, SortedResult> = {}
-        const guaranteedResults: Record<string, SortedResult> = {}
+        const unsortedResults: Record<string, MinisearchResult> = {}
+        const guaranteedResults: Record<string, MinisearchResult> = {}
 
-        const datastores: IDatastore[] = []
+        const datastores: Record<string, IDatastore> = {}
         for (const schemaResult of schemaResults) {
             let schemaResultCount = 0
             for (const row of schemaResult.rows) {
                 // console.log(row.id, row.score)
                 const result = {
-                    id: row.id,
-                    schemaId: datastores.length,
-                    score: row.score
+                    ...row,
+                    schemaUrl: SearchTypeSchemas[schemaResult.searchType]
                 }
 
                 if (schemaResultCount++ < minResultsPerType) {
@@ -77,7 +72,7 @@ export class SearchService extends VeridaService {
             }
 
             const schemaUri = SearchTypeSchemas[schemaResult.searchType]
-            datastores.push(await this.context.openDatastore(schemaUri))
+            datastores[schemaUri] = await this.context.openDatastore(schemaUri)
         }
 
         const unsortedResultCount = Object.values(unsortedResults).length
@@ -99,10 +94,14 @@ export class SearchService extends VeridaService {
             if (!result) {
                 continue
             }
-            const datastore = datastores[result.schemaId]
+
+            const datastore = datastores[result.schemaUrl]
             const row = await datastore.get(result.id, {})
-            row._score = result.score
-            results.push(row)
+            delete result['schemaUrl']
+            results.push({
+                ...row,
+                _match: result
+            })
         }
 
         return results
@@ -272,19 +271,13 @@ export class SearchService extends VeridaService {
 
         const searchResults = []
         for (const searchType of searchTypes) {
-            // let queryResult: SchemaRecord[] | ChatThreadResult[] = []
-            // if (searchType == SearchType.CHAT_THREADS) {
-            //     const threadSize = 10
-            //     queryResult = await this.chatThreadsByKeywords(keywordsList, threadSize, limit, true)
-            // } else {
-                const schemaUri = SearchTypeSchemas[searchType]
-                if (!schemaUri) {
-                    // Invalid search type, ignore
-                    continue
-                }
-                const miniSearchIndex = await dataService.getIndex(schemaUri)
-                const queryResult = <MinisearchResult[]> await miniSearchIndex.search(query)
-            // }
+            const schemaUri = SearchTypeSchemas[searchType]
+            if (!schemaUri) {
+                // Invalid search type, ignore
+                continue
+            }
+            const miniSearchIndex = await dataService.getIndex(schemaUri)
+            const queryResult = <MinisearchResult[]> await miniSearchIndex.search(query)
 
             searchResults.push({
                 searchType,

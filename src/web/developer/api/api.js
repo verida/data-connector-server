@@ -71,8 +71,9 @@ $(document).ready(function() {
         runEndpoint();
     });
 
-    // Update code examples when any input changes
+    // Update code examples and save state when any input changes
     $(document).on('input', 'input, select, textarea', function() {
+        saveState()
         updateCodeExamples();
     });
 
@@ -95,21 +96,11 @@ $(document).ready(function() {
         saveState();
     });
 
-
-    $('#showPrivateKey').change(function() {
-        updateCodeExamples();
-    });
-
-    // Save state when inputs change
-    $(document).on('input', 'input, select, textarea', function() {
-        saveState();
-        updateCodeExamples();
-    });
-
     // Save state when endpoint selection changes
     $('#endpointSelect').change(function() {
         updateEndpointOptions($(this).val());
         saveState();
+        $('#result').empty()
     });
 
     // Save state when language selection changes

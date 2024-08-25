@@ -95,7 +95,7 @@ const apiEndpoints = {
     },
     "/ds/get/{schemaUrl}/{recordId}": {
         "method": "GET",
-        "path": `${apiPrefix}/get/{schemaUrl}/{recordId}`,
+        "path": `${apiPrefix}/ds/get/{schemaUrl}/{recordId}`,
         "documentation": "Retrieves a record from a datastore.",
         "urlVariables": {
             "schemaUrl": commonUrlVariables.schemaUrl,
@@ -120,7 +120,7 @@ const apiEndpoints = {
     },
     "/db/get/{databaseName}/{recordId}": {
         "method": "GET",
-        "path": `${apiPrefix}/get/{databaseName}/{recordId}`,
+        "path": `${apiPrefix}/db/get/{databaseName}/{recordId}`,
         "documentation": "Retrieves a record from a database.",
         "urlVariables": {
             "databaseName": commonUrlVariables.databaseName,
@@ -168,41 +168,22 @@ Defaults to \`"emails,chat-messages"\`.
             }
         }
     },
-    "/search/chatThreads": {
+    "/search/datastore/{schemaUrl}": {
         "method": "GET",
-        "path": `${apiPrefix}/search/chatThreads`,
-        "documentation": `Search chat messages by keyword and return matching chat threads to ensure the full message context is available.
-
-Each result contains the chat group and an array of messages.`,
-        "params": {
-            "keywords": {
-                "type": "string",
-                "documentation": "List of keywords to search for",
-                "default": "robert gray",
-                "required": true
-            },
-            "limit": {
-                "type": "number",
-                "documentation": "Limit how many chat threads to return. Defaults to `20`.",
-                "default": 5
-            },
-            "merge": {
-                "type": "boolean",
-                "documentation": "Merge overlapping threads. If two messages match within the same chat group, they are merged to produce a single chat group.",
-                "default": true
-            }
-        }
-    },
-    "/minisearch/ds/{schemaUrl}": {
-        "method": "GET",
-        "path": `${apiPrefix}/minisearch/ds/{schemaUrl}`,
+        "path": `${apiPrefix}/search/datastore/{schemaUrl}`,
         "documentation": `Execute a keyword search on a datastore.
 
 It's possible to define the fields to index on and the fields to be stored in the search index which is then returned with results.
 
 The index is cached for the user, until the user cache times out.
 
-Requests with the exact same list of indexed and stored fields will re-use the same index. If there is any difference in the indexed or stored fields, a new index is created, which increases the memory footprint.`,
+Requests with the exact same list of indexed and stored fields will re-use the same index. If there is any difference in the indexed or stored fields, a new index is created, which increases the memory footprint.
+
+Returns:
+
+- \`total\` - Total number of search results found in the search index
+- \`items\` - Array of item results
+`,
         "urlVariables": {
             "schemaUrl": commonUrlVariables.schemaUrl,
         },
@@ -245,6 +226,31 @@ Requests with the exact same list of indexed and stored fields will re-use the s
                 "type": "string",
                 "documentation": "Comma separated list of fields to store in the index and return with results (ie: `name,description`)",
                 "default": "name,description"
+            }
+        }
+    },
+    "/search/chatThreads": {
+        "method": "GET",
+        "path": `${apiPrefix}/search/chatThreads`,
+        "documentation": `Search chat messages by keyword and return matching chat threads to ensure the full message context is available.
+
+Each result contains the chat group and an array of messages.`,
+        "params": {
+            "keywords": {
+                "type": "string",
+                "documentation": "List of keywords to search for",
+                "default": "robert gray",
+                "required": true
+            },
+            "limit": {
+                "type": "number",
+                "documentation": "Limit how many chat threads to return. Defaults to `20`.",
+                "default": 5
+            },
+            "merge": {
+                "type": "boolean",
+                "documentation": "Merge overlapping threads. If two messages match within the same chat group, they are merged to produce a single chat group.",
+                "default": true
             }
         }
     },

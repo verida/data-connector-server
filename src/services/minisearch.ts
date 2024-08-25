@@ -6,8 +6,16 @@ import { indexCache } from "./data";
 import { IContext } from "@verida/types";
 import { Utils } from "../utils";
 
+export interface SearchResultItem {
+  id: string
+  terms: string[]
+  queryTerms: string[]
+  match: object
+  score: number
+}
+
 export interface MinisearchServiceSearchResult {
-  results: object[];
+  results: SearchResultItem[];
   count: number;
 }
 
