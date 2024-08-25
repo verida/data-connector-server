@@ -100,9 +100,6 @@ $(document).ready(function() {
         updateCodeExamples();
     });
 
-    // Load saved state
-    loadState();
-
     // Save state when inputs change
     $(document).on('input', 'input, select, textarea', function() {
         saveState();
@@ -135,6 +132,9 @@ $(document).ready(function() {
 
     // Call the initialization function
     initializeCodeExamples();
+
+    // Load saved state
+    loadState();
 });
 
 function updateEndpointOptions(endpoint) {
