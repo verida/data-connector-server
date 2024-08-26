@@ -1,6 +1,6 @@
 $(document).ready(function() {
     // Load the private key from local storage
-    const savedVeridaKey = localStorage.getItem('veridaKey');
+    let savedVeridaKey = localStorage.getItem('veridaKey');
     $('#veridaKey').val(savedVeridaKey);
     handleButtonStates();
 
@@ -18,6 +18,7 @@ $(document).ready(function() {
         $('#loadBtn').prop('disabled', !veridaKey);
         $('#generateIdentityBtn').toggle(!veridaKey);
         $('#clearBtn').toggle(!!veridaKey);
+        savedVeridaKey = veridaKey
     }
 
     $('#loadBtn').click(function() {
@@ -109,7 +110,6 @@ $(document).ready(function() {
             });
 
             $('.sync-btn').click(function() {
-                console.log('clicked!')
                 const $button = $(this)
                 const provider = $(this).data('provider');
                 const providerId = $(this).data('provider-id');
