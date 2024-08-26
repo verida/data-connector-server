@@ -56,8 +56,7 @@ export const Connections: Command<ConnectionsOptions> = {
     const vault = networkInstance.context;
 
     const syncManager = new SyncManager(
-      await networkInstance.account.did(),
-      options.key
+      vault
     );
 
     const providers = await syncManager.getProviders(

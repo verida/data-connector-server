@@ -1,11 +1,13 @@
 import { DataService } from "./data"
 import { VeridaService } from "./veridaService"
-import { SchemaRecord, SchemaSocialChatGroup, SchemaSocialChatMessage } from "../schemas"
+import { SchemaEmail, SchemaRecord, SchemaSocialChatGroup, SchemaSocialChatMessage } from "../schemas"
 import { IDatastore } from "@verida/types"
+import { threadId } from "worker_threads"
 const _ = require('lodash')
 
 export interface MinisearchResult {
     id: string
+    schemaUrl?: string
     score: number
     terms: string[]
     queryTerms: string[]
@@ -13,19 +15,32 @@ export interface MinisearchResult {
 }
 
 export interface SearchServiceSchemaResult {
-    schemaUri: string
+    searchType: SearchType
     rows: MinisearchResult[]
 }
 
-export interface SortedResult {
-    id: string
-    schemaId: number
-    score: number
+
+export enum SearchSortType {
+    RECENT = "recent",
+    OLDEST = "oldest"
 }
 
-export enum SearchTypes {
-    CHAT_MESSAGES = "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
-    EMAILS = "https://common.schemas.verida.io/social/email/v0.1.0/schema.json"
+export enum SearchType {
+    // CHAT_THREADS = "chat-threads",
+    CHAT_MESSAGES = "chat-messages",
+    EMAILS = "emails",
+    FAVORITES = "favorites",
+    FOLLOWING = "following",
+    POSTS = "posts"
+}
+
+export const SearchTypeSchemas: Record<SearchType, string> = {
+    // [SearchType.CHAT_THREADS]: "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
+    [SearchType.CHAT_MESSAGES]: "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
+    [SearchType.EMAILS]: "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
+    [SearchType.FAVORITES]: "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
+    [SearchType.POSTS]: "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
+    [SearchType.FOLLOWING]: "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
 }
 
 export interface ChatThreadResult {
@@ -36,18 +51,17 @@ export interface ChatThreadResult {
 export class SearchService extends VeridaService {
 
     protected async rankAndMergeResults(schemaResults: SearchServiceSchemaResult[], limit: number, minResultsPerType: number = 10): Promise<SchemaRecord[]> {
-        const unsortedResults: Record<string, SortedResult> = {}
-        const guaranteedResults: Record<string, SortedResult> = {}
+        const unsortedResults: Record<string, MinisearchResult> = {}
+        const guaranteedResults: Record<string, MinisearchResult> = {}
 
-        const datastores: IDatastore[] = []
+        const datastores: Record<string, IDatastore> = {}
         for (const schemaResult of schemaResults) {
             let schemaResultCount = 0
             for (const row of schemaResult.rows) {
                 // console.log(row.id, row.score)
                 const result = {
-                    id: row.id,
-                    schemaId: datastores.length,
-                    score: row.score
+                    ...row,
+                    schemaUrl: SearchTypeSchemas[schemaResult.searchType]
                 }
 
                 if (schemaResultCount++ < minResultsPerType) {
@@ -57,7 +71,8 @@ export class SearchService extends VeridaService {
                 }
             }
 
-            datastores.push(await this.context.openDatastore(schemaResult.schemaUri))
+            const schemaUri = SearchTypeSchemas[schemaResult.searchType]
+            datastores[schemaUri] = await this.context.openDatastore(schemaUri)
         }
 
         const unsortedResultCount = Object.values(unsortedResults).length
@@ -76,33 +91,65 @@ export class SearchService extends VeridaService {
         const results = []
         for (let i = 0; i < limit; i++) {
             const result = queuedResults[i]
-            const datastore = datastores[result.schemaId]
+            if (!result) {
+                continue
+            }
+
+            const datastore = datastores[result.schemaUrl]
             const row = await datastore.get(result.id, {})
-            row._score = result.score
-            results.push(row)
+            delete result['schemaUrl']
+            results.push({
+                ...row,
+                _match: result
+            })
         }
 
         return results
     }
 
-    public async emails(keywordsList: string[], limit: number = 20): Promise<any[]> {
+    public async emailsByKeywords(keywordsList: string[], limit: number = 20): Promise<SchemaEmail[]> {
         const query = keywordsList.join(' ')
-        const schemaUri = "https://common.schemas.verida.io/social/email/v0.1.0/schema.json"
+        const searchType = SearchType.EMAILS
+        const schemaUri = SearchTypeSchemas[searchType]
         const dataService = new DataService(this.did, this.context)
         const miniSearchIndex = await dataService.getIndex(schemaUri)
 
         console.log('Emails: searching for', query)
         
         const searchResults = await miniSearchIndex.search(query)
-        return this.rankAndMergeResults([{
-            schemaUri,
+        return <SchemaEmail[]> await this.rankAndMergeResults([{
+            searchType,
             rows: searchResults
         }], limit)
     }
 
-    public async chatHistory(keywordsList: string[], limit: number = 20): Promise<any[]> {
+    public async emailsByDateRange(maxDatetime: Date, sortType: SearchSortType, limit: number = 20): Promise<SchemaEmail[]> {
+        const searchType = SearchType.EMAILS
+        const schemaUri = SearchTypeSchemas[searchType]
+        const dataService = new DataService(this.did, this.context)
+        const emailDatastore = await dataService.getDatastore(schemaUri)
+        const filter = {
+            sentAt: {
+                "$gte": maxDatetime.toISOString()
+            }
+        }
+        const options = {
+            limit,
+            sort: [
+                {
+                    sentAt: sortType == SearchSortType.OLDEST ? "asc" : "desc"
+                }
+            ]
+        }
+
+        console.log('Emails: searching for', filter, options)
+        return <SchemaEmail[]> await emailDatastore.getMany(filter, options)
+    }
+
+    public async chatHistoryByKeywords(keywordsList: string[], limit: number = 20): Promise<any[]> {
+        const searchType = SearchType.CHAT_MESSAGES
+        const schemaUri = SearchTypeSchemas[searchType]
         const query = keywordsList.join(' ')
-        const schemaUri = "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
         const dataService = new DataService(this.did, this.context)
         const miniSearchIndex = await dataService.getIndex(schemaUri)
 
@@ -110,7 +157,7 @@ export class SearchService extends VeridaService {
         
         const searchResults = await miniSearchIndex.search(query)
         return this.rankAndMergeResults([{
-            schemaUri,
+            searchType,
             rows: searchResults
         }], limit)
     }
@@ -126,7 +173,7 @@ export class SearchService extends VeridaService {
      * @param mergeOverlaps If there is an overlap of messages within the same chat group, they will be merged into a single thread.
      * @returns 
      */
-    public async chatThreads(keywordsList: string[], threadSize: 10, limit: number = 20, mergeOverlaps: boolean = true): Promise<ChatThreadResult[]> {
+    public async chatThreadsByKeywords(keywordsList: string[], threadSize: number = 10, limit: number = 20, mergeOverlaps: boolean = true): Promise<ChatThreadResult[]> {
         const query = keywordsList.join(' ')
         const messageSchemaUri = "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
         const groupSchemaUri = "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json"
@@ -216,18 +263,24 @@ export class SearchService extends VeridaService {
         
     }
 
-    public async multi(searchTypes: SearchTypes[], keywordsList: string[], limit: number = 20, minResultsPerType: number = 10) {
+    public async multiByKeywords(searchTypes: SearchType[], keywordsList: string[], limit: number = 20, minResultsPerType: number = 10) {
         const query = keywordsList.join(' ')
         const dataService = new DataService(this.did, this.context)
 
         console.log('Multi: searching for', query)
 
         const searchResults = []
-        for (const schemaUri of searchTypes) {
+        for (const searchType of searchTypes) {
+            const schemaUri = SearchTypeSchemas[searchType]
+            if (!schemaUri) {
+                // Invalid search type, ignore
+                continue
+            }
             const miniSearchIndex = await dataService.getIndex(schemaUri)
-            const queryResult = await miniSearchIndex.search(query)
+            const queryResult = <MinisearchResult[]> await miniSearchIndex.search(query)
+
             searchResults.push({
-                schemaUri,
+                searchType,
                 rows: queryResult
             })
         }

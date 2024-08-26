@@ -1,4 +1,4 @@
-import { IContext } from '@verida/types';
+import { IContext, IDatastore } from '@verida/types';
 import * as CryptoJS from 'crypto-js';
 import { EventEmitter } from 'events'
 import MiniSearch from 'minisearch';
@@ -41,9 +41,14 @@ const schemas: Record<string, SchemaConfig> = {
         indexFields: ['name','fromName','fromEmail','messageText','attachments_0.textContent','attachments_1.textContent','attachments_2.textContent', 'indexableText', 'sentAt']
     },
     "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json": {
-        label: "Chat History",
+        label: "Chat Message",
         storeFields: ['_id', 'groupId'],
         indexFields: ['messageText', 'fromHandle', 'fromName', 'groupName', 'indexableText', 'sentAt']
+    },
+    "https://common.schemas.verida.io/favourite/v0.1.0/schema.json": {
+        label: "Favourite",
+        storeFields: ['_id'],
+        indexFields: ['name', 'favouriteType', 'contentTYpe', 'summary']
     }
 }
 
@@ -74,6 +79,10 @@ export class DataService extends EventEmitter {
             totalProgress: ((this.stepCount) / this.totalSteps)
         }
         this.emit('progress', progress)
+    }
+
+    public async getDatastore(schemaUri: string): Promise<IDatastore> {
+        return this.context.openDatastore(schemaUri)
     }
 
     public async getIndex(schemaUri: string): Promise<MiniSearch<any>> {

@@ -56,8 +56,7 @@ export const Sync: Command<SyncOptions> = {
     }, {});
 
     const syncManager = new SyncManager(
-      await networkInstance.account.did(),
-      options.key
+      networkInstance.context
     );
 
     const providers = await syncManager.getProviders(
