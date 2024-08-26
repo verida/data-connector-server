@@ -157,8 +157,6 @@ export default class GoogleDriveDocument extends GoogleHandler {
         let breakHit: SyncItemsBreak;
     
         for (const file of serverResponse.data.files ?? []) {
-            console.log("==========")
-            console.log(file)
             
             const fileId = file.id ?? '';
             
