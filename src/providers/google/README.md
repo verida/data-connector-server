@@ -26,9 +26,9 @@ Before running the unit tests, ensure that you have the following set up:
 1. **YouTube Account**: A YouTube account with some activity is required. This activity includes uploaded videos, subscriptions, and liked videos.
 
 2. **YouTube Data**: Make sure your YouTube account has:
-   - **Favorites**: At least 7 videos you have liked.
-   - **Following**: At least 7 Channels you have subscribed to.
-   - **Posts**: At least 7 videos you have uploaded.
+   - **Favorites**: At least 14 videos you have liked.
+   - **Following**: At least 14 Channels you have subscribed to.
+   - **Posts**: At least 14 videos you have uploaded.
 3. **Activity**: Make sure you have made activities within the last 24 hours.
 
 ## Running the Tests
