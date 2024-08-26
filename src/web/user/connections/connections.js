@@ -83,7 +83,7 @@ $(document).ready(function() {
                                     </button>
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" href="#" class="sync-btn" data-sync-type="force">Force</a>
+                                    <a class="dropdown-item sync-btn" href="#" data-sync-type="force" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Force</a>
                                 </div>
                             </div>
                             <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Full Logs</button>
@@ -109,6 +109,7 @@ $(document).ready(function() {
             });
 
             $('.sync-btn').click(function() {
+                console.log('clicked!')
                 const $button = $(this)
                 const provider = $(this).data('provider');
                 const providerId = $(this).data('provider-id');
