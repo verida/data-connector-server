@@ -54,7 +54,7 @@ $(document).ready(function() {
         $('#loadingIndicator').show();
         $('#loadBtn').prop('disabled', true);
 
-        $.getJSON(`/api/v1/syncStatus?key=${veridaKey}`, function(syncStatusResponse) {
+        $.getJSON(`/api/v1/sync/status?key=${veridaKey}`, function(syncStatusResponse) {
             $.each(syncStatusResponse.result, function(key, value) {
                 const connection = value.connection;
                 const handlers = value.handlers;
@@ -97,13 +97,13 @@ $(document).ready(function() {
             $('.logs-btn').click(function() {
                 const provider = $(this).data('provider');
                 const providerId = $(this).data('provider-id');
-                window.open(`/dashboard/data?limit=50&filter=providerName:${provider},providerId:${providerId}&schema=https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json&sort=insertedAt:desc`, '_blank');
+                window.open(`/developer/data?limit=50&filter=providerName:${provider},providerId:${providerId}&schema=https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json&sort=insertedAt:desc`, '_blank');
             });
 
             $('.disconnect-btn').click(function() {
                 const provider = $(this).data('provider');
                 const providerId = $(this).data('provider-id');
-                $.getJSON(`/api/v1/disconnect/${provider}?key=${veridaKey}&providerId=${providerId}`, function(response) {
+                $.getJSON(`/api/v1/provider/disconnect/${provider}?key=${veridaKey}&providerId=${providerId}`, function(response) {
                     console.log(response.data)
                 })
             });
@@ -117,7 +117,7 @@ $(document).ready(function() {
                 const syncType = $(this).data('sync-type');
 
                 // Start tailing logs
-                const eventSource = new EventSource(`/api/v1/logs?key=${veridaKey}`);
+                const eventSource = new EventSource(`/api/v1/sync/logs?key=${veridaKey}`);
 
                 const tableBody = $('#eventTableBody');
                 tableBody.empty()
@@ -177,7 +177,7 @@ $(document).ready(function() {
         $dropdown.empty();
         $.each(providersData, function(key, provider) {
             if (provider.name === 'mock') return; // Skip 'mock' provider
-            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/api/v1/connect/${provider.name}?key=${$('#veridaKey').val()}', '_blank');">
+            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/api/v1/provider/connect/${provider.name}?key=${$('#veridaKey').val()}', '_blank');">
                 <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
                 ${provider.label}
             </a>`);

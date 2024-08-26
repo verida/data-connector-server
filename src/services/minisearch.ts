@@ -6,8 +6,16 @@ import { indexCache } from "./data";
 import { IContext } from "@verida/types";
 import { Utils } from "../utils";
 
+export interface SearchResultItem {
+  id: string
+  terms: string[]
+  queryTerms: string[]
+  match: object
+  score: number
+}
+
 export interface MinisearchServiceSearchResult {
-  results: object[];
+  results: SearchResultItem[];
   count: number;
 }
 
@@ -19,6 +27,7 @@ export class MinisearchService {
     did: string,
     schemaName: string,
     query: string,
+    options: object = {},
     indexFields: string[],
     storeFields: string[] = [],
     limit: number = 20,
@@ -96,11 +105,6 @@ export class MinisearchService {
               }
 
               // @todo: Make sure the original field isn't stored (`arrayProperty`)
-
-              console.log(
-                arrayItem.filename,
-                arrayItem.textContent.substring(0, 100)
-              );
               i++;
             }
           }
@@ -129,8 +133,8 @@ export class MinisearchService {
       console.log("cache match!");
     }
 
-    console.log("Searching...");
-    const results = indexCache[cacheKey].search(query);
+    console.log("Searching...", query, options);
+    const results = indexCache[cacheKey].search(query, options);
 
     return {
       results: results.slice(0, limit),

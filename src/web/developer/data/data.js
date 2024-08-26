@@ -1,6 +1,6 @@
 $(document).ready(function() {
     let offset = 0;
-    const apiUrl = '/api/v1/data';
+    const apiUrl = '/api/v1/ds/query';
     let currentSortField = '';
     let currentSortDirection = 'asc';
     let currentFilters = {};
@@ -54,7 +54,7 @@ $(document).ready(function() {
         $('.alert').hide(); // Hide previous error messages
 
         $.ajax({
-            url: apiUrl,
+            url: `${apiUrl}/${btoa(schema)}`,
             data: {
                 key: veridaKey,
                 schema: schema,

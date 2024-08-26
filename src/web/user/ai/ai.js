@@ -41,10 +41,17 @@ $(document).ready(function() {
         addMessage(prompt, 'user');
         showTypingIndicator();
 
+        const userInput = $('#privateData-input').val();
+
+        let urlType = "prompt"
+        if (userInput == "on") {
+            urlType = "personal"
+        }
+
         const body = { prompt: prompt, key: veridaKey };
 
         $.ajax({
-            url: `/api/v1/llm/personal?key=${veridaKey}`,
+            url: `/api/v1/llm/${urlType}?key=${veridaKey}`,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(body),
@@ -74,7 +81,7 @@ $(document).ready(function() {
     });
 
     // Hotload data
-    const eventSource = new EventSource(`/api/v1/minisearch/hotload?key=${savedVeridaKey}`);
+    const eventSource = new EventSource(`/api/v1/llm/hotload?key=${savedVeridaKey}`);
     
     let loadComplete = false
     eventSource.onmessage = function(event) {
@@ -92,6 +99,7 @@ $(document).ready(function() {
         if (data.status === 'Load Complete' && data.totalProgress >= 1) {
             loadComplete = true
             $('#loading-overlay').fadeOut();
+            eventSource.close()
         }
     };
 

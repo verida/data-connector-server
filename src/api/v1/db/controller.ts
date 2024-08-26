@@ -16,8 +16,10 @@ export class DbController {
                 // @ts-ignore
                 permissions
             })
-            const results = await (await db).getMany()
-            res.json(results)
+            const items = await db.getMany()
+            res.json({
+                items
+            })
         } catch (error) {
             let message = error.message
             if (error.message.match('invalid encoding')) {
@@ -35,15 +37,14 @@ export class DbController {
             const rowId = req.params[1]
             const permissions = Utils.buildPermissions(req)
 
-            console.log(rowId)
-            console.log(req)
-
             const db = await context.openDatabase(dbName, {
                 // @ts-ignore
                 permissions
             })
-            const results = await (await db).get(rowId)
-            res.json(results)
+            const item = await db.get(rowId)
+            res.json({
+                item
+            })
         } catch (error) {
             res.status(500).send(error.message);
         }
@@ -60,11 +61,14 @@ export class DbController {
                 permissions
             })
 
-            const selector = req.body.query
+            const filter = req.body.query || {}
             const options = req.body.options || {}
-            const results = await (await db).getMany(selector, options)
-            res.json(results)
+            const items = await db.getMany(filter, options)
+            res.json({
+                items
+            })
         } catch (error) {
+            console.log(error)
             res.status(500).send(error.message);
         }
     }
