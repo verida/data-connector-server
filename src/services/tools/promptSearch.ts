@@ -1,3 +1,4 @@
+import { KeywordSearchTimeframe } from "../../helpers/interfaces";
 import { LLM } from "../llm"
 
 const systemPrompt = `You are an expert data analyst. When I give you a prompt, you must generate search metadata that will be used to extract relevant information to help answer the prompt.
@@ -7,18 +8,30 @@ You must generate a JSON response containing the following information:
 - timeframe: one of; day, week, month, quarter, half-year, full-year, all
 - databases: an array of databases to search; emails, chat_messages, files, favourites, web_history, calendar
 - sort: keyword_rank, recent, oldest
-- output_type: The amount of detail in the output of each search result to provide meaningful context. full_content, summary, name
+- output_type: The amount of detail in the output of each search result to provide meaningful context. full_content, summary, headline
 - profile_information; Array of these options only; name, contactInfo, demographics, lifestyle, preferences, habits, financial, health, personality, employment, education, skills, language, interests
 
 JSON only, no explanation.`
 
+export enum PromptSearchSort {
+  KEYWORD_RANK = "keyword_rank",
+  RECENT = "recent",
+  OLDEST = "oldest"
+}
+
+export enum PromptSearchOutputType {
+  FULL = "full_content",
+  SUMMARY = "summary",
+  HEADLINE = "headline"
+}
+
 export interface PromptSearchLLMResponse {
     search_type: "keywords" | "all";
     keywords?: string[]; // Array of single word terms, required if search_type is "keywords"
-    timeframe: "day" | "week" | "month" | "quarter" | "half-year" | "full-year" | "all";
+    timeframe: KeywordSearchTimeframe;
     databases: Array<"emails" | "chat_messages" | "files" | "favourites" | "web_history" | "calendar">;
-    sort: "keyword_rank" | "recent" | "oldest";
-    output_type: "full_content" | "summary" | "name";
+    sort: PromptSearchSort;
+    output_type: PromptSearchOutputType;
     profile_information: Array<
       "name" | "contactInfo" | "demographics" | "lifestyle" | "preferences" | "habits" |
       "financial" | "health" | "personality" | "employment" | "education" | "skills" |

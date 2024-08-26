@@ -3,6 +3,7 @@ import { Utils } from "../../../utils";
 import { SearchService, SearchType } from "../../../services/search"
 import { MinisearchService, SearchResultItem } from "../../../services/minisearch";
 import { SchemaRecord } from "../../../schemas";
+import { KeywordSearchTimeframe } from "../../../helpers/interfaces";
 
 const DEFAULT_LIMIT = 20
 
@@ -27,9 +28,10 @@ class SearchController {
             const threadSize = req.query.threadSize ? parseInt(req.query.threadSize.toString()) : 10
             const limit = req.query.limit ? parseInt(req.query.limit.toString()) : DEFAULT_LIMIT
             const mergeOverlaps = req.query.limit ? req.query.merge.toString() == 'true' : true
+            const timeframe: KeywordSearchTimeframe = req.query.timeframe ? <KeywordSearchTimeframe> req.query.timeframe.toString() : undefined
 
             const searchService = new SearchService(did, context)
-            const items = await searchService.chatThreadsByKeywords(keywords, threadSize, limit, mergeOverlaps)
+            const items = await searchService.chatThreadsByKeywords(keywords, timeframe, threadSize, limit, mergeOverlaps)
 
             return res.json({
                 items
@@ -47,6 +49,7 @@ class SearchController {
             const did = await account.did()
             const keywordString = req.query.keywords ? req.query.keywords.toString() : ""
             const keywords = keywordString.split(' ')
+            const timeframe: KeywordSearchTimeframe = req.query.timeframe ? <KeywordSearchTimeframe> req.query.timeframe.toString() : undefined
 
             const searchTypes = req.query.searchTypes ? <SearchType[]> req.query.searchTypes.toString().split(',') : [
                 SearchType.EMAILS,
@@ -56,7 +59,7 @@ class SearchController {
             const minResultsPerType = req.query.minResultsPerType ? parseInt(req.query.minResultsPerType.toString()) : 5
 
             const searchService = new SearchService(did, context)
-            const items = await searchService.multiByKeywords(searchTypes, keywords, limit, minResultsPerType)
+            const items = await searchService.multiByKeywords(searchTypes, keywords, timeframe, limit, minResultsPerType)
 
             return res.json({
                 items

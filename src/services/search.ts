@@ -2,7 +2,8 @@ import { DataService } from "./data"
 import { VeridaService } from "./veridaService"
 import { SchemaEmail, SchemaRecord, SchemaSocialChatGroup, SchemaSocialChatMessage } from "../schemas"
 import { IDatastore } from "@verida/types"
-import { threadId } from "worker_threads"
+import { KeywordSearchTimeframe } from "../helpers/interfaces"
+import { Helpers } from "./helpers"
 const _ = require('lodash')
 
 export interface MinisearchResult {
@@ -107,27 +108,29 @@ export class SearchService extends VeridaService {
         return results
     }
 
-    public async emailsByKeywords(keywordsList: string[], limit: number = 20): Promise<SchemaEmail[]> {
+    public async emailsByKeywords(keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20): Promise<SchemaEmail[]> {
         const query = keywordsList.join(' ')
         const searchType = SearchType.EMAILS
         const schemaUri = SearchTypeSchemas[searchType]
         const dataService = new DataService(this.did, this.context)
         const miniSearchIndex = await dataService.getIndex(schemaUri)
 
-        console.log('Emails: searching for', query)
+        const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
+        console.log('Emails: searching for', query, timeframe)
         
-        const searchResults = await miniSearchIndex.search(query)
+        const searchResults = await miniSearchIndex.search(query, {
+            filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
+        })
         return <SchemaEmail[]> await this.rankAndMergeResults([{
             searchType,
             rows: searchResults
         }], limit)
     }
 
-    public async emailsByDateRange(maxDatetime: Date, sortType: SearchSortType, limit: number = 20): Promise<SchemaEmail[]> {
-        const searchType = SearchType.EMAILS
+    public async schemaByDateRange(searchType: SearchType, maxDatetime: Date, sortType: SearchSortType, limit: number = 20): Promise<SchemaRecord[]> {
         const schemaUri = SearchTypeSchemas[searchType]
         const dataService = new DataService(this.did, this.context)
-        const emailDatastore = await dataService.getDatastore(schemaUri)
+        const datastore = await dataService.getDatastore(schemaUri)
         const filter = {
             sentAt: {
                 "$gte": maxDatetime.toISOString()
@@ -142,20 +145,24 @@ export class SearchService extends VeridaService {
             ]
         }
 
-        console.log('Emails: searching for', filter, options)
-        return <SchemaEmail[]> await emailDatastore.getMany(filter, options)
+        console.log(searchType, ': searching for', filter, options)
+        return <SchemaRecord[]> await datastore.getMany(filter, options)
     }
 
-    public async chatHistoryByKeywords(keywordsList: string[], limit: number = 20): Promise<any[]> {
+    public async chatHistoryByKeywords(keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20): Promise<any[]> {
         const searchType = SearchType.CHAT_MESSAGES
         const schemaUri = SearchTypeSchemas[searchType]
         const query = keywordsList.join(' ')
         const dataService = new DataService(this.did, this.context)
         const miniSearchIndex = await dataService.getIndex(schemaUri)
 
-        console.log('Chat history: searching for', query)
+        const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
+        console.log('Chat history: searching for', query, timeframe, maxDatetime)
         
-        const searchResults = await miniSearchIndex.search(query)
+        const searchResults = await miniSearchIndex.search(query, {
+            filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
+        })
+
         return this.rankAndMergeResults([{
             searchType,
             rows: searchResults
@@ -173,16 +180,19 @@ export class SearchService extends VeridaService {
      * @param mergeOverlaps If there is an overlap of messages within the same chat group, they will be merged into a single thread.
      * @returns 
      */
-    public async chatThreadsByKeywords(keywordsList: string[], threadSize: number = 10, limit: number = 20, mergeOverlaps: boolean = true): Promise<ChatThreadResult[]> {
+    public async chatThreadsByKeywords(keywordsList: string[], timeframe: KeywordSearchTimeframe, threadSize: number = 10, limit: number = 20, mergeOverlaps: boolean = true): Promise<ChatThreadResult[]> {
         const query = keywordsList.join(' ')
         const messageSchemaUri = "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
         const groupSchemaUri = "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json"
         const dataService = new DataService(this.did, this.context)
         const miniSearchIndex = await dataService.getIndex(messageSchemaUri)
 
-        console.log('Chat threads: searching for', query)
+        const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
+        console.log('Chat threads: searching for', query, timeframe, maxDatetime)
         
-        const searchResults = await miniSearchIndex.search(query)
+        const searchResults = await miniSearchIndex.search(query, {
+            filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
+        })
         const chatMessageDs = await this.context.openDatastore(messageSchemaUri)
         const chatGroupDs = await this.context.openDatastore(groupSchemaUri)
 
@@ -263,9 +273,10 @@ export class SearchService extends VeridaService {
         
     }
 
-    public async multiByKeywords(searchTypes: SearchType[], keywordsList: string[], limit: number = 20, minResultsPerType: number = 10) {
+    public async multiByKeywords(searchTypes: SearchType[], keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20, minResultsPerType: number = 10) {
         const query = keywordsList.join(' ')
         const dataService = new DataService(this.did, this.context)
+        const maxTimeframe = 
 
         console.log('Multi: searching for', query)
 
