@@ -304,45 +304,84 @@ export class GoogleDriveHelpers {
     }
   }
 
-  static async extractIndexableText(
+  static async extractTextContent(
     drive: drive_v3.Drive,
     fileId: string,
     mimeType: string,
     auth: OAuth2Client
   ): Promise<string> {
-    let textContent = '';
-  
-    // 5MB limit (5 * 1024 * 1024)
-    const sizeLimit = 5 * 1024 * 1024;
-    const fileSize = await this.getFileSize(drive, fileId);
-  
-    if (fileSize !== undefined && fileSize <= sizeLimit) {
-      if (mimeType === 'application/pdf') {
-        const fileBuffer = await this.downloadFile(drive, fileId);
-        textContent = await this.parsePdf(fileBuffer);
-      } else if (mimeType === 'application/vnd.google-apps.document') {
-        textContent = await this.extractGoogleDocsText(drive, fileId);
-      } else if (mimeType === 'application/vnd.google-apps.spreadsheet') {
-        textContent = await this.extractGoogleSheetsText(fileId, auth);
-      } else if (mimeType === 'application/vnd.google-apps.presentation') {
-        textContent = await this.extractGoogleSlidesText(fileId, auth);
-      } else if (mimeType === 'text/plain') {
-        const fileBuffer = await this.downloadFile(drive, fileId);
-        textContent = fileBuffer.toString('utf8');
-      } else if (mimeType === 'application/msword' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        const fileBuffer = await this.downloadFile(drive, fileId);
-        textContent = await this.parseDocx(fileBuffer);
-      } else if (mimeType === 'application/vnd.ms-excel' || mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-        const fileBuffer = await this.downloadFile(drive, fileId);
-        textContent = await this.parseXlsx(fileBuffer);
-      } else if (mimeType === 'application/vnd.ms-powerpoint' || mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
-        const fileBuffer = await this.downloadFile(drive, fileId);
-        textContent = await this.parsePptx(fileBuffer);
+    let textContent = "";
+
+    try {
+      // Attempt to fetch the indexable text from contentHints
+      const response = await drive.files.get({
+        fileId: fileId,
+        fields: "contentHints/indexableText, size",
+      });
+
+      // Check if indexable text is available
+      textContent = response.data.contentHints?.indexableText || "";
+
+      // If no indexable text is found, proceed with original extraction methods
+      if (!textContent) {
+        console.warn("No indexable text found, using fallback method.");
+
+        // 10MB limit (5 * 1024 * 1024)
+        const sizeLimit = 10 * 1024 * 1024;
+        const fileSize = response.data.size
+          ? parseInt(response.data.size)
+          : undefined;
+
+        if (fileSize !== undefined && fileSize <= sizeLimit) {
+          if (mimeType === "application/pdf") {
+            const fileBuffer = await this.downloadFile(drive, fileId);
+            textContent = await this.parsePdf(fileBuffer);
+          } else if (mimeType === "application/vnd.google-apps.document") {
+            textContent = await this.extractGoogleDocsText(drive, fileId);
+          } else if (mimeType === "application/vnd.google-apps.spreadsheet") {
+            textContent = await this.extractGoogleSheetsText(fileId, auth);
+          } else if (mimeType === "application/vnd.google-apps.presentation") {
+            textContent = await this.extractGoogleSlidesText(fileId, auth);
+          } else if (mimeType === "text/plain") {
+            const fileBuffer = await this.downloadFile(drive, fileId);
+            textContent = fileBuffer.toString("utf8");
+          } else if (
+            mimeType === "application/msword" ||
+            mimeType ===
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          ) {
+            const fileBuffer = await this.downloadFile(drive, fileId);
+            textContent = await this.parseDocx(fileBuffer);
+          } else if (
+            mimeType === "application/vnd.ms-excel" ||
+            mimeType ===
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          ) {
+            const fileBuffer = await this.downloadFile(drive, fileId);
+            textContent = await this.parseXlsx(fileBuffer);
+          } else if (
+            mimeType === "application/vnd.ms-powerpoint" ||
+            mimeType ===
+              "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+          ) {
+            const fileBuffer = await this.downloadFile(drive, fileId);
+            textContent = await this.parsePptx(fileBuffer);
+          } else {
+            console.warn(
+              "Unsupported MIME type or file size exceeds the limit."
+            );
+          }
+        } else {
+          console.warn("File size exceeds the limit or unsupported file type.");
+        }
+      } else {
+        console.log("Indexable text extracted successfully from contentHints.");
       }
-    } else {
-      console.warn('File size exceeds the limit or unsupported file type.');
+    } catch (error) {
+      console.error("Error extracting indexable text:", error);
+      throw error;
     }
-  
+
     return textContent;
   }
   
@@ -484,7 +523,7 @@ export class GoogleDriveHelpers {
     };
   }
 
-  static async getFileExtension(drive: drive_v3.Drive, fileId: string): Promise<string | undefined> {
+  static async getFileExtension(drive: drive_v3.Drive, fileId: string): Promise<string> {
 
     try {
         const response = await drive.files.get({
@@ -499,7 +538,7 @@ export class GoogleDriveHelpers {
         const lastDotIndex = fileName.lastIndexOf(".");
         if (lastDotIndex === -1) {
             // No period found, so no extension
-            return undefined;
+            return 'Unknown';
         }
 
         // Determine extension from file name
@@ -508,7 +547,7 @@ export class GoogleDriveHelpers {
         // Fallback if extension is not in file name (based on MIME type)
         if (!extension) {
             
-            return mimeExtensions[mimeType] || '';
+            return mimeExtensions[mimeType] || 'Unknown';
         }
 
         return extension;

@@ -157,6 +157,9 @@ export default class GoogleDriveDocument extends GoogleHandler {
         let breakHit: SyncItemsBreak;
     
         for (const file of serverResponse.data.files ?? []) {
+            console.log("==========")
+            console.log(file)
+            
             const fileId = file.id ?? '';
             
             if (fileId === breakId) {
@@ -206,7 +209,16 @@ export default class GoogleDriveDocument extends GoogleHandler {
             const extension = await GoogleDriveHelpers.getFileExtension(this.getGoogleDrive(), fileId);
             const thumbnail = file.thumbnailLink ?? '';
             const size = await GoogleDriveHelpers.getFileSize(drive, fileId);
-            const textContent = await GoogleDriveHelpers.extractIndexableText(drive, fileId, mimeType, this.getGoogleAuth());
+            if (!size) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `No size for file ${fileId}. Ignoring this file.`,
+                };
+                this.emit('log', logEvent);
+                continue;
+            }
+
+            const textContent = await GoogleDriveHelpers.extractTextContent(drive, fileId, mimeType, this.getGoogleAuth());
     
             results.push({
                 _id: this.buildItemId(fileId),
@@ -217,6 +229,7 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 uri: link,
                 icon: thumbnail,
                 contentText: textContent,
+                fileDataId: undefined,
                 sourceId: fileId,
                 sourceData: file,
                 sourceAccountId: this.provider.getProviderId(),
