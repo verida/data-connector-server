@@ -5,7 +5,7 @@ export interface SchemaRecord {
     _rev?: string
     schema?: string
     name: string
-    description?: string
+    summary?: string
     insertedAt?: string
     modifiedAt?: string
     icon?: string

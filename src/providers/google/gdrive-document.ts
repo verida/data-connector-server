@@ -220,6 +220,7 @@ export default class GoogleDriveDocument extends GoogleHandler {
     
             results.push({
                 _id: this.buildItemId(fileId),
+                schema: CONFIG.verida.schemas.FILE,
                 name: title,
                 mimeType: mimeType,
                 extension: extension,

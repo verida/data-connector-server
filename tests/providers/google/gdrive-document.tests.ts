@@ -32,7 +32,7 @@ describe(`${providerName} GDrive Document Tests`, function () {
   
     testConfig = {
       idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
-      timeOrderAttribute: "insertedAt",
+      timeOrderAttribute: "modifiedAt",
       batchSizeLimitAttribute: "batchSize",
     };
   });
