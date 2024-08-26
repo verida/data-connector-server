@@ -155,60 +155,69 @@ export default class GoogleDriveDocument extends GoogleHandler {
     ): Promise<SyncDocumentItemsResult> {
         const results: SchemaFile[] = [];
         let breakHit: SyncItemsBreak;
-
-        for (const file of serverResponse.data.files) {
-            const fileId = file.id;
-
+    
+        for (const file of serverResponse.data.files ?? []) {
+            const fileId = file.id ?? '';
+            
             if (fileId === breakId) {
-                this.emit('log', { level: SyncProviderLogLevel.DEBUG, message: `Break ID hit (${breakId})` });
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break ID hit (${breakId})`,
+                };
+                this.emit('log', logEvent);
                 breakHit = SyncItemsBreak.ID;
                 break;
             }
-
-            const createdTime = file.createdTime || new Date().toISOString();
-            const modifiedTime = file.modifiedTime || new Date().toISOString();
-
+    
+            const createdTime = file.createdTime ?? new Date().toISOString();
+            const modifiedTime = file.modifiedTime ?? new Date().toISOString();
+    
             if (breakTimestamp && modifiedTime < breakTimestamp) {
-                this.emit('log', { level: SyncProviderLogLevel.DEBUG, message: `Break timestamp hit (${breakTimestamp})` });
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Break timestamp hit (${breakTimestamp})`,
+                };
+                this.emit('log', logEvent);
                 breakHit = SyncItemsBreak.TIMESTAMP;
                 break;
             }
-
-            const title = file.name || "No title";
+    
+            const title = file.name ?? 'No title';
             const link = file.webViewLink;
             if (!link) {
                 const logEvent: SyncProviderLogEvent = {
                     level: SyncProviderLogLevel.DEBUG,
-                    message: `No link available for file ${fileId}. Ignoring this file.`
-                }
+                    message: `No link available for file ${fileId}. Ignoring this file.`,
+                };
                 this.emit('log', logEvent);
                 continue;
             }
-
+    
             const mimeType = file.mimeType;
             if (!mimeType) {
                 const logEvent: SyncProviderLogEvent = {
                     level: SyncProviderLogLevel.DEBUG,
-                    message: `No mimeType available for file ${fileId}. Ignoring this file.`
-                }
+                    message: `No mimeType available for file ${fileId}. Ignoring this file.`,
+                };
                 this.emit('log', logEvent);
                 continue;
             }
-            const extension = await GoogleDriveHelpers.getFileExtension(this.getGoogleDrive(), fileId)
-            const thumbnail = file.thumbnailLink || undefined;
-            const size = await GoogleDriveHelpers.getFileSize(drive, file.id);
-            const textContent = await GoogleDriveHelpers.extractIndexableText(drive, file.id, mimeType, this.getGoogleAuth());
-
+    
+            const extension = await GoogleDriveHelpers.getFileExtension(this.getGoogleDrive(), fileId);
+            const thumbnail = file.thumbnailLink ?? '';
+            const size = await GoogleDriveHelpers.getFileSize(drive, fileId);
+            const textContent = await GoogleDriveHelpers.extractIndexableText(drive, fileId, mimeType, this.getGoogleAuth());
+    
             results.push({
                 _id: this.buildItemId(fileId),
                 name: title,
                 mimeType: mimeType,
                 extension: extension,
-                size,
+                size: size,
                 uri: link,
                 icon: thumbnail,
                 contentText: textContent,
-                sourceId: file.id,
+                sourceId: fileId,
                 sourceData: file,
                 sourceAccountId: this.provider.getProviderId(),
                 sourceApplication: this.getProviderApplicationUrl(),
@@ -216,7 +225,11 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 modifiedAt: modifiedTime,
             });
         }
-
-        return { items: results, breakHit };
+    
+        return {
+            items: results,
+            breakHit,
+        };
     }
+    
 }
