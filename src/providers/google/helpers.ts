@@ -495,8 +495,15 @@ export class GoogleDriveHelpers {
         const fileName = response.data.name;
         const mimeType = response.data.mimeType;
 
+        // Check if the file name contains a period (.)
+        const lastDotIndex = fileName.lastIndexOf(".");
+        if (lastDotIndex === -1) {
+            // No period found, so no extension
+            return undefined;
+        }
+
         // Determine extension from file name
-        const extension = fileName.slice((fileName.lastIndexOf(".") - 1 >>> 0) + 2);
+        const extension = fileName.slice(lastDotIndex + 1);
         
         // Fallback if extension is not in file name (based on MIME type)
         if (!extension) {
@@ -509,6 +516,6 @@ export class GoogleDriveHelpers {
         console.error('Error retrieving file metadata:', error);
         throw error;
     }
-}
+  }
 
 }
