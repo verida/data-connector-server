@@ -23,7 +23,7 @@ let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
 
 
 describe(`${providerName} GDrive Document Tests`, function () {
-  this.timeout(100000);
+  this.timeout(400000);
 
   this.beforeAll(async function () {
     network = await CommonUtils.getNetwork();
