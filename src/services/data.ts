@@ -48,7 +48,7 @@ const schemas: Record<string, SchemaConfig> = {
     "https://common.schemas.verida.io/favourite/v0.1.0/schema.json": {
         label: "Favourite",
         storeFields: ['_id', 'insertedAt'],
-        indexFields: ['name', 'favouriteType', 'contentTYpe', 'summary']
+        indexFields: ['name', 'favouriteType', 'contentType', 'summary']
     }
 }
 

@@ -29,7 +29,7 @@ export enum SearchSortType {
 export enum SearchType {
     // CHAT_THREADS = "chat-threads",
     FILES = "files",
-    CHAT_MESSAGES = "chat-messages",
+    CHAT_MESSAGES = "messages",
     EMAILS = "emails",
     FAVORITES = "favorites",
     FOLLOWING = "following",
@@ -44,6 +44,16 @@ export const SearchTypeSchemas: Record<SearchType, string> = {
     [SearchType.FAVORITES]: "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
     [SearchType.POSTS]: "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
     [SearchType.FOLLOWING]: "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
+}
+
+export const SearchTypeTimeProperty: Record<SearchType, string> = {
+    // [SearchType.CHAT_THREADS]: "sentAt",
+    [SearchType.FILES]: "insertedAt",
+    [SearchType.CHAT_MESSAGES]: "sentAt",
+    [SearchType.EMAILS]: "sentAt",
+    [SearchType.FAVORITES]: "insertedAt",
+    [SearchType.POSTS]: "insertedAt",
+    [SearchType.FOLLOWING]: "followedAt",
 }
 
 export interface ChatThreadResult {
@@ -141,7 +151,7 @@ export class SearchService extends VeridaService {
             limit,
             sort: [
                 {
-                    sentAt: sortType == SearchSortType.OLDEST ? "asc" : "desc"
+                    [SearchTypeTimeProperty[searchType]]: sortType == SearchSortType.OLDEST ? "asc" : "desc"
                 }
             ]
         }

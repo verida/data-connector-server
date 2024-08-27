@@ -41,31 +41,31 @@ export class PromptSearchService extends VeridaService {
         const searchService = new SearchService(this.did, this.context)
 
         if (promptSearchResult.search_type == PromptSearchType.KEYWORDS) {
-            if (promptSearchResult.databases.indexOf("emails")) {
+            if (promptSearchResult.databases.indexOf(SearchType.EMAILS) !== -1) {
                 emails = await searchService.schemaByKeywords<SchemaEmail>(SearchType.EMAILS, promptSearchResult.keywords!, promptSearchResult.timeframe, 20)
             }
             // if (promptSearchResult.databases.indexOf("files")) {
             //     files = await searchService.schemaByKeywords<SchemaFile>(SearchType.FILES, promptSearchResult.keywords!, promptSearchResult.timeframe, 20)
             // }
-            if (promptSearchResult.databases.indexOf("favourites")) {
+            if (promptSearchResult.databases.indexOf(SearchType.FAVORITES) !== -1) {
                 favourites = await searchService.schemaByKeywords<SchemaFavourite>(SearchType.FAVORITES, promptSearchResult.keywords!, promptSearchResult.timeframe, 20)
             }
-            if (promptSearchResult.databases.indexOf("chat_messages")) {
+            if (promptSearchResult.databases.indexOf(SearchType.CHAT_MESSAGES) !== -1) {
                 chatThreads = await searchService.chatThreadsByKeywords(promptSearchResult.keywords!, promptSearchResult.timeframe, 10, 10)
             }
         } else {
             const maxDatetime = Helpers.keywordTimeframeToDate(promptSearchResult.timeframe)
             const sort = promptSearchResult.sort == PromptSearchSort.RECENT ? SearchSortType.RECENT : SearchSortType.OLDEST
-            if (promptSearchResult.databases.indexOf("emails")) {
+            if (promptSearchResult.databases.indexOf(SearchType.EMAILS) !== -1) {
                 emails = await searchService.schemaByDateRange<SchemaEmail>(SearchType.EMAILS, maxDatetime, sort, MAX_DATERANGE_EMAILS)
             }
             // if (promptSearchResult.databases.indexOf("files")) {
             //     files = await searchService.schemaByDateRange<SchemaFile>(SearchType.FILES, maxDatetime, sort, MAX_DATERANGE_FILES)
             // }
-            if (promptSearchResult.databases.indexOf("favourites")) {
+            if (promptSearchResult.databases.indexOf(SearchType.FAVORITES) !== -1) {
                 favourites = await searchService.schemaByDateRange<SchemaFavourite>(SearchType.FAVORITES, maxDatetime, sort, MAX_DATERANGE_FAVOURITES)
             }
-            if (promptSearchResult.databases.indexOf("chat_messages")) {
+            if (promptSearchResult.databases.indexOf(SearchType.CHAT_MESSAGES) !== -1) {
                 chatMessages = <SchemaSocialChatMessage[]> await searchService.schemaByDateRange(SearchType.CHAT_MESSAGES, maxDatetime, sort, MAX_DATERANGE_CHAT_MESSAGES)
             }
         }
