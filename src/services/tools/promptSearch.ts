@@ -13,6 +13,11 @@ You must generate a JSON response containing the following information:
 
 JSON only, no explanation.`
 
+export enum PromptSearchType {
+  KEYWORDS = "keywords",
+  ALL = "all"
+}
+
 export enum PromptSearchSort {
   KEYWORD_RANK = "keyword_rank",
   RECENT = "recent",
@@ -26,7 +31,7 @@ export enum PromptSearchOutputType {
 }
 
 export interface PromptSearchLLMResponse {
-    search_type: "keywords" | "all";
+    search_type: PromptSearchType;
     keywords?: string[]; // Array of single word terms, required if search_type is "keywords"
     timeframe: KeywordSearchTimeframe;
     databases: Array<"emails" | "chat_messages" | "files" | "favourites" | "web_history" | "calendar">;

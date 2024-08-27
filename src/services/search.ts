@@ -28,6 +28,7 @@ export enum SearchSortType {
 
 export enum SearchType {
     // CHAT_THREADS = "chat-threads",
+    FILES = "files",
     CHAT_MESSAGES = "chat-messages",
     EMAILS = "emails",
     FAVORITES = "favorites",
@@ -37,6 +38,7 @@ export enum SearchType {
 
 export const SearchTypeSchemas: Record<SearchType, string> = {
     // [SearchType.CHAT_THREADS]: "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
+    [SearchType.FILES]: "https://common.schemas.verida.io/file/v0.1.0/schema.json",
     [SearchType.CHAT_MESSAGES]: "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
     [SearchType.EMAILS]: "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
     [SearchType.FAVORITES]: "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
@@ -108,26 +110,25 @@ export class SearchService extends VeridaService {
         return results
     }
 
-    public async emailsByKeywords(keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20): Promise<SchemaEmail[]> {
+    public async schemaByKeywords<T extends SchemaRecord>(searchType: SearchType, keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20): Promise<T[]> {
         const query = keywordsList.join(' ')
-        const searchType = SearchType.EMAILS
         const schemaUri = SearchTypeSchemas[searchType]
         const dataService = new DataService(this.did, this.context)
         const miniSearchIndex = await dataService.getIndex(schemaUri)
 
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
-        console.log('Emails: searching for', query, timeframe)
+        console.log(`${searchType}: Searching for ${query} (${timeframe})`)
         
         const searchResults = await miniSearchIndex.search(query, {
             filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
         })
-        return <SchemaEmail[]> await this.rankAndMergeResults([{
+        return await this.rankAndMergeResults([{
             searchType,
             rows: searchResults
-        }], limit)
+        }], limit) as T[]
     }
 
-    public async schemaByDateRange(searchType: SearchType, maxDatetime: Date, sortType: SearchSortType, limit: number = 20): Promise<SchemaRecord[]> {
+    public async schemaByDateRange<T extends SchemaRecord>(searchType: SearchType, maxDatetime: Date, sortType: SearchSortType, limit: number = 20): Promise<T[]> {
         const schemaUri = SearchTypeSchemas[searchType]
         const dataService = new DataService(this.did, this.context)
         const datastore = await dataService.getDatastore(schemaUri)
@@ -146,10 +147,10 @@ export class SearchService extends VeridaService {
         }
 
         console.log(searchType, ': searching for', filter, options)
-        return <SchemaRecord[]> await datastore.getMany(filter, options)
+        return await datastore.getMany(filter, options) as T[]
     }
 
-    public async chatHistoryByKeywords(keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20): Promise<any[]> {
+    public async chatHistoryByKeywords(keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20): Promise<SchemaRecord[]> {
         const searchType = SearchType.CHAT_MESSAGES
         const schemaUri = SearchTypeSchemas[searchType]
         const query = keywordsList.join(' ')
