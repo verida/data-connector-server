@@ -209,7 +209,7 @@ $(document).ready(function() {
             "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
             "Favourites": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
             "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
-            "FILE": "https://common.schemas.verida.io/file/v0.1.0/schema.json",
+            "File": "https://common.schemas.verida.io/file/v0.1.0/schema.json",
             "Chat Group": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
             "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
         };
