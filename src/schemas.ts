@@ -1,5 +1,3 @@
-import { String$Input } from "tdlib-native/dist/types"
-
 export interface SchemaRecord {
     _id: string
     _rev?: string
