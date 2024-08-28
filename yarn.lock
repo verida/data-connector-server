@@ -628,6 +628,16 @@
   resolved "https://registry.yarnpkg.com/@oauth-everything/profile/-/profile-1.0.0.tgz#0b5e78749415519fa312dc83347a677903f456ba"
   integrity sha512-OmCuBPhjaLHh9MST9P5jRuVBZaP0z7hBk8nH4Yt7Id5kNM1AXGd5uud6CP7W2zuhKl2nk0KsYmeMT7SkzN6VWg==
 
+"@one-ini/wasm@0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@one-ini/wasm/-/wasm-0.1.1.tgz#6013659736c9dbfccc96e8a9c2b3de317df39323"
+  integrity sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==
+
+"@pkgjs/parseargs@^0.11.0":
+  version "0.11.0"
+  resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
+  integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
+
 "@prebuilt-tdlib/darwin@0.1008034.0":
   version "0.1008034.0"
   resolved "https://registry.yarnpkg.com/@prebuilt-tdlib/darwin/-/darwin-0.1008034.0.tgz#a5983898df91b3017fc432874f258a17299dcf3c"
@@ -647,16 +657,6 @@
   version "0.1008034.0"
   resolved "https://registry.yarnpkg.com/@prebuilt-tdlib/win32-x64/-/win32-x64-0.1008034.0.tgz#4cfd1463e7a21aa052afd174380b9773ffdb4744"
   integrity sha512-GdkQVgeyXm5Fzj9Rh9UL/30WwuTTbqS+SAs3MKhwu5IxZXtmtv0kHerCfctW6jI926dBCbysSO1+d6wgEMOhbg==
-
-"@one-ini/wasm@0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@one-ini/wasm/-/wasm-0.1.1.tgz#6013659736c9dbfccc96e8a9c2b3de317df39323"
-  integrity sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==
-
-"@pkgjs/parseargs@^0.11.0":
-  version "0.11.0"
-  resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
-  integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
 "@sapphire/async-queue@^1.5.0":
   version "1.5.0"
@@ -1418,7 +1418,7 @@ abbrev@^2.0.0:
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-2.0.0.tgz#cf59829b8b4f03f89dda2771cb7f3653828c89bf"
   integrity sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==
 
-abort-controller@3.0.0:
+abort-controller@3.0.0, abort-controller@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/abort-controller/-/abort-controller-3.0.0.tgz#eaf54d53b62bae4138e809ca225c8439a6efb392"
   integrity sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==
@@ -2442,11 +2442,6 @@ create-hmac@^1.1.4:
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
 
-crypto-js@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/crypto-js/-/crypto-js-4.2.0.tgz#4d931639ecdfd12ff80e8186dba6af2c2e856631"
-  integrity sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==
-
 cross-spawn@^7.0.0:
   version "7.0.3"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.3.tgz#f73a85b9d5d41d045551c177e2882d4ac85728a6"
@@ -2455,6 +2450,11 @@ cross-spawn@^7.0.0:
     path-key "^3.1.0"
     shebang-command "^2.0.0"
     which "^2.0.1"
+
+crypto-js@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/crypto-js/-/crypto-js-4.2.0.tgz#4d931639ecdfd12ff80e8186dba6af2c2e856631"
+  integrity sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==
 
 "crypto-pouch@git+https://github.com/tahpot/crypto-pouch.git#feature/support-key-import":
   version "4.0.1"
@@ -2542,7 +2542,7 @@ debug@^3.1.0, debug@^3.2.7:
   dependencies:
     ms "^2.1.1"
 
-debug@^4.3.5:
+debug@^4.1.1, debug@^4.3.1, debug@^4.3.5:
   version "4.3.6"
   resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.6.tgz#2ab2c38fbaffebf8aa95fdfe6d88438c7a13c52b"
   integrity sha512-O/09Bd4Z1fBrU4VzkhFqVgpPzaGbw6Sm9FEkBT1A/YBXQFGuuSxa1dN2nxgxS34JmKXqYx8CZAwEVoJFImUXIg==
@@ -4649,15 +4649,15 @@ minimist@^1.2.0, minimist@^1.2.5, minimist@^1.2.6:
   resolved "https://registry.yarnpkg.com/minimist/-/minimist-1.2.6.tgz#8637a5b759ea0d6e98702cfb3a9283323c93af44"
   integrity sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q==
 
-minisearch@^7.1.0:
-  version "7.1.0"
-  resolved "https://registry.yarnpkg.com/minisearch/-/minisearch-7.1.0.tgz#f5830e9109b5919ee7b291c29a304f381aa68770"
-  integrity sha512-tv7c/uefWdEhcu6hvrfTihflgeEi2tN6VV7HJnCjK6VxM75QQJh4t9FwJCsA2EsRS8LCnu3W87CuGPWMocOLCA==
-
 "minipass@^5.0.0 || ^6.0.2 || ^7.0.0", minipass@^7.1.2:
   version "7.1.2"
   resolved "https://registry.yarnpkg.com/minipass/-/minipass-7.1.2.tgz#93a9626ce5e5e66bd4db86849e7515e92340a707"
   integrity sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==
+
+minisearch@^7.1.0:
+  version "7.1.0"
+  resolved "https://registry.yarnpkg.com/minisearch/-/minisearch-7.1.0.tgz#f5830e9109b5919ee7b291c29a304f381aa68770"
+  integrity sha512-tv7c/uefWdEhcu6hvrfTihflgeEi2tN6VV7HJnCjK6VxM75QQJh4t9FwJCsA2EsRS8LCnu3W87CuGPWMocOLCA==
 
 mkdirp-classic@^0.5.2:
   version "0.5.3"
@@ -5342,16 +5342,6 @@ pouchdb@^7.2.2:
     uuid "8.3.2"
     vuvuzela "1.0.3"
 
-prebuilt-tdlib@^0.1008034.0:
-  version "0.1008034.0"
-  resolved "https://registry.yarnpkg.com/prebuilt-tdlib/-/prebuilt-tdlib-0.1008034.0.tgz#f80d8f2b21a242e43739df54624ae20418ee251d"
-  integrity sha512-8BuDali/P5wz2kQ4prnFbjeA5wieHmNgDNOm+C6Wu4W2mZ7L/4vDy15EdknKhqMfB8OrRbCKZknp6rqJ16FcTw==
-  optionalDependencies:
-    "@prebuilt-tdlib/darwin" "0.1008034.0"
-    "@prebuilt-tdlib/linux-arm64-glibc" "0.1008034.0"
-    "@prebuilt-tdlib/linux-x64-glibc" "0.1008034.0"
-    "@prebuilt-tdlib/win32-x64" "0.1008034.0"
-
 pptx-parser@^1.1.7-beta.9:
   version "1.1.7-beta.9"
   resolved "https://registry.yarnpkg.com/pptx-parser/-/pptx-parser-1.1.7-beta.9.tgz#26648ba5c45c4c5c548b1de7ab03f04764399d37"
@@ -5375,6 +5365,16 @@ pptx-parser@^1.1.7-beta.9:
     transformation-matrix "^2.5.0"
     txml "3.1.3"
     url-loader "^4.1.0"
+
+prebuilt-tdlib@^0.1008034.0:
+  version "0.1008034.0"
+  resolved "https://registry.yarnpkg.com/prebuilt-tdlib/-/prebuilt-tdlib-0.1008034.0.tgz#f80d8f2b21a242e43739df54624ae20418ee251d"
+  integrity sha512-8BuDali/P5wz2kQ4prnFbjeA5wieHmNgDNOm+C6Wu4W2mZ7L/4vDy15EdknKhqMfB8OrRbCKZknp6rqJ16FcTw==
+  optionalDependencies:
+    "@prebuilt-tdlib/darwin" "0.1008034.0"
+    "@prebuilt-tdlib/linux-arm64-glibc" "0.1008034.0"
+    "@prebuilt-tdlib/linux-x64-glibc" "0.1008034.0"
+    "@prebuilt-tdlib/win32-x64" "0.1008034.0"
 
 prepend-http@^2.0.0:
   version "2.0.0"
@@ -6018,6 +6018,15 @@ string-strip-html@8.5.0:
   resolved "https://registry.yarnpkg.com/string-strip-html/-/string-strip-html-8.5.0.tgz#5e239fe84016fad7b33ca02d23c591f1ccb6af75"
   integrity sha512-5ICsK1B1j0A3AF1d45m0sqQCcmi1Q+t1QpF+b794LO5FTHV+ITkGR5C+UCDJQZgs5LMuRruqr6j48PxQVIurJQ==
 
+"string-width-cjs@npm:string-width@^4.2.0":
+  version "4.2.3"
+  resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
+  integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
+  dependencies:
+    emoji-regex "^8.0.0"
+    is-fullwidth-code-point "^3.0.0"
+    strip-ansi "^6.0.1"
+
 string-width@^4.0.0, string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.2:
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
@@ -6230,7 +6239,7 @@ tdlib-native@^2.6.0:
     "@tdlib-native/tdjson-linux-x64-glibc" "1.8.33-commit.cb164927417f22811c74cd8678ed4a5ab7cb80ba"
     "@tdlib-native/tdjson-win32-x64" "1.8.33-commit.cb164927417f22811c74cd8678ed4a5ab7cb80ba"
 
-through2@3.0.2:
+through2@3.0.2, through2@^3.0.1:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/through2/-/through2-3.0.2.tgz#99f88931cfc761ec7678b41d5d7336b5b6a07bf4"
   integrity sha512-enaDQ4MUyP2W6ZyT6EsMzqBPZaM/avg8iuo+l2d3QCs0J+6RaqkHV/2/lOwDTueBHeJ/2LG9lrLW3d5rWPucuQ==
