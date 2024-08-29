@@ -195,6 +195,10 @@ export default class BaseProvider extends EventEmitter {
     public async sync(accessToken?: string, refreshToken?: string, force: boolean = false): Promise<Connection> {
         await this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
 
+        // Touch network, to ensure cache remains active
+        const account = await this.vault.getAccount()
+        await Utils.touchNetworkCache(await account.did())
+
         if (!accessToken) {
             const connection = this.getConnection()
             accessToken = connection.accessToken
