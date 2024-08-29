@@ -60,6 +60,7 @@ export interface SchemaEmail extends SchemaRecord {
     fromName: string
     fromEmail: string
     toEmail: string
+    toName: string
     messageText: string
     messageHTML: string
     sentAt: string
