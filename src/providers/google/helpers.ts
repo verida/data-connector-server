@@ -326,7 +326,7 @@ export class GoogleDriveHelpers {
       if (!textContent) {
         console.warn("No indexable text found, using fallback method.");
 
-        // 10MB limit (5 * 1024 * 1024)
+        // 10MB limit (10 * 1024 * 1024)
         const sizeLimit = 10 * 1024 * 1024;
         const fileSize = response.data.size
           ? parseInt(response.data.size)
@@ -336,6 +336,7 @@ export class GoogleDriveHelpers {
           if (mimeType === "application/pdf") {
             const fileBuffer = await this.downloadFile(drive, fileId);
             textContent = await this.parsePdf(fileBuffer);
+            
           } else if (mimeType === "application/vnd.google-apps.document") {
             textContent = await this.extractGoogleDocsText(drive, fileId);
           } else if (mimeType === "application/vnd.google-apps.spreadsheet") {
@@ -349,26 +350,29 @@ export class GoogleDriveHelpers {
             mimeType === "application/msword" ||
             mimeType ===
               "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          ) {
+          ) {            
             const fileBuffer = await this.downloadFile(drive, fileId);
             textContent = await this.parseDocx(fileBuffer);
+            
           } else if (
             mimeType === "application/vnd.ms-excel" ||
             mimeType ===
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          ) {
+          ) {            
             const fileBuffer = await this.downloadFile(drive, fileId);
             textContent = await this.parseXlsx(fileBuffer);
+            
           } else if (
             mimeType === "application/vnd.ms-powerpoint" ||
             mimeType ===
               "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-          ) {
+          ) {            
             const fileBuffer = await this.downloadFile(drive, fileId);
             textContent = await this.parsePptx(fileBuffer);
+            
           } else {
             console.warn(
-              "Unsupported MIME type or file size exceeds the limit."
+              "Unsupported MIME type."
             );
           }
         } else {
