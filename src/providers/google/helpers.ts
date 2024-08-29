@@ -292,17 +292,22 @@ export class GoogleDriveHelpers {
     fileId: string
   ): Promise<number | undefined> {
     const file = await this.getFile(drive, fileId);
-
+  
     if (file.size) {
       // For non-Google docs (like PDF, image)
       return parseInt(file.size);
     } else if (file.mimeType && file.mimeType.startsWith("application/vnd.google-apps.")) {
-      // For Google Docs, export the file as plain text to estimate size
-      const exportedFile = await drive.files.export(
-        { fileId: fileId, mimeType: "text/plain" }, 
-        { responseType: "arraybuffer" }
-      );
-      return Buffer.byteLength(exportedFile.data as ArrayBuffer);
+      try {
+        // For Google Docs, export the file as plain text to estimate size
+        const exportedFile = await drive.files.export(
+          { fileId: fileId, mimeType: "text/plain" }, 
+          { responseType: "arraybuffer" }
+        );
+        return Buffer.byteLength(exportedFile.data as ArrayBuffer);
+      } catch (error) {
+        // Ignore the file if there's an error during export
+        return undefined;
+      }
     } else {
       return undefined;
     }

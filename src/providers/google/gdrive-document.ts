@@ -60,7 +60,7 @@ export default class GoogleDriveDocument extends GoogleHandler {
         let query: drive_v3.Params$Resource$Files$List = {
             pageSize: this.config.batchSize,
             fields: 'nextPageToken, files(id, name, mimeType, modifiedTime, webViewLink, thumbnailLink)',
-            q: "", // Fetch all files without restricting mimeType
+            q: "mimeType != 'application/vnd.google-apps.folder'", // Fetch all files without restricting mimeType
             orderBy: "modifiedTime desc", // Fetch files ordered by modifiedTime descending
         };
     
