@@ -4,10 +4,22 @@ $(document).ready(function() {
     let currentSortField = '';
     let currentSortDirection = 'asc';
     let currentFilters = {};
+    const schemas = {
+        "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.1.0/schema.json",
+        "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
+        "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
+        "Social Following": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
+        "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
+        "Favourites": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
+        "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
+        "Chat Group": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
+        "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
+        "Files": "https://common.schemas.verida.io/file/v0.1.0/schema.json"
+    };
 
     // Load Verida Key and Schema from local storage
     $('#veridaKey').val(localStorage.getItem('veridaKey') || '');
-    $('#schema').val(localStorage.getItem('schema') || '');
+    $('#schema').val(localStorage.getItem('schema') || schemas["Connections"]);
 
     // Function to get query parameters
     function getQueryParams() {
@@ -44,10 +56,21 @@ $(document).ready(function() {
     function fetchData() {
         const veridaKey = $('#veridaKey').val();
         const schema = $('#schema').val();
-        const limit = $('#limit').val();
+        const limit = parseInt($('#limit').val());
+        const offset = parseInt($('#offset').val());
         const sortField = currentSortField;
         const sortDirection = currentSortDirection;
-        const filterParam = Object.keys(currentFilters).map(key => `${key}:${currentFilters[key]}`).join(',');
+
+        let sort = undefined
+        if (sortField) {
+            sort = [{[sortField]: sortDirection}]
+        }
+
+        const options = {
+            limit,
+            skip: offset,
+            sort
+        }
 
         // Show loading message
         $('#tableBody').html('<tr><td colspan="100%" class="text-center">Loading...</td></tr>');
@@ -55,16 +78,17 @@ $(document).ready(function() {
 
         $.ajax({
             url: `${apiUrl}/${btoa(schema)}`,
-            data: {
-                key: veridaKey,
-                schema: schema,
-                limit: limit,
-                offset: offset,
-                sort: sortField ? `${sortField}:${sortDirection}` : '',
-                filter: filterParam
+            method: 'POST',
+            headers: {
+                key: veridaKey
             },
+            data: JSON.stringify({
+                options,
+                query: currentFilters
+            }),
+            contentType: 'application/json',
             success: function(response) {
-                const results = response.results;
+                const results = response.items;
                 const options = response.options;
                 const headers = Object.keys(results[0] || {});
 
@@ -74,6 +98,7 @@ $(document).ready(function() {
                     const sortIcon = (header === currentSortField) ? (currentSortDirection === 'asc' ? '▲' : '▼') : '';
                     $('#tableHeaders').append(`<th class="sortable" data-field="${header}">${header} ${sortIcon}</th>`);
                 });
+                $('#tableHeaders').append('<th>Action</th>'); // Add Action column header
 
                 // Populate table rows
                 $('#tableBody').empty();
@@ -82,6 +107,7 @@ $(document).ready(function() {
                     headers.forEach(header => {
                         rowHtml += `<td>${row[header] || ''}</td>`;
                     });
+                    rowHtml += `<td><button class="btn btn-danger btn-sm delete-row" data-id="${row._id}">Delete</button></td>`; // Add Delete button
                     rowHtml += '</tr>';
                     $('#tableBody').append(rowHtml);
                 });
@@ -117,7 +143,7 @@ $(document).ready(function() {
                 $('#openFilters').show();
 
                 // Handle pagination
-                $('#prevButton').toggleClass('disabled', options.skip === 0);
+                $('#prevButton').toggleClass('disabled', !options || !options.skip ? true : options.skip === 0);
                 $('#nextButton').toggleClass('disabled', results.length < limit);
             },
             error: function(jqXHR) {
@@ -238,6 +264,60 @@ $(document).ready(function() {
 
     // Hide the filter button initially
     $('#openFilters').hide();
+
+    // Handle delete row button click
+    $('#tableBody').on('click', '.delete-row', function() {
+        const id = $(this).data('id');
+        const schemaUrl = $('#schema').val();
+        const veridaKey = $('#veridaKey').val();
+
+        if (confirm('Are you sure you want to delete this row?')) {
+            $.ajax({
+                url: `/api/v1/ds/${btoa(schemaUrl)}?id=${id}`,
+                method: 'DELETE',
+                headers: {
+                    key: veridaKey
+                },
+                success: function() {
+                    alert('Row deleted successfully');
+                    fetchData();
+                },
+                error: function(jqXHR) {
+                    const error = jqXHR.responseJSON ? jqXHR.responseJSON.error : 'An error occurred while deleting the row';
+                    alert(error);
+                }
+            });
+        }
+    });
+
+    // Handle Destroy button click
+    $('#destroyButton').click(function() {
+        $('#destroyModal').modal('show');
+    });
+
+    // Handle Destroy confirmation
+    $('#confirmDestroy').click(function() {
+        const schemaUrl = $('#schema').val();
+        const veridaKey = $('#veridaKey').val();
+
+        $.ajax({
+            url: `/api/v1/ds/${btoa(schemaUrl)}?destroy=true`,
+            method: 'DELETE',
+            headers: {
+                key: veridaKey
+            },
+            success: function() {
+                alert('Database destroyed successfully');
+                $('#destroyModal').modal('hide');
+                fetchData();
+            },
+            error: function(jqXHR) {
+                const error = jqXHR.responseJSON ? jqXHR.responseJSON.error : 'An error occurred while destroying the database';
+                alert(error);
+                $('#destroyModal').modal('hide');
+            }
+        });
+    });
 
     // Set initial values from query parameters
     setInitialValues();

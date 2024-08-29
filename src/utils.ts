@@ -10,6 +10,7 @@ import { Request } from 'express'
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 const SBT_CREDENTIAL_SCHEMA = 'https://common.schemas.verida.io/token/sbt/credential/v0.1.0/schema.json'
+const NETWORK_CONNECTION_CACHE_EXPIRY = 60*3 // 3 mins
 
 export {
     DID_CLIENT_CONFIG,
@@ -20,6 +21,7 @@ export interface NetworkConnectionCache {
     requestIds: string[],
     currentPromise?: Promise<void>,
     networkConnection?: NetworkConnection
+    lastTouch: Date
 }
 
 export interface NetworkConnection {
@@ -71,6 +73,9 @@ export class Utils {
 
         if (Utils.networkCache[did]) {
             Utils.networkCache[did].requestIds.push(requestId)
+            Utils.networkCache[did].lastTouch = new Date()
+
+            Utils.gcNetworkCache()
             return Utils.networkCache[did].networkConnection
         }
 
@@ -80,7 +85,8 @@ export class Utils {
         //     await Utils.networkCache[did].shuttingPromise
         // }
         Utils.networkCache[did] = {
-            requestIds: [requestId]
+            requestIds: [requestId],
+            lastTouch: new Date()
         }
 
         Utils.networkCache[did].currentPromise = new Promise(async (resolve, reject) => {
@@ -96,6 +102,7 @@ export class Utils {
     
             Utils.networkCache[did] = {
                 requestIds: [requestId],
+                lastTouch: new Date(),
                 networkConnection
             }
 
@@ -104,6 +111,20 @@ export class Utils {
 
         await Utils.networkCache[did].currentPromise
         return Utils.networkCache[did].networkConnection
+    }
+
+    public static async gcNetworkCache() {
+        // console.log("gcNetworkCache()")
+        for (const did in Utils.networkCache) {
+            const cache = Utils.networkCache[did]
+            const duration = ((new Date()).getTime() - cache.lastTouch.getTime())/1000
+            // console.log("gcNetworkCache()", duration)
+            if (duration > NETWORK_CONNECTION_CACHE_EXPIRY) {
+                // console.log("gcNetworkCache() -- expired!", did)
+                await Utils.networkCache[did].networkConnection.context.close()
+                delete Utils.networkCache[did]
+            }
+        }
     }
 
     public static async closeConnection(did: string, requestId: string = 'none'): Promise<void> {

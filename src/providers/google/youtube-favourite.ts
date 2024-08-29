@@ -14,6 +14,8 @@ import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 
 const _ = require("lodash");
 
+// Set MAX_BATCH_SIZE to 50 because the YouTube Data API v3 'maxResults' parameter is capped at 50.
+// For more details, see: https://developers.google.com/youtube/v3/docs/search/list
 const MAX_BATCH_SIZE = 50;
 
 export interface SyncFavouriteItemsResult extends SyncItemsResult {

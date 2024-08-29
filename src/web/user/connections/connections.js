@@ -1,6 +1,6 @@
 $(document).ready(function() {
     // Load the private key from local storage
-    const savedVeridaKey = localStorage.getItem('veridaKey');
+    let savedVeridaKey = localStorage.getItem('veridaKey');
     $('#veridaKey').val(savedVeridaKey);
     handleButtonStates();
 
@@ -18,6 +18,7 @@ $(document).ready(function() {
         $('#loadBtn').prop('disabled', !veridaKey);
         $('#generateIdentityBtn').toggle(!veridaKey);
         $('#clearBtn').toggle(!!veridaKey);
+        savedVeridaKey = veridaKey
     }
 
     $('#loadBtn').click(function() {
@@ -83,7 +84,7 @@ $(document).ready(function() {
                                     </button>
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" href="#" class="sync-btn" data-sync-type="force">Force</a>
+                                    <a class="dropdown-item sync-btn" href="#" data-sync-type="force" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Force</a>
                                 </div>
                             </div>
                             <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Full Logs</button>

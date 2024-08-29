@@ -22,11 +22,16 @@ export default class BaseGoogleHandler extends BaseSyncHandler {
         // Handle update to access or refresh token
         const handler = this
         oAuth2Client.on('tokens', (tokens) => {
-            handler.updateConnection({
-                accessToken: tokens.access_token,
-                refreshToken: tokens.refresh_token
-            })
-          });
+          const updatedConnection: Record<string, string> = {
+            accessToken: tokens.access_token,
+          }
+
+          if (tokens.refresh_token) {
+            updatedConnection.refreshToken = tokens.refresh_token
+          }
+
+          handler.updateConnection(updatedConnection)
+        })
     
         oAuth2Client.setCredentials(TOKEN);
         return oAuth2Client
