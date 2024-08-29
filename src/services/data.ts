@@ -28,27 +28,27 @@ const schemas: Record<string, SchemaConfig> = {
     "https://common.schemas.verida.io/social/following/v0.1.0/schema.json": {
         label: "Social Following",
         storeFields: ['_id', 'name','uri','description','insertedAt','followedTimestamp'],
-        indexFields: ['name','description']
+        indexFields: ['name','description','sourceApplication']
     },
     "https://common.schemas.verida.io/social/post/v0.1.0/schema.json": {
         label: "Social Posts",
         storeFields: ['_id', 'name','content','type','uri','insertedAt'],
-        indexFields: ['name', 'content', 'indexableText']
+        indexFields: ['name', 'content', 'indexableText','sourceApplication']
     },
     "https://common.schemas.verida.io/social/email/v0.1.0/schema.json": {
         label: "Email",
         storeFields: ['_id', 'sentAt'],
-        indexFields: ['name','fromName','fromEmail','messageText','attachments_0.textContent','attachments_1.textContent','attachments_2.textContent', 'indexableText', 'sentAt']
+        indexFields: ['name','fromName','fromEmail','messageText','attachments_0.textContent','attachments_1.textContent','attachments_2.textContent', 'indexableText', 'sentAt','sourceApplication']
     },
     "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json": {
         label: "Chat Message",
         storeFields: ['_id', 'groupId', 'sentAt'],
-        indexFields: ['messageText', 'fromHandle', 'fromName', 'groupName', 'indexableText', 'sentAt']
+        indexFields: ['messageText', 'fromHandle', 'fromName', 'groupName', 'indexableText', 'sentAt','sourceApplication']
     },
     "https://common.schemas.verida.io/favourite/v0.1.0/schema.json": {
-        label: "Favourite",
+        label: "Favorite",
         storeFields: ['_id', 'insertedAt'],
-        indexFields: ['name', 'favouriteType', 'contentType', 'summary']
+        indexFields: ['name', 'favouriteType', 'contentType', 'summary','sourceApplication']
     }
 }
 
@@ -96,7 +96,7 @@ export class DataService extends EventEmitter {
             this.emitProgress(schemaConfig.label, HotLoadStatus.StartData, 10)
             const datastore = await this.context.openDatastore(schemaUri)
 
-            console.log('Fetching data')
+            console.log('Fetching data from index ', schemaUri)
             const database = await datastore.getDb()
             const db = await database.getDb()
             const result = await db.allDocs({
