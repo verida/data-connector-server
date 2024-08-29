@@ -32,7 +32,7 @@ export enum SearchType {
     CHAT_MESSAGES = "messages",
     EMAILS = "emails",
     FAVORITES = "favorites",
-    FOLLOWING = "following",
+    FOLLOWING = "followed_pages",
     POSTS = "posts"
 }
 
@@ -43,7 +43,7 @@ export const SearchTypeSchemas: Record<SearchType, string> = {
     [SearchType.EMAILS]: "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
     [SearchType.FAVORITES]: "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
     [SearchType.POSTS]: "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
-    [SearchType.FOLLOWING]: "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
+    [SearchType.FOLLOWING]: "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
 }
 
 export const SearchTypeTimeProperty: Record<SearchType, string> = {
@@ -53,7 +53,7 @@ export const SearchTypeTimeProperty: Record<SearchType, string> = {
     [SearchType.EMAILS]: "sentAt",
     [SearchType.FAVORITES]: "insertedAt",
     [SearchType.POSTS]: "insertedAt",
-    [SearchType.FOLLOWING]: "followedAt",
+    [SearchType.FOLLOWING]: "followedTimestamp",
 }
 
 export interface ChatThreadResult {
@@ -64,6 +64,7 @@ export interface ChatThreadResult {
 export class SearchService extends VeridaService {
 
     protected async rankAndMergeResults(schemaResults: SearchServiceSchemaResult[], limit: number, minResultsPerType: number = 10): Promise<SchemaRecord[]> {
+        console.time("RankAndMerge")
         const unsortedResults: Record<string, MinisearchResult> = {}
         const guaranteedResults: Record<string, MinisearchResult> = {}
 
@@ -117,10 +118,12 @@ export class SearchService extends VeridaService {
             })
         }
 
+        console.timeEnd("RankAndMerge")
         return results
     }
 
     public async schemaByKeywords<T extends SchemaRecord>(searchType: SearchType, keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20): Promise<T[]> {
+        console.time("SchemaByKeywords" + searchType, )
         const query = keywordsList.join(' ')
         const schemaUri = SearchTypeSchemas[searchType]
         const dataService = new DataService(this.did, this.context)
@@ -132,6 +135,7 @@ export class SearchService extends VeridaService {
         const searchResults = await miniSearchIndex.search(query, {
             filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
         })
+        console.timeEnd("SchemaByKeywords" + searchType)
         return await this.rankAndMergeResults([{
             searchType,
             rows: searchResults
@@ -143,7 +147,7 @@ export class SearchService extends VeridaService {
         const dataService = new DataService(this.did, this.context)
         const datastore = await dataService.getDatastore(schemaUri)
         const filter = {
-            sentAt: {
+            [SearchTypeTimeProperty[searchType]]: {
                 "$gte": maxDatetime.toISOString()
             }
         }
