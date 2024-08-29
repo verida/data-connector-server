@@ -66,6 +66,7 @@
             "clientId": "",
             "clientSecret": "",
             "batchSize": 50,
+            "sizeLimit": 10,
             "maxSyncLoops": 1,
             "metadata": {
                 "breakTimestamp": "2000-07-21T12:07:11.000Z"

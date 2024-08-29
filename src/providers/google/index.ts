@@ -28,10 +28,10 @@ export default class GoogleProvider extends Base {
 
   public syncHandlers(): any[] {
     return [
-      Gmail,
-      YouTubeFollowing,
-      YouTubePost,
-      YouTubeFavourite,
+      //Gmail,
+      //YouTubeFollowing,
+      //YouTubePost,
+      //YouTubeFavourite,
       GoogleDriveDocument
     ];
   }

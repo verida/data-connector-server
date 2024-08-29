@@ -158,7 +158,15 @@ export default class GoogleDriveDocument extends GoogleHandler {
     
         for (const file of serverResponse.data.files ?? []) {
             
-            const fileId = file.id ?? '';
+            const fileId = file.id;
+            if (!fileId) {
+                const logEvent: SyncProviderLogEvent = {
+                    level: SyncProviderLogLevel.DEBUG,
+                    message: `Invalid ID for file ${fileId}. Ignoring this file.`,
+                };
+                this.emit('log', logEvent);
+                continue;
+            }
             
             if (fileId === breakId) {
                 const logEvent: SyncProviderLogEvent = {
@@ -216,7 +224,8 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 continue;
             }
 
-            const textContent = await GoogleDriveHelpers.extractTextContent(drive, fileId, mimeType, this.getGoogleAuth());
+            const sizeLimit = this.config.sizeLimit * 1024 * 1024;
+            const textContent = await GoogleDriveHelpers.extractTextContent(drive, fileId, mimeType, sizeLimit, this.getGoogleAuth());
     
             results.push({
                 _id: this.buildItemId(fileId),

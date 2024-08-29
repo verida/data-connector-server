@@ -4,6 +4,7 @@ export interface GoogleProviderConfig extends BaseProviderConfig {
   clientId: string;
   clientSecret: string;
   callbackUrl: string;
+  sizeLimit: number; //Mega bytes
 }
 
 export interface GmailHandlerConfig extends Record<"backdate", string> {}

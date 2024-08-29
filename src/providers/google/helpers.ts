@@ -2,7 +2,11 @@ import { drive_v3, gmail_v1, google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import pdf from "pdf-parse";
 import { stripHtml } from "string-strip-html";
-import { DocumentType } from "../../schemas";
+import mammoth from "mammoth";
+import * as XLSX from "xlsx";
+import * as officeParser from "officeparser";
+
+
 
 export const mimeExtensions: {[key: string]: string} = {
   // Google Drive MIME types
@@ -308,6 +312,7 @@ export class GoogleDriveHelpers {
     drive: drive_v3.Drive,
     fileId: string,
     mimeType: string,
+    sizeLimit: number,
     auth: OAuth2Client
   ): Promise<string> {
     let textContent = "";
@@ -326,8 +331,6 @@ export class GoogleDriveHelpers {
       if (!textContent) {
         console.warn("No indexable text found, using fallback method.");
 
-        // 10MB limit (10 * 1024 * 1024)
-        const sizeLimit = 10 * 1024 * 1024;
         const fileSize = response.data.size
           ? parseInt(response.data.size)
           : undefined;
@@ -347,7 +350,6 @@ export class GoogleDriveHelpers {
             const fileBuffer = await this.downloadFile(drive, fileId);
             textContent = fileBuffer.toString("utf8");
           } else if (
-            mimeType === "application/msword" ||
             mimeType ===
               "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           ) {            
@@ -363,11 +365,11 @@ export class GoogleDriveHelpers {
             textContent = await this.parseXlsx(fileBuffer);
             
           } else if (
-            mimeType === "application/vnd.ms-powerpoint" ||
             mimeType ===
               "application/vnd.openxmlformats-officedocument.presentationml.presentation"
           ) {            
             const fileBuffer = await this.downloadFile(drive, fileId);
+            //const pdfBuffer = await this.convertToPDF(fileBuffer);
             textContent = await this.parsePptx(fileBuffer);
             
           } else {
@@ -388,9 +390,9 @@ export class GoogleDriveHelpers {
 
     return textContent;
   }
-  
+
   static async parseDocx(docxBuffer: Buffer): Promise<string> {
-    const mammoth = require('mammoth');
+    
     try {
       const result = await mammoth.extractRawText({ buffer: docxBuffer });
       return result.value;
@@ -401,7 +403,6 @@ export class GoogleDriveHelpers {
   }
   
   static async parseXlsx(xlsxBuffer: Buffer): Promise<string> {
-    const XLSX = require('xlsx');
     try {
       const workbook = XLSX.read(xlsxBuffer, { type: 'buffer' });
       const text = workbook.SheetNames.map((sheetName: string) => {
@@ -416,12 +417,11 @@ export class GoogleDriveHelpers {
   }
   
   static async parsePptx(pptxBuffer: Buffer): Promise<string> {
-    const PptxParser = require('pptx-parser');
     try {
-      const result = await PptxParser(pptxBuffer);
-      return result.text;
+      const data = await officeParser.parseOfficeAsync(pptxBuffer);
+      return data;
     } catch (error) {
-      console.error("Error parsing PPTX file:", error);
+      console.error("Error parsing Slides file:", error);
       return "";
     }
   }
