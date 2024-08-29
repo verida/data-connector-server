@@ -4,10 +4,21 @@ $(document).ready(function() {
     let currentSortField = '';
     let currentSortDirection = 'asc';
     let currentFilters = {};
+    const schemas = {
+        "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.1.0/schema.json",
+        "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
+        "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
+        "Social Following": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
+        "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
+        "Favourites": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
+        "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
+        "Chat Group": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
+        "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
+    };
 
     // Load Verida Key and Schema from local storage
     $('#veridaKey').val(localStorage.getItem('veridaKey') || '');
-    $('#schema').val(localStorage.getItem('schema') || '');
+    $('#schema').val(localStorage.getItem('schema') || schemas["Connections"]);
 
     // Function to get query parameters
     function getQueryParams() {
@@ -44,10 +55,23 @@ $(document).ready(function() {
     function fetchData() {
         const veridaKey = $('#veridaKey').val();
         const schema = $('#schema').val();
-        const limit = $('#limit').val();
+        const limit = parseInt($('#limit').val());
+        const offset = parseInt($('#offset').val());
         const sortField = currentSortField;
         const sortDirection = currentSortDirection;
-        const filterParam = Object.keys(currentFilters).map(key => `${key}:${currentFilters[key]}`).join(',');
+
+        let sort = undefined
+        if (sortField) {
+            sort = [{[sortField]: sortDirection}]
+        }
+
+        const options = {
+            limit,
+            skip: offset,
+            sort
+        }
+
+        console.log(currentFilters, options)
 
         // Show loading message
         $('#tableBody').html('<tr><td colspan="100%" class="text-center">Loading...</td></tr>');
@@ -55,16 +79,17 @@ $(document).ready(function() {
 
         $.ajax({
             url: `${apiUrl}/${btoa(schema)}`,
-            data: {
-                key: veridaKey,
-                schema: schema,
-                limit: limit,
-                offset: offset,
-                sort: sortField ? `${sortField}:${sortDirection}` : '',
-                filter: filterParam
+            method: 'POST',
+            headers: {
+                key: veridaKey
             },
+            data: JSON.stringify({
+                options,
+                query: currentFilters
+            }),
+            contentType: 'application/json',
             success: function(response) {
-                const results = response.results;
+                const results = response.items;
                 const options = response.options;
                 const headers = Object.keys(results[0] || {});
 
@@ -201,18 +226,6 @@ $(document).ready(function() {
 
     // Example of listing schemas
     $('#schemaModal').on('show.bs.modal', function() {
-        const schemas = {
-            "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.1.0/schema.json",
-            "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
-            "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
-            "Social Following": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
-            "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
-            "Favourites": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
-            "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
-            "Chat Group": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
-            "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
-        };
-
         // Clear previous list
         $('#schemaList').empty();
 
