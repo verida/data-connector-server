@@ -87,11 +87,6 @@ export class SearchService extends VeridaService {
             datastores[schemaUri] = await this.context.openDatastore(schemaUri)
         }
 
-        const unsortedResultCount = Object.values(unsortedResults).length
-        if (unsortedResultCount == 0) {
-            return []
-        }
-
         // Sort results by score
         const sortedResults = Object.values(unsortedResults)
         sortedResults.sort((a: any, b: any) => b.score - a.score)
@@ -115,6 +110,7 @@ export class SearchService extends VeridaService {
             })
         }
 
+        // console.log('returning ', results.length, 'items')
         return results
     }
 
@@ -124,10 +120,14 @@ export class SearchService extends VeridaService {
         const dataService = new DataService(this.did, this.context)
 
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
+
+        console.log(query, maxDatetime)
         
         const searchResults = await dataService.searchIndex(schemaUri, query, limit, undefined, {
             filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
         })
+
+        console.log(searchResults)
 
         return await this.rankAndMergeResults([{
             searchType,
