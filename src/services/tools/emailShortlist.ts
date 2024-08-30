@@ -8,7 +8,7 @@ You must generate a JSON object containing a single key "emailIds" that contains
 Data is in the format:
 [emailId] <emailSubject>
 
-JSON only, no explanation.`
+JSON only, no explanation, no formatting.`
 
 const MAX_EMAILS = 200
 
@@ -22,7 +22,6 @@ export class EmailShortlist {
     }
 
     public async shortlist(originalPrompt: string, emails: SchemaEmail[], limit=20): Promise<SchemaEmail[]> {
-        console.log("shortlist")
         let userPrompt = `${originalPrompt}\n\n`
         const emailDict: Record<string, SchemaEmail> = {}
         let emailLimit = MAX_EMAILS
@@ -37,16 +36,16 @@ export class EmailShortlist {
 
         userPrompt += `\nMaximum of ${limit} email IDs`
         const response = await this.llm.prompt(userPrompt, systemPrompt)
-        console.log(response.choices[0])
         const jsonResponse: any = JSON.parse(response.choices[0].message.content!)
-        console.log(jsonResponse)
         const emailIds = jsonResponse.emailIds
-        console.log(emailIds)
         const result: SchemaEmail[] = []
 
         for (const emailId of emailIds) {
+            if (!emailDict[emailId]) {
+                continue
+            }
+
             result.push(emailDict[emailId])
-            console.log(emailDict[emailId].name)
             limit--
             if (limit <= 0) {
                 break

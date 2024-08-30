@@ -93,7 +93,7 @@ export class GroqLLM implements LLM {
       temperature: 1,
       top_p: 1
     });
-    console.log(JSON.stringify(response, null, 2))
+
     return response
 }
 }
@@ -141,8 +141,6 @@ export class OpenAILLM implements LLM {
       headers
     });
 
-    // return response.data.choices[0].message.content
-    console.log(JSON.stringify(response.data, null, 2))
     return response.data
   }
 }

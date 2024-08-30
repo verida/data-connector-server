@@ -64,7 +64,6 @@ export interface ChatThreadResult {
 export class SearchService extends VeridaService {
 
     protected async rankAndMergeResults(schemaResults: SearchServiceSchemaResult[], limit: number, minResultsPerType: number = 10): Promise<SchemaRecord[]> {
-        console.time("RankAndMerge")
         const unsortedResults: Record<string, MinisearchResult> = {}
         const guaranteedResults: Record<string, MinisearchResult> = {}
 
@@ -72,7 +71,6 @@ export class SearchService extends VeridaService {
         for (const schemaResult of schemaResults) {
             let schemaResultCount = 0
             for (const row of schemaResult.rows) {
-                // console.log(row.id, row.score)
                 const result = {
                     ...row,
                     schemaUrl: SearchTypeSchemas[schemaResult.searchType]
@@ -90,7 +88,6 @@ export class SearchService extends VeridaService {
         }
 
         const unsortedResultCount = Object.values(unsortedResults).length
-        console.log(`Have ${unsortedResultCount} unsorted schema results`)
         if (unsortedResultCount == 0) {
             return []
         }
@@ -118,24 +115,20 @@ export class SearchService extends VeridaService {
             })
         }
 
-        console.timeEnd("RankAndMerge")
         return results
     }
 
     public async schemaByKeywords<T extends SchemaRecord>(searchType: SearchType, keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20): Promise<T[]> {
-        console.time("SchemaByKeywords" + searchType, )
         const query = keywordsList.join(' ')
         const schemaUri = SearchTypeSchemas[searchType]
         const dataService = new DataService(this.did, this.context)
-        const miniSearchIndex = await dataService.getIndex(schemaUri)
 
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
-        console.log(`${searchType}: Searching for ${query} (${timeframe})`)
         
-        const searchResults = await miniSearchIndex.search(query, {
+        const searchResults = await dataService.searchIndex(schemaUri, query, limit, undefined, {
             filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
         })
-        console.timeEnd("SchemaByKeywords" + searchType)
+
         return await this.rankAndMergeResults([{
             searchType,
             rows: searchResults
@@ -160,7 +153,6 @@ export class SearchService extends VeridaService {
             ]
         }
 
-        console.log(searchType, ': searching for', filter, options)
         return await datastore.getMany(filter, options) as T[]
     }
 
@@ -172,7 +164,6 @@ export class SearchService extends VeridaService {
         const miniSearchIndex = await dataService.getIndex(schemaUri)
 
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
-        console.log('Chat history: searching for', query, timeframe, maxDatetime)
         
         const searchResults = await miniSearchIndex.search(query, {
             filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
@@ -200,49 +191,15 @@ export class SearchService extends VeridaService {
         const messageSchemaUri = "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
         const groupSchemaUri = "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json"
         const dataService = new DataService(this.did, this.context)
-        const miniSearchIndex = await dataService.getIndex(messageSchemaUri)
 
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
-        console.log('Chat threads: searching for', query, timeframe, maxDatetime)
         
-        const searchResults = await miniSearchIndex.search(query, {
+        const searchResults = await dataService.searchIndex(messageSchemaUri, query, 50, 0.5, {
             filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
         })
+        
         const chatMessageDs = await this.context.openDatastore(messageSchemaUri)
         const chatGroupDs = await this.context.openDatastore(groupSchemaUri)
-
-        // Create a thread for each message
-        async function buildThread(messageId: string, groupId: string): Promise<SchemaSocialChatMessage[]> {
-            const maxMessages = Math.round(threadSize / 2)
-            const startMessages = <SchemaSocialChatMessage[]> await chatMessageDs.getMany({
-                _id: {
-                    "$lte": messageId
-                },
-                groupId
-            }, {
-                limit: maxMessages,
-                sort: [{_id: "desc"}]
-            })
-            const lastMessages = <SchemaSocialChatMessage[]> await chatMessageDs.getMany({
-                _id: {
-                    "$gt": messageId
-                },
-                groupId
-            }, {
-                limit: maxMessages,
-                sort: [{_id: "asc"}]
-            })
-
-            const messages: SchemaSocialChatMessage[] = []
-            for (const message of startMessages.concat(lastMessages)) {
-                delete message['sourceData']
-                messages.push(<SchemaSocialChatMessage> message)
-            }
-
-            // @todo: if not enough messages, fetch more to match threadSize
-
-            return messages
-        }
 
         const groupCache: Record<string, SchemaSocialChatGroup> = {}
         async function getGroup(groupId: string) {
@@ -256,44 +213,97 @@ export class SearchService extends VeridaService {
             return groupCache[groupId]
         }
 
+        // Build a list of messages for each chat group
+        const chatThreadMessageIds: Record<string, string[]> = {}
+        // Build a chat group of results for each chat group
         const chatThreads: Record<string, ChatThreadResult> = {}
-        let foundThreads = 0
         for (const searchResult of searchResults) {
-            const messages = await buildThread(searchResult.id, searchResult.groupId)
-
             if (!chatThreads[searchResult.groupId]) {
                 chatThreads[searchResult.groupId] = {
-                    group: await getGroup(messages[0].groupId),
+                    group: await getGroup(searchResult.groupId),
                     messages: []
                 }
             }
 
-            chatThreads[searchResult.groupId].messages = chatThreads[searchResult.groupId].messages.concat(messages)
-
-            if (foundThreads++ >= limit) {
-                break
+            if (!chatThreadMessageIds[searchResult.groupId]) {
+                chatThreadMessageIds[searchResult.groupId] = []
             }
+
+            chatThreadMessageIds[searchResult.groupId].push(searchResult.id)
         }
 
-        const results: ChatThreadResult[] = []
-        for (const chatThread of Object.values(chatThreads)) {
-            // Remove duplicate messages
-            chatThread.messages = _.uniqBy(chatThread.messages, '_id')
-            // Sort chat thread messages by _id
-            chatThread.messages = _.sortBy(chatThread.messages, '_id')
-            results.push(chatThread)
-        }
-
-        return results
+        async function fetchMessagesWithContext(db: any, groupId: string, messageIds: string[], windowSize = 10) {
+            const results: SchemaSocialChatMessage[] = []
+            const fetchedMessages = new Set<SchemaSocialChatMessage>(); // Track fetched messages
         
+            // Sort the message IDs lexicographically
+            const sortedMessageIds = messageIds.sort();
+        
+            // Determine the range for initial query
+            const startKey = sortedMessageIds[0];
+            const endKey = sortedMessageIds[sortedMessageIds.length - 1];
+        
+            let lastFetchedKey = startKey; // Track the last fetched message ID
+        
+            try {
+            // Use a sliding window to fetch messages in chunks
+            for (const messageId of sortedMessageIds) {
+                if (lastFetchedKey > messageId) {
+                    continue
+                }
+
+                const response = await db.find({
+                    selector: {
+                        groupId: groupId,
+                        _id: { $gte: lastFetchedKey, $lte: endKey }
+                    },
+                    sort: [{ _id: 'asc' }],
+                    limit: windowSize
+                });
+        
+                // Break the loop if no more messages are found
+                if (response.docs.length === 0) break;
+        
+                // Step 4: Process and collect fetched messages
+                response.docs.forEach((doc: any) => {
+                if (!fetchedMessages.has(doc._id)) {
+                    results.push(doc);
+                    fetchedMessages.add(doc._id); // Mark this message ID as fetched
+                }
+                });
+        
+                // Update the last fetched key to the next message ID for the sliding window
+                lastFetchedKey = response.docs[response.docs.length - 1]._id;
+        
+                // Slide the window to the next set of messages
+                if (lastFetchedKey === endKey) break; // Stop if the last fetched key reaches the end
+            }
+        
+            } catch (err) {
+                console.error(`Error fetching messages for group ${groupId}:`, err);
+            }
+        
+            // console.log(`Finished processing group: ${groupId} (${fetchedMessages.values.length})`);
+
+            return results
+          }
+
+        // Process each chat group
+        const veridaDb = await chatMessageDs.getDb()
+        const pouchDb = await veridaDb.getDb()
+
+        for (const groupId in chatThreadMessageIds) {
+            chatThreads[groupId].messages = await fetchMessagesWithContext(pouchDb, groupId, chatThreadMessageIds[groupId])
+            break
+        }
+
+        const results = Object.values(chatThreads)
+        return results
     }
 
     public async multiByKeywords(searchTypes: SearchType[], keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20, minResultsPerType: number = 10) {
         const query = keywordsList.join(' ')
         const dataService = new DataService(this.did, this.context)
-        const maxTimeframe = 
-
-        console.log('Multi: searching for', query)
 
         const searchResults = []
         for (const searchType of searchTypes) {
