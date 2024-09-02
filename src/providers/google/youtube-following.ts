@@ -88,17 +88,14 @@ export default class YouTubeFollowing extends GoogleHandler {
             }, false);
         }
 
-        if (items.length != this.config.batchSize) {
-            currentRange = rangeTracker.nextRange();
+        currentRange = rangeTracker.nextRange();
+        if (items.length != this.config.batchSize && currentRange.startId) {
             query = {
                 part: ["snippet"],
                 mine: true,
                 maxResults: this.config.batchSize - items.length,
+                pageToken: currentRange.startId
             };
-
-            if (currentRange.startId) {
-                query.pageToken = currentRange.startId;
-            }
 
             const backfillResponse = await youtube.subscriptions.list(query);
             const backfillResult = await this.buildResults(
