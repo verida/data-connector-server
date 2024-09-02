@@ -3,7 +3,7 @@ import { defaultModel } from "../llm"
 import { PromptSearch, PromptSearchLLMResponse, PromptSearchSort, PromptSearchType } from "../tools/promptSearch"
 import { ChatThreadResult, SearchService, SearchSortType, SearchType } from "../search"
 import { VeridaService } from '../veridaService'
-import { SchemaEmail, SchemaFavourite, SchemaFollowing, SchemaSocialChatMessage } from '../../schemas'
+import { SchemaEmail, SchemaFavourite, SchemaFile, SchemaFollowing, SchemaSocialChatMessage } from '../../schemas'
 import { Helpers } from "../helpers"
 import { EmailShortlist } from "../tools/emailShortlist"
 
@@ -41,7 +41,7 @@ export class PromptSearchService extends VeridaService {
         let emails: SchemaEmail[] = []
         let favourites: SchemaFavourite[] = []
         let following: SchemaFollowing[] = []
-        // let files: SchemaFile[] = []
+        let files: SchemaFile[] = []
         let chatMessages: SchemaSocialChatMessage[] = []
 
         const searchService = new SearchService(this.did, this.context)
@@ -52,9 +52,9 @@ export class PromptSearchService extends VeridaService {
             if (promptSearchResult.databases.indexOf(SearchType.EMAILS) !== -1) {
                 emails = await searchService.schemaByKeywords<SchemaEmail>(SearchType.EMAILS, promptSearchResult.keywords!, promptSearchResult.timeframe, 40)
             }
-            // if (promptSearchResult.databases.indexOf("files")) {
-            //     files = await searchService.schemaByKeywords<SchemaFile>(SearchType.FILES, promptSearchResult.keywords!, promptSearchResult.timeframe, 20)
-            // }
+            if (promptSearchResult.databases.indexOf(SearchType.FILES)) {
+                files = await searchService.schemaByKeywords<SchemaFile>(SearchType.FILES, promptSearchResult.keywords!, promptSearchResult.timeframe, 20)
+            }
             if (promptSearchResult.databases.indexOf(SearchType.FAVORITES) !== -1) {
                 favourites = await searchService.schemaByKeywords<SchemaFavourite>(SearchType.FAVORITES, promptSearchResult.keywords!, promptSearchResult.timeframe, 40)
             }
@@ -76,9 +76,9 @@ export class PromptSearchService extends VeridaService {
                 emails = await emailShortlist.shortlist(prompt, emails, MAX_DATERANGE_EMAILS)
                 console.timeEnd("EmailShortlist")
             }
-            // if (promptSearchResult.databases.indexOf("files")) {
-            //     files = await searchService.schemaByDateRange<SchemaFile>(SearchType.FILES, maxDatetime, sort, MAX_DATERANGE_FILES)
-            // }
+            if (promptSearchResult.databases.indexOf(SearchType.FILES)) {
+                files = await searchService.schemaByDateRange<SchemaFile>(SearchType.FILES, maxDatetime, sort, MAX_DATERANGE_FILES)
+            }
             if (promptSearchResult.databases.indexOf(SearchType.FAVORITES) !== -1) {
                 favourites = await searchService.schemaByDateRange<SchemaFavourite>(SearchType.FAVORITES, maxDatetime, sort, MAX_DATERANGE_FAVORITES)
             }
@@ -147,8 +147,8 @@ export class PromptSearchService extends VeridaService {
         const now = (new Date()).toISOString()
         finalPrompt += `${contextString}\nThe current time is: ${now}`
 
-        console.log('Running final prompt', finalPrompt.length)
-        console.time("FinalPrompt")
+        console.log(finalPrompt)
+
         const finalResponse = await llm.prompt(finalPrompt, undefined, false)
         console.timeEnd("FinalPrompt")
         const duration = Date.now() - start
