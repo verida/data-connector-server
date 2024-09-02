@@ -63,7 +63,7 @@ $(document).ready(function() {
                 const formattedSyncTimes = `Start: ${new Date(connection.syncStart).toLocaleString()}<br>End: ${new Date(connection.syncEnd).toLocaleString()}`;
 
                 const providerDetails = getProviderDetails(connection.provider);
-                const avatar = connection.profile.avatarUrl ? `<img src="${connection.profile.avatarUrl}" alt="${connection.profile.name}" style="width: 30px; height: 30px;"></img>` : ''
+                const avatar = connection.profile.avatar.uri ? `<img src="${connection.profile.avatar.uri}" alt="${connection.profile.name}" style="width: 30px; height: 30px;"></img>` : ''
 
                 const row = $(`
                     <tr>
@@ -72,7 +72,7 @@ $(document).ready(function() {
                             ${providerDetails.label}</td>
                         <td>
                             ${avatar}
-                            ${connection.profile.name}<br />${connection.profile.email ? '('+ connection.profile.email +')' : ''} (${connection.providerId})</td>
+                            <strong>${connection.profile.name}</strong><br />${connection.profile.email ? '('+ connection.profile.email +')' : ''} (${connection.providerId})</td>
                         <td>${connection.syncStatus}<br>${formattedSyncTimes}</td>
                         <td>${handlers.map(handler => `[${handler.handlerName}] ${handler.syncMessage ? handler.syncMessage : ""} (${handler.status})<br/>`).join('')}</td>
                         <td>
