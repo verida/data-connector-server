@@ -53,7 +53,7 @@ export class PromptSearchService extends VeridaService {
             if (promptSearchResult.databases.indexOf(SearchType.EMAILS) !== -1) {
                 emails = await searchService.schemaByKeywords<SchemaEmail>(SearchType.EMAILS, promptSearchResult.keywords!, promptSearchResult.timeframe, 40)
             }
-            if (promptSearchResult.databases.indexOf(SearchType.FILES)) {
+            if (promptSearchResult.databases.indexOf(SearchType.FILES) !== -1) {
                 files = await searchService.schemaByKeywords<SchemaFile>(SearchType.FILES, promptSearchResult.keywords!, promptSearchResult.timeframe, 20)
             }
             if (promptSearchResult.databases.indexOf(SearchType.FAVORITES) !== -1) {
@@ -77,7 +77,7 @@ export class PromptSearchService extends VeridaService {
                 emails = await emailShortlist.shortlist(prompt, emails, MAX_DATERANGE_EMAILS)
                 console.timeEnd("EmailShortlist")
             }
-            if (promptSearchResult.databases.indexOf(SearchType.FILES)) {
+            if (promptSearchResult.databases.indexOf(SearchType.FILES) !== -1) {
                 files = await searchService.schemaByDateRange<SchemaFile>(SearchType.FILES, maxDatetime, sort, MAX_DATERANGE_FILES)
             }
             if (promptSearchResult.databases.indexOf(SearchType.FAVORITES) !== -1) {
