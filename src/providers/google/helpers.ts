@@ -379,11 +379,11 @@ export class GoogleDriveHelpers {
             
           } else {
             console.warn(
-              "Unsupported MIME type."
+              `Unsupported MIME type (${mimeType})`
             );
           }
         } else {
-          console.warn("File size exceeds the limit or unsupported file type.");
+          console.warn(`File size ${fileSize} exceeds the limit (${sizeLimit}) or unsupported file type.`);
         }
       } else {
         console.log("Indexable text extracted successfully from contentHints.");
