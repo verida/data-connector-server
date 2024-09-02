@@ -195,6 +195,10 @@ export default class BaseProvider extends EventEmitter {
     public async sync(accessToken?: string, refreshToken?: string, force: boolean = false): Promise<Connection> {
         await this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
 
+        // Touch network, to ensure cache remains active
+        const account = await this.vault.getAccount()
+        await Utils.touchNetworkCache(await account.did())
+
         if (!accessToken) {
             const connection = this.getConnection()
             accessToken = connection.accessToken
@@ -255,7 +259,7 @@ export default class BaseProvider extends EventEmitter {
         syncPosition.status = SyncHandlerStatus.SYNCING
         
         handler.on('log', async (syncLog: SyncProviderLogEvent) => {
-            await providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncLog.message, handler.getName(), schemaUri)
+            await providerInstance.logMessage(syncLog.level, syncLog.message, handler.getName(), schemaUri)
         })
 
         await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(),schemaUri)

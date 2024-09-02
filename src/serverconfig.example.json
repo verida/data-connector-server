@@ -4,6 +4,7 @@
     "assetsUrl": "https://127.0.0.1:5021/assets",
     "logLevel": "debug", 
     "verida": {
+        "devMode": true,
         "environment": "banksia",
         "testVeridaKey": "0x...",
         "testVeridaNetwork": "banksia",

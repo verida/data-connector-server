@@ -111,18 +111,14 @@ export default class Gmail extends GoogleHandler {
       }, false) // No results and first batch, so break ID couldn't have been hit
     }
 
-    if (items.length != this.config.batchSize) {
+    currentRange = rangeTracker.nextRange();
+    if (items.length != this.config.batchSize && currentRange.startId) {
       // Not enough items, fetch more from the next page of results
-      currentRange = rangeTracker.nextRange()
-
       query = {
         userId: "me",
         maxResults: this.config.batchSize - items.length, // only fetch enough items needed to complete the batch size
+        pageToken: currentRange.startId
       };
-  
-      if (currentRange.startId) {
-        query.pageToken = currentRange.startId
-      }
 
       const backfillResponse = await gmail.users.messages.list(query);
       const backfillResult = await this.buildResults(

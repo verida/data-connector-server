@@ -1,5 +1,6 @@
 import { UniqueRequest } from './interfaces'
 import express, { Response, NextFunction } from 'express'
+import { Utils } from './utils'
 const cors = require('cors')
 import bodyParser from 'body-parser'
 import router from './routes'
@@ -41,5 +42,10 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(router)
 
+if (CONFIG.verida.devMode) {
+  console.log("Server is in development mode")
+} else {
+  Utils.deleteCachedData()
+}
 
 module.exports=app

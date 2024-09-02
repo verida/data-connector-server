@@ -12,7 +12,7 @@ You must generate a JSON response containing the following information:
 - output_type: The amount of detail in the output of each search result to provide meaningful context. full_content, summary, headline
 - profile_information; Array of these options only; name, contactInfo, demographics, lifestyle, preferences, habits, financial, health, personality, employment, education, skills, language, interests
 
-JSON only, no explanation.`
+JSON only, no explanation or formatting.`
 
 export enum PromptSearchType {
   KEYWORDS = "keywords",
@@ -55,7 +55,6 @@ export class PromptSearch {
 
     public async search(userPrompt: string): Promise<PromptSearchLLMResponse> {
         const response = await this.llm.prompt(userPrompt, systemPrompt)
-        console.log(response.choices[0])
         return <PromptSearchLLMResponse> JSON.parse(response.choices[0].message.content!)
         
     }

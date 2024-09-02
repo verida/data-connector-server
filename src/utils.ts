@@ -3,6 +3,7 @@ import { Client } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
 import fs from 'fs'
+import path from 'path'
 import serverconfig from './config'
 import { AutoAccount } from '@verida/account-node'
 import { Request } from 'express'
@@ -73,7 +74,7 @@ export class Utils {
 
         if (Utils.networkCache[did]) {
             Utils.networkCache[did].requestIds.push(requestId)
-            Utils.networkCache[did].lastTouch = new Date()
+            Utils.touchNetworkCache(did)
 
             Utils.gcNetworkCache()
             return Utils.networkCache[did].networkConnection
@@ -111,6 +112,12 @@ export class Utils {
 
         await Utils.networkCache[did].currentPromise
         return Utils.networkCache[did].networkConnection
+    }
+
+    public static async touchNetworkCache(did: string) {
+        if (Utils.networkCache[did]) {
+            Utils.networkCache[did].lastTouch = new Date()
+        }
     }
 
     public static async gcNetworkCache() {
@@ -238,6 +245,44 @@ export class Utils {
     public static getSchemaFromParams(base64Schema: string) {
         const buffer = Buffer.from(base64Schema, 'base64')
         return buffer.toString('utf-8')
+    }
+
+    public static deleteCachedData() {
+        // Read all files and folders in the directory
+        const directory = "./"
+        fs.readdir(directory, (err, files) => {
+            if (err) {
+                console.error(`Error reading directory: ${err}`);
+                return;
+            }
+
+            // Loop through each file/folder
+            files.forEach(file => {
+                const filePath = path.join(directory, file);
+
+                // Check if the name starts with 'v' and it's a directory
+                if (file.startsWith('v')) {
+                    fs.stat(filePath, (err, stats) => {
+                    if (err) {
+                        console.error(`Error stating file: ${err}`);
+                        return;
+                    }
+
+                    if (stats.isDirectory()) {
+                        // Recursively delete the directory
+                        console.log('rm ', filePath)
+                        fs.rm(filePath, { recursive: true, force: true }, (err) => {
+                            if (err) {
+                                console.error(`Error deleting folder: ${err}`);
+                            } else {
+                                console.log(`Deleted folder: ${filePath}`);
+                            }
+                        });
+                    }
+                    });
+                }
+            });
+        });
     }
 }
 

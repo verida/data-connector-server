@@ -59,12 +59,8 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     // Fetch all the latest chat groups, fetches 500 by default
     const latestChatGroupIds = await api.getChatGroupIds()
 
-    // Append the chat group list with any new chat groups so we don't miss any
-    for (const groupId of latestChatGroupIds) {
-      if (chatGroupIds.indexOf(groupId) === -1) {
-        chatGroupIds.push(groupId)
-      }
-    }
+    // Make sure we process new groups first
+    chatGroupIds = latestChatGroupIds
 
     // Build chat group data for each group ID
     const chatGroupResults = await this.buildChatGroupResults(api, chatGroupIds, this.config.groupLimit)

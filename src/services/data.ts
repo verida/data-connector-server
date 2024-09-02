@@ -1,7 +1,7 @@
 import { IContext, IDatastore } from '@verida/types';
 import * as CryptoJS from 'crypto-js';
 import { EventEmitter } from 'events'
-import MiniSearch from 'minisearch';
+import MiniSearch, { SearchOptions, SearchResult } from 'minisearch';
 
 export const indexCache: Record<string, MiniSearch<any>> = {}
 
@@ -90,6 +90,29 @@ export class DataService extends EventEmitter {
         return this.context.openDatastore(schemaUri)
     }
 
+    public async searchIndex(schemaUri: string, query: string, maxResults: number = 50, cutoffPercent: number = 0.5, searchOptions?: SearchOptions): Promise<SearchResult[]> {
+        const miniSearchIndex = await this.getIndex(schemaUri)
+        const searchResults = await miniSearchIndex.search(query, searchOptions)
+        
+        if (!searchResults.length) {
+            return []
+        }
+
+        const results: any[] = []
+        const cutoffScore = searchResults[0].score * cutoffPercent
+        for (const result of searchResults) {
+            if (result.score < cutoffScore || results.length >= maxResults) {
+                break
+            }
+
+            results.push(result)
+        }
+
+        // console.log(schemaUri, results)
+
+        return results
+    }
+
     public async getIndex(schemaUri: string): Promise<MiniSearch<any>> {
         const schemaConfig = schemas[schemaUri]
         const indexFields = schemaConfig.indexFields
@@ -101,7 +124,6 @@ export class DataService extends EventEmitter {
             this.emitProgress(schemaConfig.label, HotLoadStatus.StartData, 10)
             const datastore = await this.context.openDatastore(schemaUri)
 
-            console.log('Fetching data from index ', schemaUri)
             const database = await datastore.getDb()
             const db = await database.getDb()
             const result = await db.allDocs({
@@ -182,6 +204,8 @@ export class DataService extends EventEmitter {
             this.emitProgress(schemaConfig.label, HotLoadStatus.Complete, 10)
 
             indexCache[cacheKey] = miniSearch
+
+            console.log(`Index created for ${schemaUri}`)
         } else {
             this.stepCount += 2
             this.emitProgress(schemaConfig.label, HotLoadStatus.Complete, 10)
