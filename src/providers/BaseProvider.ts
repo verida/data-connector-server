@@ -259,7 +259,7 @@ export default class BaseProvider extends EventEmitter {
         syncPosition.status = SyncHandlerStatus.SYNCING
         
         handler.on('log', async (syncLog: SyncProviderLogEvent) => {
-            await providerInstance.logMessage(SyncProviderLogLevel.ERROR, syncLog.message, handler.getName(), schemaUri)
+            await providerInstance.logMessage(syncLog.level, syncLog.message, handler.getName(), schemaUri)
         })
 
         await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(),schemaUri)
