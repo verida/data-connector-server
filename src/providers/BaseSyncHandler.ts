@@ -4,6 +4,7 @@ import { EventEmitter } from "events"
 import { Utils } from "../utils"
 import { SchemaRecord } from "../schemas"
 import BaseProvider from "./BaseProvider"
+const _ = require("lodash")
 
 export default class BaseSyncHandler extends EventEmitter {
 
@@ -15,6 +16,15 @@ export default class BaseSyncHandler extends EventEmitter {
 
     constructor(config: any, connection: Connection, provider: BaseProvider) {
         super()
+        // Handle any custom config for this handler
+        if (config.handlers) {
+            if (config.handlers[this.getName()]) {
+                config = _.merge({}, config, config.handlers[this.getName()])
+            }
+
+            delete config["handlers"]
+        }
+
         this.config = config
         this.connection = connection
         this.provider = provider

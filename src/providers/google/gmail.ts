@@ -90,8 +90,8 @@ export default class Gmail extends GoogleHandler {
       latestResponse,
       currentRange.endId,
       SchemaEmailType.RECEIVE,
-      _.has(this.config, "metadata.breakTimestamp")
-        ? this.config.metadata.breakTimestamp
+      _.has(this.config, "breakTimestamp")
+        ? this.config.breakTimestamp
         : undefined
     );
 
@@ -126,8 +126,8 @@ export default class Gmail extends GoogleHandler {
         backfillResponse,
         currentRange.endId,
         SchemaEmailType.RECEIVE,
-        _.has(this.config, "metadata.breakTimestamp")
-          ? this.config.metadata.breakTimestamp
+        _.has(this.config, "breakTimestamp")
+          ? this.config.breakTimestamp
           : undefined
       );
 

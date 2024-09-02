@@ -6,6 +6,7 @@ import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 import { SchemaRecord } from '../schemas'
 import EventEmitter from 'events'
+const _ = require("lodash")
 
 const SCHEMA_SYNC_POSITIONS = serverconfig.verida.schemas.SYNC_POSITION
 const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
@@ -337,7 +338,7 @@ export default class BaseProvider extends EventEmitter {
         const syncHandlers = []
         for (let h in handlers) {
             const handler = handlers[h]
-            
+
             const handlerInstance = new handler(this.config, this.connection, this)
             syncHandlers.push(handlerInstance)
         }

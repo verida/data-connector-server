@@ -73,8 +73,8 @@ export default class GoogleDriveDocument extends GoogleHandler {
             drive,
             latestResponse,
             currentRange.endId,
-            _.has(this.config, "metadata.breakTimestamp")
-                ? this.config.metadata.breakTimestamp
+            _.has(this.config, "breakTimestamp")
+                ? this.config.breakTimestamp
                 : undefined
         );
     
@@ -106,8 +106,8 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 drive,
                 backfillResponse,
                 currentRange.endId,
-                _.has(this.config, "metadata.breakTimestamp")
-                    ? this.config.metadata.breakTimestamp
+                _.has(this.config, "breakTimestamp")
+                    ? this.config.breakTimestamp
                     : undefined
             );
     

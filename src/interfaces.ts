@@ -115,8 +115,9 @@ export interface BaseProviderConfig {
     sbtImage: string
     batchSize?: number
     maxSyncLoops?: number
-    // Other metadata useful to configure for the handler
-    metadata?: object
+    breakTimestamp?: object
+    // Custom config for each handler
+    handlers?: Record<string, object>
 }
 
 export interface DatastoreSaveResponse {
