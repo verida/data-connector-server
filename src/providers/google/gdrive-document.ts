@@ -93,16 +93,15 @@ export default class GoogleDriveDocument extends GoogleHandler {
             }, false);
         }
     
-        if (items.length != this.config.batchSize) {
+        currentRange = rangeTracker.nextRange();
+        if (items.length != this.config.batchSize && currentRange.startId) {
+        
             currentRange = rangeTracker.nextRange();
             query = {
                 ...query,
                 pageSize: this.config.batchSize - items.length,
+                pageToken: currentRange.startId
             };
-    
-            if (currentRange.startId) {
-                query.pageToken = currentRange.startId;
-            }
     
             const backfillResponse = await drive.files.list(query);
             const backfillResult = await this.buildResults(
