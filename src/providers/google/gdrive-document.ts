@@ -95,8 +95,6 @@ export default class GoogleDriveDocument extends GoogleHandler {
     
         currentRange = rangeTracker.nextRange();
         if (items.length != this.config.batchSize && currentRange.startId) {
-        
-            currentRange = rangeTracker.nextRange();
             query = {
                 ...query,
                 pageSize: this.config.batchSize - items.length,
