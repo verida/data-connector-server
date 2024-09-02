@@ -124,10 +124,8 @@ export class SearchService extends VeridaService {
         console.log(query, maxDatetime)
         
         const searchResults = await dataService.searchIndex(schemaUri, query, limit, undefined, {
-            filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
+            filter: (result: any) => maxDatetime ? result[SearchTypeTimeProperty[searchType]] > maxDatetime.toISOString() : true
         })
-
-        console.log(searchResults)
 
         return await this.rankAndMergeResults([{
             searchType,
@@ -166,7 +164,7 @@ export class SearchService extends VeridaService {
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
         
         const searchResults = await miniSearchIndex.search(query, {
-            filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
+            filter: (result: any) => maxDatetime ? result[SearchTypeTimeProperty[searchType]] > maxDatetime.toISOString() : true
         })
 
         return this.rankAndMergeResults([{
@@ -195,7 +193,7 @@ export class SearchService extends VeridaService {
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
         
         const searchResults = await dataService.searchIndex(messageSchemaUri, query, 50, 0.5, {
-            filter: (result: any) => maxDatetime ? result.sentAt > maxDatetime.toISOString() : true
+            filter: (result: any) => maxDatetime ? result[SearchTypeTimeProperty[SearchType.CHAT_MESSAGES]] > maxDatetime.toISOString() : true
         })
         
         const chatMessageDs = await this.context.openDatastore(messageSchemaUri)

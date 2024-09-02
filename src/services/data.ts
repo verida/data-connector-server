@@ -165,13 +165,13 @@ export class DataService extends EventEmitter {
                 // Flatten array fields for indexing
                 for (const arrayProperty of arrayProperties) {
                     if (row[arrayProperty] && row[arrayProperty].length) {
-                        let i = 0
+                        let j = 0
                         for (const arrayItem of row[arrayProperty]) {
                             if (!arrayItem.filename.match('pdf')) {
                                 continue
                             }
 
-                            const arrayItemProperty = `${arrayProperty}_${i}`
+                            const arrayItemProperty = `${arrayProperty}_${j}`
                             row[arrayItemProperty] = arrayItem
 
                             // Make sure this field is stored
@@ -180,7 +180,7 @@ export class DataService extends EventEmitter {
                             }
 
                             // @todo: Make sure the original field isn't stored (`arrayProperty`)
-                            i++
+                            j++
                         }
                     }
                 }
@@ -195,7 +195,7 @@ export class DataService extends EventEmitter {
                 // Add support for nested fields (`ie: attachments_0.textContent)
                 extractField: (document, fieldName) => {
                     return fieldName.split('.').reduce((doc, key) => doc && doc[key], document)
-                    }
+                }
             })
 
             // Index all documents

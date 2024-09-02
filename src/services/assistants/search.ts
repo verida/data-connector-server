@@ -84,8 +84,8 @@ export class PromptSearchService extends VeridaService {
             }
         }
 
-        console.log('emails / favourites / following / chatThreads')
-        console.log(emails.length, favourites.length, following.length, chatThreads.length)
+        console.log('files / emails / favourites / following / chatThreads')
+        console.log(files.length, emails.length, favourites.length, following.length, chatThreads.length)
 
         let finalPrompt = `Answer this prompt:\n${prompt}\nHere are some recent messages that may help you provide a relevant answer.\n`
         let contextString = ''
@@ -105,9 +105,8 @@ export class PromptSearchService extends VeridaService {
             contextString += `From: ${chatMessage.fromName} <${chatMessage.fromHandle}> (${chatMessage.groupName})\nBody: ${chatMessage.messageText}\n\n`
         }
 
-        console.log('files: ', files.length)
         for (const file of files) {
-            contextString += `File: ${file.name} ${file.indexableText?.substring(0,MAX_DOC_LENGTH)} (via ${file.sourceApplication})\n\n`
+            contextString += `File: ${file.name} ${file.contentText.substring(0,MAX_DOC_LENGTH)} (via ${file.sourceApplication})\n\n`
         }
 
         for (const favourite of favourites) {
@@ -140,7 +139,7 @@ export class PromptSearchService extends VeridaService {
         const now = (new Date()).toISOString()
         finalPrompt += `${contextString}\nThe current time is: ${now}`
 
-        console.log(finalPrompt)
+        // console.log(finalPrompt)
 
         const finalResponse = await llm.prompt(finalPrompt, undefined, false)
         const duration = Date.now() - start
