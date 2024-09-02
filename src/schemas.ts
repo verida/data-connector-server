@@ -3,7 +3,7 @@ export interface SchemaRecord {
     _rev?: string
     schema?: string
     name: string
-    description?: string
+    summary?: string
     insertedAt?: string
     modifiedAt?: string
     icon?: string
@@ -108,4 +108,26 @@ export interface SchemaSocialChatMessage extends SchemaRecord {
     fromHandle?: string
     fromName?: string
     sentAt: string
+}
+
+export enum DocumentType {
+    TXT = "txt",
+    PDF = "pdf",
+    DOC = "doc",
+    DOCX = "docx",
+    XLS = "xls",
+    XLSX = "xlsx",
+    PPT = "ppt",
+    PPTX = "pptx",
+    OTHER = "other"
+}
+
+export interface SchemaFile extends SchemaRecord {
+    extension: string
+    mimeType: string
+    size: number
+    contentText?: string
+    fileDataId?: string
+    uri?: string
+
 }

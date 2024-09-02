@@ -3,13 +3,14 @@ import { defaultModel } from "../llm"
 import { PromptSearch, PromptSearchLLMResponse, PromptSearchSort, PromptSearchType } from "../tools/promptSearch"
 import { ChatThreadResult, SearchService, SearchSortType, SearchType } from "../search"
 import { VeridaService } from '../veridaService'
-import { SchemaEmail, SchemaFavourite, SchemaFollowing, SchemaSocialChatMessage } from '../../schemas'
+import { SchemaEmail, SchemaFavourite, SchemaFile, SchemaFollowing, SchemaSocialChatMessage } from '../../schemas'
 import { Helpers } from "../helpers"
 import { EmailShortlist } from "../tools/emailShortlist"
 
 const llm = defaultModel
 
 const MAX_EMAIL_LENGTH = 500
+const MAX_DOC_LENGTH = 2000
 const MAX_ATTACHMENT_LENGTH = 500
 const MAX_CONTEXT_LENGTH = 20000 // (~5000 tokens)
 
@@ -38,7 +39,7 @@ export class PromptSearchService extends VeridaService {
         let emails: SchemaEmail[] = []
         let favourites: SchemaFavourite[] = []
         let following: SchemaFollowing[] = []
-        // let files: SchemaFile[] = []
+        let files: SchemaFile[] = []
         let chatMessages: SchemaSocialChatMessage[] = []
 
         const searchService = new SearchService(this.did, this.context)
@@ -48,9 +49,9 @@ export class PromptSearchService extends VeridaService {
             if (promptSearchResult.databases.indexOf(SearchType.EMAILS) !== -1) {
                 emails = await searchService.schemaByKeywords<SchemaEmail>(SearchType.EMAILS, promptSearchResult.keywords!, promptSearchResult.timeframe, 40)
             }
-            // if (promptSearchResult.databases.indexOf("files")) {
-            //     files = await searchService.schemaByKeywords<SchemaFile>(SearchType.FILES, promptSearchResult.keywords!, promptSearchResult.timeframe, 20)
-            // }
+            if (promptSearchResult.databases.indexOf(SearchType.FILES) !== -1) {
+                files = await searchService.schemaByKeywords<SchemaFile>(SearchType.FILES, promptSearchResult.keywords!, promptSearchResult.timeframe, 20)
+            }
             if (promptSearchResult.databases.indexOf(SearchType.FAVORITES) !== -1) {
                 favourites = await searchService.schemaByKeywords<SchemaFavourite>(SearchType.FAVORITES, promptSearchResult.keywords!, promptSearchResult.timeframe, 40)
             }
@@ -69,9 +70,9 @@ export class PromptSearchService extends VeridaService {
                 const emailShortlist = new EmailShortlist(llm)
                 emails = await emailShortlist.shortlist(prompt, emails, MAX_DATERANGE_EMAILS)
             }
-            // if (promptSearchResult.databases.indexOf("files")) {
-            //     files = await searchService.schemaByDateRange<SchemaFile>(SearchType.FILES, maxDatetime, sort, MAX_DATERANGE_FILES)
-            // }
+            if (promptSearchResult.databases.indexOf(SearchType.FILES) !== -1) {
+                files = await searchService.schemaByDateRange<SchemaFile>(SearchType.FILES, maxDatetime, sort, MAX_DATERANGE_FILES)
+            }
             if (promptSearchResult.databases.indexOf(SearchType.FAVORITES) !== -1) {
                 favourites = await searchService.schemaByDateRange<SchemaFavourite>(SearchType.FAVORITES, maxDatetime, sort, MAX_DATERANGE_FAVORITES)
             }
@@ -104,6 +105,11 @@ export class PromptSearchService extends VeridaService {
             contextString += `From: ${chatMessage.fromName} <${chatMessage.fromHandle}> (${chatMessage.groupName})\nBody: ${chatMessage.messageText}\n\n`
         }
 
+        console.log('files: ', files.length)
+        for (const file of files) {
+            contextString += `File: ${file.name} ${file.indexableText?.substring(0,MAX_DOC_LENGTH)} (via ${file.sourceApplication})\n\n`
+        }
+
         for (const favourite of favourites) {
             contextString += `Favorite: ${favourite.name} ${favourite.description?.substring(0,100)} (via ${favourite.sourceApplication})\n\n`
         }
@@ -133,6 +139,8 @@ export class PromptSearchService extends VeridaService {
 
         const now = (new Date()).toISOString()
         finalPrompt += `${contextString}\nThe current time is: ${now}`
+
+        console.log(finalPrompt)
 
         const finalResponse = await llm.prompt(finalPrompt, undefined, false)
         const duration = Date.now() - start
