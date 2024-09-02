@@ -10,6 +10,7 @@ import { EmailShortlist } from "../tools/emailShortlist"
 const llm = defaultModel
 
 const MAX_EMAIL_LENGTH = 500
+const MAX_DOC_LENGTH = 2000
 const MAX_ATTACHMENT_LENGTH = 500
 const MAX_CONTEXT_LENGTH = 20000 // (~5000 tokens)
 
@@ -108,6 +109,11 @@ export class PromptSearchService extends VeridaService {
 
         for (const chatMessage of chatMessages) {
             contextString += `From: ${chatMessage.fromName} <${chatMessage.fromHandle}> (${chatMessage.groupName})\nBody: ${chatMessage.messageText}\n\n`
+        }
+
+        console.log('files: ', files.length)
+        for (const file of files) {
+            contextString += `File: ${file.name} ${file.indexableText?.substring(0,MAX_DOC_LENGTH)} (via ${file.sourceApplication})\n\n`
         }
 
         console.log('favourites: ', favourites.length)
