@@ -49,6 +49,11 @@ const schemas: Record<string, SchemaConfig> = {
         label: "Favorite",
         storeFields: ['_id', 'insertedAt'],
         indexFields: ['name', 'favouriteType', 'contentType', 'summary','sourceApplication']
+    },
+    "https://common.schemas.verida.io/file/v0.1.0/schema.json": {
+        label: "File",
+        storeFields: ['_id', 'insertedAt'],
+        indexFields: ['name', 'contentText', 'indexableText', 'sourceApplication', "modifiedAt", "insertedAt"]
     }
 }
 
