@@ -167,7 +167,10 @@ $(document).ready(function() {
 
     function loadProviders(callback) {
         $.getJSON('/api/v1/providers', function(providersResponse) {
-            window.providersData = providersResponse; // Store globally or manage differently as needed
+            window.providersData = {}
+            for (const provider of providersResponse) {
+                window.providersData[provider.name] = provider
+            }
             populateConnectionDropdown(providersResponse);
             if (callback) callback();
         });
