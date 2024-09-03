@@ -1,4 +1,4 @@
-import { Connection, HandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition } from "../interfaces"
+import { Connection, ProviderHandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
@@ -34,11 +34,23 @@ export default class BaseSyncHandler extends EventEmitter {
         throw new Error('Not implemented')
     }
 
+    /**
+     * Set a default label
+     */
+    public getLabel(): string {
+        let label = this.getName()
+        // Replace all instances of "-" with a space
+        label = label.replace(/-/g, ' ');
+
+        // Uppercase the first letter
+        return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
     public getConfig(): any {
         return this.config
     }
 
-    public getOptions(): HandlerOption[] {
+    public getOptions(): ProviderHandlerOption[] {
         return []
     }
 

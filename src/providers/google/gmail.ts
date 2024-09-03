@@ -8,7 +8,7 @@ import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker"
 import {
   SyncResponse,
   SyncHandlerStatus,
-  HandlerOption,
+  ProviderHandlerOption,
   ConnectionOptionType,
 } from "../../interfaces";
 import { SchemaEmail, SchemaEmailType, SchemaRecord } from "../../schemas";
@@ -24,6 +24,10 @@ export interface SyncEmailItemsResult extends SyncItemsResult {
 }
 
 export default class Gmail extends GoogleHandler {
+
+  public getLabel(): string {
+    return "Gmail"
+  }
 
   public getName(): string {
     return 'gmail'
@@ -44,13 +48,25 @@ export default class Gmail extends GoogleHandler {
     return gmail;
   }
   
-  public getOptions(): HandlerOption[] {
+  public getOptions(): ProviderHandlerOption[] {
     return [{
-      name: 'backdate',
+      id: 'backdate',
       label: 'Backdate history',
       type: ConnectionOptionType.ENUM,
-      enumOptions: ['1 month', '3 months', '6 months', '12 months'],
-      defaultValue: '3 months'
+      enumOptions: [{
+        value: '1-month',
+        label: '1 month'
+      }, {
+        value: '3-months',
+        label: '3 months'
+      }, {
+        value: '6-months',
+        label: '6 months'
+      }, {
+        value: '12-months',
+        label: '12 months'
+      }],
+      defaultValue: '3-months'
     }]
   }
 

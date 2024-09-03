@@ -16,11 +16,16 @@ export enum ConnectionOptionType {
     BOOLEAN = "boolean"
 }
 
+export interface ConnectionOptionEnumOption {
+    value: string
+    label: string
+}
+
 export interface ConnectionOption {
-    name: string
+    id: string
     label: string
     type: ConnectionOptionType
-    enumOptions?: string[]
+    enumOptions?: ConnectionOptionEnumOption[]
     defaultValue: string
 }
 
@@ -49,7 +54,13 @@ export interface PassportProfile {
     connectionProfile?: Partial<ConnectionProfile>
 }
 
-export interface HandlerOption extends ConnectionOption {}
+export interface ProviderHandler {
+    id: string
+    label: string
+    options: ProviderHandlerOption[]
+}
+
+export interface ProviderHandlerOption extends ConnectionOption {}
 
 export interface AvatarObject extends Object {
     uri: string
