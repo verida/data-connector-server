@@ -15,7 +15,7 @@ const MAX_BATCH_SIZE = 50;
 export default class YouTubeFollowing extends GoogleHandler {
 
     public getLabel(): string {
-        return "Youtube Following"
+        return "Youtube Subscriptions"
     }
 
     public getName(): string {

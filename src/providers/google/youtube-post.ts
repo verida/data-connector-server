@@ -25,7 +25,7 @@ export interface SyncPostItemsResult extends SyncItemsResult {
 export default class YouTubePost extends GoogleHandler {
 
     public getLabel(): string {
-        return "Youtube Post"
+        return "Youtube Posts"
     }
 
     public getName(): string {

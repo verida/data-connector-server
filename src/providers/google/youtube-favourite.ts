@@ -25,7 +25,7 @@ export interface SyncFavouriteItemsResult extends SyncItemsResult {
 export default class YouTubeFavourite extends GoogleHandler {
 
     public getLabel(): string {
-        return "Youtube Favourite"
+        return "Youtube Favourites"
     }
 
     public getName(): string {

@@ -29,7 +29,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
   }
 
   public getLabel(): string {
-    return "Chat Message"
+    return "Chat Messages"
   }
 
   public getSchemaUri(): string {

@@ -12,6 +12,10 @@ export default class Following extends BaseSyncHandler {
 
     protected apiEndpoint = '/me/likes'
 
+    public getLabel(): string {
+        return "Liked Pages"
+    }
+
     public getName(): string {
         return 'following'
     }
