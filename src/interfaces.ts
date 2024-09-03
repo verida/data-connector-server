@@ -16,11 +16,16 @@ export enum ConnectionOptionType {
     BOOLEAN = "boolean"
 }
 
+export interface ConnectionOptionEnumOption {
+    value: string
+    label: string
+}
+
 export interface ConnectionOption {
-    name: string
+    id: string
     label: string
     type: ConnectionOptionType
-    enumOptions?: string[]
+    enumOptions?: ConnectionOptionEnumOption[]
     defaultValue: string
 }
 

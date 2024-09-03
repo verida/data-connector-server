@@ -178,7 +178,7 @@ export default class SyncManager {
             const handlerConfig: Record<string, string> = {}
 
             for (const handlerOption of handlerOptions) {
-                handlerConfig[handlerOption.name] = handlerOption.defaultValue
+                handlerConfig[handlerOption.id] = handlerOption.defaultValue
             }
 
             connectionHandlers.push({
@@ -190,7 +190,7 @@ export default class SyncManager {
 
         const providerConfig: Record<string, string> = {}
         for (const providerOption of provider.getOptions()) {
-            providerConfig[providerOption.name] = providerOption.defaultValue
+            providerConfig[providerOption.id] = providerOption.defaultValue
         }
 
         providerConnection = {

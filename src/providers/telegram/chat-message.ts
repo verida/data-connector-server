@@ -42,10 +42,19 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
 
   public getOptions(): ProviderHandlerOption[] {
     return [{
-      name: 'groupTypes',
+      id: 'groupTypes',
       label: 'Group types',
       type: ConnectionOptionType.ENUM_MULTI,
-      enumOptions: [TelegramChatGroupType.BASIC, TelegramChatGroupType.PRIVATE, TelegramChatGroupType.SECRET, TelegramChatGroupType.SUPERGROUP],
+      enumOptions: [{
+        label: "Basic",
+        value: TelegramChatGroupType.BASIC
+      }, {
+        label: "Private",
+        value: TelegramChatGroupType.PRIVATE
+      }, {
+        label: "Secret",
+        value: TelegramChatGroupType.SECRET
+      }],
       // Exclude super groups by default
       defaultValue: [TelegramChatGroupType.BASIC, TelegramChatGroupType.PRIVATE, TelegramChatGroupType.SECRET].join(',')
     }]
