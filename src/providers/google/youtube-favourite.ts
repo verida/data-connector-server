@@ -4,7 +4,7 @@ import { SyncHandlerPosition, SyncItemsBreak, SyncItemsResult, SyncProviderLogEv
 import {
     SyncResponse,
     SyncHandlerStatus,
-    HandlerOption,
+    ProviderHandlerOption,
     ConnectionOptionType,
 } from "../../interfaces";
 import { SchemaFavouriteContentType, SchemaFavouriteType, SchemaFavourite } from "../../schemas";
@@ -24,6 +24,10 @@ export interface SyncFavouriteItemsResult extends SyncItemsResult {
 
 export default class YouTubeFavourite extends GoogleHandler {
 
+    public getLabel(): string {
+        return "Youtube Favourite"
+    }
+
     public getName(): string {
         return "youtube-favourite";
     }
@@ -42,7 +46,7 @@ export default class YouTubeFavourite extends GoogleHandler {
         return youtube;
     }
 
-    public getOptions(): HandlerOption[] {
+    public getOptions(): ProviderHandlerOption[] {
         return [{
             name: 'backdate',
             label: 'Backdate history',

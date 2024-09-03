@@ -1,6 +1,6 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-import { SyncProviderLogEvent, SyncProviderLogLevel, SyncHandlerPosition, SyncResponse, SyncHandlerStatus, SyncItemsBreak, HandlerOption, ConnectionOptionType } from "../../interfaces";
+import { SyncProviderLogEvent, SyncProviderLogLevel, SyncHandlerPosition, SyncResponse, SyncHandlerStatus, SyncItemsBreak, ProviderHandlerOption, ConnectionOptionType } from "../../interfaces";
 import { SchemaFollowing } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
@@ -13,6 +13,10 @@ const _ = require("lodash");
 const MAX_BATCH_SIZE = 50;
 
 export default class YouTubeFollowing extends GoogleHandler {
+
+    public getLabel(): string {
+        return "Youtube Following"
+    }
 
     public getName(): string {
         return "youtube-following";
@@ -31,7 +35,7 @@ export default class YouTubeFollowing extends GoogleHandler {
         return google.youtube({ version: "v3", auth: oAuth2Client });
     }
 
-    public getOptions(): HandlerOption[] {
+    public getOptions(): ProviderHandlerOption[] {
         return [{
             name: 'backdate',
             label: 'Backdate history',

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Providers from "../../../providers"
 import SyncManager from '../../../sync-manager'
-import { HandlerOption, SyncHandlerPosition, UniqueRequest } from '../../../interfaces'
+import { ProviderHandler, SyncHandlerPosition, UniqueRequest } from '../../../interfaces'
 import { Utils } from '../../../utils'
 import CONFIG from '../../../config'
 import { SchemaRecord } from '../../../schemas'
@@ -201,26 +201,30 @@ export default class Controller {
     public static async providers(req: Request, res: Response) {
         const providers = Object.keys(CONFIG.providers)
 
-        const results: any = {}
+        const results: any = []
         for (let p in providers) {
             const providerName = providers[p]
 
             try {
                 const provider = Providers(providerName)
                 const syncHandlers = await provider.getSyncHandlers()
-                const handlers: Record<string, HandlerOption[]> = {}
+                const handlers: ProviderHandler[] = []
                 for (const handler of syncHandlers) {
-                    handlers[handler.getName()] = handler.getOptions()
+                    handlers.push({
+                        id: handler.getName(),
+                        label: handler.getLabel(),
+                        options: handler.getOptions()
+                    })
                 }
 
-                results[providerName] = {
+                results.push({
                     name: providerName,
                     label: provider.getProviderLabel(),
                     icon: provider.getProviderImageUrl(),
                     description: provider.getDescription(),
                     options: provider.getOptions(),
                     handlers
-                }
+                })
             } catch (err) {
                 // skip broken providers
             }

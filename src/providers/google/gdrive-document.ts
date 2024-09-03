@@ -1,5 +1,5 @@
 import CONFIG from "../../config";
-import { SyncProviderLogEvent, SyncProviderLogLevel, SyncHandlerPosition, SyncItemsBreak, SyncResponse, SyncHandlerStatus, SyncItemsResult, HandlerOption, ConnectionOptionType } from '../../interfaces';
+import { SyncProviderLogEvent, SyncProviderLogLevel, SyncHandlerPosition, SyncItemsBreak, SyncResponse, SyncHandlerStatus, SyncItemsResult, ConnectionOptionType, ProviderHandlerOption } from '../../interfaces';
 import { SchemaFile } from "../../schemas";
 import { google, drive_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
@@ -16,6 +16,10 @@ export interface SyncDocumentItemsResult extends SyncItemsResult {
 }
 
 export default class GoogleDriveDocument extends GoogleHandler {
+
+    public getLabel(): string {
+        return "Google Drive Documents"
+    }
 
     public getName(): string {
         return "google-drive-documents";
@@ -34,7 +38,7 @@ export default class GoogleDriveDocument extends GoogleHandler {
         return google.drive({ version: "v3", auth });
     }
 
-    public getOptions(): HandlerOption[] {
+    public getOptions(): ProviderHandlerOption[] {
         return [{
             name: 'backdate',
             label: 'Backdate history',

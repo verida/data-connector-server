@@ -4,7 +4,7 @@ import { ConnectionOptionType, SyncHandlerPosition, SyncItemsBreak, SyncItemsRes
 import {
     SyncResponse,
     SyncHandlerStatus,
-    HandlerOption,
+    ProviderHandlerOption,
 } from "../../interfaces";
 import { SchemaPostType, SchemaPost } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
@@ -24,6 +24,10 @@ export interface SyncPostItemsResult extends SyncItemsResult {
 
 export default class YouTubePost extends GoogleHandler {
 
+    public getLabel(): string {
+        return "Youtube Post"
+    }
+
     public getName(): string {
         return "youtube-post";
     }
@@ -42,7 +46,7 @@ export default class YouTubePost extends GoogleHandler {
         return youtube;
     }
 
-    public getOptions(): HandlerOption[] {
+    public getOptions(): ProviderHandlerOption[] {
         return [{
             name: 'backdate',
             label: 'Backdate history',

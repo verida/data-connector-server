@@ -8,7 +8,7 @@ import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker"
 import {
   SyncResponse,
   SyncHandlerStatus,
-  HandlerOption,
+  ProviderHandlerOption,
   ConnectionOptionType,
 } from "../../interfaces";
 import { SchemaEmail, SchemaEmailType, SchemaRecord } from "../../schemas";
@@ -24,6 +24,10 @@ export interface SyncEmailItemsResult extends SyncItemsResult {
 }
 
 export default class Gmail extends GoogleHandler {
+
+  public getLabel(): string {
+    return "Gmail"
+  }
 
   public getName(): string {
     return 'gmail'
@@ -44,7 +48,7 @@ export default class Gmail extends GoogleHandler {
     return gmail;
   }
   
-  public getOptions(): HandlerOption[] {
+  public getOptions(): ProviderHandlerOption[] {
     return [{
       name: 'backdate',
       label: 'Backdate history',

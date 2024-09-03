@@ -49,7 +49,13 @@ export interface PassportProfile {
     connectionProfile?: Partial<ConnectionProfile>
 }
 
-export interface HandlerOption extends ConnectionOption {}
+export interface ProviderHandler {
+    id: string
+    label: string
+    options: ProviderHandlerOption[]
+}
+
+export interface ProviderHandlerOption extends ConnectionOption {}
 
 export interface AvatarObject extends Object {
     uri: string
