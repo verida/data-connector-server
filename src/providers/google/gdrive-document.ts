@@ -22,7 +22,7 @@ export default class GoogleDriveDocument extends GoogleHandler {
     }
 
     public getName(): string {
-        return "google-drive-documents";
+        return "google-drive-document";
     }
 
     public getSchemaUri(): string {
