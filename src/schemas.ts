@@ -1,3 +1,5 @@
+import { CalendarAttachment, DateTimeInfo, Person } from "./providers/google/interfaces"
+
 export interface SchemaRecord {
     _id: string
     _rev?: string
@@ -143,11 +145,11 @@ export interface SchemaEvent extends SchemaRecord {
     description?: string
     calendarId: string
     location?: string
-    creator?: object
-    start: object
-    end: object
-    attendees?: []
+    creator?: Person
+    start: DateTimeInfo
+    end: DateTimeInfo
+    attendees?: Person[]
     conferenceData?: object
-    attachments?: []
-    
+    attachments?: CalendarAttachment[]
+
 }
