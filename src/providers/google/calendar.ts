@@ -15,6 +15,8 @@ import { SchemaCalendar } from "../../schemas";
 
 const _ = require("lodash");
 
+// Set MAX_BATCH_SIZE to 250 because the Google Calendar API v3 'maxResults' parameter is capped at 250.
+// For more details, see: https://developers.google.com/calendar/api/v3/reference/calendarList/list 
 const MAX_BATCH_SIZE = 250;
 
 export interface SyncCalendarItemsResult extends SyncItemsResult {
@@ -28,7 +30,7 @@ export default class Calendar extends GoogleHandler {
   }
 
   public getSchemaUri(): string {
-    return CONFIG.verida.schemas.CALENDAR_LIST;
+    return CONFIG.verida.schemas.CALENDAR;
   }
 
   public getProviderApplicationUrl() {
