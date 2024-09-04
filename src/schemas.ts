@@ -137,3 +137,17 @@ export interface SchemaCalendar extends SchemaRecord {
     timezone: string
     location?: string
 }
+
+export interface SchemaEvent extends SchemaRecord {
+    status?: string
+    description?: string
+    calendarId: string
+    location?: string
+    creator?: object
+    start: object
+    end: object
+    attendees?: []
+    conferenceData?: object
+    attachments?: []
+    
+}
