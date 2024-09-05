@@ -50,8 +50,7 @@ export const ResetProvider: Command<ResetProviderOptions> = {
     const vault = networkInstance.context;
 
     const syncManager = new SyncManager(
-      await networkInstance.account.did(),
-      options.key
+      networkInstance.context
     );
 
     const providers = await syncManager.getProviders(

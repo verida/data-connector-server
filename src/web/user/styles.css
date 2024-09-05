@@ -1,0 +1,27 @@
+.filter-panel {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    display: none; /* Initially hidden */
+}
+.filter-panel input {
+    margin-bottom: 5px;
+}
+
+.nav-link.active {
+    border-bottom: 2px solid;
+}
+
+.modal-dialog {
+    max-height: 80vh; /* Adjust as needed */
+    margin: 30px auto;
+}
+.modal-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.modal-body {
+    overflow-y: auto;
+}

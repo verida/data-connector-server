@@ -59,6 +59,9 @@ export class TelegramApi {
             application_version: '0.1',
             database_directory: `${this.tdPath}/db`,
             files_directory: `${this.tdPath}/files`,
+            use_chat_info_database: false,
+            use_message_database: false,
+            use_file_database: false
         })
     }
 

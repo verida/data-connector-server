@@ -12,29 +12,29 @@
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="/dashboard/welcome">Sandbox</a>
+        <a class="navbar-brand" href="/user/welcome">Verida Bridge [alpha]</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link active" href="/dashboard/welcome">Welcome</a>
+                    <a class="nav-link active" href="/user/welcome">Welcome</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/connections">Connections</a>
+                    <a class="nav-link" href="/user/connections">Connections</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/ai">Private AI</a>
+                    <a class="nav-link" href="/user/ai">Private AI</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/data">Browse Data</a>
+                    <a class="nav-link" href="/user/security">Security</a>
                 </li>
+            </ul>
+            <!-- Extra nav item aligned to the right -->
+            <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/api">API Playground</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/dashboard/about">About</a>
+                    <a class="nav-link" href="/developer">Developer Sandbox &rarr;</a>
                 </li>
             </ul>
         </div>
@@ -64,36 +64,7 @@
 
         <a name="security" />
         <h2>Security</h2>
-        <p>This server is running within a <a href="https://docs.marlin.org/learn/what-is-oyster">Marlin Oyster</a> secure enclave that protects all data and computation. This means that no-one, not even the underlying infrastructure provider for this server, can access any user data. See <a href="../about#security">About &rarr; Security</a> for more details.</p>
-        <p>For full transparency, the Verida Private Data Bridge is open source: <a href="https://github.com/verida/data-connector-server">https://github.com/verida/data-connector-server</a></p>
-
-        <a name="sandbox" />
-        <h2>Developer Sandbox (alpha)</h2>
-        <p>You are currently viewing the developer sandbox, which is a basic web interface that interacts with the Verida Private Data Bridge APIs.</p>
-        <p>This is your entry point to the following services:</p>
-        <p>
-            <ol>
-                <li><a href="../connections/">Connections</a> &mdash; Connect, Disconnect, Sync and View Logs of active data connections.</li>
-                <li><a href="../ai/">Private AI</a> &mdash; A basic proof of concept of a private AI prompt that can access your user data.</li>
-                <li><a href="../data/">Browse Data</a> &mdash; A basic interface to view data syncronized from third party data connections, along with sync information.</li>
-                <li><a href="../api/">API Playground</a> &mdash; An interactive API playground for developers who want to integrate their applications / AI agents with the private data bridge to access user data.</li>
-                <li><a href="../about/">About</a> &mdash; Learn more about the technology, security and architecture powering this private data bridge.</li>
-            </ol>
-        </p>
-
-        <a name="apis" />
-        <h2>Developer APIs</h2>
-        <p>The private data bridge API's enable developers to securely integrate user data into their applications and AI agents::</p>
-        <ul>
-            <li><strong>/api/v1/db</strong> &mdash; View and Query user databases</li>
-            <li><strong>/api/v1/ds</strong> &mdash; View and Query user datastores (databases that enforce structured data; ie: a database of emails)</li>
-            <li><strong>/api/v1/minisearch</strong> &mdash; Powerful keyword search on user data</li>
-            <li><strong>/api/v1/email</strong> &mdash; An advanced interface for searching user emails</li>
-            <li><strong>/api/v1/chat</strong> &mdash; An advanced interface for searching user chat message history</li>
-            <li><strong>/api/v1/llm</strong> &mdash; Access a basic, built-in AI prompt service. There is a generic prompt service and a personalized prompt service that incorporates user data into AI responses. Developers can fork this and build their own AI solutions that leverage user data.</li>
-        </ul>
-
-        <p>You can learn how to integrate these API's into your own applications in the <a href="../api/">API Playground</a>.</p>
+        <p>This server is running within a <a href="https://docs.marlin.org/learn/what-is-oyster">Marlin Oyster</a> secure enclave that protects all data and computation. This means that no-one, not even the underlying infrastructure provider for this server, can access any user data. See <a href="../user/about#security">About &rarr; Security</a> for more details.</p>
     </div>
 
     <!-- jQuery -->

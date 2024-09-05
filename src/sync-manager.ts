@@ -20,9 +20,7 @@ const delay = async (ms: number) => {
  */
 export default class SyncManager {
 
-    private vault?: IContext
-    private did: string
-    private seedPhrase: string
+    private vault: IContext
     private requestId: string
 
     private connectionDatastore?: IDatastore
@@ -30,9 +28,8 @@ export default class SyncManager {
 
     private status: SyncStatus = SyncStatus.CONNECTED
 
-    public constructor(did: string, seedPhrase: string, requestId: string = 'none') {
-        this.did = did
-        this.seedPhrase = seedPhrase
+    public constructor(vaultContext: IContext, requestId: string = 'none') {
+        this.vault = vaultContext
         this.requestId = requestId
     }
 
@@ -76,21 +73,6 @@ export default class SyncManager {
 
     }
 
-    public async getVault(): Promise<IContext> {
-        if (this.vault) {
-            return this.vault
-        }
-
-        try {
-            const { context } = await Utils.getNetwork(this.seedPhrase, this.requestId)
-
-            this.vault = <IContext> context
-            return this.vault
-        } catch (err) {
-            console.log(err)
-        }
-    }
-
     public async getProviders(providerName?: string, providerId?: string): Promise<BaseProvider[]> {
         if (this.connections) {
             if (providerName) {
@@ -112,8 +94,6 @@ export default class SyncManager {
             return this.connections
         }
 
-        const vault = await this.getVault()
-
         const datastore = await this.getConnectionDatastore()
         const allProviders = providerName ? [providerName] : Object.keys(CONFIG.providers)
         const userConnections = []
@@ -131,7 +111,7 @@ export default class SyncManager {
 
                 const connections = <Connection[]> await datastore.getMany(filter, {})
                 for (const connection of connections) {
-                    const provider = Providers(providerName, vault, connection)
+                    const provider = Providers(providerName, this.vault, connection)
                     userConnections.push(provider)
                 }
                 
@@ -155,9 +135,7 @@ export default class SyncManager {
             return this.connectionDatastore
         }
 
-        const vault = await this.getVault()
-
-        this.connectionDatastore = await vault.openDatastore(
+        this.connectionDatastore = await this.vault.openDatastore(
             DATA_CONNECTION_SCHEMA
         )
 
@@ -200,7 +178,7 @@ export default class SyncManager {
             const handlerConfig: Record<string, string> = {}
 
             for (const handlerOption of handlerOptions) {
-                handlerConfig[handlerOption.name] = handlerOption.defaultValue
+                handlerConfig[handlerOption.id] = handlerOption.defaultValue
             }
 
             connectionHandlers.push({
@@ -212,7 +190,7 @@ export default class SyncManager {
 
         const providerConfig: Record<string, string> = {}
         for (const providerOption of provider.getOptions()) {
-            providerConfig[providerOption.name] = providerOption.defaultValue
+            providerConfig[providerOption.id] = providerOption.defaultValue
         }
 
         providerConnection = {

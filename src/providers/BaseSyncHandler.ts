@@ -1,9 +1,10 @@
-import { Connection, HandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition } from "../interfaces"
+import { Connection, ProviderHandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
 import { SchemaRecord } from "../schemas"
 import BaseProvider from "./BaseProvider"
+const _ = require("lodash")
 
 export default class BaseSyncHandler extends EventEmitter {
 
@@ -15,6 +16,15 @@ export default class BaseSyncHandler extends EventEmitter {
 
     constructor(config: any, connection: Connection, provider: BaseProvider) {
         super()
+        // Handle any custom config for this handler
+        if (config.handlers) {
+            if (config.handlers[this.getName()]) {
+                config = _.merge({}, config, config.handlers[this.getName()])
+            }
+
+            delete config["handlers"]
+        }
+
         this.config = config
         this.connection = connection
         this.provider = provider
@@ -24,11 +34,23 @@ export default class BaseSyncHandler extends EventEmitter {
         throw new Error('Not implemented')
     }
 
+    /**
+     * Set a default label
+     */
+    public getLabel(): string {
+        let label = this.getName()
+        // Replace all instances of "-" with a space
+        label = label.replace(/-/g, ' ');
+
+        // Uppercase the first letter
+        return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
     public getConfig(): any {
         return this.config
     }
 
-    public getOptions(): HandlerOption[] {
+    public getOptions(): ProviderHandlerOption[] {
         return []
     }
 

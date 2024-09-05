@@ -1,7 +1,7 @@
-import { IContext } from '@verida/types';
+import { IContext, IDatastore } from '@verida/types';
 import * as CryptoJS from 'crypto-js';
 import { EventEmitter } from 'events'
-import MiniSearch from 'minisearch';
+import MiniSearch, { SearchOptions, SearchResult } from 'minisearch';
 
 export const indexCache: Record<string, MiniSearch<any>> = {}
 
@@ -28,22 +28,32 @@ const schemas: Record<string, SchemaConfig> = {
     "https://common.schemas.verida.io/social/following/v0.1.0/schema.json": {
         label: "Social Following",
         storeFields: ['_id', 'name','uri','description','insertedAt','followedTimestamp'],
-        indexFields: ['name','description']
+        indexFields: ['name','description','sourceApplication']
     },
     "https://common.schemas.verida.io/social/post/v0.1.0/schema.json": {
         label: "Social Posts",
         storeFields: ['_id', 'name','content','type','uri','insertedAt'],
-        indexFields: ['name', 'content', 'indexableText']
+        indexFields: ['name', 'content', 'indexableText','sourceApplication']
     },
     "https://common.schemas.verida.io/social/email/v0.1.0/schema.json": {
         label: "Email",
-        storeFields: ['_id'],
-        indexFields: ['name','fromName','fromEmail','messageText','attachments_0.textContent','attachments_1.textContent','attachments_2.textContent', 'indexableText', 'sentAt']
+        storeFields: ['_id', 'sentAt'],
+        indexFields: ['name','fromName','fromEmail','messageText','attachments_0.textContent','attachments_1.textContent','attachments_2.textContent', 'indexableText', 'sentAt','sourceApplication']
     },
     "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json": {
-        label: "Chat History",
-        storeFields: ['_id', 'groupId'],
-        indexFields: ['messageText', 'fromHandle', 'fromName', 'groupName', 'indexableText', 'sentAt']
+        label: "Chat Message",
+        storeFields: ['_id', 'groupId', 'sentAt'],
+        indexFields: ['messageText', 'fromHandle', 'fromName', 'groupName', 'indexableText', 'sentAt','sourceApplication']
+    },
+    "https://common.schemas.verida.io/favourite/v0.1.0/schema.json": {
+        label: "Favorite",
+        storeFields: ['_id', 'insertedAt'],
+        indexFields: ['name', 'favouriteType', 'contentType', 'summary','sourceApplication']
+    },
+    "https://common.schemas.verida.io/file/v0.1.0/schema.json": {
+        label: "File",
+        storeFields: ['_id', 'insertedAt'],
+        indexFields: ['name', 'contentText', 'indexableText', 'sourceApplication', "modifiedAt", "insertedAt"]
     }
 }
 
@@ -76,6 +86,33 @@ export class DataService extends EventEmitter {
         this.emit('progress', progress)
     }
 
+    public async getDatastore(schemaUri: string): Promise<IDatastore> {
+        return this.context.openDatastore(schemaUri)
+    }
+
+    public async searchIndex(schemaUri: string, query: string, maxResults: number = 50, cutoffPercent: number = 0.5, searchOptions?: SearchOptions): Promise<SearchResult[]> {
+        const miniSearchIndex = await this.getIndex(schemaUri)
+        const searchResults = await miniSearchIndex.search(query, searchOptions)
+        
+        if (!searchResults.length) {
+            return []
+        }
+
+        const results: any[] = []
+        const cutoffScore = searchResults[0].score * cutoffPercent
+        for (const result of searchResults) {
+            if (result.score < cutoffScore || results.length >= maxResults) {
+                break
+            }
+
+            results.push(result)
+        }
+
+        // console.log(schemaUri, results)
+
+        return results
+    }
+
     public async getIndex(schemaUri: string): Promise<MiniSearch<any>> {
         const schemaConfig = schemas[schemaUri]
         const indexFields = schemaConfig.indexFields
@@ -87,7 +124,6 @@ export class DataService extends EventEmitter {
             this.emitProgress(schemaConfig.label, HotLoadStatus.StartData, 10)
             const datastore = await this.context.openDatastore(schemaUri)
 
-            console.log('Fetching data')
             const database = await datastore.getDb()
             const db = await database.getDb()
             const result = await db.allDocs({
@@ -129,13 +165,13 @@ export class DataService extends EventEmitter {
                 // Flatten array fields for indexing
                 for (const arrayProperty of arrayProperties) {
                     if (row[arrayProperty] && row[arrayProperty].length) {
-                        let i = 0
+                        let j = 0
                         for (const arrayItem of row[arrayProperty]) {
                             if (!arrayItem.filename.match('pdf')) {
                                 continue
                             }
 
-                            const arrayItemProperty = `${arrayProperty}_${i}`
+                            const arrayItemProperty = `${arrayProperty}_${j}`
                             row[arrayItemProperty] = arrayItem
 
                             // Make sure this field is stored
@@ -144,7 +180,7 @@ export class DataService extends EventEmitter {
                             }
 
                             // @todo: Make sure the original field isn't stored (`arrayProperty`)
-                            i++
+                            j++
                         }
                     }
                 }
@@ -159,7 +195,7 @@ export class DataService extends EventEmitter {
                 // Add support for nested fields (`ie: attachments_0.textContent)
                 extractField: (document, fieldName) => {
                     return fieldName.split('.').reduce((doc, key) => doc && doc[key], document)
-                    }
+                }
             })
 
             // Index all documents
@@ -168,6 +204,8 @@ export class DataService extends EventEmitter {
             this.emitProgress(schemaConfig.label, HotLoadStatus.Complete, 10)
 
             indexCache[cacheKey] = miniSearch
+
+            console.log(`Index created for ${schemaUri}`)
         } else {
             this.stepCount += 2
             this.emitProgress(schemaConfig.label, HotLoadStatus.Complete, 10)

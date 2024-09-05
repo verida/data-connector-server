@@ -16,11 +16,16 @@ export enum ConnectionOptionType {
     BOOLEAN = "boolean"
 }
 
+export interface ConnectionOptionEnumOption {
+    value: string
+    label: string
+}
+
 export interface ConnectionOption {
-    name: string
+    id: string
     label: string
     type: ConnectionOptionType
-    enumOptions?: string[]
+    enumOptions?: ConnectionOptionEnumOption[]
     defaultValue: string
 }
 
@@ -49,7 +54,13 @@ export interface PassportProfile {
     connectionProfile?: Partial<ConnectionProfile>
 }
 
-export interface HandlerOption extends ConnectionOption {}
+export interface ProviderHandler {
+    id: string
+    label: string
+    options: ProviderHandlerOption[]
+}
+
+export interface ProviderHandlerOption extends ConnectionOption {}
 
 export interface AvatarObject extends Object {
     uri: string
@@ -115,8 +126,9 @@ export interface BaseProviderConfig {
     sbtImage: string
     batchSize?: number
     maxSyncLoops?: number
-    // Other metadata useful to configure for the handler
-    metadata?: object
+    breakTimestamp?: object
+    // Custom config for each handler
+    handlers?: Record<string, object>
 }
 
 export interface DatastoreSaveResponse {
@@ -185,4 +197,14 @@ export interface SyncProviderLogEvent {
 export interface SyncHandlerResponse {
     syncPosition: SyncHandlerPosition
     syncResults: SchemaRecord[]
+}
+
+export interface SyncItemsResult {
+    items: SchemaRecord[]
+    breakHit?: SyncItemsBreak
+}
+
+export enum SyncItemsBreak {
+    ID = "id",
+    TIMESTAMP = "timestamp"
 }

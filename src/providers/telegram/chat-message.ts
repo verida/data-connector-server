@@ -5,7 +5,7 @@ import {
   SyncResponse,
   SyncHandlerPosition,
   SyncHandlerStatus,
-  HandlerOption,
+  ProviderHandlerOption,
   ConnectionOptionType,
 } from "../../interfaces";
 import {
@@ -28,6 +28,10 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     return "chat-message";
   }
 
+  public getLabel(): string {
+    return "Chat Messages"
+  }
+
   public getSchemaUri(): string {
     return CONFIG.verida.schemas.CHAT_MESSAGE;
   }
@@ -36,12 +40,21 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     return "https://telegram.com";
   }
 
-  public getOptions(): HandlerOption[] {
+  public getOptions(): ProviderHandlerOption[] {
     return [{
-      name: 'groupTypes',
+      id: 'groupTypes',
       label: 'Group types',
       type: ConnectionOptionType.ENUM_MULTI,
-      enumOptions: [TelegramChatGroupType.BASIC, TelegramChatGroupType.PRIVATE, TelegramChatGroupType.SECRET, TelegramChatGroupType.SUPERGROUP],
+      enumOptions: [{
+        label: "Basic",
+        value: TelegramChatGroupType.BASIC
+      }, {
+        label: "Private",
+        value: TelegramChatGroupType.PRIVATE
+      }, {
+        label: "Secret",
+        value: TelegramChatGroupType.SECRET
+      }],
       // Exclude super groups by default
       defaultValue: [TelegramChatGroupType.BASIC, TelegramChatGroupType.PRIVATE, TelegramChatGroupType.SECRET].join(',')
     }]
@@ -59,12 +72,8 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     // Fetch all the latest chat groups, fetches 500 by default
     const latestChatGroupIds = await api.getChatGroupIds()
 
-    // Append the chat group list with any new chat groups so we don't miss any
-    for (const groupId of latestChatGroupIds) {
-      if (chatGroupIds.indexOf(groupId) === -1) {
-        chatGroupIds.push(groupId)
-      }
-    }
+    // Make sure we process new groups first
+    chatGroupIds = latestChatGroupIds
 
     // Build chat group data for each group ID
     const chatGroupResults = await this.buildChatGroupResults(api, chatGroupIds, this.config.groupLimit)
@@ -204,7 +213,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     chatGroup: SchemaSocialChatGroup,
     chatHistory: SchemaSocialChatMessage[]
   }> {
-    console.log(`- Processing group: ${chatGroup.name} (${chatGroup.sourceId}) - ${chatGroup.syncData}`)
+    // console.log(`- Processing group: ${chatGroup.name} (${chatGroup.sourceId}) - ${chatGroup.syncData}`)
     const chatHistory: SchemaSocialChatMessage[] = []
     const rangeTracker = new ItemsRangeTracker(chatGroup.syncData)
     let groupMessageCount = 0
@@ -287,7 +296,6 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       const userCache = new UsersCache(api)
       const chatGroups: SchemaSocialChatGroup[] = []
       const chatGroupsBacklog = await this.buildChatGroupList(api, syncPosition)
-      console.log(`- Fetched ${chatGroupsBacklog.length} chat groups as backlog`)
       let chatHistory: SchemaSocialChatMessage[] = []
 
       // Process each chat group
@@ -341,8 +349,8 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     }
 
     if (content == "") {
-      console.log('empty content')
-      console.log(rawMessage.content)
+      // console.log('empty content')
+      // console.log(rawMessage.content)
       return
     }
 
@@ -381,11 +389,9 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       }
 
       const groupDetails = await api.getChatGroup(parseInt(groupId))
-      console.log(groupDetails.title, groupDetails.type._)
       if (groupDetails.type._ == TelegramChatGroupType.SUPERGROUP) {
         const supergroupDetails = await api.getSupergroup(groupDetails.type.supergroup_id)
         if (supergroupDetails.member_count > this.config.maxGroupSize) {
-          console.log('group too big')
           continue
         }
       }

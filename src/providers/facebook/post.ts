@@ -19,6 +19,10 @@ export const enum PostSyncRefTypes {
 
 export default class Posts extends BaseSyncHandler {
 
+    public getLabel(): string {
+        return "Posts"
+    }
+
     public getName(): string {
         return 'post'
     }

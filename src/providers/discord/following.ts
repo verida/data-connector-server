@@ -11,6 +11,10 @@ export default class Following extends BaseSyncHandler {
 
     protected static schemaUri: string = 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
 
+    public getLabel(): string {
+        return "Joined Servers"
+    }
+
     public getName(): string {
         return 'following'
     }

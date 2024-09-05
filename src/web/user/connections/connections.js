@@ -1,6 +1,6 @@
 $(document).ready(function() {
     // Load the private key from local storage
-    const savedVeridaKey = localStorage.getItem('veridaKey');
+    let savedVeridaKey = localStorage.getItem('veridaKey');
     $('#veridaKey').val(savedVeridaKey);
     handleButtonStates();
 
@@ -18,6 +18,7 @@ $(document).ready(function() {
         $('#loadBtn').prop('disabled', !veridaKey);
         $('#generateIdentityBtn').toggle(!veridaKey);
         $('#clearBtn').toggle(!!veridaKey);
+        savedVeridaKey = veridaKey
     }
 
     $('#loadBtn').click(function() {
@@ -54,7 +55,7 @@ $(document).ready(function() {
         $('#loadingIndicator').show();
         $('#loadBtn').prop('disabled', true);
 
-        $.getJSON(`/api/v1/syncStatus?key=${veridaKey}`, function(syncStatusResponse) {
+        $.getJSON(`/api/v1/sync/status?key=${veridaKey}`, function(syncStatusResponse) {
             $.each(syncStatusResponse.result, function(key, value) {
                 const connection = value.connection;
                 const handlers = value.handlers;
@@ -62,7 +63,7 @@ $(document).ready(function() {
                 const formattedSyncTimes = `Start: ${new Date(connection.syncStart).toLocaleString()}<br>End: ${new Date(connection.syncEnd).toLocaleString()}`;
 
                 const providerDetails = getProviderDetails(connection.provider);
-                const avatar = connection.profile.avatarUrl ? `<img src="${connection.profile.avatarUrl}" alt="${connection.profile.name}" style="width: 30px; height: 30px;"></img>` : ''
+                const avatar = connection.profile.avatar.uri ? `<img src="${connection.profile.avatar.uri}" alt="${connection.profile.name}" style="width: 30px; height: 30px;"></img>` : ''
 
                 const row = $(`
                     <tr>
@@ -71,11 +72,21 @@ $(document).ready(function() {
                             ${providerDetails.label}</td>
                         <td>
                             ${avatar}
-                            ${connection.profile.name}<br />${connection.profile.email ? '('+ connection.profile.email +')' : ''} (${connection.providerId})</td>
+                            <strong>${connection.profile.name}</strong><br />${connection.profile.email ? '('+ connection.profile.email +')' : ''} (${connection.providerId})</td>
                         <td>${connection.syncStatus}<br>${formattedSyncTimes}</td>
                         <td>${handlers.map(handler => `[${handler.handlerName}] ${handler.syncMessage ? handler.syncMessage : ""} (${handler.status})<br/>`).join('')}</td>
                         <td>
-                            <button class="btn btn-success sync-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Sync Now</button>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-success sync-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">
+                                    Sync Now
+                                    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-expanded="false">
+                                        <span class="sr-only">Toggle Dropdown</span>
+                                    </button>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item sync-btn" href="#" data-sync-type="force" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Force</a>
+                                </div>
+                            </div>
                             <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Full Logs</button>
                             <button class="btn btn-danger disconnect-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Disconnect</button>
                         </td>
@@ -87,13 +98,13 @@ $(document).ready(function() {
             $('.logs-btn').click(function() {
                 const provider = $(this).data('provider');
                 const providerId = $(this).data('provider-id');
-                window.open(`/dashboard/data?limit=50&filter=providerName:${provider},providerId:${providerId}&schema=https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json&sort=insertedAt:desc`, '_blank');
+                window.open(`/developer/data?limit=50&filter=providerName:${provider},providerId:${providerId}&schema=https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json&sort=insertedAt:desc`, '_blank');
             });
 
             $('.disconnect-btn').click(function() {
                 const provider = $(this).data('provider');
                 const providerId = $(this).data('provider-id');
-                $.getJSON(`/api/v1/disconnect/${provider}?key=${veridaKey}&providerId=${providerId}`, function(response) {
+                $.getJSON(`/api/v1/provider/disconnect/${provider}?key=${veridaKey}&providerId=${providerId}`, function(response) {
                     console.log(response.data)
                 })
             });
@@ -104,9 +115,10 @@ $(document).ready(function() {
                 const providerId = $(this).data('provider-id');
                 $button.text('Syncing...')
                 $button.prop('disabled', true);
+                const syncType = $(this).data('sync-type');
 
                 // Start tailing logs
-                const eventSource = new EventSource(`/api/v1/logs?key=${veridaKey}`);
+                const eventSource = new EventSource(`/api/v1/sync/logs?key=${veridaKey}`);
 
                 const tableBody = $('#eventTableBody');
                 tableBody.empty()
@@ -138,7 +150,7 @@ $(document).ready(function() {
                   });
 
                 // Initialize sync
-                $.getJSON(`/api/v1/sync?key=${veridaKey}&provider=${provider}&providerId=${providerId}&force=true`, function(response) {
+                $.getJSON(`/api/v1/sync?key=${veridaKey}&provider=${provider}&providerId=${providerId}&${syncType == 'force' ? 'force=true' : ''}`, function(response) {
                     $button.prop('disabled', false);
                     $button.text('Sync Now')
 
@@ -155,7 +167,10 @@ $(document).ready(function() {
 
     function loadProviders(callback) {
         $.getJSON('/api/v1/providers', function(providersResponse) {
-            window.providersData = providersResponse; // Store globally or manage differently as needed
+            window.providersData = {}
+            for (const provider of providersResponse) {
+                window.providersData[provider.name] = provider
+            }
             populateConnectionDropdown(providersResponse);
             if (callback) callback();
         });
@@ -166,7 +181,7 @@ $(document).ready(function() {
         $dropdown.empty();
         $.each(providersData, function(key, provider) {
             if (provider.name === 'mock') return; // Skip 'mock' provider
-            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/api/v1/connect/${provider.name}?key=${$('#veridaKey').val()}', '_blank');">
+            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/api/v1/provider/connect/${provider.name}?key=${$('#veridaKey').val()}', '_blank');">
                 <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
                 ${provider.label}
             </a>`);

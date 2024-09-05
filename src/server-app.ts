@@ -1,5 +1,6 @@
 import { UniqueRequest } from './interfaces'
 import express, { Response, NextFunction } from 'express'
+import { Utils } from './utils'
 const cors = require('cors')
 import bodyParser from 'body-parser'
 import router from './routes'
@@ -25,8 +26,7 @@ const app = express();
 
 app.use(requestIdMiddleware)
 app.use('/assets', express.static(path.join(__dirname, 'assets')))
-app.use('/dashboard', express.static(path.join(__dirname, 'dashboard')))
-app.use('/provider', express.static(path.join(__dirname, 'provider')))
+app.use('/', express.static(path.join(__dirname, 'web')))
 app.use(session({
   secret: CONFIG.verida.sessionSecret,
   resave: false,
@@ -42,5 +42,10 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(router)
 
+if (CONFIG.verida.devMode) {
+  console.log("Server is in development mode")
+} else {
+  Utils.deleteCachedData()
+}
 
 module.exports=app

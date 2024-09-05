@@ -8,7 +8,7 @@ export default function (providerName: string, vault?: IContext, connection?: Co
     const provider = require(`./${providerName}`)
 
     // @ts-ignore
-    const providerConfig = _.merge(CONFIG.providerDefaults, CONFIG.providers[providerName])
+    const providerConfig = _.merge({}, CONFIG.providerDefaults, CONFIG.providers[providerName])
     providerConfig.callbackUrl = `${CONFIG.serverUrl}/callback/${providerName}`
 
     return new provider.default(providerConfig, vault, connection)
