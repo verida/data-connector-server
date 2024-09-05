@@ -12,6 +12,7 @@ import {
   ConnectionOptionType,
 } from "../../interfaces";
 import { SchemaEvent } from "../../schemas";
+import { DateTimeInfo } from "./interfaces";
 
 const _ = require("lodash");
 
@@ -202,10 +203,10 @@ export default class CalendarEvent extends GoogleHandler {
         break;
       }
 
-      const startTime = event.start?.dateTime || event.start?.date;
-      const endTime = event.end?.dateTime || event.end?.date;
+      const start: DateTimeInfo = event.start;
+      const end: DateTimeInfo = event.end;
 
-      if (breakTimestamp && startTime < breakTimestamp) {
+      if (breakTimestamp && start.dateTime < breakTimestamp) {
         const logEvent: SyncProviderLogEvent = {
           level: SyncProviderLogLevel.DEBUG,
           message: `Break timestamp hit (${breakTimestamp})`
@@ -221,12 +222,12 @@ export default class CalendarEvent extends GoogleHandler {
         sourceAccountId: this.provider.getProviderId(),
         sourceData: event,
         sourceApplication: this.getProviderApplicationUrl(),
-        sourceId: event.id,
-        startTime,
-        endTime,
+        sourceId: "primary",
+        calendarId: eventId,
+        start,
+        end,
         location: event.location || 'No location',
-        description: event.description || 'No description',
-        attendees: event.attendees || [],
+        description: event.description || 'No description'       
       });
     }
 
