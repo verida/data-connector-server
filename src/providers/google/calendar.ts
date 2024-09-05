@@ -5,6 +5,8 @@ import { google, calendar_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 
+import moment from "moment-timezone";
+
 import {
   SyncResponse,
   SyncHandlerStatus,
@@ -39,9 +41,7 @@ export default class Calendar extends GoogleHandler {
 
   public getCalendar(): calendar_v3.Calendar {
     const oAuth2Client = this.getGoogleAuth();
-
-    const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
-    return calendar;
+    return google.calendar({ version: "v3", auth: oAuth2Client });
   }
 
   public getOptions(): ProviderHandlerOption[] {
@@ -63,7 +63,7 @@ export default class Calendar extends GoogleHandler {
         label: '12 months'
       }],
       defaultValue: '3-months'
-    }]
+    }];
   }
 
   public async _sync(
@@ -81,9 +81,8 @@ export default class Calendar extends GoogleHandler {
 
     // Fetch any new items
     let currentRange = rangeTracker.nextRange();
-
     let query: calendar_v3.Params$Resource$Calendarlist$List = {
-      maxResults: this.config.batchSize, // default = 250, max = 250
+      maxResults: this.config.batchSize,
     };
 
     if (currentRange.startId) {
@@ -115,7 +114,6 @@ export default class Calendar extends GoogleHandler {
 
     if (items.length != this.config.batchSize) {
       currentRange = rangeTracker.nextRange();
-
       query = {
         maxResults: this.config.batchSize - items.length,
       };
@@ -132,7 +130,6 @@ export default class Calendar extends GoogleHandler {
       );
 
       items = items.concat(backfillResult.items);
-
       nextPageToken = _.has(backfillResponse, "data.nextPageToken") ? backfillResponse.data.nextPageToken : undefined;
 
       if (backfillResult.items.length) {
@@ -178,7 +175,16 @@ export default class Calendar extends GoogleHandler {
 
     for (const listItem of serverResponse.data.items) {
       const calendarId = listItem.id;
-
+      
+      if (!calendarId) {
+        const logEvent: SyncProviderLogEvent = {
+            level: SyncProviderLogLevel.DEBUG,
+            message: `Invalid calendar ID. Ignoring this calendar.`,
+        };
+        this.emit('log', logEvent);
+        continue;
+      }
+      
       if (calendarId == breakId) {
         const logEvent: SyncProviderLogEvent = {
           level: SyncProviderLogLevel.DEBUG,
@@ -189,21 +195,36 @@ export default class Calendar extends GoogleHandler {
         break;
       }
 
-      const summary = listItem.summary;
+      const summary = listItem.summary ?? 'No calendar title';
       const timeZone = listItem.timeZone;
-      const description = listItem.description;
-      const location = listItem.location;
+
+      if (!timeZone) {
+        const logEvent: SyncProviderLogEvent = {
+            level: SyncProviderLogLevel.DEBUG,
+            message: `Invalid timezone for calendar ${calendarId}. Ignoring this calendar.`,
+        };
+        this.emit('log', logEvent);
+        continue;
+      }
+      
+      const now = moment.tz(timeZone);
+      const utcOffset   = now.format("Z");
+
+      const description = listItem.description ?? 'No description';
+      const location = listItem.location ?? 'No location';
+      const insertedAt = new Date().toISOString(); // Adding insertedAt field
 
       results.push({
         _id: this.buildItemId(calendarId),
-        name: summary || 'No calendar title',
+        name: summary,
         sourceAccountId: this.provider.getProviderId(),
         sourceData: listItem,
         sourceApplication: this.getProviderApplicationUrl(),
-        sourceId: listItem.id,
-        timezone: timeZone || 'No time zone',
-        description: description || 'No description',
-        location: location || 'No location',
+        sourceId: calendarId,
+        timezone: utcOffset,
+        description,
+        location,
+        insertedAt,  // insertedAt field
       });
     }
 
