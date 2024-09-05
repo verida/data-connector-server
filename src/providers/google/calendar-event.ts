@@ -40,9 +40,7 @@ export default class CalendarEvent extends GoogleHandler {
 
   public getCalendar(): calendar_v3.Calendar {
     const oAuth2Client = this.getGoogleAuth();
-
-    const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
-    return calendar;
+    return google.calendar({ version: "v3", auth: oAuth2Client });
   }
 
   public getOptions(): ProviderHandlerOption[] {
@@ -64,7 +62,7 @@ export default class CalendarEvent extends GoogleHandler {
         label: '12 months'
       }],
       defaultValue: '3-months'
-    }]
+    }];
   }
 
   public async _sync(
@@ -99,14 +97,12 @@ export default class CalendarEvent extends GoogleHandler {
       calendar,
       latestResponse,
       currentRange.endId,
-      _.has(this.config, "breakTimestamp")
-        ? this.config.breakTimestamp
-        : undefined
+      this.config.breakTimestamp ?? undefined
     );
 
     items = latestResult.items;
 
-    let nextPageToken = _.has(latestResponse, "data.nextPageToken") ? latestResponse.data.nextPageToken : undefined;
+    let nextPageToken = latestResponse.data.nextPageToken ?? undefined;
 
     if (items.length) {
       rangeTracker.completedRange({
@@ -139,14 +135,12 @@ export default class CalendarEvent extends GoogleHandler {
         calendar,
         backfillResponse,
         currentRange.endId,
-        _.has(this.config, "breakTimestamp")
-          ? this.config.breakTimestamp
-          : undefined
+        this.config.breakTimestamp ?? undefined
       );
 
       items = items.concat(backfillResult.items);
 
-      nextPageToken = _.has(backfillResponse, "data.nextPageToken") ? backfillResponse.data.nextPageToken : undefined;
+      nextPageToken = backfillResponse.data.nextPageToken ?? undefined;
 
       if (backfillResult.items.length) {
         rangeTracker.completedRange({
@@ -189,7 +183,7 @@ export default class CalendarEvent extends GoogleHandler {
   ): Promise<SyncCalendarItemsResult> {
     const results: SchemaEvent[] = [];
     let breakHit: SyncItemsBreak;
-    
+
     for (const event of serverResponse.data.items) {
       const eventId = event.id;
 
@@ -206,6 +200,15 @@ export default class CalendarEvent extends GoogleHandler {
       const start: DateTimeInfo = event.start;
       const end: DateTimeInfo = event.end;
 
+      if (!start.date || !end.date) {
+        const logEvent: SyncProviderLogEvent = {
+            level: SyncProviderLogLevel.DEBUG,
+            message: `Invalid date for the event ${eventId}. Ignoring this event.`,
+        };
+        this.emit('log', logEvent);
+        continue;
+      }
+
       if (breakTimestamp && start.dateTime < breakTimestamp) {
         const logEvent: SyncProviderLogEvent = {
           level: SyncProviderLogLevel.DEBUG,
@@ -216,18 +219,21 @@ export default class CalendarEvent extends GoogleHandler {
         break;
       }
 
+      const insertedAt = new Date().toISOString();
+
       results.push({
         _id: this.buildItemId(eventId),
-        name: event.summary || 'No event title',
+        name: event.summary ?? 'No event title',
         sourceAccountId: this.provider.getProviderId(),
         sourceData: event,
         sourceApplication: this.getProviderApplicationUrl(),
-        sourceId: "primary",
-        calendarId: eventId,
+        sourceId: eventId,
+        calendarId: "primary",
         start,
         end,
-        location: event.location || 'No location',
-        description: event.description || 'No description'       
+        location: event.location ?? 'No location',
+        description: event.description ?? 'No description',
+        insertedAt
       });
     }
 
