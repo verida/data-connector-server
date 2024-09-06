@@ -14,6 +14,7 @@ import {
   ConnectionOptionType,
 } from "../../interfaces";
 import { SchemaCalendar } from "../../schemas";
+import { CalendarHelpers } from "./helpers";
 
 const _ = require("lodash");
 
@@ -196,7 +197,7 @@ export default class Calendar extends GoogleHandler {
       }
 
       const summary = listItem.summary ?? 'No calendar title';
-      const timeZone = listItem.timeZone;
+      let timeZone = listItem.timeZone;
 
       if (!timeZone) {
         const logEvent: SyncProviderLogEvent = {
@@ -207,8 +208,7 @@ export default class Calendar extends GoogleHandler {
         continue;
       }
       
-      const now = moment.tz(timeZone);
-      const utcOffset   = now.format("Z");
+      timeZone = CalendarHelpers.getUTCOffsetTimezone(timeZone);
 
       const description = listItem.description ?? 'No description';
       const location = listItem.location ?? 'No location';
@@ -221,7 +221,7 @@ export default class Calendar extends GoogleHandler {
         sourceData: listItem,
         sourceApplication: this.getProviderApplicationUrl(),
         sourceId: calendarId,
-        timezone: utcOffset,
+        timezone: timeZone,
         description,
         location,
         insertedAt,  // insertedAt field
