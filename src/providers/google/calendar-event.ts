@@ -13,6 +13,7 @@ import {
 } from "../../interfaces";
 import { SchemaEvent } from "../../schemas";
 import { DateTimeInfo } from "./interfaces";
+import { CalendarHelpers } from "./helpers";
 
 const _ = require("lodash");
 
@@ -185,7 +186,7 @@ export default class CalendarEvent extends GoogleHandler {
     let breakHit: SyncItemsBreak;
 
     for (const event of serverResponse.data.items) {
-      const eventId = event.id;
+      const eventId = event.id ?? '';
 
       if (eventId == breakId) {
         const logEvent: SyncProviderLogEvent = {
@@ -197,10 +198,20 @@ export default class CalendarEvent extends GoogleHandler {
         break;
       }
 
-      const start: DateTimeInfo = event.start;
-      const end: DateTimeInfo = event.end;
+      let start: DateTimeInfo = {
+        date: ""
+      };
+      let end: DateTimeInfo = {
+        date: ""
+      };
 
-      if (!start.date || !end.date) {
+      start.dateTime = event.start?.dateTime;
+      end.dateTime = event.end?.dateTime;
+
+      const startDate = event.start?.date ?? start.dateTime?.split('T')[0];
+      const endDate = event.end?.date ?? end.dateTime?.split('T')[0];
+
+      if (!startDate || !endDate) {
         const logEvent: SyncProviderLogEvent = {
             level: SyncProviderLogLevel.DEBUG,
             message: `Invalid date for the event ${eventId}. Ignoring this event.`,
@@ -208,6 +219,14 @@ export default class CalendarEvent extends GoogleHandler {
         this.emit('log', logEvent);
         continue;
       }
+
+      // `start.date` and `end.date` are required
+      start.date = startDate;
+      end.date = endDate;
+
+      // UTC offset time zone
+      start.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.start?.timeZone)
+      end.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.end?.timeZone)
 
       if (breakTimestamp && start.dateTime < breakTimestamp) {
         const logEvent: SyncProviderLogEvent = {

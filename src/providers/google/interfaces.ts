@@ -42,7 +42,7 @@ export interface Person {
 
 export interface DateTimeInfo {
   dateTime?: string;  // ISO format: YYYY-MM-DDTHH:mm:ss.sssZ
-  date?: string;      // ISO ate format: YYYY-MM-DD
+  date: string;      // ISO ate format: YYYY-MM-DD
   timeZone?: string;  // UTC offset format: ±HH:MM
 }
 
