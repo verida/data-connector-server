@@ -12,7 +12,7 @@ import {
   ConnectionOptionType,
 } from "../../interfaces";
 import { SchemaEvent } from "../../schemas";
-import { DateTimeInfo } from "./interfaces";
+import { CalendarAttachment, DateTimeInfo, Person } from "./interfaces";
 import { CalendarHelpers } from "./helpers";
 
 const _ = require("lodash");
@@ -233,6 +233,20 @@ export default class CalendarEvent extends GoogleHandler {
 
       const insertedAt = new Date().toISOString();
 
+      const creator: Person = {
+        email: event.creator.email ?? 'info@example.com',
+        displayName: event.creator.displayName
+      }
+
+      const organizer: Person = {
+        email: event.organizer.email ?? 'info@example.com',
+        displayName: event.organizer.displayName
+      }
+
+      const attendees: Person[] = event.attendees.filter(attendee => attendee.email) as Person[];
+
+      const attachments: CalendarAttachment[] = event.attachments as CalendarAttachment[];
+
       results.push({
         _id: this.buildItemId(eventId),
         name: event.summary ?? 'No event title',
@@ -243,8 +257,14 @@ export default class CalendarEvent extends GoogleHandler {
         calendarId: "primary",
         start,
         end,
+        creator,
+        organizer,
         location: event.location ?? 'No location',
         description: event.description ?? 'No description',
+        status: event.status ?? 'Unkown',
+        conferenceData: event.conferenceData,
+        attendees,
+        attachments,
         insertedAt
       });
     }

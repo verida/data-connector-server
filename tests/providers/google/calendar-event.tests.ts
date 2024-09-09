@@ -8,7 +8,7 @@ import {
 import Providers from "../../../src/providers";
 import CommonUtils, { NetworkInstance } from "../../common.utils";
 
-import GoogleCalendar from "../../../src/providers/google/calendar";
+import CalendarEvent from "../../../src/providers/google/calendar-event";
 import BaseProvider from "../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../common.tests";
 
@@ -16,11 +16,11 @@ const providerName = "google";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
-let handlerName = "calendar";
+let handlerName = "calendar-event";
 let testConfig: GenericTestConfig;
 let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
 
-describe(`${providerName} Google Calendar Tests`, function () {
+describe(`${providerName} Google Calendar Event Tests`, function () {
   this.timeout(100000);
 
   this.beforeAll(async function () {
@@ -39,7 +39,7 @@ describe(`${providerName} Google Calendar Tests`, function () {
     it(`Can pass basic tests: ${handlerName}`, async () => {
       await CommonTests.runGenericTests(
         providerName,
-        GoogleCalendar,
+        CalendarEvent,
         testConfig,
         providerConfig,
         connection
