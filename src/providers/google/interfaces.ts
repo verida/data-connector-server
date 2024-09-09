@@ -41,8 +41,7 @@ export interface Person {
 }
 
 export interface DateTimeInfo {
-  dateTime?: string;  // ISO format: YYYY-MM-DDTHH:mm:ss.sssZ
-  date: string;      // ISO ate format: YYYY-MM-DD
+  dateTime: string;  // ISO format: YYYY-MM-DDTHH:mm:ss.sssZ
   timeZone?: string;  // UTC offset format: ±HH:MM
 }
 

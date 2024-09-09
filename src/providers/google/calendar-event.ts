@@ -199,19 +199,16 @@ export default class CalendarEvent extends GoogleHandler {
       }
 
       let start: DateTimeInfo = {
-        date: ""
+        dateTime: event.start?.dateTime
       };
       let end: DateTimeInfo = {
-        date: ""
+        dateTime: event.end?.dateTime
       };
 
       start.dateTime = event.start?.dateTime;
       end.dateTime = event.end?.dateTime;
 
-      const startDate = event.start?.date ?? start.dateTime?.split('T')[0];
-      const endDate = event.end?.date ?? end.dateTime?.split('T')[0];
-
-      if (!startDate || !endDate) {
+      if (!start.dateTime) {
         const logEvent: SyncProviderLogEvent = {
             level: SyncProviderLogLevel.DEBUG,
             message: `Invalid date for the event ${eventId}. Ignoring this event.`,
@@ -219,10 +216,6 @@ export default class CalendarEvent extends GoogleHandler {
         this.emit('log', logEvent);
         continue;
       }
-
-      // `start.date` and `end.date` are required
-      start.date = startDate;
-      end.date = endDate;
 
       // UTC offset time zone
       start.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.start?.timeZone)
