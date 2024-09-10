@@ -67,7 +67,12 @@ export class GroqLLM implements LLM {
 
   constructor(defaultModel: string) {
     this.defaultModel = defaultModel
-    this.groq = new Groq({ apiKey: GROQ_KEY });
+
+    if (GROQ_KEY) {
+      this.groq = new Groq({ apiKey: GROQ_KEY });
+    } else {
+      console.warn("Unable to initialize Grok: No key specified")
+    }
   }
 
   public async prompt(userPrompt: string, systemPrompt?: string, jsonFormat: boolean = true, model: string = this.defaultModel): Promise<OpenAIChatResponse> {
