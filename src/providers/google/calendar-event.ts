@@ -243,7 +243,10 @@ export default class CalendarEvent extends GoogleHandler {
         displayName: event.organizer.displayName
       }
 
-      const attendees: Person[] = event.attendees.filter(attendee => attendee.email) as Person[];
+      let attendees: Person[] = []
+      if (event.attendees) {
+        attendees = event.attendees.filter(attendee => attendee.email) as Person[];
+      }
 
       const attachments: CalendarAttachment[] = event.attachments as CalendarAttachment[];
 
