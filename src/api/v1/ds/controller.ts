@@ -54,7 +54,9 @@ export class DsController {
             const options = req.body.options || {}
             const items = await ds.getMany(selector, options)
             res.json({
-                items
+                items,
+                limit: options.limit ? options.limit : 20,
+                skip: options.skip ? options.skip : 0
             })
         } catch (error) {
             let message = error.message
