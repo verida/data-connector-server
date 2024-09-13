@@ -79,7 +79,10 @@ export default class GoogleProvider extends Base {
               id: data.profile.id,
               accessToken: data.accessToken,
               refreshToken: data.refreshToken,
-              profile: data.profile,
+              profile: {
+                username: data.profile.email,
+                ...data.profile,
+              }
             };
 
             resolve(connectionToken);
