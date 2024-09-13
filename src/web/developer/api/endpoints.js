@@ -278,6 +278,11 @@ Each result contains the chat group and an array of messages.`,
     "/sync/status": {
         "method": "GET",
         "path": "/api/v1/sync/status",
+        "documentation": `Get the status of the current sync connection for a provider.`
+    },
+    "/sync/logs": {
+        "method": "GET",
+        "path": "/api/v1/sync/logs",
         "documentation": `Live stream of the sync logs.
 
 This is not a typical HTTP request, it uses EventSource to stream the loading progress.
@@ -292,11 +297,6 @@ eventSource.onmessage = function(event) {
 }
 \`\`\`
 `
-    },
-    "/sync/logs": {
-        "method": "GET",
-        "path": "/api/v1/sync/logs",
-        "documentation": "Get the status of the current sync connection for a provider."
     },
     "/admin/memory": {
         "method": "GET",
