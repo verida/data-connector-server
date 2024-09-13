@@ -142,7 +142,7 @@ export default class SyncManager {
         return this.connectionDatastore
     }
 
-    public async saveProvider(providerName: string, accessToken: string, refreshToken: string, profile: PassportProfile) {
+    public async saveProvider(providerName: string, accessToken: string, refreshToken: string, profile: PassportProfile): Promise<Connection> {
         const connectionDatastore = await this.getConnectionDatastore()
 
         const providerId = `${providerName}:${profile.id}`
@@ -213,6 +213,8 @@ export default class SyncManager {
         if (!result) {
             throw new Error(`Unable to save connection: ${JSON.stringify(connectionDatastore.errors, null, 2)}`)
         }
+
+        return providerConnection
     }
 
     // public async disconnectProvider(providerName: string, providerId: string): Promise<void> {

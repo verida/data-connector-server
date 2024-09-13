@@ -85,10 +85,12 @@ export default class Controller {
             const networkInstance = await Utils.getNetwork(key, req.requestId)
 
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
-            await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
+            const connection = await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
             if (redirect) {
-                res.redirect(redirect)
+                const redirectedUrl = new URL(redirect)
+                redirectedUrl.searchParams.append("connectionId", connection._id)
+                res.redirect(redirectedUrl.toString())
             } else {
                 const output = `<html>
                     <head>
