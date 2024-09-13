@@ -41,12 +41,8 @@ $(document).ready(function() {
         addMessage(prompt, 'user');
         showTypingIndicator();
 
-        const userInput = $('#privateData-input').val();
-
-        let urlType = "prompt"
-        if (userInput == "on") {
-            urlType = "personal"
-        }
+        const urlType = $('#privateData-input').prop('checked') ? "personal" : 
+        "prompt";
 
         const body = { prompt: prompt, key: veridaKey };
 
@@ -57,7 +53,7 @@ $(document).ready(function() {
             data: JSON.stringify(body),
             success: function(response) {
                 removeTypingIndicator();
-                addMessage(response.result, 'bot');
+                addMessage(urlType == "personal" ? response.result : response.result.choices[0].message.content, 'bot');
             },
             error: function(xhr) {
                 removeTypingIndicator();
