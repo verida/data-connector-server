@@ -46,7 +46,20 @@ export class DbController {
                 item
             })
         } catch (error) {
-            res.status(500).send(error.message);
+            if (error.message.match("missing")) {
+                res.status(404).send({
+                    "error": "Not found"
+                })
+            } else {
+                let message = error.message
+                if (error.message.match('invalid encoding')) {
+                    message = 'Invalid encoding (check permissions header)'
+                }
+                
+                res.status(500).send({
+                    "error": message
+                });
+            }
         }
     }
 

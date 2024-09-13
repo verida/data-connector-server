@@ -5,30 +5,6 @@ import { Utils } from "../../../utils";
  * 
  */
 export class DsController {
-    
-    public async get(req: Request, res: Response) {
-        try {
-            const { context } = await Utils.getNetworkFromRequest(req)
-            const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const permissions = Utils.buildPermissions(req)
-        
-            const ds = await context.openDatastore(schemaName, {
-                // @ts-ignore
-                permissions
-            })
-            const items = await (await ds).getMany()
-            res.json({
-                items
-            })
-        } catch (error) {
-            let message = error.message
-            if (error.message.match('invalid encoding')) {
-                message = 'Invalid encoding (check permissions header)'
-            }
-
-            res.status(500).send(message);
-        }
-    }
 
     public async getById(req: Request, res: Response) {
         try {
@@ -46,7 +22,20 @@ export class DsController {
                 item: item
             })
         } catch (error) {
-            res.status(500).send(error.message);
+            if (error.message.match("missing")) {
+                res.status(404).send({
+                    "error": "Not found"
+                })
+            } else {
+                let message = error.message
+                if (error.message.match('invalid encoding')) {
+                    message = 'Invalid encoding (check permissions header)'
+                }
+                
+                res.status(500).send({
+                    "error": message
+                });
+            }
         }
     }
 
@@ -68,8 +57,17 @@ export class DsController {
                 items
             })
         } catch (error) {
+            let message = error.message
+            if (error.message.match('invalid encoding')) {
+                message = 'Invalid encoding (check permissions header)'
+            }
+            
             res.status(500).send({
-                error: error.message
+                "error": message
+            });
+            
+            res.status(500).send({
+                error: message
             });
         }
     }
