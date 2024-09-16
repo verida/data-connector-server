@@ -1,4 +1,4 @@
-import { Connection, SyncHandlerPosition, ConnectionHandler, BaseProviderConfig } from "../../interfaces";
+import { Connection, SyncHandlerPosition, ConnectionHandler, BaseProviderConfig, BaseHandlerConfig } from "../../interfaces";
 
 export interface GoogleProviderConfig extends BaseProviderConfig {
   clientId: string;
@@ -7,10 +7,17 @@ export interface GoogleProviderConfig extends BaseProviderConfig {
   sizeLimit: number; //Mega bytes
 }
 
-export interface GmailHandlerConfig extends Record<"backdate", string> {}
+export interface GoogleHandlerConfig extends BaseHandlerConfig {
+  batchSize: number
+  breakTimestamp: string
+}
+
+export interface GoogleDriveDocumentHandlerConfig extends GoogleHandlerConfig {
+  sizeLimit: number
+}
 
 export interface GoogleConnectionHandler extends ConnectionHandler {
-  config: GmailHandlerConfig;
+  config: GoogleHandlerConfig;
 }
 
 export interface GoogleProviderConnection extends Connection {

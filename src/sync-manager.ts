@@ -73,10 +73,14 @@ export default class SyncManager {
 
     }
 
-    public async getProvider(connectionId: string): Promise<BaseProvider | undefined> {
+    public async getConnection(connectionId: string): Promise<Connection | undefined> {
         const connectionDs = await this.getConnectionDatastore()
-        const connectionRecord = <Connection> await connectionDs.get(connectionId, {})
+        const connectionRecord = <Connection | undefined> await connectionDs.get(connectionId, {})
+        return connectionRecord
+    }
 
+    public async getProvider(connectionId: string): Promise<BaseProvider | undefined> {
+        const connectionRecord = await this.getConnection(connectionId)
         const providers = <BaseProvider[]> await this.getProviders(connectionRecord.provider, connectionRecord.providerId)
         if (providers.length) {
             return providers[0]
@@ -183,6 +187,7 @@ export default class SyncManager {
         const handlers = await provider.getSyncHandlers()
         const connectionHandlers: ConnectionHandler[] = []
 
+        // Set default values for connection handlers
         for (const handler of handlers) {
             const handlerOptions = handler.getOptions()
             const handlerConfig: Record<string, string> = {}
@@ -226,16 +231,5 @@ export default class SyncManager {
 
         return providerConnection
     }
-
-    // public async disconnectProvider(providerName: string, providerId: string): Promise<void> {
-    //     const providers = await this.getProviders(providerName, providerId)
-
-    //     if (!providers.length) {
-    //         throw new Error(`Unable to locate provider: ${providerName} (${providerId})`)
-    //     }
-
-    //     const provider = providers[0]
-    //     await provider.disconnect()
-    // }
 
 }

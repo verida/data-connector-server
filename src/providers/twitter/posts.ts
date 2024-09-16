@@ -22,7 +22,7 @@ export default class Posts extends BaseSyncHandler {
      */
     public async sync(api: any): Promise<any> {
         const timelinePaginator = await api.v2.userTimeline(this.connection.profile.id, {
-            max_results: this.config.postLimit,
+            max_results: this.config.batchSize,
             exclude: ['replies', 'retweets']
         })
 

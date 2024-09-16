@@ -45,11 +45,11 @@ export default class Posts extends BaseSyncHandler {
 
         let pageResults
         if (syncPosition.thisRefType == PostSyncRefTypes.Url) {
-            const url = `${syncPosition.thisRef}&limit=${this.config.postBatchSize}`
+            const url = `${syncPosition.thisRef}&limit=${this.config.batchSize}`
             const axiosResult = await Axios.get(url)
             pageResults = axiosResult.data
         } else {
-            const url = `${apiEndpoint}?fields=id,created_time,message,type,permalink_url&limit=${this.config.postBatchSize}`
+            const url = `${apiEndpoint}?fields=id,created_time,message,type,permalink_url&limit=${this.config.batchSize}`
             pageResults = await Fb.api(url)
         }
 

@@ -11,6 +11,7 @@ import { SchemaFavouriteContentType, SchemaFavouriteType, SchemaFavourite } from
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
+import { GoogleHandlerConfig } from "./interfaces";
 
 const _ = require("lodash");
 
@@ -23,6 +24,8 @@ export interface SyncFavouriteItemsResult extends SyncItemsResult {
 }
 
 export default class YouTubeFavourite extends GoogleHandler {
+
+    protected config: GoogleHandlerConfig
 
     public getLabel(): string {
         return "Youtube Favourites"

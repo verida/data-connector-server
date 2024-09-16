@@ -22,6 +22,7 @@ import { UsersCache } from "./usersCache";
 const _ = require("lodash");
 
 export default class TelegramChatMessageHandler extends BaseSyncHandler {
+  
   protected config: TelegramConfig
 
   public getName(): string {

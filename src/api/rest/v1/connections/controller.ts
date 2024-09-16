@@ -1,14 +1,21 @@
 import { Request, Response } from 'express'
 import Providers from "../../../../providers"
 import SyncManager from '../../../../sync-manager'
-import { ProviderHandler, SyncHandlerPosition, UniqueRequest } from '../../../../interfaces'
+import { BaseHandlerConfig, ConnectionHandler, ProviderHandler, SyncHandlerPosition, SyncStatus, UniqueRequest } from '../../../../interfaces'
 import { Utils } from '../../../../utils'
 import CONFIG from '../../../../config'
+import BaseSyncHandler from '../../../../providers/BaseSyncHandler'
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 
 const SCHEMA_SYNC_LOG = CONFIG.verida.schemas.SYNC_LOG
+
+export interface UpdateConnectionParams {
+    syncStatus: SyncStatus
+    handlerConfig: Record<string, Record<string, object>>
+    handlerEnabled: Record<string, boolean>
+}
 
 /**
  * Sign in process:
@@ -131,7 +138,70 @@ export default class Controller {
     }
 
     public static async update(req: UniqueRequest, res: Response) {
-        // @todo: update connection (specific attributes only)
+        try {
+            const connectionId = req.params.connectionId
+            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const syncManager = new SyncManager(networkInstance.context, req.requestId)
+
+            const connection = await syncManager.getConnection(connectionId)
+            const provider = await syncManager.getProvider(connectionId)
+            if (!connection) {
+                throw new Error(`Unable to locate connection: ${connectionId})`)
+            }
+
+            const data = <UpdateConnectionParams> req.body
+
+            // Handle updates to sync status
+            const validSyncStatus = [SyncStatus.CONNECTED, SyncStatus.PAUSED]
+            if (data.syncStatus) {
+                if (validSyncStatus.indexOf(data.syncStatus) === -1) {
+                    throw new Error(`Invalid sync status (${data.syncStatus}) not in ${JSON.stringify(validSyncStatus)}`)
+                }
+
+                connection.syncStatus = data.syncStatus
+            }
+
+            // Handle updates to config
+            const handlers = (await provider.getSyncHandlers()).reduce((handlers: Record<string, BaseSyncHandler>, handler: BaseSyncHandler) => {
+                handlers[handler.getName()] = handler
+                return handlers
+            }, {})
+
+            const handlerConfigs = (await connection.handlers).reduce((handlers: Record<string, ConnectionHandler>, handler: ConnectionHandler) => {
+                handlers[handler.name] = handler
+                return handlers
+            }, {})
+
+            const updatedHandlers = []
+            if (data.handlerConfig) {
+                for (const handlerId in data.handlerConfig) {
+                    if (handlers[handlerId]) {
+                        continue
+                    }
+
+                    let isEnabled = handlerConfigs[handlerId].enabled
+                    isEnabled = data.handlerEnabled && typeof(data.handlerEnabled[handlerId]) === "boolean" ? data.handlerEnabled[handlerId] : isEnabled
+
+                    updatedHandlers.push({
+                        name: handlerId,
+                        enabled: isEnabled,
+                        config: handlers[handlerId].buildConfig(data.handlerConfig[handlerId])
+                    })
+                }
+
+                connection.handlers = updatedHandlers
+            }
+
+            provider.updateConnection(connection)
+            await provider.saveConnection()
+
+            return res.send({
+                success: true
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send(error.message);
+        }
     }
 
     public static async disconnect(req: UniqueRequest, res: Response, next: any) {

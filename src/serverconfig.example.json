@@ -36,15 +36,21 @@
     "providers": {
         "mock": {
             "label": "Mock",
-            "limit": 20
+            "batchSize": 20
         },
         "facebook": {
             "label": "Facebook",
             "appId": "",
             "appSecret": "",
             "sbtImage": "https://data.verida.network/ipfs/QmcCoAjMWQpz7FwJi1d7jSh9EJ1m3xY1FRGxPi9pu3Rit7/FacebookBadge.png",
-            "followingBatchSize": 100,
-            "postBatchSize": 100,
+            "handlers": {
+                "following": {
+                    "batchSize": 100
+                },
+                "post": {
+                    "batchSize": 100
+                }
+            },
             "maxSyncLoops": 5
         },
         "twitter": {
@@ -53,8 +59,14 @@
             "clientSecret": "",
             "bearerToken": "",
             "sbtImage": "https://data.verida.network/ipfs/QmWpmaBusMENzxLJb5RJUzp951sXPm9GLQCy4pt5zC2XdU/TwitterBadge.png",
-            "followingLimit": 20,
-            "postLimit": 20
+            "handlers": {
+                "following": {
+                    "batchSize": 20
+                },
+                "posts": {
+                    "batchSize": 20
+                }
+            }
         },
         "discord": {
             "label": "Discord",

@@ -6,6 +6,7 @@ import { GaxiosResponse } from "gaxios";
 import { GoogleDriveHelpers } from "./helpers";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 import GoogleHandler from "./GoogleHandler";
+import { GoogleDriveDocumentHandlerConfig } from "./interfaces";
 
 const _ = require("lodash");
 
@@ -16,6 +17,8 @@ export interface SyncDocumentItemsResult extends SyncItemsResult {
 }
 
 export default class GoogleDriveDocument extends GoogleHandler {
+
+    protected config: GoogleDriveDocumentHandlerConfig
 
     public getLabel(): string {
         return "Google Drive Documents"

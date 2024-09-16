@@ -1,4 +1,4 @@
-import { Connection, ProviderHandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition } from "../interfaces"
+import { Connection, ProviderHandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition, ConnectionOptionType, ConnectionOptionEnumOption, BaseHandlerConfig } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
@@ -9,7 +9,7 @@ const _ = require("lodash")
 export default class BaseSyncHandler extends EventEmitter {
 
     protected provider: BaseProvider
-    protected config: any
+    protected config: BaseHandlerConfig
     protected connection: Connection
 
     protected syncStatus: SyncHandlerStatus
@@ -68,6 +68,55 @@ export default class BaseSyncHandler extends EventEmitter {
 
     protected updateConnection(connectionParams: object) {
         this.provider.updateConnection(connectionParams)
+    }
+
+    public buildConfig(handlerConfig: Record<string, object>): BaseHandlerConfig {
+        const newConfig: Record<string, string> = {}
+
+        for (const handlerOption of this.getOptions()) {
+            if (newConfig[handlerOption.id]) {
+                const configValue = handlerConfig[handlerOption.id]
+                const newValue = newConfig[handlerOption.id]
+
+                switch (handlerOption.type) {
+                    case ConnectionOptionType.BOOLEAN:
+                        if (typeof(configValue) !== "boolean") {
+                            throw new Error(`${handlerOption.label}: Must be boolean`)
+                        }
+
+                        newConfig[handlerOption.id] = newValue
+                        break
+                    case ConnectionOptionType.ENUM:
+                        if (typeof(configValue) !== "string") {
+                            throw new Error(`${handlerOption.label}: Must be string`)
+                        } else if (handlerOption.enumOptions.indexOf(configValue) === -1) {
+                            throw new Error(`${handlerOption.label} must be one of ${JSON.stringify(handlerOption.enumOptions)}, not ${configValue}`)
+                        }
+
+                        newConfig[handlerOption.id] = newValue
+                        break
+                    case ConnectionOptionType.ENUM_MULTI:
+                        if (typeof(configValue) !== "string") {
+                            throw new Error(`${handlerOption.label}: Must be string`)
+                        } else {
+                            const enumValues = newValue.split(',')
+
+                            for (const enumValue of enumValues) {
+                                if (handlerOption.enumOptions.indexOf(<ConnectionOptionEnumOption> <unknown> enumValue) === -1) {
+                                    throw new Error(`${handlerOption.label}: Must be one of ${JSON.stringify(handlerOption.enumOptions)}, not ${enumValue}`)
+                                }
+                            }
+                        }
+
+                        newConfig[handlerOption.id] = newValue
+                        break
+                }
+            } else {
+                newConfig[handlerOption.id] = handlerOption.defaultValue
+            }
+        }
+
+        return newConfig
     }
 
     /**

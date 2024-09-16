@@ -1,3 +1,4 @@
+import { BaseHandlerConfig } from "../../interfaces"
 
 export enum TelegramChatGroupType {
     SUPERGROUP = "chatTypeSupergroup",
@@ -6,7 +7,7 @@ export enum TelegramChatGroupType {
     BASIC = "chatTypeBasicGroup"
 }
 
-export interface TelegramConfig {
+export interface TelegramConfig extends BaseHandlerConfig {
     apiId: number
     apiHash: string
     maxSyncLoops: number

@@ -29,6 +29,11 @@ export interface ConnectionOption {
     defaultValue: string
 }
 
+export interface BaseHandlerConfig extends Record<string, string | boolean | number> {
+    batchSize?: number
+    breakTimestamp?: string
+}
+
 export interface PassportName {
     givenName?: string
     familyName?: string
@@ -100,7 +105,7 @@ export enum SyncStatus {
 export interface ConnectionHandler {
     name: string
     enabled: boolean
-    config: Record<string, string>
+    config: BaseHandlerConfig
 }
 
 export interface Connection {
@@ -126,7 +131,7 @@ export interface BaseProviderConfig {
     sbtImage: string
     batchSize?: number
     maxSyncLoops?: number
-    breakTimestamp?: object
+    breakTimestamp?: string
     // Custom config for each handler
     handlers?: Record<string, object>
 }
