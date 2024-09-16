@@ -11,7 +11,8 @@ const enum BedrockModels {
 const enum GroqModels {
   LLAMA3_70B = "llama3-70b-8192",
   LLAMA3_8B = "llama3-8b-8192",
-  LLAMA31_70B = "llama-3.1-70b-versatile"
+  LLAMA31_70B = "llama-3.1-70b-versatile",
+  MIXTRAL8_7B = "mixtral-8x7b-32768"
 }
 
 const BEDROCK_KEY = CONFIG.verida.llms.bedrockKey
