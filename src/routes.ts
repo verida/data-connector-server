@@ -1,9 +1,9 @@
 import express from 'express'
-import v1Routes from './api/v1/routes'
-import Controller from './api/v1/base/controller'
+import restRoutes from './api/rest/routes'
+import Controller from './api/rest/v1/base/controller'
 
 const router = express.Router()
-router.use('/api/v1/', v1Routes)
+router.use('/api/rest', restRoutes)
 
 // Add default callback handler for third party callbacks
 router.get('/callback/:provider', Controller.callback)

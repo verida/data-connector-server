@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { Utils } from "../../../utils";
-import { SearchService, SearchType } from "../../../services/search"
-import { MinisearchService, SearchResultItem } from "../../../services/minisearch";
-import { SchemaRecord } from "../../../schemas";
-import { KeywordSearchTimeframe } from "../../../helpers/interfaces";
+import { Utils } from "../../../../utils";
+import { SearchService, SearchType } from "../../../../services/search"
+import { MinisearchService, SearchResultItem } from "../../../../services/minisearch";
+import { SchemaRecord } from "../../../../schemas";
+import { KeywordSearchTimeframe } from "../../../../helpers/interfaces";
 
 const DEFAULT_LIMIT = 20
 

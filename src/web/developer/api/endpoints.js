@@ -1,4 +1,4 @@
-const apiPrefix = `/api/v1`
+const apiPrefix = `/api/rest/v1`
 
 const commonParams = {
     "provider": {
@@ -263,7 +263,7 @@ Each result contains the chat group and an array of messages.`,
     },
     "/sync": {
         "method": "GET",
-        "path": "/api/v1/sync",
+        "path": `${apiPrefix}/sync`,
         "documentation": "Start syncing data for a given provider",
         "params": {
             "provider": commonParams.provider,
@@ -277,12 +277,12 @@ Each result contains the chat group and an array of messages.`,
     },
     "/sync/status": {
         "method": "GET",
-        "path": "/api/v1/sync/status",
+        "path": `${apiPrefix}/sync/status`,
         "documentation": `Get the status of the current sync connection for a provider.`
     },
     "/sync/logs": {
         "method": "GET",
-        "path": "/api/v1/sync/logs",
+        "path": `${apiPrefix}/sync/logs`,
         "documentation": `Live stream of the sync logs.
 
 This is not a typical HTTP request, it uses EventSource to stream the loading progress.
@@ -290,7 +290,7 @@ This is not a typical HTTP request, it uses EventSource to stream the loading pr
 **Example code:**
 
 \`\`\`
-const eventSource = new EventSource(\`/api/v1/llm/hotload?key=<key>\`);
+const eventSource = new EventSource(\`${apiPrefix}/llm/hotload?key=<key>\`);
     
 eventSource.onmessage = function(event) {
     console.log(event)
@@ -324,7 +324,7 @@ This is not a typical HTTP request, it uses EventSource to stream the loading pr
 **Example code:**
 
 \`\`\`
-const eventSource = new EventSource(\`/api/v1/llm/hotload?key=<key>\`);
+const eventSource = new EventSource(\`${apiPrefix}/llm/hotload?key=<key>\`);
     
 eventSource.onmessage = function(event) {
     console.log(event)

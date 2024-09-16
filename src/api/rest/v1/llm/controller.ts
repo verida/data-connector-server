@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { bedrock } from '../../../services/llm'
-import { PromptSearchService } from '../../../services/assistants/search'
-import { Utils } from "../../../utils";
-import { HotLoadProgress } from "../../../services/data";
-import { DataService } from "../../../services/data";
+import { bedrock } from '../../../../services/llm'
+import { PromptSearchService } from '../../../../services/assistants/search'
+import { Utils } from "../../../../utils";
+import { HotLoadProgress } from "../../../../services/data";
+import { DataService } from "../../../../services/data";
 const _ = require('lodash')
 
 

@@ -1,6 +1,6 @@
 $(document).ready(function() {
     let offset = 0;
-    const apiUrl = '/api/v1/ds/query';
+    const apiUrl = '/api/rest/v1/ds/query';
     let currentSortField = '';
     let currentSortDirection = 'asc';
     let currentFilters = {};

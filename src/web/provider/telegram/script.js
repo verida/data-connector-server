@@ -36,23 +36,23 @@ function createInputBox(type, placeholder, buttonText, submitFunction) {
 
 function submitAuthCode() {
     const authCode = $('.form-control').val();
-    $.post('/api/v1/telegram/loginSubmit', { type: 'authcode', code: authCode, requestId }, null, 'json');
+    $.post('/api/rest/v1/telegram/loginSubmit', { type: 'authcode', code: authCode, requestId }, null, 'json');
 }
 
 function submitPhoneNumber() {
     const phoneNumber = $('.form-control').val();
-    $.post('/api/v1/telegram/loginSubmit', { type: 'phone', phone: phoneNumber, requestId }, null, 'json');
+    $.post('/api/rest/v1/telegram/loginSubmit', { type: 'phone', phone: phoneNumber, requestId }, null, 'json');
 }
 
 function submitPassword() {
     const password = $('.form-control').val();
-    $.post('/api/v1/telegram/loginSubmit', { type: 'password', password, requestId }, null, 'json');
+    $.post('/api/rest/v1/telegram/loginSubmit', { type: 'password', password, requestId }, null, 'json');
 }
 
 $(document).ready(function() {
     generateQRCode(qrCodeLink);
 
-    const eventSource = new EventSource('/api/v1/telegram/login');
+    const eventSource = new EventSource('/api/rest/v1/telegram/login');
 
     eventSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
