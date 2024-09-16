@@ -18,6 +18,7 @@ export class DbController {
                 permissions
             })
             const item = await db.get(rowId)
+
             res.json({
                 item
             })
@@ -53,11 +54,14 @@ export class DbController {
             const filter = req.body.query || {}
             const options = req.body.options || {}
             const items = await db.getMany(filter, options)
+            const pouchDb = await db.getDb()
+            const info = await pouchDb.info()
 
             res.json({
                 items,
                 limit: options.limit ? options.limit : 20,
-                skip: options.skip ? options.skip : 0
+                skip: options.skip ? options.skip : 0,
+                dbRows: info.doc_count
             })
         } catch (error) {
             console.log(error)
