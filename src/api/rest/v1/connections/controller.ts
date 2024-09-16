@@ -86,7 +86,7 @@ export default class Controller {
         return res.send(results)
     }
 
-    public static async syncStatus(req: UniqueRequest, res: Response, next: any) {
+    public static async connections(req: UniqueRequest, res: Response, next: any) {
         try {
             const query = req.query
             const providerName = query.provider ? query.provider.toString() : undefined
@@ -130,20 +130,21 @@ export default class Controller {
         }
     }
 
+    public static async update(req: UniqueRequest, res: Response) {
+        // @todo: update connection (specific attributes only)
+    }
+
     public static async disconnect(req: UniqueRequest, res: Response, next: any) {
         try {
-            const providerName = req.params.provider
-            const query = req.query
-            const providerId = query.providerId ? query.providerId.toString() : undefined
-
+            const connectionId = req.params.connectionId
             const networkInstance = await Utils.getNetworkFromRequest(req)
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
-            const connections = await syncManager.getProviders(providerName, providerId)
-            if (!connections.length) {
-                throw new Error(`Unable to locate connection: ${providerName} (${providerId})`)
+
+            const connection = await syncManager.getProvider(connectionId)
+            if (!connection) {
+                throw new Error(`Unable to locate connection: ${connectionId})`)
             }
 
-            const connection = connections[0]
             await connection.reset(false, true, true)
 
             return res.send({

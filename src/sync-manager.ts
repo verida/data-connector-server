@@ -73,6 +73,16 @@ export default class SyncManager {
 
     }
 
+    public async getProvider(connectionId: string): Promise<BaseProvider | undefined> {
+        const connectionDs = await this.getConnectionDatastore()
+        const connectionRecord = <Connection> await connectionDs.get(connectionId, {})
+
+        const providers = <BaseProvider[]> await this.getProviders(connectionRecord.provider, connectionRecord.providerId)
+        if (providers.length) {
+            return providers[0]
+        }
+    }
+
     public async getProviders(providerName?: string, providerId?: string): Promise<BaseProvider[]> {
         if (this.connections) {
             if (providerName) {
