@@ -89,6 +89,12 @@
             "messagesPerGroupLimit": 100,
             "maxGroupSize": 50,
             "useDbPos": true
+        },
+        "slack": {
+            "label": "Slack",
+            "clientId": "",
+            "clientSecret": "",
+            "stateSecret": ""
         }
     },
     "providerDefaults": {

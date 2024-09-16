@@ -34,6 +34,7 @@
   "dependencies": {
     "@oauth-everything/passport-discord": "^1.0.2",
     "@sapphire/snowflake": "^3.4.2",
+    "@slack/oauth": "^3.0.1",
     "@superfaceai/passport-twitter-oauth2": "^1.2.3",
     "@types/node": "^20.14.11",
     "@verida/account-node": "^4.1.0",
@@ -46,7 +47,7 @@
     "@verida/verifiable-credentials": "^4.1.1",
     "@verida/web3": "^4.1.0",
     "aws-serverless-express": "^3.4.0",
-    "axios": "^1.7.2",
+    "axios": "^1.7.7",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
