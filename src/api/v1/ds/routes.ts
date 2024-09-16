@@ -5,8 +5,8 @@ const router = express.Router()
 
 router.get(/get\/(.*)\/(.*)$/, controller.getById)
 router.post(/query\/(.*)$/, controller.query)
-
 router.delete(/([^\/]*)$/, controller.delete)
+router.post(/watch\/(.*)$/, controller.watch)
 
 
 export default router
