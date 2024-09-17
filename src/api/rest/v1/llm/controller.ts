@@ -1,13 +1,51 @@
 import { Request, Response } from "express";
-import { bedrock } from '../../../../services/llm'
+import { bedrock, LLMProviders, ProviderModels, prompt as LLMPrompt, OpenAIConfig, getLLM } from '../../../../services/llm'
 import { PromptSearchService } from '../../../../services/assistants/search'
 import { Utils } from "../../../../utils";
 import { HotLoadProgress } from "../../../../services/data";
 import { DataService } from "../../../../services/data";
 const _ = require('lodash')
 
+export interface LLMConfig {
+    llmProvider: LLMProviders,
+    llmModel: string,
+    customEndpoint?: OpenAIConfig
+}
 
-const llm = bedrock
+function buildLLMConfig(req: Request) {
+    const provider = req.body.provider ? req.body.provider.toString() : LLMProviders.BEDROCK.toString()
+    if (!Object.values(LLMProviders).includes(provider)) {
+        throw new Error(`${provider} is not a valid LLM provider`)
+    }
+    const llmProvider = <LLMProviders> provider
+
+    let customEndpoint: OpenAIConfig
+    let llmModel: string
+    if (llmProvider == LLMProviders.CUSTOM) {
+        const endpoint = req.body.customEndpoint.toString()
+        const key = req.body.customKey ? req.body.customKey.toString() : undefined
+        customEndpoint = {
+            endpoint,
+            key
+        }
+
+        llmModel = req.body.model.toString()
+    } else {
+        const model = req.body.model ? req.body.model.toString() : "LLAMA3_70B"
+        if (!Object.keys(ProviderModels[llmProvider]).includes(model)) {
+            throw new Error(`${model} is not a valid model for ${provider}`)
+        }
+
+        // @ts-ignore
+        llmModel = ProviderModels[llmProvider][model]
+    }
+
+    return {
+        customEndpoint,
+        llmModel,
+        llmProvider
+    }
+}
 
 /**
  * 
@@ -16,8 +54,16 @@ export class LLMController {
 
     public async prompt(req: Request, res: Response) {
         try {
-            const prompt = req.body.prompt
-            const serverResponse = await llm.prompt(prompt)
+            const {
+                customEndpoint,
+                llmModel,
+                llmProvider
+            } = buildLLMConfig(req)
+
+            const prompt = req.body.prompt.toString()
+            const systemPrompt = req.body.systemPrompt ? req.body.systemPrompt.toString() : undefined
+            const jsonFormat = req.body.jsonFormat ? req.body.jsonFormat.toString() === "true" : false
+            const serverResponse = await LLMPrompt(prompt, systemPrompt, jsonFormat, llmProvider, llmModel, customEndpoint ? customEndpoint : undefined)
 
             return res.json({
                 result: serverResponse
@@ -34,8 +80,16 @@ export class LLMController {
             const did = await account.did()
             const prompt = req.body.prompt
 
+            const {
+                customEndpoint,
+                llmModel,
+                llmProvider
+            } = buildLLMConfig(req)
+
+            const llm = getLLM(llmProvider, llmModel, customEndpoint)
+
             const promptService = new PromptSearchService(did, context)
-            const promptResult = await promptService.prompt(prompt)
+            const promptResult = await promptService.prompt(prompt, llm)
 
             return res.json(promptResult)
         } catch (error) {
