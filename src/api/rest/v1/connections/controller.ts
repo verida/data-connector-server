@@ -144,7 +144,7 @@ export default class Controller {
 
             // @todo: catch and send errors
             return res.send({
-                result,
+                items: result,
                 success: true
             })
         } catch (error) {
@@ -252,7 +252,7 @@ export default class Controller {
 
             const connection = await syncManager.getProvider(connectionId)
             if (!connection) {
-                throw new Error(`Unable to locate connection: ${connectionId})`)
+                throw new Error(`Unable to locate connection: ${connectionId}`)
             }
 
             await connection.reset(false, true, true)

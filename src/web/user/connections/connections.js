@@ -62,8 +62,8 @@ $(document).ready(function() {
             type: 'GET',
             contentType: 'application/json',
             success: function(syncStatusResponse) {
-                $.each(syncStatusResponse.result, function(key, value) {
-                    const connection = value.connection;
+                $.each(syncStatusResponse.items, function(key, value) {
+                    const connection = value;
                     const handlers = value.handlers;
     
                     const formattedSyncTimes = `Start: ${new Date(connection.syncStart).toLocaleString()}<br>End: ${new Date(connection.syncEnd).toLocaleString()}`;
@@ -80,10 +80,10 @@ $(document).ready(function() {
                                 ${avatar}
                                 <strong>${connection.profile.name}</strong><br />${connection.profile.email ? '('+ connection.profile.email +')' : ''} (${connection.providerId})</td>
                             <td>${connection.syncStatus}<br>${formattedSyncTimes}</td>
-                            <td>${handlers.map(handler => `[${handler.handlerName}] ${handler.syncMessage ? handler.syncMessage : ""} (${handler.status})<br/>`).join('')}</td>
+                            <td>${handlers.map(handler => `[${handler.id}] ${handler.syncMessage ? handler.syncMessage : ""} (${handler.status})<br/>`).join('')}</td>
                             <td>
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-success sync-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">
+                                    <button type="button" class="btn btn-success sync-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-connection="${connection._id}">
                                         Sync Now
                                         <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-expanded="false">
                                             <span class="sr-only">Toggle Dropdown</span>
@@ -137,8 +137,8 @@ $(document).ready(function() {
                           <tr>
                             <td>${eventData.level}</td>
                             <td>${eventData.insertedAt}</td>
-                            <td>${eventData.providerName} ${eventData.handlerName ? "(" + eventData.handlerName + ")" : ""}</td>
-                            <td>${eventData.providerId}</td>
+                            <td>${eventData.providerId} ${eventData.handlerId ? "(" + eventData.handlerId + ")" : ""}</td>
+                            <td>${eventData.accountId}</td>
                             <td>${eventData.message}</td>
                           </tr>
                         `;
@@ -186,10 +186,10 @@ $(document).ready(function() {
     function loadProviders(callback) {
         $.getJSON('/api/rest/v1/providers', function(providersResponse) {
             window.providersData = {}
-            for (const provider of providersResponse) {
-                window.providersData[provider.name] = provider
+            for (const provider of providersResponse.items) {
+                window.providersData[provider.id] = provider
             }
-            populateConnectionDropdown(providersResponse);
+            populateConnectionDropdown(providersResponse.items);
             if (callback) callback();
         });
     }
@@ -198,15 +198,15 @@ $(document).ready(function() {
         const $dropdown = $('#providerListDropdown');
         $dropdown.empty();
         $.each(providersData, function(key, provider) {
-            if (provider.name === 'mock') return; // Skip 'mock' provider
-            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/connect/${provider.name}?key=${$('#veridaKey').val()}', '_blank');">
+            if (provider.id === 'mock') return; // Skip 'mock' provider
+            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/connect/${provider.id}?key=${$('#veridaKey').val()}', '_blank');">
                 <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
                 ${provider.label}
             </a>`);
         });
     }
 
-    function getProviderDetails(providerName) {
-        return window.providersData[providerName] || { icon: 'default-icon.png', label: 'Unknown' };
+    function getProviderDetails(providerId) {
+        return window.providersData[providerId] || { icon: 'default-icon.png', label: 'Unknown' };
     }
 });
