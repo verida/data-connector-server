@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Base from "../BaseProvider";
 import { SlackProviderConfig } from "./interfaces";
 import { FileInstallationStore, InstallProvider } from '@slack/oauth';
+import { WebClient } from "@slack/web-api";
 import SlackChatMessageHandler from "./chat-message";
 const axios = require('axios');
 
@@ -76,6 +77,10 @@ export default class SlackProvider extends Base {
             "channels:read",
             "groups:read",
             "users:read",
+            "channels:history",
+            "groups:history",
+            "im:history",
+            "mpim:history"
         ];
     }
 
@@ -84,6 +89,10 @@ export default class SlackProvider extends Base {
             "channels:read",
             "groups:read",
             "users:read",
+            "channels:history",
+            "groups:history",
+            "im:history",
+            "mpim:history"
         ];
     }
 
@@ -156,7 +165,14 @@ export default class SlackProvider extends Base {
     }
    
 
-    public async getApi(accessToken?: string, refreshToken?: string): Promise<any> {
-        // You can return the Slack Web API client here using the access token
+    public async getApi(accessToken?: string, refreshToken?: string): Promise<WebClient> {
+        if (!accessToken) {
+            throw new Error('Access token is required');
+        }
+        
+        // Create a new WebClient instance with the provided access token
+        const client = new WebClient(accessToken);
+        
+        return client;
     }
 }

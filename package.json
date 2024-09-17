@@ -35,6 +35,7 @@
     "@oauth-everything/passport-discord": "^1.0.2",
     "@sapphire/snowflake": "^3.4.2",
     "@slack/oauth": "^3.0.1",
+    "@slack/web-api": "^7.4.0",
     "@superfaceai/passport-twitter-oauth2": "^1.2.3",
     "@types/node": "^20.14.11",
     "@verida/account-node": "^4.1.0",
