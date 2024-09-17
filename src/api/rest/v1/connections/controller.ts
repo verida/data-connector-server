@@ -42,14 +42,15 @@ export default class Controller {
      * @param next 
      */
     public static async sync(req: UniqueRequest, res: Response, next: any) {
-        const query = req.query
-        const providerName = query.provider ? query.provider.toString() : undefined
-        const providerId = query.providerId ? query.providerId.toString() : undefined
-        const forceSync = query.force ? query.force == 'true' : undefined
+        const {
+            provider,
+            providerId,
+            forceSync
+        } = req.body
 
         const networkInstance = await Utils.getNetworkFromRequest(req)
         const syncManager = new SyncManager(networkInstance.context, req.requestId)
-        const connections = await syncManager.sync(providerName, providerId, forceSync)
+        const connections = await syncManager.sync(provider, providerId ? providerId.toString() : undefined, forceSync)
 
         // @todo: catch and send errors
         return res.send({

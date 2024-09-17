@@ -1,6 +1,6 @@
 $(document).ready(function() {
     let offset = 0;
-    const apiUrl = '/api/rest/v1/ds/query';
+    const apiUrl = '/api/rest/v1';
     let currentSortField = '';
     let currentSortDirection = 'asc';
     let currentFilters = {};
@@ -79,7 +79,7 @@ $(document).ready(function() {
         $('.alert').hide(); // Hide previous error messages
 
         $.ajax({
-            url: `${apiUrl}/${btoa(schema)}`,
+            url: `${apiUrl}/ds/query/${btoa(schema)}`,
             method: 'POST',
             headers: {
                 key: veridaKey
@@ -275,7 +275,7 @@ $(document).ready(function() {
 
         if (confirm('Are you sure you want to delete this row?')) {
             $.ajax({
-                url: `/api/v1/ds/${btoa(schemaUrl)}?id=${id}`,
+                url: `${apiUrl}/ds/${btoa(schemaUrl)}?id=${id}`,
                 method: 'DELETE',
                 headers: {
                     key: veridaKey
