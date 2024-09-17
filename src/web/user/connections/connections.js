@@ -90,7 +90,7 @@ $(document).ready(function() {
                                         </button>
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item sync-btn" href="#" data-sync-type="force" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Force</a>
+                                        <a class="dropdown-item sync-btn" href="#" data-sync-type="force"  data-connection="${connection._id}">Force</a>
                                     </div>
                                 </div>
                                 <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Full Logs</button>
@@ -120,8 +120,7 @@ $(document).ready(function() {
     
                 $('.sync-btn').click(function() {
                     const $button = $(this)
-                    const provider = $(this).data('provider');
-                    const providerId = $(this).data('provider-id');
+                    const connectionId = $(this).data('connection');
                     $button.text('Syncing...')
                     $button.prop('disabled', true);
                     const syncType = $(this).data('sync-type');
@@ -161,11 +160,9 @@ $(document).ready(function() {
     
                     // Initialize sync
                     $.ajax({
-                        url: `/api/rest/v1/connections/sync?key=${veridaKey}`,
+                        url: `/api/rest/v1/connections/sync/${connectionId}?key=${veridaKey}`,
                         type: 'POST',
                         data: JSON.stringify({
-                            provider,
-                            providerId,
                             force: (syncType == 'force')
                         }),
                         contentType: 'application/json',

@@ -43,21 +43,65 @@ export default class Controller {
      * @param next 
      */
     public static async sync(req: UniqueRequest, res: Response, next: any) {
-        const {
-            provider,
-            providerId,
-            forceSync
-        } = req.body
+        try {
+            const {
+                forceSync,
+                instantComplete
+            } = req.body
 
-        const networkInstance = await Utils.getNetworkFromRequest(req)
-        const syncManager = new SyncManager(networkInstance.context, req.requestId)
-        const connections = await syncManager.sync(provider, providerId ? providerId.toString() : undefined, forceSync)
+            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const syncManager = new SyncManager(networkInstance.context, req.requestId)
 
-        // @todo: catch and send errors
-        return res.send({
-            connection: connections[0],
-            success: true
-        })
+            if (instantComplete) {
+                syncManager.sync(undefined, undefined, forceSync)
+
+                return res.send({
+                    success: true
+                })
+            } else {
+                const connections = await syncManager.sync(undefined, undefined, forceSync)
+
+                return res.send({
+                    connections,
+                    success: true
+                })
+            }
+        } catch (error) {
+            console.log(error)
+            res.status(500).send(error.message);
+        }
+    }
+
+    public static async syncConnection(req: UniqueRequest, res: Response, next: any) {
+        try {
+            const connectionId = req.params.connectionId
+            const {
+                instantComplete,
+                forceSync
+            } = req.body
+
+            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const syncManager = new SyncManager(networkInstance.context, req.requestId)
+            const connection = await syncManager.getConnection(connectionId)
+
+            if (instantComplete) {
+                syncManager.sync(connection.provider, connection.providerId, forceSync)
+
+                return res.send({
+                    success: true
+                })
+            } else {
+                const connections = await syncManager.sync(connection.provider, connection.providerId, forceSync)
+
+                return res.send({
+                    connections,
+                    success: true
+                })
+            }
+        } catch (error) {
+            console.log(error)
+            res.status(500).send(error.message);
+        }
     }
 
     public static async providers(req: Request, res: Response) {
