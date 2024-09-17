@@ -61,7 +61,7 @@ export const ResetProvider: Command<ResetProviderOptions> = {
     const connectionDs = await syncManager.getConnectionDatastore()
     for (const provider of providers) {
       console.log(
-        `Reset started for ${provider.getProviderName()} (${provider.getProviderId()})`
+        `Reset started for ${provider.getProviderId()} (${provider.getAccountId()})`
       );
 
       const deleteCount = await provider.reset(

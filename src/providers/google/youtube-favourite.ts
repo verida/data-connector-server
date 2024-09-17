@@ -208,7 +208,7 @@ export default class YouTubeFavourite extends GoogleHandler {
                 contentType: SchemaFavouriteContentType.VIDEO,
                 sourceId: videoId,
                 sourceData: snippet,
-                sourceAccountId: this.provider.getProviderId(),
+                sourceAccountId: this.provider.getAccountId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 insertedAt: insertedAt,
             });

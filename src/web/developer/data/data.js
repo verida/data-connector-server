@@ -5,9 +5,9 @@ $(document).ready(function() {
     let currentSortDirection = 'asc';
     let currentFilters = {};
     const schemas = {
-        "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.1.0/schema.json",
-        "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
-        "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
+        "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.2.0/schema.json",
+        "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.2.0/schema.json",
+        "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.3.0/schema.json",
         "Social Following": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
         "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
         "Favourites": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",

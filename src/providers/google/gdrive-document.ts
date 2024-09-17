@@ -256,7 +256,7 @@ export default class GoogleDriveDocument extends GoogleHandler {
                 fileDataId: undefined,
                 sourceId: fileId,
                 sourceData: file,
-                sourceAccountId: this.provider.getProviderId(),
+                sourceAccountId: this.provider.getAccountId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 insertedAt: createdTime,
                 modifiedAt: modifiedTime,

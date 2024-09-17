@@ -173,6 +173,7 @@ export default class Controller {
             // dont sync for now
             //await syncManager.sync(providerName)
         } catch (err: any) {
+            console.log(err)
             const message = err.message
             // @todo: Generate nice looking thank you page
             const output = `<html>

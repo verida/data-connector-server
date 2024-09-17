@@ -64,7 +64,7 @@ export default class TelegramProvider extends Base {
 
         const profile: PassportProfile = {
             id: tgProfile.id.toString(),
-            provider: this.getProviderName(),
+            providerId: this.getProviderId(),
             displayName: displayName,
             name: {
                 familyName: tgProfile.last_name,

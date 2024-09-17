@@ -80,7 +80,7 @@ export default class Controller {
                 }
 
                 results.push({
-                    name: providerName,
+                    id: providerName,
                     label: provider.getProviderLabel(),
                     icon: provider.getProviderImageUrl(),
                     description: provider.getDescription(),

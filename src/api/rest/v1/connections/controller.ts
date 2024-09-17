@@ -85,13 +85,13 @@ export default class Controller {
             const connection = await syncManager.getConnection(connectionId)
 
             if (instantComplete) {
-                syncManager.sync(connection.provider, connection.providerId, forceSync)
+                syncManager.sync(connection.providerId, connection.accountId, forceSync)
 
                 return res.send({
                     success: true
                 })
             } else {
-                const connections = await syncManager.sync(connection.provider, connection.providerId, forceSync)
+                const connections = await syncManager.sync(connection.providerId, connection.accountId, forceSync)
 
                 return res.send({
                     connections,
@@ -104,41 +104,6 @@ export default class Controller {
         }
     }
 
-    public static async providers(req: Request, res: Response) {
-        const providers = Object.keys(CONFIG.providers)
-
-        const results: any = []
-        for (let p in providers) {
-            const providerName = providers[p]
-
-            try {
-                const provider = Providers(providerName)
-                const syncHandlers = await provider.getSyncHandlers()
-                const handlers: ProviderHandler[] = []
-                for (const handler of syncHandlers) {
-                    handlers.push({
-                        id: handler.getName(),
-                        label: handler.getLabel(),
-                        options: handler.getOptions()
-                    })
-                }
-
-                results.push({
-                    name: providerName,
-                    label: provider.getProviderLabel(),
-                    icon: provider.getProviderImageUrl(),
-                    description: provider.getDescription(),
-                    options: provider.getOptions(),
-                    handlers
-                })
-            } catch (err) {
-                // skip broken providers
-            }
-        }
-
-        return res.send(results)
-    }
-
     public static async connections(req: UniqueRequest, res: Response, next: any) {
         try {
             const query = req.query
@@ -149,27 +114,32 @@ export default class Controller {
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
             const connections = await syncManager.getProviders(providerName, providerId)
 
-            const result: Record<string, {
-                connection: object,
-                // sync
-                handlers: SyncHandlerPosition[]
-            }> = {}
+            const result: Record<string, any> = {}
             for (const connection of connections) {
-                const handlerPositions: SyncHandlerPosition[] = []
+                const handlerPositions: Record<string, SyncHandlerPosition> = {}
 
                 for (const handler of await connection.getSyncHandlers()) {
-                    handlerPositions.push(await connection.getSyncPosition(handler.getName()))
+                    handlerPositions[handler.getId()] = await connection.getSyncPosition(handler.getId())
                 }
 
                 const redactedConnection = connection.getConnection()
                 delete redactedConnection['accessToken']
                 delete redactedConnection['refreshToken']
 
-                const uniqueId = `${connection.getProviderName()}:${connection.getProviderId()}`
-                result[uniqueId] = {
-                    connection: redactedConnection,
-                    handlers: handlerPositions
+                for (const i in redactedConnection.handlers) {
+                    const handler = redactedConnection.handlers[i]
+                    const handlerPosition = handlerPositions[handler.id]
+
+                    if (handlerPosition) {
+                        redactedConnection.handlers[i] = {
+                            ...handler,
+                            ...handlerPosition
+                        }
+                    }
                 }
+
+                const uniqueId = `${connection.getProviderId()}:${connection.getAccountId()}`
+                result[uniqueId] = redactedConnection
             }
 
             // @todo: catch and send errors
@@ -223,7 +193,7 @@ export default class Controller {
             }, {})
 
             const handlerConfigs = (await connection.handlers).reduce((handlers: Record<string, ConnectionHandler>, handler: ConnectionHandler) => {
-                handlers[handler.name] = handler
+                handlers[handler.id] = handler
                 return handlers
             }, {})
 
@@ -240,7 +210,7 @@ export default class Controller {
                     delete data.handlerConfig[handlerId]['enabled']
 
                     updatedHandlers.push({
-                        name: handlerId,
+                        id: handlerId,
                         enabled: isEnabled,
                         config: handlers[handlerId].buildConfig(<Record<string, object>> data.handlerConfig[handlerId], handlerConfigs[handlerId] && handlerConfigs[handlerId].config ? handlerConfigs[handlerId].config : {})
                     })

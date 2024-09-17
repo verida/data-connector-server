@@ -49,7 +49,7 @@ export default class DiscordProvider extends Base {
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
         this.init()
-        const auth = await passport.authenticate(this.getProviderId())
+        const auth = await passport.authenticate(this.getAccountId())
         return auth(req, res, next)
     }
 
@@ -65,7 +65,7 @@ export default class DiscordProvider extends Base {
         this.init()
 
         const promise = new Promise((resolve, rejects) => {
-            const auth = passport.authenticate(this.getProviderId(), {
+            const auth = passport.authenticate(this.getAccountId(), {
                 scope: SCOPE,
                 failureRedirect: '/failure/discord',
                 failureMessage: true

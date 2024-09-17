@@ -239,7 +239,7 @@ export default class Gmail extends GoogleHandler {
         _id: this.buildItemId(messageId),
         type: messageType,
         name: subject ? subject : 'No email subject',
-        sourceAccountId: this.provider.getProviderId(),
+        sourceAccountId: this.provider.getAccountId(),
         sourceData: {},
         sourceApplication: this.getProviderApplicationUrl(),
         sourceId: message.id,

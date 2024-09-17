@@ -209,7 +209,7 @@ export default class YouTubePost extends GoogleHandler {
                 content: description,
                 sourceId: postId,
                 sourceData: snippet,
-                sourceAccountId: this.provider.getProviderId(),
+                sourceAccountId: this.provider.getAccountId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 insertedAt: insertedAt,
             });

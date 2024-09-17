@@ -81,7 +81,7 @@ export default class SyncManager {
 
     public async getProvider(connectionId: string): Promise<BaseProvider | undefined> {
         const connectionRecord = await this.getConnection(connectionId)
-        const providers = <BaseProvider[]> await this.getProviders(connectionRecord.provider, connectionRecord.providerId)
+        const providers = <BaseProvider[]> await this.getProviders(connectionRecord.providerId, connectionRecord.accountId)
         if (providers.length) {
             return providers[0]
         }
@@ -97,7 +97,7 @@ export default class SyncManager {
                         continue
                     }
 
-                    if (!providerId || connection.getProviderId() == providerId) {
+                    if (!providerId || connection.getAccountId() == providerId) {
                         connections.push(connection)
                     }
                 }
@@ -176,6 +176,7 @@ export default class SyncManager {
             avatar: {
                 uri: profile.photos && profile.photos.length ? profile.photos[0].value : undefined
             },
+            readableId: `${profile.displayName} (${profile.id})`,
             //uri: 
             givenName: profile.name.givenName,
             familyName: profile.name.familyName,
@@ -197,7 +198,7 @@ export default class SyncManager {
             }
 
             connectionHandlers.push({
-                name: handler.getName(),
+                id: handler.getId(),
                 enabled: true,
                 config: handlerConfig
             })
@@ -212,8 +213,8 @@ export default class SyncManager {
             ...(providerConnection ? providerConnection : {}),
             _id: providerId,
             name: providerId,
-            provider: providerName,
-            providerId: profile.id,
+            providerId: providerName,
+            accountId: profile.id,
             accessToken,
             refreshToken,
             profile: connectionProfile,

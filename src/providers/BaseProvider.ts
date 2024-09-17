@@ -55,20 +55,27 @@ export default class BaseProvider extends EventEmitter {
         this.config = config
     }
 
+    /**
+     * @deprecated Use getProviderId()
+     */
     public getProviderName(): string {
         throw new Error('Not implemented')
     }
 
     public getProviderId(): string {
+        return this.getProviderName()
+    }
+
+    public getAccountId(): string {
         if (!this.connection) {
             throw new Error('Unable to locate ID, provider is not connected')
         }
 
-        return this.connection.providerId
+        return this.connection.accountId
     }
 
     public getProviderImageUrl(): string {
-        return `${serverconfig.assetsUrl}/${this.getProviderName()}/icon.png`
+        return `${serverconfig.assetsUrl}/${this.getProviderId()}/icon.png`
     }
 
     public getProviderLabel(): string {
@@ -107,15 +114,15 @@ export default class BaseProvider extends EventEmitter {
         return this.vault.openDatastore(schemaUrl)
     }
 
-    protected async logMessage(level: SyncProviderLogLevel, message: string, handlerName?: string, schemaUri?: string): Promise<void> {
+    protected async logMessage(level: SyncProviderLogLevel, message: string, handlerId?: string, schemaUri?: string): Promise<void> {
         try {
             const syncLog = await this.vault.openDatastore(SCHEMA_SYNC_LOG)
             const logEntry: SyncProviderLogEntry = {
                 message,
                 level,
-                providerName: this.getProviderName(),
                 providerId: this.getProviderId(),
-                handlerName,
+                accountId: this.getAccountId(),
+                handlerId,
                 schemaUri,
                 insertedAt: (new Date()).toISOString()
             }
@@ -146,7 +153,7 @@ export default class BaseProvider extends EventEmitter {
             if (deleteSyncPositions) {
                 const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
                 try {
-                    const syncPositionId = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handler.getName())
+                    const syncPositionId = Utils.buildSyncHandlerId(this.getProviderId(), this.getAccountId(), handler.getId())
                     await syncPositionsDs.delete(syncPositionId)
                 } catch (err: any) {
                     // deleted already
@@ -297,23 +304,23 @@ export default class BaseProvider extends EventEmitter {
         return this.syncPositionsDs
     }
 
-    public async getSyncPosition(handlerName: string, syncPositionsDs?: IDatastore): Promise<SyncHandlerPosition> {
+    public async getSyncPosition(handlerId: string, syncPositionsDs?: IDatastore): Promise<SyncHandlerPosition> {
         if (!syncPositionsDs) {
             syncPositionsDs = await this.getSyncPositionsDs()
         }
 
         try {
-            const id = Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handlerName)
+            const id = Utils.buildSyncHandlerId(this.getProviderId(), this.getAccountId(), handlerId)
             return await syncPositionsDs.get(id, {})
 
         } catch (err: any) {
             if (err.message.match('missing')) {
                 // Schema position doesn't exist, so create new
                 return {
-                    _id: Utils.buildSyncHandlerId(this.getProviderName(), this.getProviderId(), handlerName),
-                    providerName: this.getProviderName(),
+                    _id: Utils.buildSyncHandlerId(this.getProviderId(), this.getAccountId(), handlerId),
                     providerId: this.getProviderId(),
-                    handlerName,
+                    accountId: this.getAccountId(),
+                    handlerId,
                     status: SyncHandlerStatus.SYNCING
                 }
             }

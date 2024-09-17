@@ -136,7 +136,7 @@ export default class Posts extends BaseSyncHandler {
                 ...item,
                 _id: `post-${item._id}`,
                 sourceApplication: this.getProviderApplicationUrl(),
-                sourceAccountId: this.provider.getProviderId(),
+                sourceAccountId: this.provider.getAccountId(),
                 sourceId: i,
                 sourceData: {},
                 insertedAt

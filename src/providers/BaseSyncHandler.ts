@@ -30,8 +30,15 @@ export default class BaseSyncHandler extends EventEmitter {
         this.provider = provider
     }
 
+    /**
+     * @deprecated Use getId()
+     */
     public getName(): string {
         throw new Error('Not implemented')
+    }
+
+    public getId(): string {
+        return this.getName()
     }
 
     /**
