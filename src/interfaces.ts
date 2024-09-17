@@ -51,7 +51,7 @@ export interface PassportPhoto {
 
 export interface PassportProfile {
     id: string,
-    provider: string,
+    providerId: string,
     displayName?: string
     name?: PassportName
     emails?: PassportEmail[]
@@ -104,7 +104,7 @@ export enum SyncStatus {
 }
 
 export interface ConnectionHandler {
-    name: string
+    id: string
     enabled: boolean
     config: BaseHandlerConfig
 }
@@ -113,8 +113,8 @@ export interface Connection {
     _id?: string
     _rev?: string
     name: string
-    provider: string
     providerId: string
+    accountId: string
     accessToken: string
     refreshToken?: string
     profile: ConnectionProfile
@@ -152,9 +152,9 @@ export interface SyncHandlerPosition {
     // id = `${providerName}:${handlerName]}:${status}`
     _id: string
     _rev?: string
-    providerName: string
     providerId: string
-    handlerName: string
+    accountId: string
+    handlerId: string
     status: SyncHandlerStatus
 
     // Message describing the status of the sync
@@ -181,9 +181,9 @@ export interface SyncResponse {
 export interface SyncProviderLogEntry {
     _id?: string
     insertedAt?: string
-    providerName: string
-    providerId?: string
-    handlerName?: string
+    providerId: string
+    accountId?: string
+    handlerId?: string
     schemaUri?: string
     message: string
     level: SyncProviderLogLevel
