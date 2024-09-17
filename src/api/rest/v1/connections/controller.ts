@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Providers from "../../../../providers"
 import SyncManager from '../../../../sync-manager'
-import { BaseHandlerConfig, ConnectionHandler, ProviderHandler, SyncHandlerPosition, SyncStatus, UniqueRequest } from '../../../../interfaces'
+import { ConnectionHandler, ProviderHandler, SyncFrequency, SyncHandlerPosition, SyncStatus, UniqueRequest } from '../../../../interfaces'
 import { Utils } from '../../../../utils'
 import CONFIG from '../../../../config'
 import BaseSyncHandler from '../../../../providers/BaseSyncHandler'
@@ -13,7 +13,8 @@ const SCHEMA_SYNC_LOG = CONFIG.verida.schemas.SYNC_LOG
 
 export interface UpdateConnectionParams {
     syncStatus: SyncStatus
-    handlerConfig: Record<string, Record<string, object>>
+    syncFrequency: SyncFrequency
+    handlerConfig: Record<string, Record<string, object | boolean>>
     handlerEnabled: Record<string, boolean>
 }
 
@@ -156,10 +157,19 @@ export default class Controller {
             const validSyncStatus = [SyncStatus.CONNECTED, SyncStatus.PAUSED]
             if (data.syncStatus) {
                 if (validSyncStatus.indexOf(data.syncStatus) === -1) {
-                    throw new Error(`Invalid sync status (${data.syncStatus}) not in ${JSON.stringify(validSyncStatus)}`)
+                    throw new Error(`Invalid sync status (${data.syncStatus}) not in [${validSyncStatus.join(', ')}]`)
                 }
 
                 connection.syncStatus = data.syncStatus
+            }
+
+            const validFrequencyStatus = Object.values(SyncFrequency)
+            if (data.syncFrequency) {
+                if (validFrequencyStatus.indexOf(data.syncFrequency) === -1) {
+                    throw new Error(`Invalid sync frequency (${data.syncFrequency}) not in [${validFrequencyStatus.join(', ')}]`)
+                }
+
+                connection.syncFrequency = data.syncFrequency
             }
 
             // Handle updates to config
@@ -176,17 +186,19 @@ export default class Controller {
             const updatedHandlers = []
             if (data.handlerConfig) {
                 for (const handlerId in data.handlerConfig) {
-                    if (handlers[handlerId]) {
+                    if (!handlers[handlerId]) {
                         continue
                     }
 
-                    let isEnabled = handlerConfigs[handlerId].enabled
-                    isEnabled = data.handlerEnabled && typeof(data.handlerEnabled[handlerId]) === "boolean" ? data.handlerEnabled[handlerId] : isEnabled
+                    let isEnabled = handlerConfigs[handlerId] ? handlerConfigs[handlerId].enabled : true
+                    isEnabled = typeof(data.handlerConfig[handlerId].enabled) === "boolean" ? <boolean> data.handlerConfig[handlerId].enabled : isEnabled
+
+                    delete data.handlerConfig[handlerId]['enabled']
 
                     updatedHandlers.push({
                         name: handlerId,
                         enabled: isEnabled,
-                        config: handlers[handlerId].buildConfig(data.handlerConfig[handlerId])
+                        config: handlers[handlerId].buildConfig(<Record<string, object>> data.handlerConfig[handlerId], handlerConfigs[handlerId] && handlerConfigs[handlerId].config ? handlerConfigs[handlerId].config : {})
                     })
                 }
 
@@ -196,12 +208,25 @@ export default class Controller {
             provider.updateConnection(connection)
             await provider.saveConnection()
 
-            return res.send({
-                success: true
-            })
+            if (!data.handlerConfig && !data.syncStatus) {
+                return res.status(500).send({
+                    success: false,
+                    message: `Nothing updated`
+                })
+            } else {
+                return res.send({
+                    success: true,
+                    syncStatus: connection.syncStatus,
+                    syncFrequency: connection.syncFrequency,
+                    handlers: connection.handlers
+                })
+            }
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
         }
     }
 

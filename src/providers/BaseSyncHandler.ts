@@ -1,4 +1,4 @@
-import { Connection, ProviderHandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition, ConnectionOptionType, ConnectionOptionEnumOption, BaseHandlerConfig } from "../interfaces"
+import { Connection, ProviderHandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition, ConnectionOptionType, ConnectionOptionEnumOption, BaseHandlerConfig, ConnectionHandler } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
@@ -70,53 +70,61 @@ export default class BaseSyncHandler extends EventEmitter {
         this.provider.updateConnection(connectionParams)
     }
 
-    public buildConfig(handlerConfig: Record<string, object>): BaseHandlerConfig {
-        const newConfig: Record<string, string> = {}
+    public buildConfig(newConfig: Record<string, object>, currentConfig: Record<string, string | number | boolean>): BaseHandlerConfig {
+        const finalConfig: Record<string, string | number | boolean> = {}
 
         for (const handlerOption of this.getOptions()) {
+            const configValue = currentConfig[handlerOption.id] ? currentConfig[handlerOption.id] : undefined
+
             if (newConfig[handlerOption.id]) {
-                const configValue = handlerConfig[handlerOption.id]
                 const newValue = newConfig[handlerOption.id]
+                const validEnumOptions = handlerOption.enumOptions.map((item) => item.value)
 
                 switch (handlerOption.type) {
                     case ConnectionOptionType.BOOLEAN:
-                        if (typeof(configValue) !== "boolean") {
+                        if (typeof(newValue) !== "boolean") {
                             throw new Error(`${handlerOption.label}: Must be boolean`)
                         }
 
-                        newConfig[handlerOption.id] = newValue
+                        finalConfig[handlerOption.id] = newValue
                         break
                     case ConnectionOptionType.ENUM:
-                        if (typeof(configValue) !== "string") {
+                        if (typeof(newValue) !== "string") {
                             throw new Error(`${handlerOption.label}: Must be string`)
-                        } else if (handlerOption.enumOptions.indexOf(configValue) === -1) {
-                            throw new Error(`${handlerOption.label} must be one of ${JSON.stringify(handlerOption.enumOptions)}, not ${configValue}`)
+                        } else if (validEnumOptions.indexOf(newValue) === -1) {
+                            throw new Error(`${handlerOption.label} must be one of [${validEnumOptions.join(", ")}], not ${newValue}`)
                         }
 
-                        newConfig[handlerOption.id] = newValue
+                        finalConfig[handlerOption.id] = newValue
                         break
                     case ConnectionOptionType.ENUM_MULTI:
-                        if (typeof(configValue) !== "string") {
+                        if (typeof(newValue) !== "string") {
                             throw new Error(`${handlerOption.label}: Must be string`)
                         } else {
-                            const enumValues = newValue.split(',')
+                            const enumValues = (<string> newValue).split(',')
 
                             for (const enumValue of enumValues) {
-                                if (handlerOption.enumOptions.indexOf(<ConnectionOptionEnumOption> <unknown> enumValue) === -1) {
-                                    throw new Error(`${handlerOption.label}: Must be one of ${JSON.stringify(handlerOption.enumOptions)}, not ${enumValue}`)
+                                if (validEnumOptions.indexOf(enumValue) === -1) {
+                                    throw new Error(`${handlerOption.label}: Must be one of [${validEnumOptions.join(", ")}], not ${enumValue}`)
                                 }
                             }
                         }
 
-                        newConfig[handlerOption.id] = newValue
+                        finalConfig[handlerOption.id] = newValue
                         break
                 }
             } else {
-                newConfig[handlerOption.id] = handlerOption.defaultValue
+                if (!configValue) {
+                    // No existing value, so set defaults
+                    finalConfig[handlerOption.id] = handlerOption.defaultValue
+                } else {
+                    // No value specified, so use existing value
+                    finalConfig[handlerOption.id] = configValue
+                }
             }
         }
 
-        return newConfig
+        return finalConfig
     }
 
     /**
