@@ -59,6 +59,8 @@ export default class TelegramProvider extends Base {
         const tgProfile = await client.api.getMe({})
         console.log('telegram profile', tgProfile)
 
+        const username = tgProfile.usernames && tgProfile.usernames.active_usernames ? tgProfile.usernames.active_usernames[0] : undefined
+
         const profile: PassportProfile = {
             id: tgProfile.id.toString(),
             provider: this.getProviderName(),
@@ -68,7 +70,8 @@ export default class TelegramProvider extends Base {
                 givenName: tgProfile.first_name
             },
             connectionProfile: {
-                username: tgProfile.usernames && tgProfile.usernames.active_usernames ? tgProfile.usernames.active_usernames[0] : undefined,
+                username,
+                readableId: username ? username : tgProfile.id.toString(),
                 phone: tgProfile.phone_number,
                 verified: tgProfile.is_verified
             }

@@ -92,10 +92,13 @@ export default class FacebookProvider extends Base {
 
             const me = await Fb.api('/me?fields=id,name,picture,link')
 
+            const readableId = me.id
+
             if (this.connection) {
                 this.connection.profile = {
                     ...(this.connection.profile ? this.connection.profile : {}),
                     id: me.id,
+                    readableId,
                     name: me.name,
                     link: me.link,
                     avatar: {

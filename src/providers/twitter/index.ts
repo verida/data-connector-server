@@ -70,11 +70,17 @@ export default class TwitterProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
+                    // @todo: Confirm `id` is the username
+                    const username = data.profile.id
                     const connectionToken = {
                         id: data.profile.id,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
-                        profile: data.profile
+                        profile: {
+                            readableId: username,
+                            username,
+                            ...data.profile,
+                        }
                     }
     
                     resolve(connectionToken)

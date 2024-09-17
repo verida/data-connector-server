@@ -81,6 +81,7 @@ export default class GoogleProvider extends Base {
               refreshToken: data.refreshToken,
               profile: {
                 username: data.profile.email,
+                readableId: data.profile.email,
                 ...data.profile,
               }
             };
