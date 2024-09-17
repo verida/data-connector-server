@@ -19,12 +19,12 @@ $(document).ready(function() {
 
     // Load Verida Key and Schema from local storage
     $('#veridaKey').val(localStorage.getItem('veridaKey') || '');
-    $('#schema').val(localStorage.getItem('schema') || schemas["Connections"]);
 
     // Function to get query parameters
     function getQueryParams() {
         const params = new URLSearchParams(window.location.search);
         return {
+            schema: params.get('schema') || localStorage.getItem('schema') || schemas["Connections"],
             limit: params.get('limit') || '10',
             offset: params.get('offset') || '0',
             sort: params.get('sort') || '',
@@ -51,6 +51,8 @@ $(document).ready(function() {
                 currentFilters[field] = value;
             }
         });
+
+        $('#schema').val(queryParams.schema);
     }
 
     function fetchData() {
