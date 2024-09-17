@@ -85,6 +85,7 @@ export interface ConnectionProfile {
     phoneVerified?: boolean
     verified?: boolean
     username?: string
+    readableId: string
     createdAt?: string
     sourceData?: object
 }
