@@ -8,6 +8,7 @@ const axios = require('axios');
 
 import { Installation, InstallationStore, InstallationQuery } from '@slack/oauth';
 import { PassportProfile } from "../../interfaces";
+import SlackChatGroupHandler from "./chat-group";
 
 export class CustomInstallationStore implements InstallationStore {
     private installations: Map<string, Installation> = new Map();
@@ -68,7 +69,8 @@ export default class SlackProvider extends Base {
 
     public syncHandlers(): any[] {
         return [
-            SlackChatMessageHandler
+            SlackChatMessageHandler,
+            SlackChatGroupHandler
         ];
     }
 
@@ -76,6 +78,8 @@ export default class SlackProvider extends Base {
         return [
             "channels:read",
             "groups:read",
+            "im:read",
+            "mpim:read",
             "users:read",
             "channels:history",
             "groups:history",
@@ -88,6 +92,8 @@ export default class SlackProvider extends Base {
         return [
             "channels:read",
             "groups:read",
+            "im:read",
+            "mpim:read",
             "users:read",
             "channels:history",
             "groups:history",
@@ -100,7 +106,7 @@ export default class SlackProvider extends Base {
         this.init();
         try {
 
-            const result = await this.slackInstaller.handleInstallPath(
+            await this.slackInstaller.handleInstallPath(
                 req,
                 res,
                 {},
@@ -152,7 +158,7 @@ export default class SlackProvider extends Base {
             // Add access token data if necessary
             const connectionToken = {
                 id: data.team.id,
-                accessToken: data.access_token,
+                accessToken: data.authed_user.access_token,
                 refreshToken: data.refresh_token,  // If applicable, otherwise remove
                 profile: profile
             };

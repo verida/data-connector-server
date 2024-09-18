@@ -140,6 +140,7 @@ export enum SyncHandlerStatus {
     ERROR = "error",
     DISABLED = "disabled",
     SYNCING = "syncing",
+    COMPLETED = "COMPLETED",
 }
 
 export interface SyncHandlerPosition {

@@ -94,7 +94,10 @@
             "label": "Slack",
             "clientId": "",
             "clientSecret": "",
-            "stateSecret": ""
+            "stateSecret": "",
+            "groupLimit": 2,
+            "messageBatchSize": 50,
+            "messagesPerGroupLimit": 10            
         }
     },
     "providerDefaults": {
