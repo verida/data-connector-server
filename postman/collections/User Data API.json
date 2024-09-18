@@ -1024,6 +1024,7 @@
 							"id": "2f505970-c7b1-42b0-83ef-d3f29cdacebc",
 							"name": "Basic Prompt - Custom Endpoint",
 							"originalRequest": {
+								"method": "GET",
 								"header": [],
 								"body": {
 									"mode": "raw",
@@ -1033,6 +1034,9 @@
 											"language": "json"
 										}
 									}
+								},
+								"url": {
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -1276,7 +1280,7 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "a938f69d-bdd6-4ac2-9c90-d2d7226e28cc",
+				"id": "699df110-79a4-46ea-96dd-ba3601e54bca",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -1286,7 +1290,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "87099beb-270b-4e54-8d7b-53dbfe1a5209",
+				"id": "5947eb7d-b472-4960-a31d-0208f6b52561",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -1296,43 +1300,43 @@
 	],
 	"variable": [
 		{
-			"id": "0077e558-37c2-4e00-a81d-d88a2e6925dd",
+			"id": "d452d5f2-77e5-4fd6-955b-8dfe25c0655c",
 			"key": "key",
-			"value": "",
+			"value": "0x..",
 			"type": "string"
 		},
 		{
-			"id": "383a2173-7618-4c9b-a4ac-f363164873f3",
+			"id": "86f12339-60cf-4b94-9f53-827ed1effc97",
 			"key": "apiVersion",
 			"value": "v1",
 			"type": "string"
 		},
 		{
-			"id": "69f70121-fc93-4aad-b2f1-3dd0cb3e620e",
+			"id": "a4a2fd57-42ea-4933-9c0a-d28c08ec24aa",
 			"key": "testDb",
 			"value": "favourite",
 			"type": "string"
 		},
 		{
-			"id": "92c39c00-494a-4069-a687-3cf41e4e5971",
+			"id": "8aba3502-24e9-4539-a2df-595298c6f3c6",
 			"key": "testRecordId",
-			"value": "google-114389302261538986945-xskZ50giJkw",
+			"value": "google-abc-123",
 			"type": "string"
 		},
 		{
-			"id": "7bbe43b1-e9ce-460e-ab96-f7e9059d3003",
+			"id": "1346effb-abcb-4ba9-8149-a3d8a4c8699e",
 			"key": "testDsName",
 			"value": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
 			"type": "string"
 		},
 		{
-			"id": "155fdc6f-1ba5-4bf2-a15b-99ab20b3a3f9",
+			"id": "e1a856d7-7900-4b56-b737-71558bac3984",
 			"key": "testDsEncoded",
 			"value": "aHR0cHM6Ly9jb21tb24uc2NoZW1hcy52ZXJpZGEuaW8vZmF2b3VyaXRlL3YwLjEuMC9zY2hlbWEuanNvbg==",
 			"type": "string"
 		},
 		{
-			"id": "499f8c85-c731-427b-b801-f1c2130710db",
+			"id": "df0a018f-bbf6-4c1d-82c6-078f51ff3b15",
 			"key": "testWatchDsName",
 			"value": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
 			"type": "string"

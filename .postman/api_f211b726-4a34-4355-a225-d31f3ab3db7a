@@ -9,7 +9,7 @@ id = f211b726-4a34-4355-a225-d31f3ab3db7a
 
 [config.relations.collections]
 rootDirectory = postman/collections
-files[] = {"id":"20367237-b2713328-ef23-4174-9918-10121008ffcb","path":"Data Bridge API.json","metaData":{}}
+files[] = {"id":"20367237-02d3e0eb-9444-434d-879f-8670a45d58b9","path":"Data Bridge API.json","metaData":{}}
 files[] = {"id":"20367237-b7d54d68-a116-4f59-8374-4486b591db85","path":"User Data API.json","metaData":{}}
 
 [config.relations.collections.metaData]
