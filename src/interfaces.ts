@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { Profile as PassportBaseProfile } from "passport"
 import { SchemaRecord } from "./schemas"
 
 export interface UniqueRequest extends Request {
@@ -34,28 +35,7 @@ export interface BaseHandlerConfig extends Record<string, string | boolean | num
     breakTimestamp?: string
 }
 
-export interface PassportName {
-    givenName?: string
-    familyName?: string
-    middleName?: string
-}
-
-export interface PassportEmail {
-    type?: string
-    value: string
-}
-
-export interface PassportPhoto {
-    value: string
-}
-
-export interface PassportProfile {
-    id: string,
-    providerId: string,
-    displayName?: string
-    name?: PassportName
-    emails?: PassportEmail[]
-    photos?: PassportPhoto[]
+export interface PassportProfile extends PassportBaseProfile {
     connectionProfile?: Partial<ConnectionProfile>
 }
 

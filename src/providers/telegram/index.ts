@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
 
-import { BaseProviderConfig, ConnectionProfile, PassportPhoto, PassportProfile } from '../../interfaces'
+import { BaseProviderConfig, PassportProfile } from '../../interfaces'
 import { TelegramApi } from './api'
 import TelegramChatMessageHandler from './chat-message'
 
@@ -64,7 +64,7 @@ export default class TelegramProvider extends Base {
 
         const profile: PassportProfile = {
             id: tgProfile.id.toString(),
-            providerId: this.getProviderId(),
+            provider: this.getProviderId(),
             displayName: displayName,
             name: {
                 familyName: tgProfile.last_name,
