@@ -37,7 +37,7 @@ export default class Controller {
      */
     public static async connect(req: Request, res: Response, next: any) {
         try {
-            const providerName = req.params.provider
+            const providerName = req.params.providerId
             const query = req.query
             let redirect = query.redirect ? query.redirect.toString() : ''
             const key = query.key ? query.key.toString() : undefined

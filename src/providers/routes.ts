@@ -3,7 +3,7 @@ import Controller from './controller'
 
 const router = express.Router()
 
-router.get('/:provider/connect', Controller.connect)
-router.get('/:provider/callback', Controller.callback)
+router.get('/:providerId/connect', Controller.connect)
+router.get('/:providerId/callback', Controller.callback)
 
 export default router
