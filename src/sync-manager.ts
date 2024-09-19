@@ -154,17 +154,17 @@ export default class SyncManager {
         return this.connectionDatastore
     }
 
-    public async saveProvider(providerName: string, accessToken: string, refreshToken: string, profile: PassportProfile): Promise<Connection> {
+    public async saveProvider(providerId: string, accessToken: string, refreshToken: string, profile: PassportProfile): Promise<Connection> {
         const connectionDatastore = await this.getConnectionDatastore()
 
-        const providerId = `${providerName}:${profile.id}`
+        const fullProviderId = `${providerId}:${profile.id}`
 
         let providerConnection: Connection
         try {
-            providerConnection = await connectionDatastore.get(providerId, {})
+            providerConnection = await connectionDatastore.get(fullProviderId, {})
         } catch (err: any) {
             if (!err.message.match('missing')) {
-                throw new Error(`Unknown error saving ${providerName} (${providerId}) auth tokens: ${err.message}`)
+                throw new Error(`Unknown error saving ${providerId} (${fullProviderId}) auth tokens: ${err.message}`)
             }
         }
 
@@ -182,7 +182,7 @@ export default class SyncManager {
             ...(profile.connectionProfile ? profile.connectionProfile : {})
         }
 
-        const provider = Providers(providerName)
+        const provider = Providers(providerId)
         const handlers = await provider.getSyncHandlers()
         const connectionHandlers: ConnectionHandler[] = []
 
@@ -209,9 +209,9 @@ export default class SyncManager {
 
         providerConnection = {
             ...(providerConnection ? providerConnection : {}),
-            _id: providerId,
-            name: providerId,
-            providerId: providerName,
+            _id: fullProviderId,
+            name: fullProviderId,
+            providerId,
             accountId: profile.id,
             accessToken,
             refreshToken,

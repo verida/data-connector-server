@@ -107,12 +107,12 @@ export default class Controller {
     public static async connections(req: UniqueRequest, res: Response, next: any) {
         try {
             const query = req.query
-            const providerName = query.provider ? query.provider.toString() : undefined
             const providerId = query.providerId ? query.providerId.toString() : undefined
+            const accountId = query.accountId ? query.accountId.toString() : undefined
 
             const networkInstance = await Utils.getNetworkFromRequest(req)
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
-            const connections = await syncManager.getProviders(providerName, providerId)
+            const connections = await syncManager.getProviders(providerId, accountId)
 
             const result: Record<string, any> = {}
             for (const connection of connections) {

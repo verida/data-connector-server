@@ -1,12 +1,16 @@
 import { Request, Response } from 'express'
 import Providers from "../../../../providers"
-import { ProviderHandler } from '../../../../interfaces'
+import { ConnectionOption, ProviderHandler } from '../../../../interfaces'
 import CONFIG from '../../../../config'
 
-const log4js = require("log4js")
-const logger = log4js.getLogger()
-
-const SCHEMA_SYNC_LOG = CONFIG.verida.schemas.SYNC_LOG
+export interface ProviderResult {
+    id: string
+    label: string,
+    icon: string,
+    description: string,
+    options: ConnectionOption[],
+    handlers: ProviderHandler[]
+}
 
 /**
  */
@@ -16,7 +20,7 @@ export default class Controller {
         const providerId = req.params.providerId
         const providers = Object.keys(CONFIG.providers)
 
-        const results: any = []
+        const results: ProviderResult[] = []
         for (let p in providers) {
             const providerName = providers[p]
             if (providerName != providerId) {
@@ -29,14 +33,14 @@ export default class Controller {
                 const handlers: ProviderHandler[] = []
                 for (const handler of syncHandlers) {
                     handlers.push({
-                        id: handler.getName(),
+                        id: handler.getId(),
                         label: handler.getLabel(),
                         options: handler.getOptions()
                     })
                 }
 
                 results.push({
-                    name: providerName,
+                    id: providerId,
                     label: provider.getProviderLabel(),
                     icon: provider.getProviderImageUrl(),
                     description: provider.getDescription(),
@@ -63,7 +67,7 @@ export default class Controller {
     public static async providers(req: Request, res: Response) {
         const providers = Object.keys(CONFIG.providers)
 
-        const results: any = []
+        const results: ProviderResult[] = []
         for (let p in providers) {
             const providerName = providers[p]
 
@@ -73,7 +77,7 @@ export default class Controller {
                 const handlers: ProviderHandler[] = []
                 for (const handler of syncHandlers) {
                     handlers.push({
-                        id: handler.getName(),
+                        id: handler.getId(),
                         label: handler.getLabel(),
                         options: handler.getOptions()
                     })

@@ -88,8 +88,8 @@ export default class Controller {
     public static async callback(req: UniqueRequest, res: Response, next: any) {
         try {
             logger.trace('callback()')
-            const providerName = req.params.provider
-            const provider = Providers(providerName)
+            const providerId = req.params.providerId
+            const provider = Providers(providerId)
 
             const connectionResponse = await provider.callback(req, res, next)
     
@@ -100,7 +100,7 @@ export default class Controller {
             const networkInstance = await Utils.getNetwork(key, req.requestId)
 
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
-            const connection = await syncManager.saveProvider(providerName, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
+            const connection = await syncManager.saveProvider(providerId, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
             if (redirect) {
                 const redirectedUrl = new URL(redirect)
@@ -121,7 +121,7 @@ export default class Controller {
                             <h2>Success!</h2>
                         </div>
                         <div style="margin: auto; text-align: center;">
-                            <img src="/assets/${providerName}/icon.png" style="width: 200px; height: 200px;" />
+                            <img src="/assets/${providerId}/icon.png" style="width: 200px; height: 200px;" />
                         </div>
                         <div style="margin: auto; text-align: center;">
                             <p>You may close this window</p>

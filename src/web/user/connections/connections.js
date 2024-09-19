@@ -160,7 +160,7 @@ $(document).ready(function() {
     
                     // Initialize sync
                     $.ajax({
-                        url: `/api/rest/v1/connections/sync/${connectionId}?key=${veridaKey}`,
+                        url: `/api/rest/v1/connections/${connectionId}/sync?key=${veridaKey}`,
                         type: 'POST',
                         data: JSON.stringify({
                             force: (syncType == 'force')
