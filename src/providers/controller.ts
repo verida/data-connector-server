@@ -37,7 +37,6 @@ export default class Controller {
      */
     public static async connect(req: Request, res: Response, next: any) {
         try {
-            logger.trace('connect()')
             const providerName = req.params.provider
             const query = req.query
             let redirect = query.redirect ? query.redirect.toString() : ''
@@ -57,7 +56,8 @@ export default class Controller {
             req.session.did = did
 
             const provider = Providers(providerName)
-            return provider.connect(req, res, next)
+
+            await provider.connect(req, res, next)
         } catch (err: any) {
             const message = err.message
             // @todo: Generate nice looking thank you page
@@ -86,11 +86,11 @@ export default class Controller {
      * @returns 
      */
     public static async callback(req: UniqueRequest, res: Response, next: any) {
-        logger.trace('callback()')
-        const providerName = req.params.provider
-        const provider = Providers(providerName)
-
         try {
+            logger.trace('callback()')
+            const providerName = req.params.provider
+            const provider = Providers(providerName)
+
             const connectionResponse = await provider.callback(req, res, next)
     
             const did = req.session.did
