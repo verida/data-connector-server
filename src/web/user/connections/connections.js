@@ -199,7 +199,7 @@ $(document).ready(function() {
         $dropdown.empty();
         $.each(providersData, function(key, provider) {
             if (provider.id === 'mock') return; // Skip 'mock' provider
-            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/connect/${provider.id}?key=${$('#veridaKey').val()}', '_blank');">
+            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/${provider.id}/connect?key=${$('#veridaKey').val()}', '_blank');">
                 <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
                 ${provider.label}
             </a>`);
