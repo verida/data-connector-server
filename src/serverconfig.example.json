@@ -95,7 +95,7 @@
             "clientId": "",
             "clientSecret": "",
             "stateSecret": "",
-            "groupLimit": 2,
+            "groupLimit": 20,
             "messageBatchSize": 50,
             "messagesPerGroupLimit": 10            
         }

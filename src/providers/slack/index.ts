@@ -8,8 +8,6 @@ const axios = require('axios');
 
 import { Installation, InstallationStore, InstallationQuery } from '@slack/oauth';
 import { PassportProfile } from "../../interfaces";
-import SlackChatGroupHandler from "./chat-group";
-
 export class CustomInstallationStore implements InstallationStore {
     private installations: Map<string, Installation> = new Map();
 
@@ -70,7 +68,6 @@ export default class SlackProvider extends Base {
     public syncHandlers(): any[] {
         return [
             SlackChatMessageHandler,
-            SlackChatGroupHandler
         ];
     }
 
