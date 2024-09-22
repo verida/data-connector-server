@@ -216,55 +216,49 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     }
 
     private async fetchAndTrackMessages(
-        group: any,
+        group: SchemaSocialChatGroup,
         rangeTracker: ItemsRangeTracker,
-        apiClient: any
+        apiClient: WebClient
     ): Promise<SchemaSocialChatMessage[]> {
+        // Validate group and group.id
+        if (!group || !group.sourceId) {
+            throw new Error('Invalid group or missing group sourceId');
+        }
+    
         // Initialize range from tracker
         let currentRange = rangeTracker.nextRange();
         let items: SchemaSocialChatMessage[] = [];
-
+    
         while (true) {
-            // Construct query based on range
-            let query: any = {
-                channel: group.id,
-                limit: this.config.batchSize,  // Default = 100, adjust if necessary
-            };
-
-            if (currentRange.startId) {
-                query.cursor = currentRange.startId; // Slack uses cursor for pagination
-            }
-
-            // Fetch messages from Slack API
-            const response = await apiClient.conversations.history(query);
-            const messages = response.messages || [];
-
-            // Process messages
+            // Fetch messages for the current range using fetchMessageRange
+            const messages = await this.fetchMessageRange(group, currentRange, apiClient);
+    
+            // Add fetched messages to the main list
             items = items.concat(messages);
-
-            // Break loop if no more messages or limit reached
-            if (messages.length < this.config.batchSize || !response.has_more) {
-                // Update rangeTracker
+    
+            // Break loop if no more messages are returned or the limit is reached
+            if (messages.length < this.config.messagesPerGroupLimit) {
+                // Mark the current range as complete and stop
                 rangeTracker.completedRange({
-                    startId: messages.length ? messages[0].ts : undefined,
-                    endId: response.response_metadata?.next_cursor || undefined
+                    startId: messages.length ? messages[0].sourceId : undefined,
+                    endId: messages.length ? messages[messages.length - 1].sourceId : undefined
                 }, false);
-
                 break;
             } else {
-                // Update range and continue fetching
+                // Update rangeTracker and continue fetching
                 rangeTracker.completedRange({
-                    startId: messages[0].ts,
-                    endId: response.response_metadata?.next_cursor
+                    startId: messages[0].sourceId,
+                    endId: messages[messages.length - 1].sourceId
                 }, false);
-
+    
+                // Move to the next range
                 currentRange = rangeTracker.nextRange();
             }
         }
-
+    
         return items;
     }
-
+    
     private updateRangeTracker(
         rangeTracker: ItemsRangeTracker,
         messages: SchemaSocialChatMessage[],
