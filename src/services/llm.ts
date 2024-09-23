@@ -2,16 +2,25 @@ import Groq from "groq-sdk"
 import Axios from 'axios'
 import CONFIG from "../config"
 
-const enum BedrockModels {
-  LLAMA3_70B = "meta.llama3-70b-instruct-v1:0",
-  LLAMA3_8B = "meta.llama3-8b-instruct-v1:0",
-  MIXTRAL_8_7B = "mistral.mixtral-8x7b-instruct-v0:1"
+export enum LLMProviders {
+  BEDROCK = "bedrock",
+  GROQ = "groq",
+  CUSTOM = "custom"
 }
 
-const enum GroqModels {
-  LLAMA3_70B = "llama3-70b-8192",
-  LLAMA3_8B = "llama3-8b-8192",
-  LLAMA31_70B = "llama-3.1-70b-versatile"
+export const ProviderModels = {
+  [LLMProviders.BEDROCK]: {
+    "LLAMA3_70B": "meta.llama3-70b-instruct-v1:0",
+    "LLAMA3_8B": "meta.llama3-8b-instruct-v1:0",
+    "MIXTRAL_8_7B": "mistral.mixtral-8x7b-instruct-v0:1"
+  },
+  [LLMProviders.GROQ]: {
+    "LLAMA3_70B": "llama3-70b-8192",
+    "LLAMA3_8B": "llama3-8b-8192",
+    "LLAMA31_70B": "llama-3.1-70b-versatile",
+    "MIXTRAL8_7B": "mixtral-8x7b-32768"
+  },
+  [LLMProviders.CUSTOM]: {}
 }
 
 const BEDROCK_KEY = CONFIG.verida.llms.bedrockKey
@@ -67,7 +76,12 @@ export class GroqLLM implements LLM {
 
   constructor(defaultModel: string) {
     this.defaultModel = defaultModel
-    this.groq = new Groq({ apiKey: GROQ_KEY });
+
+    if (GROQ_KEY) {
+      this.groq = new Groq({ apiKey: GROQ_KEY });
+    } else {
+      console.warn("Unable to initialize Grok: No key specified")
+    }
   }
 
   public async prompt(userPrompt: string, systemPrompt?: string, jsonFormat: boolean = true, model: string = this.defaultModel): Promise<OpenAIChatResponse> {
@@ -145,6 +159,27 @@ export class OpenAILLM implements LLM {
   }
 }
 
-export const bedrock = new OpenAILLM(LLMS.BEDROCK, BedrockModels.LLAMA3_70B)
-export const groq = new GroqLLM(GroqModels.LLAMA3_70B)
-export const defaultModel = groq
+export function getLLM(provider: LLMProviders = LLMProviders.BEDROCK, model: string = "LLAMA3_70B", customEndpoint?: OpenAIConfig): LLM {
+  let llm: LLM
+  switch (provider) {
+    case LLMProviders.BEDROCK:
+      llm = new OpenAILLM(LLMS.BEDROCK, model)
+      break
+    case LLMProviders.GROQ:
+      llm = new GroqLLM(model)
+      break
+    case LLMProviders.CUSTOM:
+      llm = new OpenAILLM(customEndpoint, model)
+  }
+
+  return llm
+}
+
+export async function prompt(userPrompt: string, systemPrompt?: string, jsonFormat: boolean = true, provider: LLMProviders = LLMProviders.BEDROCK, model: string = "LLAMA3_70B", customEndpoint?: OpenAIConfig): Promise<OpenAIChatResponse> {
+  const llm = getLLM(provider, model, customEndpoint)
+  return llm.prompt(userPrompt, systemPrompt, jsonFormat, model)
+}
+
+export const bedrock = new OpenAILLM(LLMS.BEDROCK, "LLAMA3_70B")
+export const groq = new GroqLLM("LLAMA3_70B")
+export const defaultModel = bedrock

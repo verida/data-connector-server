@@ -26,7 +26,7 @@ export default class Following extends BaseSyncHandler {
 
         const followingResult = await api.v2.following(me.data.id, {
             'user.fields': ['created_at', 'profile_image_url', 'description'],
-            max_results: this.config.followingLimit
+            max_results: this.config.batchSize
         })
 
         const users = followingResult.data

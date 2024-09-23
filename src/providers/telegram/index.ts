@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
 
-import { BaseProviderConfig, ConnectionProfile, PassportPhoto, PassportProfile } from '../../interfaces'
+import { BaseProviderConfig, ConnectionCallbackResponse, PassportProfile } from '../../interfaces'
 import { TelegramApi } from './api'
 import TelegramChatMessageHandler from './chat-message'
 
@@ -48,7 +48,7 @@ export default class TelegramProvider extends Base {
         return res.redirect('/provider/telegram')
     }
 
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         console.log('callback')
         const clientId = req.query.id!.toString()
 
@@ -59,16 +59,20 @@ export default class TelegramProvider extends Base {
         const tgProfile = await client.api.getMe({})
         console.log('telegram profile', tgProfile)
 
+        const username = tgProfile.usernames && tgProfile.usernames.active_usernames ? tgProfile.usernames.active_usernames[0] : undefined
+        const displayName = `${tgProfile.first_name} ${tgProfile.last_name}`.trim()
+
         const profile: PassportProfile = {
             id: tgProfile.id.toString(),
-            provider: this.getProviderName(),
-            displayName: `${tgProfile.first_name} ${tgProfile.last_name}`.trim(),
+            provider: this.getProviderId(),
+            displayName: displayName,
             name: {
                 familyName: tgProfile.last_name,
                 givenName: tgProfile.first_name
             },
             connectionProfile: {
-                username: tgProfile.usernames && tgProfile.usernames.active_usernames ? tgProfile.usernames.active_usernames[0] : undefined,
+                username,
+                readableId: username ? username : `${displayName} (${tgProfile.id.toString()})`,
                 phone: tgProfile.phone_number,
                 verified: tgProfile.is_verified
             }

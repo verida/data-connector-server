@@ -6,6 +6,7 @@ import YouTubePost from "./youtube-post";
 import { GoogleProviderConfig, GoogleProviderConnection } from "./interfaces";
 import YouTubeFavourite from "./youtube-favourite";
 import GoogleDriveDocument from "./gdrive-document";
+import { ConnectionCallbackResponse, PassportProfile } from "../../interfaces";
 import Calendar from "./calendar";
 import CalendarEvent from "./calendar-event";
 
@@ -64,7 +65,7 @@ export default class GoogleProvider extends Base {
     return auth(req, res, next);
   }
 
-  public async callback(req: Request, res: Response, next: any): Promise<any> {
+  public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
     this.init();
 
     const promise = new Promise((resolve, rejects) => {
@@ -78,13 +79,21 @@ export default class GoogleProvider extends Base {
           if (err) {
             rejects(err);
           } else {
-            console.log("callback!");
-            console.log(data);
-            const connectionToken = {
-              id: data.profile.id,
+            const profile = <PassportProfile> data.profile
+            const email = profile.emails && profile.emails.length ? profile.emails[0].value : undefined
+            const username = email ? email : profile.id
+            
+            const connectionToken: ConnectionCallbackResponse = {
+              id: profile.id,
               accessToken: data.accessToken,
               refreshToken: data.refreshToken,
-              profile: data.profile,
+              profile: {
+                username,
+                ...profile,
+                connectionProfile: {
+                  readableId: email,
+                }
+              }
             };
 
             resolve(connectionToken);
@@ -95,7 +104,7 @@ export default class GoogleProvider extends Base {
       auth(req, res, next);
     });
 
-    const result = await promise;
+    const result = <ConnectionCallbackResponse> await promise;
     return result;
   }
 

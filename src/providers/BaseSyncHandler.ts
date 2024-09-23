@@ -1,4 +1,4 @@
-import { Connection, ProviderHandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition } from "../interfaces"
+import { Connection, ProviderHandlerOption, SyncHandlerResponse, SyncHandlerStatus, SyncProviderLogLevel, SyncResponse, SyncHandlerPosition, ConnectionOptionType, ConnectionOptionEnumOption, BaseHandlerConfig, ConnectionHandler } from "../interfaces"
 import { IDatastore } from '@verida/types'
 import { EventEmitter } from "events"
 import { Utils } from "../utils"
@@ -9,7 +9,7 @@ const _ = require("lodash")
 export default class BaseSyncHandler extends EventEmitter {
 
     protected provider: BaseProvider
-    protected config: any
+    protected config: BaseHandlerConfig
     protected connection: Connection
 
     protected syncStatus: SyncHandlerStatus
@@ -30,8 +30,15 @@ export default class BaseSyncHandler extends EventEmitter {
         this.provider = provider
     }
 
+    /**
+     * @deprecated Use getId()
+     */
     public getName(): string {
         throw new Error('Not implemented')
+    }
+
+    public getId(): string {
+        return this.getName()
     }
 
     /**
@@ -68,6 +75,63 @@ export default class BaseSyncHandler extends EventEmitter {
 
     protected updateConnection(connectionParams: object) {
         this.provider.updateConnection(connectionParams)
+    }
+
+    public buildConfig(newConfig: Record<string, object>, currentConfig: Record<string, string | number | boolean>): BaseHandlerConfig {
+        const finalConfig: Record<string, string | number | boolean> = {}
+
+        for (const handlerOption of this.getOptions()) {
+            const configValue = currentConfig[handlerOption.id] ? currentConfig[handlerOption.id] : undefined
+
+            if (newConfig[handlerOption.id]) {
+                const newValue = newConfig[handlerOption.id]
+                const validEnumOptions = handlerOption.enumOptions.map((item) => item.value)
+
+                switch (handlerOption.type) {
+                    case ConnectionOptionType.BOOLEAN:
+                        if (typeof(newValue) !== "boolean") {
+                            throw new Error(`${handlerOption.label}: Must be boolean`)
+                        }
+
+                        finalConfig[handlerOption.id] = newValue
+                        break
+                    case ConnectionOptionType.ENUM:
+                        if (typeof(newValue) !== "string") {
+                            throw new Error(`${handlerOption.label}: Must be string`)
+                        } else if (validEnumOptions.indexOf(newValue) === -1) {
+                            throw new Error(`${handlerOption.label} must be one of [${validEnumOptions.join(", ")}], not ${newValue}`)
+                        }
+
+                        finalConfig[handlerOption.id] = newValue
+                        break
+                    case ConnectionOptionType.ENUM_MULTI:
+                        if (typeof(newValue) !== "string") {
+                            throw new Error(`${handlerOption.label}: Must be string`)
+                        } else {
+                            const enumValues = (<string> newValue).split(',')
+
+                            for (const enumValue of enumValues) {
+                                if (validEnumOptions.indexOf(enumValue) === -1) {
+                                    throw new Error(`${handlerOption.label}: Must be one of [${validEnumOptions.join(", ")}], not ${enumValue}`)
+                                }
+                            }
+                        }
+
+                        finalConfig[handlerOption.id] = newValue
+                        break
+                }
+            } else {
+                if (!configValue) {
+                    // No existing value, so set defaults
+                    finalConfig[handlerOption.id] = handlerOption.defaultValue
+                } else {
+                    // No value specified, so use existing value
+                    finalConfig[handlerOption.id] = configValue
+                }
+            }
+        }
+
+        return finalConfig
     }
 
     /**

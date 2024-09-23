@@ -68,7 +68,7 @@ export const Connections: Command<ConnectionsOptions> = {
 
     for (const provider of providers) {
         const connection = provider.getConnection()
-        console.log(`Provider ${provider.getProviderName()} (${provider.getProviderId()})`)
+        console.log(`Provider ${provider.getProviderId()} (${provider.getAccountId()})`)
         if (options.showConnections) {
           console.log(JSON.stringify(connection, null, 2))  
         } else {
