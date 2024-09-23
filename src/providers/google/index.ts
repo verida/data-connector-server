@@ -6,6 +6,7 @@ import YouTubePost from "./youtube-post";
 import { GoogleProviderConfig, GoogleProviderConnection } from "./interfaces";
 import YouTubeFavourite from "./youtube-favourite";
 import GoogleDriveDocument from "./gdrive-document";
+import { PassportProfile } from "../../interfaces";
 
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20");
@@ -73,16 +74,18 @@ export default class GoogleProvider extends Base {
           if (err) {
             rejects(err);
           } else {
-            console.log("callback!");
-            console.log(data);
+            const profile = <PassportProfile> data.profile
+            const email = profile.emails ? profile.emails[0].value : undefined
+            const username = email ? email : profile.id
+            
             const connectionToken = {
-              id: data.profile.id,
+              id: profile.id,
               accessToken: data.accessToken,
               refreshToken: data.refreshToken,
               profile: {
-                username: data.profile.email,
-                readableId: data.profile.email,
-                ...data.profile,
+                username,
+                readableId: username,
+                ...profile,
               }
             };
 
