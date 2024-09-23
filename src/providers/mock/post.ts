@@ -56,7 +56,7 @@ export default class Posts extends BaseSyncHandler {
             syncPosition.thisRef = "0"
         }
 
-        const pageResults = FAKE_RESPONSES.slice(parseInt(syncPosition.thisRef), parseInt(syncPosition.thisRef) + this.config.limit)
+        const pageResults = FAKE_RESPONSES.slice(parseInt(syncPosition.thisRef), parseInt(syncPosition.thisRef) + this.config.batchSize)
         const results = this.buildResults(pageResults, syncPosition.breakId, (parseInt(syncPosition.thisRef) + 1).toString())
 
         if (!results) {
@@ -136,7 +136,7 @@ export default class Posts extends BaseSyncHandler {
                 ...item,
                 _id: `post-${item._id}`,
                 sourceApplication: this.getProviderApplicationUrl(),
-                sourceAccountId: this.provider.getProviderId(),
+                sourceAccountId: this.provider.getAccountId(),
                 sourceId: i,
                 sourceData: {},
                 insertedAt

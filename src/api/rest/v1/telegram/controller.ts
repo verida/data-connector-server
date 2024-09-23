@@ -1,7 +1,7 @@
 import { Response } from "express";
-import { TelegramApi } from '../../../providers/telegram/api'
+import { TelegramApi } from '../../../../providers/telegram/api'
 
-import { UniqueRequest } from "../../../interfaces";
+import { UniqueRequest } from "../../../../interfaces";
 
 const pendingClients: Record<string, TelegramApi> = {}
 

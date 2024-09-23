@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import { BaseProviderConfig } from '../../interfaces'
+import { BaseProviderConfig, ConnectionCallbackResponse } from '../../interfaces'
 
 const passport = require("passport")
 import { Strategy as TwitterStrategy } from '@superfaceai/passport-twitter-oauth2'
@@ -46,7 +46,7 @@ export default class TwitterProvider extends Base {
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
         this.init()
-        const auth = await passport.authenticate(this.getProviderId())
+        const auth = await passport.authenticate(this.getAccountId())
         return auth(req, res, next)
     }
 
@@ -58,11 +58,11 @@ export default class TwitterProvider extends Base {
      * @param next 
      * @returns 
      */
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         this.init()
 
         const promise = new Promise((resolve, rejects) => {
-            const auth = passport.authenticate(this.getProviderId(), {
+            const auth = passport.authenticate(this.getAccountId(), {
                 scope: SCOPE,
                 failureRedirect: '/failure/twitter',
                 failureMessage: true
@@ -70,11 +70,17 @@ export default class TwitterProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
-                    const connectionToken = {
+                    // @todo: Confirm `id` is the username
+                    const username = data.profile.id
+                    const connectionToken: ConnectionCallbackResponse = {
                         id: data.profile.id,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
-                        profile: data.profile
+                        profile: {
+                            readableId: username,
+                            username,
+                            ...data.profile,
+                        }
                     }
     
                     resolve(connectionToken)
@@ -84,7 +90,7 @@ export default class TwitterProvider extends Base {
             auth(req, res, next)
         })
 
-        const result = await promise
+        const result = <ConnectionCallbackResponse> await promise
         return result
     }
 

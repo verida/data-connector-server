@@ -1,34 +1,10 @@
 import { Request, Response } from "express";
-import { Utils } from "../../../utils";
+import { Utils } from "../../../../utils";
 
 /**
  * 
  */
 export class DbController {
-    
-    public async get(req: Request, res: Response) {
-        try {
-            const { context } = await Utils.getNetworkFromRequest(req)
-            const dbName = req.params[0]
-            const permissions = Utils.buildPermissions(req)
-        
-            const db = await context.openDatabase(dbName, {
-                // @ts-ignore
-                permissions
-            })
-            const items = await db.getMany()
-            res.json({
-                items
-            })
-        } catch (error) {
-            let message = error.message
-            if (error.message.match('invalid encoding')) {
-                message = 'Invalid encoding (check permissions header)'
-            }
-
-            res.status(500).send(message);
-        }
-    }
 
     public async getById(req: Request, res: Response) {
         try {
@@ -42,6 +18,7 @@ export class DbController {
                 permissions
             })
             const item = await db.get(rowId)
+
             res.json({
                 item
             })
@@ -77,8 +54,14 @@ export class DbController {
             const filter = req.body.query || {}
             const options = req.body.options || {}
             const items = await db.getMany(filter, options)
+            const pouchDb = await db.getDb()
+            const info = await pouchDb.info()
+
             res.json({
-                items
+                items,
+                limit: options.limit ? options.limit : 20,
+                skip: options.skip ? options.skip : 0,
+                dbRows: info.doc_count
             })
         } catch (error) {
             console.log(error)

@@ -1,13 +1,13 @@
 $(document).ready(function() {
     let offset = 0;
-    const apiUrl = '/api/v1/ds/query';
+    const apiUrl = '/api/rest/v1';
     let currentSortField = '';
     let currentSortDirection = 'asc';
     let currentFilters = {};
     const schemas = {
-        "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.1.0/schema.json",
-        "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
-        "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
+        "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.2.0/schema.json",
+        "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.2.0/schema.json",
+        "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.3.0/schema.json",
         "Social Following": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
         "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
         "Favourites": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
@@ -19,12 +19,12 @@ $(document).ready(function() {
 
     // Load Verida Key and Schema from local storage
     $('#veridaKey').val(localStorage.getItem('veridaKey') || '');
-    $('#schema').val(localStorage.getItem('schema') || schemas["Connections"]);
 
     // Function to get query parameters
     function getQueryParams() {
         const params = new URLSearchParams(window.location.search);
         return {
+            schema: params.get('schema') || localStorage.getItem('schema') || schemas["Connections"],
             limit: params.get('limit') || '10',
             offset: params.get('offset') || '0',
             sort: params.get('sort') || '',
@@ -51,6 +51,8 @@ $(document).ready(function() {
                 currentFilters[field] = value;
             }
         });
+
+        $('#schema').val(queryParams.schema);
     }
 
     function fetchData() {
@@ -77,7 +79,7 @@ $(document).ready(function() {
         $('.alert').hide(); // Hide previous error messages
 
         $.ajax({
-            url: `${apiUrl}/${btoa(schema)}`,
+            url: `${apiUrl}/ds/query/${btoa(schema)}`,
             method: 'POST',
             headers: {
                 key: veridaKey
@@ -273,7 +275,7 @@ $(document).ready(function() {
 
         if (confirm('Are you sure you want to delete this row?')) {
             $.ajax({
-                url: `/api/v1/ds/${btoa(schemaUrl)}?id=${id}`,
+                url: `${apiUrl}/ds/${btoa(schemaUrl)}?id=${id}`,
                 method: 'DELETE',
                 headers: {
                     key: veridaKey

@@ -16,10 +16,9 @@
             }
         },
         "schemas": {
-            "DATA_CONNECTIONS": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
-            "SYNC_POSITION": "https://vault.schemas.verida.io/data-connections/sync-position/v0.1.0/schema.json",
-            "SYNC_REQUEST": "https://vault.schemas.verida.io/data-connections/sync-request/v0.1.0/schema.json",
-            "SYNC_LOG": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
+            "DATA_CONNECTIONS": "https://vault.schemas.verida.io/data-connections/connection/v0.3.0/schema.json",
+            "SYNC_POSITION": "https://vault.schemas.verida.io/data-connections/sync-position/v0.2.0/schema.json",
+            "SYNC_LOG": "https://vault.schemas.verida.io/data-connections/activity-log/v0.2.0/schema.json",
             "FOLLOWING": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
             "POST": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
             "EMAIL": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
@@ -36,15 +35,21 @@
     "providers": {
         "mock": {
             "label": "Mock",
-            "limit": 20
+            "batchSize": 20
         },
         "facebook": {
             "label": "Facebook",
             "appId": "",
             "appSecret": "",
             "sbtImage": "https://data.verida.network/ipfs/QmcCoAjMWQpz7FwJi1d7jSh9EJ1m3xY1FRGxPi9pu3Rit7/FacebookBadge.png",
-            "followingBatchSize": 100,
-            "postBatchSize": 100,
+            "handlers": {
+                "following": {
+                    "batchSize": 100
+                },
+                "post": {
+                    "batchSize": 100
+                }
+            },
             "maxSyncLoops": 5
         },
         "twitter": {
@@ -53,8 +58,14 @@
             "clientSecret": "",
             "bearerToken": "",
             "sbtImage": "https://data.verida.network/ipfs/QmWpmaBusMENzxLJb5RJUzp951sXPm9GLQCy4pt5zC2XdU/TwitterBadge.png",
-            "followingLimit": 20,
-            "postLimit": 20
+            "handlers": {
+                "following": {
+                    "batchSize": 20
+                },
+                "posts": {
+                    "batchSize": 20
+                }
+            }
         },
         "discord": {
             "label": "Discord",

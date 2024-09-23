@@ -26,7 +26,7 @@ export default class Following extends BaseSyncHandler {
 
     public async _sync(Fb: typeof Facebook, syncPosition: SyncHandlerPosition): Promise<SyncResponse> {
         if (!syncPosition.thisRef) {
-            syncPosition.thisRef = `${this.apiEndpoint}?limit=${this.config.followingBatchSize}`
+            syncPosition.thisRef = `${this.apiEndpoint}?limit=${this.config.batchSize}`
         }
 
         const pageResults = await Fb.api(syncPosition.thisRef)
@@ -45,7 +45,7 @@ export default class Following extends BaseSyncHandler {
         const results = this.buildResults(pageResults.data, syncPosition.breakId)
         syncPosition = this.setNextPosition(syncPosition, pageResults)
 
-        if (results.length != this.config.followingBatchSize) {
+        if (results.length != this.config.batchSize) {
             syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`
             syncPosition = this.stopSync(syncPosition)
         }
@@ -75,7 +75,7 @@ export default class Following extends BaseSyncHandler {
         }
 
         if (_.has(serverResponse, 'paging.next')) {
-            syncPosition.syncMessage = `Batch complete (${this.config.followingBatchSize}). More results pending.`
+            syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`
             // Have more results, so set the next page ready for the next request
             const next = serverResponse.paging.next
             const urlParts = url.parse(next, true)

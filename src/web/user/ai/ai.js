@@ -47,7 +47,7 @@ $(document).ready(function() {
         const body = { prompt: prompt, key: veridaKey };
 
         $.ajax({
-            url: `/api/v1/llm/${urlType}?key=${veridaKey}`,
+            url: `/api/rest/v1/llm/${urlType}?key=${veridaKey}`,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(body),
@@ -77,7 +77,7 @@ $(document).ready(function() {
     });
 
     // Hotload data
-    const eventSource = new EventSource(`/api/v1/llm/hotload?key=${savedVeridaKey}`);
+    const eventSource = new EventSource(`/api/rest/v1/llm/hotload?key=${savedVeridaKey}`);
     
     let loadComplete = false
     eventSource.onmessage = function(event) {

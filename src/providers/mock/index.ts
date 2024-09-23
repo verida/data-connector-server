@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import Base from "../BaseProvider"
 
 import Post from './post'
-import { BaseProviderConfig } from '../../interfaces'
+import { BaseProviderConfig, ConnectionCallbackResponse } from '../../interfaces'
 
 export interface MockProviderConfig extends BaseProviderConfig {
     limit: number
@@ -45,14 +45,15 @@ export default class MockProvider extends Base {
         return
     }
 
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         return {
-            id: 1,
+            id: "1",
             accessToken: 'fake-access-token',
             refreshToken: 'fake-refresh-token',
             profile: {
-                id: 1,
-                name: 'Fake user'
+                id: "",
+                provider: "mock",
+                displayName: 'Fake user'
             }
         }
     }

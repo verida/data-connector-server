@@ -1,6 +1,6 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-import { SyncItemsBreak, SyncItemsResult, SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
+import { BaseHandlerConfig, SyncItemsBreak, SyncItemsResult, SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import { google, gmail_v1 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker"
@@ -13,7 +13,7 @@ import {
 } from "../../interfaces";
 import { SchemaEmail, SchemaEmailType, SchemaRecord } from "../../schemas";
 import { GmailHelpers } from "./helpers";
-import { GmailSyncSchemaPosition } from "./interfaces";
+import { GmailSyncSchemaPosition, GoogleHandlerConfig } from "./interfaces";
 
 const _ = require("lodash");
 
@@ -24,6 +24,8 @@ export interface SyncEmailItemsResult extends SyncItemsResult {
 }
 
 export default class Gmail extends GoogleHandler {
+
+  protected config: GoogleHandlerConfig
 
   public getLabel(): string {
     return "Gmail"
@@ -107,7 +109,7 @@ export default class Gmail extends GoogleHandler {
       currentRange.endId,
       SchemaEmailType.RECEIVE,
       _.has(this.config, "breakTimestamp")
-        ? this.config.breakTimestamp
+        ? this.config.breakTimestamp as string
         : undefined
     );
 
@@ -237,7 +239,7 @@ export default class Gmail extends GoogleHandler {
         _id: this.buildItemId(messageId),
         type: messageType,
         name: subject ? subject : 'No email subject',
-        sourceAccountId: this.provider.getProviderId(),
+        sourceAccountId: this.provider.getAccountId(),
         sourceData: {},
         sourceApplication: this.getProviderApplicationUrl(),
         sourceId: message.id,

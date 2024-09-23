@@ -5,6 +5,7 @@ import { SchemaFollowing } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
+import { GoogleHandlerConfig } from "./interfaces";
 
 const _ = require("lodash");
 
@@ -13,6 +14,8 @@ const _ = require("lodash");
 const MAX_BATCH_SIZE = 50;
 
 export default class YouTubeFollowing extends GoogleHandler {
+
+    protected config: GoogleHandlerConfig
 
     public getLabel(): string {
         return "Youtube Subscriptions"
@@ -191,7 +194,7 @@ export default class YouTubeFollowing extends GoogleHandler {
                 description: description,
                 sourceId: itemId,
                 sourceData: snippet,
-                sourceAccountId: this.provider.getProviderId(),
+                sourceAccountId: this.provider.getAccountId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 followedTimestamp: insertedAt,
                 insertedAt: insertedAt,
