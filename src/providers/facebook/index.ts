@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import { BaseProviderConfig, SyncProviderLogLevel } from '../../interfaces'
+import { BaseProviderConfig, ConnectionCallbackResponse, SyncProviderLogLevel } from '../../interfaces'
 import TokenExpiredError from '../TokenExpiredError'
 import RequestLimitReachedError from '../RequestLimitReachedError'
 
@@ -52,7 +52,7 @@ export default class FacebookProvider extends Base {
         return auth(req, res, next)
     }
 
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         this.init()
 
         const promise = new Promise((resolve, rejects) => {
@@ -63,7 +63,7 @@ export default class FacebookProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
-                    const connectionToken = {
+                    const connectionToken: ConnectionCallbackResponse = {
                         id: data.profile.id,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
@@ -77,7 +77,7 @@ export default class FacebookProvider extends Base {
             auth(req, res, next)
         })
 
-        const result = await promise
+        const result = <ConnectionCallbackResponse> await promise
         return result
     }
 

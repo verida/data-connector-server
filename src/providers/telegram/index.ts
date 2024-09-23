@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
 
-import { BaseProviderConfig, PassportProfile } from '../../interfaces'
+import { BaseProviderConfig, ConnectionCallbackResponse, PassportProfile } from '../../interfaces'
 import { TelegramApi } from './api'
 import TelegramChatMessageHandler from './chat-message'
 
@@ -48,7 +48,7 @@ export default class TelegramProvider extends Base {
         return res.redirect('/provider/telegram')
     }
 
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         console.log('callback')
         const clientId = req.query.id!.toString()
 

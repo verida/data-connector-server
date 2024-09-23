@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { Utils } from '../utils'
 import serverconfig from '../config'
-import { BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderLogEntry, SyncProviderLogLevel, SyncHandlerPosition, SyncStatus, SyncProviderLogEvent } from '../interfaces'
+import { BaseProviderConfig, Connection, ConnectionOption, ConnectionProfile, SyncHandlerStatus, SyncProviderLogEntry, SyncProviderLogLevel, SyncHandlerPosition, SyncStatus, SyncProviderLogEvent, ConnectionCallbackResponse } from '../interfaces'
 import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 import { SchemaRecord } from '../schemas'
@@ -102,7 +102,7 @@ export default class BaseProvider extends EventEmitter {
         throw new Error('Not implemented')
     }
 
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         throw new Error('Not implemented')
     }
     

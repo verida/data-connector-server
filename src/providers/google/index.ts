@@ -6,7 +6,7 @@ import YouTubePost from "./youtube-post";
 import { GoogleProviderConfig, GoogleProviderConnection } from "./interfaces";
 import YouTubeFavourite from "./youtube-favourite";
 import GoogleDriveDocument from "./gdrive-document";
-import { PassportProfile } from "../../interfaces";
+import { ConnectionCallbackResponse, PassportProfile } from "../../interfaces";
 
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20");
@@ -60,7 +60,7 @@ export default class GoogleProvider extends Base {
     return auth(req, res, next);
   }
 
-  public async callback(req: Request, res: Response, next: any): Promise<any> {
+  public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
     this.init();
 
     const promise = new Promise((resolve, rejects) => {
@@ -75,17 +75,19 @@ export default class GoogleProvider extends Base {
             rejects(err);
           } else {
             const profile = <PassportProfile> data.profile
-            const email = profile.emails ? profile.emails[0].value : undefined
+            const email = profile.emails && profile.emails.length ? profile.emails[0].value : undefined
             const username = email ? email : profile.id
             
-            const connectionToken = {
+            const connectionToken: ConnectionCallbackResponse = {
               id: profile.id,
               accessToken: data.accessToken,
               refreshToken: data.refreshToken,
               profile: {
                 username,
-                readableId: username,
                 ...profile,
+                connectionProfile: {
+                  readableId: email,
+                }
               }
             };
 
@@ -97,7 +99,7 @@ export default class GoogleProvider extends Base {
       auth(req, res, next);
     });
 
-    const result = await promise;
+    const result = <ConnectionCallbackResponse> await promise;
     return result;
   }
 

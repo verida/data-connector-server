@@ -154,17 +154,17 @@ export default class SyncManager {
         return this.connectionDatastore
     }
 
-    public async saveProvider(providerId: string, accessToken: string, refreshToken: string, profile: PassportProfile): Promise<Connection> {
+    public async saveNewConnection(providerId: string, accessToken: string, refreshToken: string, profile: PassportProfile): Promise<Connection> {
         const connectionDatastore = await this.getConnectionDatastore()
 
-        const fullProviderId = `${providerId}:${profile.id}`
+        const connectionId = `${providerId}:${profile.id}`
 
         let providerConnection: Connection
         try {
-            providerConnection = await connectionDatastore.get(fullProviderId, {})
+            providerConnection = await connectionDatastore.get(connectionId, {})
         } catch (err: any) {
             if (!err.message.match('missing')) {
-                throw new Error(`Unknown error saving ${providerId} (${fullProviderId}) auth tokens: ${err.message}`)
+                throw new Error(`Unknown error saving ${providerId} (${connectionId}) auth tokens: ${err.message}`)
             }
         }
 
@@ -174,8 +174,8 @@ export default class SyncManager {
             avatar: {
                 uri: profile.photos && profile.photos.length ? profile.photos[0].value : undefined
             },
-            readableId: `${profile.displayName} (${profile.id})`,
-            //uri: 
+            readableId: profile.connectionProfile.readableId || `${profile.displayName} (${profile.id})`,
+            username: profile.connectionProfile.username || profile.username || profile.id,
             givenName: profile.name.givenName,
             familyName: profile.name.familyName,
             email: profile.emails && profile.emails.length ? profile.emails[0].value : undefined,
@@ -209,8 +209,8 @@ export default class SyncManager {
 
         providerConnection = {
             ...(providerConnection ? providerConnection : {}),
-            _id: fullProviderId,
-            name: fullProviderId,
+            _id: connectionId,
+            name: connectionId,
             providerId,
             accountId: profile.id,
             accessToken,

@@ -70,6 +70,13 @@ export interface ConnectionProfile {
     sourceData?: object
 }
 
+export interface ConnectionCallbackResponse {
+    id: string
+    accessToken: string
+    refreshToken?: string
+    profile: PassportProfile
+}
+
 export enum SyncFrequency {
     HOUR = "hour",
     DAY = "day",

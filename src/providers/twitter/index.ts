@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import { BaseProviderConfig } from '../../interfaces'
+import { BaseProviderConfig, ConnectionCallbackResponse } from '../../interfaces'
 
 const passport = require("passport")
 import { Strategy as TwitterStrategy } from '@superfaceai/passport-twitter-oauth2'
@@ -58,7 +58,7 @@ export default class TwitterProvider extends Base {
      * @param next 
      * @returns 
      */
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         this.init()
 
         const promise = new Promise((resolve, rejects) => {
@@ -72,7 +72,7 @@ export default class TwitterProvider extends Base {
                 } else {
                     // @todo: Confirm `id` is the username
                     const username = data.profile.id
-                    const connectionToken = {
+                    const connectionToken: ConnectionCallbackResponse = {
                         id: data.profile.id,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
@@ -90,7 +90,7 @@ export default class TwitterProvider extends Base {
             auth(req, res, next)
         })
 
-        const result = await promise
+        const result = <ConnectionCallbackResponse> await promise
         return result
     }
 
