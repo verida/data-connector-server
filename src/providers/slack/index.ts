@@ -8,6 +8,7 @@ const axios = require('axios');
 
 import { Installation, InstallationStore, InstallationQuery } from '@slack/oauth';
 import { PassportProfile } from "../../interfaces";
+import { SlackHelpers } from "./helpers";
 export class CustomInstallationStore implements InstallationStore {
     private installations: Map<string, Installation> = new Map();
 
@@ -78,6 +79,7 @@ export default class SlackProvider extends Base {
             "im:read",
             "mpim:read",
             "users:read",
+            "users:read.email",
             "channels:history",
             "groups:history",
             "im:history",
@@ -92,6 +94,7 @@ export default class SlackProvider extends Base {
             "im:read",
             "mpim:read",
             "users:read",
+            "users:read.email",
             "channels:history",
             "groups:history",
             "im:history",
@@ -130,52 +133,58 @@ export default class SlackProvider extends Base {
 
         return response.data;
     }
-    
+
+
     public async callback(req: Request, res: Response, next: any): Promise<any> {
         this.init();
         const { code } = req.query;
         try {
             const data = await this.getAccessToken(code as string);
-            
+
+            // Fetch the user's profile from Slack using the `authed_user.access_token`
+            const userInfo = await SlackHelpers.getUserInfo(data.authed_user.access_token, data.authed_user.id);
+
+            // Build the PassportProfile object
             const profile: PassportProfile = {
-                id: data.authed_user.id,  // Slack user ID
+                id: userInfo.id,  // Slack user ID
                 provider: this.getProviderName(),  // Set your Slack provider name
-                displayName: data.team.name,  // Team name as display name
+                displayName: userInfo.profile.real_name,  // User's real name
                 name: {
-                    familyName: '',  // Slack does not provide family name directly
-                    givenName: data.team.name  // Use team name as given name (optional customization)
+                    familyName: userInfo.profile.first_name,  
+                    givenName: userInfo.profile.last_name
                 },
                 connectionProfile: {
-                    username: data.authed_user.id,  // Slack user ID as username
-                    phone: undefined,  // Slack API does not provide phone info
-                    verified: true  // Assuming token authorization is verified
+                    username: userInfo.profile.display_name,  // Display name as username
+                    email: userInfo.profile.email,  // Email from profile
+                    phone: userInfo.profile.phone,  
+                    verified: userInfo.is_email_confirmed
                 }
             };
-    
-            // Add access token data if necessary
+
+            // Add access token data
             const connectionToken = {
                 id: data.team.id,
                 accessToken: data.authed_user.access_token,
                 refreshToken: data.refresh_token,  // If applicable, otherwise remove
                 profile: profile
             };
-    
+
             return connectionToken;
-    
+
         } catch (error) {
             next(error);
         }
     }
-   
+
 
     public async getApi(accessToken?: string, refreshToken?: string): Promise<WebClient> {
         if (!accessToken) {
             throw new Error('Access token is required');
         }
-        
+
         // Create a new WebClient instance with the provided access token
         const client = new WebClient(accessToken);
-        
+
         return client;
     }
 }

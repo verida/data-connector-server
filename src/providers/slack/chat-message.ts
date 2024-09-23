@@ -17,6 +17,7 @@ import { SlackChatGroupType, SlackProviderConfig } from "./interfaces";
 import BaseSyncHandler from "../BaseSyncHandler";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 import { ItemsRange } from "../../helpers/interfaces";
+import { SlackHelpers } from "./helpers";
 
 const _ = require("lodash");
 
@@ -66,7 +67,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
 
     protected async buildChatGroupList(): Promise<SchemaSocialChatGroup[]> {
         const client = this.getSlackClient();
-        let chatGroupIds: string[] = [];
+
         let channelList: SchemaSocialChatGroup[] = [];
 
         // Fetch all types of conversations: DMs, private, public
@@ -74,7 +75,6 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
         for (const type of types) {
             const conversations = await client.conversations.list({
                 types: type,
-                limit: this.config.groupLimit,
             });
 
             for (const channel of conversations.channels) {
@@ -108,12 +108,15 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
         });
 
         for (const message of response.messages) {
+            if (!message.user) continue;
+            
+            const user = await SlackHelpers.getUserInfo(this.connection.accessToken, message.user)
             const chatMessage: SchemaSocialChatMessage = {
                 _id: this.buildItemId(message.ts),
                 groupId: chatGroup._id,
                 groupName: chatGroup.name,
                 messageText: message.text,
-                fromHandle: message.user,
+                fromHandle: user.profile.email ?? "Unknown",
                 sourceApplication: this.getProviderApplicationUrl(),
                 sourceId: message.ts,
                 sourceData: message,
@@ -123,7 +126,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
                     message.user === this.connection.profile.id
                         ? SchemaChatMessageType.SEND
                         : SchemaChatMessageType.RECEIVE,
-                fromId: message.user,
+                fromId: message.user ?? "Unknown",
                 name: message.text.substring(0, 30),
             };
             messages.push(chatMessage);
@@ -149,15 +152,9 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
             const groupCount = groupList.length;
 
             // Iterate over each group 
-            for (let i = 0; i < groupCount; i++) {
+            for (let i = 0; i < Math.min(groupCount, this.config.groupLimit); i++) {
                 const groupIndex = (groupPosition + i) % groupCount; // Rotate through groups
                 const group = groupList[groupIndex];
-
-                // Stop processing if batch size is reached
-                if (totalMessages >= this.config.messageBatchSize) {
-                    syncPosition.thisRef = groupList[groupIndex + 1].sourceId; // Save the next group to process
-                    break;
-                }
 
                 // Use a separate ItemsRangeTracker for each group
                 let rangeTracker = new ItemsRangeTracker(group.syncData);
@@ -177,7 +174,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
 
                 // Stop if the total messages fetched reach the batch size
                 if (totalMessages >= this.config.messageBatchSize) {
-                    syncPosition.thisRef = groupList[groupIndex + 1].sourceId; // Continue from the next group in the next sync
+                    syncPosition.thisRef = groupList[(groupIndex + 1) % groupCount].sourceId; // Continue from the next group in the next sync
                     break;
                 }
             }
@@ -224,24 +221,26 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
         if (!group || !group.sourceId) {
             throw new Error('Invalid group or missing group sourceId');
         }
-    
+
         // Initialize range from tracker
         let currentRange = rangeTracker.nextRange();
         let items: SchemaSocialChatMessage[] = [];
-    
+
         while (true) {
             // Fetch messages for the current range using fetchMessageRange
             const messages = await this.fetchMessageRange(group, currentRange, apiClient);
-    
+
+            if (!messages.length) break;
+
             // Add fetched messages to the main list
             items = items.concat(messages);
-    
-            // Break loop if no more messages are returned or the limit is reached
-            if (messages.length < this.config.messagesPerGroupLimit) {
+
+            // Break loop if messages reached group limit
+            if (items.length > this.config.messagesPerGroupLimit) {
                 // Mark the current range as complete and stop
                 rangeTracker.completedRange({
-                    startId: messages.length ? messages[0].sourceId : undefined,
-                    endId: messages.length ? messages[messages.length - 1].sourceId : undefined
+                    startId: messages[0].sourceId,
+                    endId: messages[messages.length - 1].sourceId
                 }, false);
                 break;
             } else {
@@ -250,36 +249,13 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
                     startId: messages[0].sourceId,
                     endId: messages[messages.length - 1].sourceId
                 }, false);
-    
+
                 // Move to the next range
                 currentRange = rangeTracker.nextRange();
             }
         }
-    
-        return items;
-    }
-    
-    private updateRangeTracker(
-        rangeTracker: ItemsRangeTracker,
-        messages: SchemaSocialChatMessage[],
-        currentRange: { startId?: string; endId?: string }
-    ) {
-        if (messages.length) {
-            const firstMessage = messages[0];
-            const lastMessage = messages[messages.length - 1];
 
-            // Mark the range as completed with fetched messages
-            rangeTracker.completedRange(
-                { startId: firstMessage._id, endId: lastMessage._id },
-                false // Update if there's a break condition
-            );
-        } else {
-            // No messages found, so mark the range as completed without changes
-            rangeTracker.completedRange(
-                { startId: undefined, endId: undefined },
-                false
-            );
-        }
+        return items;
     }
 
     private updateSyncPosition(
@@ -295,6 +271,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
             syncPosition.syncMessage = `Processed ${totalMessages} messages across ${groupCount} groups. Sync complete.`;
             syncPosition.status = SyncHandlerStatus.ENABLED;
         } else {
+            //syncPosition.status = SyncHandlerStatus.ENABLED;
             syncPosition.syncMessage = `Batch complete (${this.config.messageBatchSize}). More results pending.`;
         }
     }
