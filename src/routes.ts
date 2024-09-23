@@ -8,6 +8,6 @@ router.use('/api/rest', restRoutes)
 router.use('/providers', providerRoutes)
 
 // @deprecated callback path, but added for backwards compatibility
-router.get('/callback/:provider', providerController.callback)
+router.get('/callback/:providerId', providerController.callback)
 
 export default router
