@@ -237,7 +237,7 @@ export default class BaseProvider extends EventEmitter {
         const syncHandlerNames = []
         for (let h in syncHandlers) {
             const handler = syncHandlers[h]
-            syncHandlerNames.push(handler.getName())
+            syncHandlerNames.push(handler.getId())
             syncPromises.push(this._syncHandler(handler, api, syncPositionsDs))
         }
 
@@ -252,7 +252,7 @@ export default class BaseProvider extends EventEmitter {
         this.connection.syncStatus = SyncStatus.CONNECTED
         this.connection.syncEnd = Utils.nowTimestamp()
         await this.saveConnection()
-        await this.logMessage(SyncProviderLogLevel.INFO, `Sync complete for ${this.getProviderName()} (${syncHandlerNames.join(', ')})`)
+        await this.logMessage(SyncProviderLogLevel.INFO, `Sync complete for ${this.getProviderId()} (${syncHandlerNames.join(', ')})`)
 
         return this.connection
     }
@@ -261,27 +261,26 @@ export default class BaseProvider extends EventEmitter {
         const providerInstance = this
         let syncCount = 0
         const schemaUri = handler.getSchemaUri()
-        const datastore = await this.vault.openDatastore(schemaUri)
 
-        const syncPosition = await this.getSyncPosition(handler.getName(), syncPositionsDs)
+        const syncPosition = await this.getSyncPosition(handler.getId(), syncPositionsDs)
         syncPosition.status = SyncHandlerStatus.SYNCING
         
         handler.on('log', async (syncLog: SyncProviderLogEvent) => {
-            await providerInstance.logMessage(syncLog.level, syncLog.message, handler.getName(), schemaUri)
+            await providerInstance.logMessage(syncLog.level, syncLog.message, handler.getId(), schemaUri)
         })
 
-        await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(),schemaUri)
+        await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getId()}`, handler.getId(),schemaUri)
         let syncResults = await handler.sync(api, syncPosition, syncPositionsDs)
-        await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items`, handler.getName(), schemaUri)
+        await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items`, handler.getId(), schemaUri)
         syncCount++
 
         while (!this.config.maxSyncLoops || syncCount < this.config.maxSyncLoops) {
             if (syncResults.syncPosition.status == SyncHandlerStatus.SYNCING) {
                 // sync again
-                await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getName()}`, handler.getName(), schemaUri)
+                await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getId()}`, handler.getId(), schemaUri)
                 syncResults = await handler.sync(api, syncPosition, syncPositionsDs)
-                await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items`, handler.getName(), schemaUri)
-                await this.logMessage(SyncProviderLogLevel.DEBUG, syncResults.syncPosition.syncMessage, handler.getName(), schemaUri)
+                await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items`, handler.getId(), schemaUri)
+                await this.logMessage(SyncProviderLogLevel.DEBUG, syncResults.syncPosition.syncMessage, handler.getId(), schemaUri)
             }
 
             syncCount++
