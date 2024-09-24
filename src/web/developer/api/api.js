@@ -60,9 +60,10 @@ $(document).ready(function() {
 
     // Populate endpoint dropdown
     for (let endpoint in apiEndpoints) {
+        const endpointConfig = apiEndpoints[endpoint];
         $('#endpointSelect').append($('<option>', {
             value: endpoint,
-            text: endpoint
+            text: `${endpointConfig.method} ${endpoint}`
         }));
     }
 
