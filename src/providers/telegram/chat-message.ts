@@ -304,7 +304,6 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       for (const chatGroup of chatGroupsBacklog) {
         // Respect group limit
         if (groupCount++ >= this.config.groupLimit) {
-          console.log(`- Group limit hit`)
           groupLimitHit = true
           break
         }
