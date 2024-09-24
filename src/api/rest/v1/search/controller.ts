@@ -81,22 +81,37 @@ class SearchController {
             const did = await account.did()
 
             const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const query = req.query.keywords.toString()
-            const searchOptions = req.query.options ? JSON.parse(req.query.options.toString()) : {}
-            const indexFields = req.query.fields ? req.query.fields.toString().split(',') : []
-            let storeFields = req.query.store ? req.query.store.toString().split(',') : []
+            const query = req.body.keywords ? req.body.keywords.toString() : undefined
+
+            if (!query) {
+                throw new Error(`Keywords are required`)
+            }
+
+            const indexFields = req.body.index ? req.body.index : []
+
+            if (!indexFields) {
+                throw new Error(`Index fields are required`)
+            }
+
+            const searchOptions = req.body.options ? req.body.options : {}
+            let storeFields = req.body.store ? req.body.store : []
             const permissions = Utils.buildPermissions(req)
-            const limit = req.query.limit ? parseInt(req.query.limit.toString()) : DEFAULT_LIMIT
+            const limit = req.body.limit ? parseInt(req.body.limit.toString()) : DEFAULT_LIMIT
 
             const searchResults = await MinisearchService.searchDs(context, did, schemaName, query, searchOptions, indexFields, storeFields, limit, permissions)
             const datastore = await context.openDatastore(schemaName)
             const items: SchemaRecordSearchResult[] = []
+
             for (const searchResult of searchResults.results) {
                 const item = await datastore.get(searchResult.id, {})
                 items.push({
                     ...item,
                     _match: searchResult
                 })
+
+                if (items.length >= limit) {
+                    break
+                }
             }
 
             return res.json({
