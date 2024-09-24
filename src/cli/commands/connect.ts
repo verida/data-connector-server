@@ -68,7 +68,7 @@ export const Connect: Command<ConnectProviderOptions> = {
       const rows = await ds.getMany()
       console.log(rows)*/
 
-      const openUrl = `${serverconfig.serverUrl}/api/v1/provider/${options.provider}/connect?key=${signature}`
+      const openUrl = `${serverconfig.serverUrl}/providers/${options.provider}/connect?key=${signature}`
       open(openUrl)
     }
   };
