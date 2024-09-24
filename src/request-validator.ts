@@ -1,7 +1,6 @@
-const basicAuth = require('express-basic-auth')
 const mcache = require("memory-cache")
 import { DIDClient } from '@verida/did-client'
-import { sign } from 'crypto'
+import { VERIDA_ENVIRONMENT } from './utils'
 
 let didClient: DIDClient
 
@@ -17,13 +16,9 @@ export default class RequestValidator {
      * @param {*} req 
      */
     public authorize(did: string, signature: string, req: any, cb: any) {
-        console.log('authorize called')
         did = did.replace(/_/g, ":").toLowerCase()
         const storageContext = req.headers['context-name']
         const cacheKey = `${did}/${storageContext}`
-        console.log("did", did)
-        console.log('signature', signature)
-        console.log('storageContext', storageContext)
 
         const authCheck = async () => {
             try {
@@ -35,7 +30,7 @@ export default class RequestValidator {
                 if (!didDocument) {
                     if (!didClient) {
                         didClient = new DIDClient({
-                            network: 'testnet'
+                            network: VERIDA_ENVIRONMENT
                         })
                     }
 

@@ -11,6 +11,10 @@ export default class Following extends BaseSyncHandler {
 
     protected static schemaUri: string = 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
 
+    public getName(): string {
+        return 'following'
+    }
+    
     /**
      * @todo: Support paging through all results
      * @todo: Correctly support `this.config.limitResults`
@@ -22,7 +26,7 @@ export default class Following extends BaseSyncHandler {
 
         const followingResult = await api.v2.following(me.data.id, {
             'user.fields': ['created_at', 'profile_image_url', 'description'],
-            max_results: this.config.followingLimit
+            max_results: this.config.batchSize
         })
 
         const users = followingResult.data

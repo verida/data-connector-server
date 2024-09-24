@@ -1,11 +1,13 @@
 import express from 'express'
-import Controller from './controller'
+import restRoutes from './api/rest/routes'
+import providerRoutes from './providers/routes'
+import providerController from './providers/controller'
 
 const router = express.Router()
+router.use('/api/rest', restRoutes)
+router.use('/providers', providerRoutes)
 
-router.get('/connect/:provider', Controller.connect)
-router.get('/callback/:provider', Controller.callback)
-router.get('/sync/:provider', Controller.sync)
-router.get('/syncDone/:provider', Controller.syncDone)
+// @deprecated callback path, but added for backwards compatibility
+router.get('/callback/:providerId', providerController.callback)
 
 export default router

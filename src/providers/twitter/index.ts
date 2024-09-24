@@ -1,13 +1,15 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import BaseProviderConfig from '../BaseProviderConfig'
+import { BaseProviderConfig, ConnectionCallbackResponse } from '../../interfaces'
 
 const passport = require("passport")
-const TwitterStrategy = require("passport-twitter-oauth2.0")
+import { Strategy as TwitterStrategy } from '@superfaceai/passport-twitter-oauth2'
 import { TwitterApi as TwitterClient } from 'twitter-api-v2'
+import dayjs from 'dayjs'
 
 import Following from './following'
 import Posts from './posts'
+import TokenExpiredError from '../TokenExpiredError'
 
 export interface TwitterProviderConfig extends BaseProviderConfig {
     clientID: string
@@ -23,6 +25,18 @@ export default class TwitterProvider extends Base {
 
     protected config: TwitterProviderConfig
 
+    public getProviderName() {
+        return 'twitter'
+    }
+
+    public getProviderLabel() {
+        return 'Twitter'
+    }
+
+    public getProviderApplicationUrl() {
+        return 'https://twitter.com/'
+    }
+
     public syncHandlers(): any[] {
         return [
             Following,
@@ -32,7 +46,7 @@ export default class TwitterProvider extends Base {
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
         this.init()
-        const auth = await passport.authenticate('twitter')
+        const auth = await passport.authenticate(this.getAccountId())
         return auth(req, res, next)
     }
 
@@ -44,11 +58,11 @@ export default class TwitterProvider extends Base {
      * @param next 
      * @returns 
      */
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         this.init()
 
         const promise = new Promise((resolve, rejects) => {
-            const auth = passport.authenticate('twitter', {
+            const auth = passport.authenticate(this.getAccountId(), {
                 scope: SCOPE,
                 failureRedirect: '/failure/twitter',
                 failureMessage: true
@@ -56,53 +70,89 @@ export default class TwitterProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
-                    console.log(data)
-                    /*const connectionToken = {
+                    // @todo: Confirm `id` is the username
+                    const username = data.profile.id
+                    const connectionToken: ConnectionCallbackResponse = {
                         id: data.profile.id,
-                        provider: data.profile.provider,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
-                        profile: data.profile
-                    }*/
+                        profile: {
+                            readableId: username,
+                            username,
+                            ...data.profile,
+                        }
+                    }
     
-                    resolve(data)
+                    resolve(connectionToken)
                 }
             })
 
             auth(req, res, next)
         })
 
-        const result = await promise
+        const result = <ConnectionCallbackResponse> await promise
         return result
     }
 
     public async getApi(accessToken?: string, refreshToken?: string): Promise<any> {
+        let me, client
+
         try {
-            const client = new TwitterClient(accessToken)
+            client = new TwitterClient(accessToken)
 
             // check client works okay
-            await client.v2.me()
-            return client
+            me = await client.v2.me({
+                'user.fields': ['username', 'name', 'profile_image_url', 'created_at', 'url', 'description']
+            })
         } catch (err: any) {
             // Auth error, attempt to obtain new refresh token
             if (err.code && (err.code == 401 || err.code == 403)) {
-                const client = new TwitterClient({
-                    clientId: this.config.clientID,
-                    clientSecret: this.config.clientSecret
-                });
-    
-                const {
-                    client: refreshedClient,
-                    accessToken: newAccessToken,
-                    refreshToken: newRefreshToken
-                } = await client.refreshOAuth2Token(refreshToken);
+                try {
+                    client = new TwitterClient({
+                        clientId: this.config.clientID,
+                        clientSecret: this.config.clientSecret
+                    });
+        
+                    const {
+                        client: refreshedClient,
+                        accessToken: newAccessToken,
+                        refreshToken: newRefreshToken
+                    } = await client.refreshOAuth2Token(refreshToken);
 
-                this.setAccountAuth(newAccessToken, newRefreshToken)
-                return refreshedClient
+                    this.updateConnection({
+                        accessToken: newAccessToken,
+                        refreshToken: newRefreshToken
+                    })
+                    client = refreshedClient
+
+                    me = await client.v2.me({
+                        'user.fields': ['username', 'name', 'profile_image_url', 'created_at', 'url', 'description']
+                    })
+                } catch (err) {
+                    // Unrecoverable auth error
+                    throw new TokenExpiredError(err.message)
+                }
+            } else {
+                throw err
             }
-
-            throw err
         }
+
+        const createdAt = dayjs(me.data.created_at).toISOString()
+
+        this.connection.profile = {
+            ...this.connection.profile,
+            id: me.data.id,
+            name: me.data.name,
+            username: me.data.username,
+            description: me.data.description,
+            link: me.data.url,
+            avatar: {
+                uri: me.data.profile_image_url
+            },
+            createdAt
+        }
+
+        return client
     }
 
     public init() {
@@ -111,10 +161,8 @@ export default class TwitterProvider extends Base {
             clientID: this.config.clientID,
             clientSecret: this.config.clientSecret,
             callbackURL: this.config.callbackUrl,
-            clientType: 'private',
+            clientType: 'confidential',
             scope: SCOPE,
-            pkce: true, // required,
-            state: true // required
           },
           function(accessToken: string, refreshToken: string, profile: any, cb: any) {
             // Simply return the raw data

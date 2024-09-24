@@ -1,16 +1,14 @@
-import { EnvironmentType } from '@verida/client-ts'
-import serverconfig from './serverconfig.json' 
+const _ = require('lodash')
+import serverconfig from "./serverconfig.example.json";
 
-export default serverconfig
-
-export function strToEnvType(s: string) { 
-    if (s == EnvironmentType.LOCAL) {
-        return EnvironmentType.LOCAL;
-    } else if (s == EnvironmentType.TESTNET) {
-        return EnvironmentType.TESTNET;
-    } else if (s == EnvironmentType.MAINNET) {
-        return EnvironmentType.MAINNET;
-    } else {
-        throw new Error("Invalid EnvironmentType value");
-    }
+let localconfig = {};
+try {
+  localconfig = require("../src/serverconfig.local.json");
+} catch (err) {
+  console.log(err)
+  if (err.code !== "MODULE_NOT_FOUND") {
+    throw err;
+  }
 }
+
+export default _.merge({}, serverconfig, localconfig);

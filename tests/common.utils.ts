@@ -1,63 +1,126 @@
-
 const assert = require("assert")
 import Axios from 'axios'
-import { EnvironmentType, Context, Client, ContextInterfaces } from '@verida/client-ts'
+import { Context, Client } from '@verida/client-ts'
 import { AutoAccount } from '@verida/account-node'
 
-import serverconfig from '../src/serverconfig.json'
-import Datastore from '@verida/client-ts/dist/context/datastore'
+import serverconfig from '../src/config'
+import { DatabasePermissionOptionsEnum, Network, IContext, IDatastore } from '@verida/types'
+import { Connection, SyncProviderLogEntry, SyncProviderLogLevel } from '../src/interfaces'
+import BaseSyncHandler from '../src/providers/BaseSyncHandler'
 
 const SERVER_URL = serverconfig.serverUrl
-const TEST_VAULT_CONTEXT = serverconfig.testing.contextName
-const TEST_VAULT_PRIVATE_KEY = serverconfig.testing.veridaPrivateKey
+const TEST_VAULT_PRIVATE_KEY = serverconfig.verida.testVeridaKey
+const SCHEMA_DATA_CONNECTION = serverconfig.verida.schemas.DATA_CONNECTIONS
+const DATA_SYNC_REQUEST_SCHEMA = serverconfig.verida.schemas.SYNC_REQUEST
 
-const VERIDA_ENVIRONMENT = <EnvironmentType> serverconfig.verida.environment
+const VERIDA_ENVIRONMENT = <Network> serverconfig.verida.environment
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
 
 const axios = Axios.create()
 
+export interface SyncSchemaConfig {
+    limit?: number
+    sinceId?: string
+}
+
+export interface NetworkInstance {
+    did: string,
+    network: Client,
+    context: IContext,
+    account: AutoAccount
+}
+
+let cachedNetworkInstance: NetworkInstance
+
+const providerIdArg = process.argv.find(arg => arg.startsWith('--providerId='))
+const cliProviderId = providerIdArg ? providerIdArg.split('=')[1] : undefined
+
 export default class CommonUtils {
 
-    static getNetwork = async (): Promise<any> => {
+    static getNetwork = async (): Promise<NetworkInstance> => {
+        if (cachedNetworkInstance) {
+            return cachedNetworkInstance
+        }
+
         const network = new Client({
-            environment: VERIDA_ENVIRONMENT
+            network: VERIDA_ENVIRONMENT
         })
 
-        const account = new AutoAccount(serverconfig.verida.defaultEndpoints, {
+        const account = new AutoAccount({
             privateKey: TEST_VAULT_PRIVATE_KEY,
-            environment: VERIDA_ENVIRONMENT,
+            network: VERIDA_ENVIRONMENT,
             // @ts-ignore
             didClientConfig: DID_CLIENT_CONFIG
         })
 
         await network.connect(account);
-        const context = await network.openContext(TEST_VAULT_CONTEXT)
+        const context = <Context> await network.openContext('Verida: Vault')
         const did = await account.did()
 
-        return {
+        cachedNetworkInstance = {
             did,
             network,
             context,
             account
         }
+
+        return cachedNetworkInstance
     }
 
-    static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string): Promise<any> => {
-        return await axios.get(`${SERVER_URL}/sync/${provider}?accessToken=${accessToken}&refreshToken=${refreshToken}&did=${did}&key=${encryptionKey}`)
+    static getConnection = async(providerName: string, providerId?: string): Promise<Connection> => {
+        if (!providerId) {
+            providerId = cliProviderId
+        }
+
+        if (!cliProviderId) {
+            console.log(`Provider ID is not defined, using first. Specify with --providerId=<providerId>`)
+        }
+
+        const { context } = await CommonUtils.getNetwork()
+        const connectionsDs = await context.openDatastore(SCHEMA_DATA_CONNECTION)
+        
+        const filter = {
+            provider: providerName,
+            providerId
+        }
+
+        const connection = <Connection | undefined> await connectionsDs.getOne(filter, {})
+
+        if (!connection) {
+            throw new Error(`Unable to locate connection ${providerName} ${providerId}`)
+        }
+
+        return connection
     }
 
-    static openSchema = async (context: Context, contextName: string, schemaName: string, databaseName: string, encryptionKey: string, externalDid: string, did: string): Promise<any> => {
-        const key = Buffer.from(encryptionKey, 'hex')
+    static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string, syncSchemas: Record<string, SyncSchemaConfig>): Promise<any> => {
+        return await axios.post(`${SERVER_URL}/syncStart/${provider}`, {
+            accessToken,
+            refreshToken,
+            did,
+            key: encryptionKey,
+            syncSchemas
+        })
+    }
 
+    static syncDone = async (provider: string, did: string): Promise<any> => {
+        return await axios.get(`${SERVER_URL}/syncDone/${provider}`, {
+            params: {
+                did
+            }
+        })
+    }
+
+    static async openSchema(context: Context, contextName: string, schemaName: string, databaseName: string, encryptionKey: string, externalDid: string, did: string): Promise<any> {
         const externalDatastore = await context.openExternalDatastore(schemaName, externalDid, {
             permissions: {
-                read: ContextInterfaces.PermissionOptionsEnum.USERS,
-                write: ContextInterfaces.PermissionOptionsEnum.USERS,
+                read: DatabasePermissionOptionsEnum.USERS,
+                write: DatabasePermissionOptionsEnum.USERS,
                 readList: [did],
                 writeList: [did]
             },
             // @ts-ignore
-            encryptionKey: key,
+            encryptionKey: Buffer.from(encryptionKey, 'hex'),
             databaseName,
             contextName
         })
@@ -65,9 +128,80 @@ export default class CommonUtils {
         return externalDatastore
     }
 
-    static closeDatastore = async (datastore: Datastore): Promise<any> => {
+    static getSyncResult = async (connection: any, syncRequestResult: any, encryptionKey: string) => {
+        const { serverDid, contextName, syncRequestId, syncRequestDatabaseName } = syncRequestResult.data
+            
+        let syncResult
+        let limit = 10
+        while (limit > 0) {
+            try {
+                const syncRequest = await CommonUtils.openSchema(
+                    connection.context,
+                    contextName,
+                    DATA_SYNC_REQUEST_SCHEMA,
+                    syncRequestDatabaseName,
+                    encryptionKey,
+                    serverDid,
+                    connection.did)
+                syncResult = await syncRequest.get(syncRequestId)
+                await CommonUtils.closeDatastore(syncRequest)
+
+                if (syncResult.status == 'requested') {
+                    continue
+                }
+                break
+            } catch (err) {
+                limit--
+                await CommonUtils.sleep(1000)
+            }
+        }
+
+        if (!syncResult) {
+            throw new Error(`No sync result after 10 seconds`)
+        } else {
+            return syncResult
+        }
+    }
+
+    static closeDatastore = async (datastore: IDatastore) => {
         await datastore.close({
             clearLocal: true
         })
+    }
+
+    static sleep = async (ms) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    static outputLogMessage(log: SyncProviderLogEntry) {
+        console.log(
+            `${log.level.toUpperCase()}: ${log.message} (${log.insertedAt})${
+            log.schemaUri ? "-" + log.schemaUri : ""
+            }`
+        );
+    }
+
+    static setupHandlerLogging(handler: BaseSyncHandler, logLevel?: SyncProviderLogLevel) {
+        if (logLevel) {
+            console.log(`Setting log level: ${logLevel}`)
+            handler.on('log', ((logEntry: SyncProviderLogEntry)=> {
+              switch(logLevel) {
+                case 'debug':
+                  if (logEntry.level == SyncProviderLogLevel.DEBUG) {
+                    CommonUtils.outputLogMessage(logEntry)
+                  }
+                case 'info':
+                  if (logEntry.level == SyncProviderLogLevel.INFO) {
+                    CommonUtils.outputLogMessage(logEntry)
+                  }
+                case 'error':
+                  if (logEntry.level == SyncProviderLogLevel.ERROR) {
+                    CommonUtils.outputLogMessage(logEntry)
+                  }
+              }
+            }))
+          } else {
+            console.log(`Logging is disabled. Enable with --logLevel=debug|info|error`)
+          }
     }
 }

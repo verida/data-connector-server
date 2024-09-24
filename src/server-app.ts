@@ -1,24 +1,34 @@
-import express from 'express'
+import { UniqueRequest } from './interfaces'
+import express, { Response, NextFunction } from 'express'
+import { Utils } from './utils'
 const cors = require('cors')
 import bodyParser from 'body-parser'
 import router from './routes'
 // @todo: See not in express-session about not using memory session
 const session = require('express-session')
+import { v4 as uuidv4 } from 'uuid';
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 import CONFIG from "./config"
 logger.level = CONFIG.logLevel
 
-//const basicAuth = require('express-basic-auth')
-//import RequestValidator from './request-validator'
+const path = require('path')
+
+function requestIdMiddleware(req: UniqueRequest, res: Response, next: NextFunction): void {
+  req.requestId = uuidv4();
+  next();
+}
+
 
 // Set up the express app
 const app = express();
-//const validator = new RequestValidator()
 
+app.use(requestIdMiddleware)
+app.use('/assets', express.static(path.join(__dirname, 'assets')))
+app.use('/', express.static(path.join(__dirname, 'web')))
 app.use(session({
-  secret: 'c20n498n720489t729amx9 8es',
+  secret: CONFIG.verida.sessionSecret,
   resave: false,
   saveUninitialized: true,
   // Enable this if HTTPS is enabled (ie: production)
@@ -30,32 +40,12 @@ const corsConfig = {}
 app.use(cors(corsConfig))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
-// Commenting out authorization for now
-/*app.use(basicAuth({
-  authorizer: validator.authorize,
-  authorizeAsync: true,
-  unauthorizedResponse: validator.getUnauthorizedResponse
-}))*/
 app.use(router)
 
+if (CONFIG.verida.devMode) {
+  console.log("Server is in development mode")
+} else {
+  Utils.deleteCachedData()
+}
 
 module.exports=app
-
-/*
-//Example code to create HTTPS server
-
-const https = require("https")
-const fs = require("fs")
-
-const key = fs.readFileSync("./keys/server.key")
-const cert = fs.readFileSync("./keys/server.cert")
-
-https.createServer(
-    {
-      key,
-      cert
-    },
-    app
-  ).listen(PORT, () => {
-  console.log(`server running on port ${PORT}`)
-});*/

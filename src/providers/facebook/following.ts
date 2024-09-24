@@ -1,58 +1,117 @@
 import BaseSyncHandler from "../BaseSyncHandler"
+import CONFIG from '../../config'
 const { Facebook } = require('fb')
 
 import url from 'url'
-import AccessTokenExpiredError from "../AccessTokenExpiredError"
+import { SyncResponse, SyncHandlerPosition, SyncHandlerStatus } from "../../interfaces"
+import { SchemaFollowing } from "../../schemas"
+
 const _ = require('lodash')
 
 export default class Following extends BaseSyncHandler {
 
-    protected static schemaUri: string = 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json'
+    protected apiEndpoint = '/me/likes'
 
-    public async sync(api: any): Promise<any> {
-        try {
-            const likes = await this.getAllPages(api, '/me/likes')
-            /*const posts = await FacebookProvider.getAllPages(Fb, '/me/posts')*/
+    public getLabel(): string {
+        return "Liked Pages"
+    }
 
-            const results = []
-            for (var l in likes) {
-                const like: any = likes[l]
-                const uriName = like.name.replace(/ /g, '-')
-                const followedTimestamp = like.created_time
+    public getName(): string {
+        return 'following'
+    }
 
-                results.push({
-                    _id: `facebook-${like.id}`,
-                    icon: `https://graph.facebook.com/${like.id}/picture`,
-                    name: like.name,
-                    uri: `https://facebook.com/${uriName}-${like.id}`,
-                    sourceApplication: 'https://facebook.com/',
-                    sourceId: like.id,
-                    followedTimestamp,
-                    insertedAt: followedTimestamp
-                })
+    public getSchemaUri(): string {
+        return CONFIG.verida.schemas.FOLLOWING
+    }
+
+    public async _sync(Fb: typeof Facebook, syncPosition: SyncHandlerPosition): Promise<SyncResponse> {
+        if (!syncPosition.thisRef) {
+            syncPosition.thisRef = `${this.apiEndpoint}?limit=${this.config.batchSize}`
+        }
+
+        const pageResults = await Fb.api(syncPosition.thisRef)
+
+        if (!pageResults || !pageResults.data.length) {
+            // No results found, so stop sync
+            syncPosition.syncMessage = `Stopping. No results found.`
+            syncPosition = this.stopSync(syncPosition)
+
+            return {
+                position: syncPosition,
+                results: []
             }
+        }
 
-            return results
-        } catch (err) {
-            throw new AccessTokenExpiredError()
+        const results = this.buildResults(pageResults.data, syncPosition.breakId)
+        syncPosition = this.setNextPosition(syncPosition, pageResults)
+
+        if (results.length != this.config.batchSize) {
+            syncPosition.syncMessage = `Processed ${results.length} items. Stopping. No more results.`
+            syncPosition = this.stopSync(syncPosition)
+        }
+
+        return {
+            results,
+            position: syncPosition
         }
     }
 
-    /**
-     * Helper method to fetch all the pages of data for any Facebook API endpoint
-     */
-     public async getAllPages(Fb: any, apiEndpoint: string, nextUrl: string = null, results: object[] = []): Promise<object[]> {
-        if (!nextUrl) {
-            nextUrl = `${apiEndpoint}?limit=${this.config.followingLimit}`
+    protected stopSync(syncPosition: SyncHandlerPosition): SyncHandlerPosition {
+        if (syncPosition.status == SyncHandlerStatus.ENABLED) {
+            return syncPosition
+        }
+        
+        syncPosition.status = SyncHandlerStatus.ENABLED
+        syncPosition.thisRef = undefined
+        syncPosition.breakId = syncPosition.futureBreakId
+        syncPosition.futureBreakId = undefined
+
+        return syncPosition
+    }
+
+    protected setNextPosition(syncPosition: SyncHandlerPosition, serverResponse: any): SyncHandlerPosition {
+        if (!syncPosition.futureBreakId && serverResponse.data.length) {
+            syncPosition.futureBreakId = serverResponse.data[0].id
         }
 
-        const pageResults = await Fb.api(nextUrl)
-        results = results.concat(pageResults.data)
-
-        if (_.has(pageResults, 'paging.next') && !this.config.limitResults) {
-            const next = pageResults.paging.next
+        if (_.has(serverResponse, 'paging.next')) {
+            syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`
+            // Have more results, so set the next page ready for the next request
+            const next = serverResponse.paging.next
             const urlParts = url.parse(next, true)
-            return await this.getAllPages(Fb, apiEndpoint, `${apiEndpoint}${urlParts.search}`, results)
+            syncPosition.thisRef = `${this.apiEndpoint}${urlParts.search}`
+        } else {
+            syncPosition.syncMessage = `Stopping. No more results.`
+            syncPosition = this.stopSync(syncPosition)
+        }
+
+        return syncPosition
+    }
+
+    protected buildResults(pageResults: any, breakId: string): SchemaFollowing[] {
+        const results = []
+        for (var r in pageResults) {
+            const like = pageResults[r]
+
+            if(like.id == breakId) {
+                // Break if the ID matches the record we are breaking on
+                break
+            }
+
+            const uriName = like.name.replace(/ /g, '-')
+            const followedTimestamp = like.created_time ? like.created_time : new Date().toISOString()
+
+            results.push({
+                _id: this.buildItemId(like.id),
+                icon: `https://graph.facebook.com/${like.id}/picture`,
+                name: like.name,
+                uri: `https://facebook.com/${uriName}-${like.id}`,
+                sourceApplication: 'https://facebook.com/',
+                sourceId: like.id,
+                sourceData: like,
+                followedTimestamp,
+                insertedAt: followedTimestamp
+            })
         }
 
         return results

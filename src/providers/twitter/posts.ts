@@ -10,6 +10,10 @@ export default class Posts extends BaseSyncHandler {
 
     protected static schemaUri: string = 'https://common.schemas.verida.io/social/post/v0.1.0/schema.json'
 
+    public getName(): string {
+        return 'post'
+    }
+
     /**
      * @todo: Support paging through all results
      * @todo: Correctly support `this.config.limitResults`
@@ -17,11 +21,8 @@ export default class Posts extends BaseSyncHandler {
      * @param api 
      */
     public async sync(api: any): Promise<any> {
-        // Get the current user's screen name
-        const me = await api.v2.me()
-
-        const timelinePaginator = await api.v2.userTimeline(me.data.id, {
-            max_results: this.config.postLimit,
+        const timelinePaginator = await api.v2.userTimeline(this.connection.profile.id, {
+            max_results: this.config.batchSize,
             exclude: ['replies', 'retweets']
         })
 

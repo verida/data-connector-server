@@ -1,36 +1,101 @@
 # Verida Data Connector Server
 
-This server enables the Verida Vault to establish a connection to third party services and pull data that the Vault can sync with the user's datastore.
+## Overview
 
-## Process Flows
+This server enables a user to authenticate with third party services to take ownership of their personal data stored with the third party.
 
-### Connect an API (Facebook as an example)
+The `Verida Vault` utilizes this server, redirecting a user to connect to an API. Once connected, the `Verida Vault` makes regular `sync` requests to the API in order to keep up-to-date with the user's latest data in that third party service.
 
-- [ Vault ] -> Open Webpage in Browser [ `https://apis.verida.io/connect/facebook?did=0xe14c...` ]
-- Webpage redirects [ `https://apis.verida.io/connect/facebook?did=0xe14c...` ] -> Facebook Auth [https://www.facebook.com/auth]
-- User completes Facebook auth
-- [ Facebook ] -> API auth completion [ `https://apis.verida.io/auth/facebook?auth_token=abc123` ]
-- User is shown a success page with a button to complete the auth. Clicking this button opens a deep link in the Vault to complete the authorization process and initiate the first sync. Provices `{ configJson }` with config info on the connection (ie: access / refresh tokens)
-- [ Vault ] Saves `{ configJson }` to `api-connections` data store
-- [ Vault ] Sends API request -> Server API [ `https://apis.verida.io/sync/facebook?did=0xe14c...&config={jsonConfig}&key=eYzfi3a02` ]
-- Server API fetches data from Facebook using refresh / auth token in `jsonConfig`
-- Server API syncs data for each datastore supported by Facebook.
-- The Vault is notified when this is complete and then syncs the data from the server datastore(s) to the vault datastore(s).
+## Running the Server
 
-## Implementation comments
+### Configuration
 
-1. The database for a user is shared between conenctors. ie: Sync Facebook and Sync Facebook data using the `followers` schema and data will be pushed into the same database for both. Should they be split?
+Create a local configuration file:
 
-## Security
+```
+cp src/serverconfig.example.json src/serverconfig.local.json
+```
 
-This server is designed to receive `accessToken` and `refreshToken` values from the user for each sync request. These credentials are not stored on the server.
+ Update `src/serverconfig.local.json` to:
 
-User data is fetched on behalf of the user and processed. This processing involves:
+1. Specify the details of each provider you want to run. You will need to obtain the necessary API keys for each provider.
+2. Specify the correct `serverUrl` and `assetsUrl` that point to the correct address of your server. Don't use `localhost` as it breaks sessions, use `127.0.0.1` instead (*).
+3. `testVeridaKey`: A Verida private key (or seedphrase) that controls a DID. This is used by the command line when connecting a provider, and also used by the unit tests to load providers and save test data.
+4. Update any connection credentials
 
-- Fetching from third party API
-- Temporarily storing the data on disk
-- Encrypting the data on disk
-- Sending the encrypted data to a CouchDB server where this server and the user has `read` / `write` access
-- Deleting the data from disk
+_(*) Sessions are used to track `redirect` URLs in the connection request. Sessions **do not** work locally if you specify `localhost` for the hostname. Use an IP address instead._
 
-This server only has access to data fetched from the third party API. It can not view the full set of data owned by the user for a given dataset. For example, if this API pulls a user's Twitter posts, it will not have access to any other posts stored in the user's Vault.
+### Starting the server
+
+Once off initialization:
+
+```
+npm use
+yarn
+```
+
+Start the server:
+
+```
+yarn run dev
+```
+
+## Tests
+
+Before running tests, ensure `src/serverconfig.json` has a Verida identity private key set in `testVeridaKey`. The tests use this identity to store test data. Use a new identity as the tests will delete any existing data and potentially add junk data. See steps below on how to create a new test Verida identity.
+
+```
+yarn run core-cli 
+```
+
+Run all tests:
+
+```
+yarn run tests
+```
+
+Run a specficic test:
+
+```
+yarn run test tests/providers/facebook.test.ts
+```
+
+## Create a Test Verida Identity
+
+Create a new Verida identity:
+
+```
+yarn run core-cli CreateAccount -n banksia -s
+```
+
+You also need to create the `Verida: Vault` context for the account that will become the container for all the databases storing your personal data. This can be achieved by creating a basic profile:
+
+```
+yarn run core-cli SetProfile -k <privateKey> --network banksia -n "John" -c "Australia"
+```
+
+Replace `<privateKey>` with the key output from the `CreateAccount` command above.
+
+By default, this will select three storage nodes on the Verida network to store and replicate your encrypted data. Alternatively, it is possible to run a local instance of the Verida Storage Node server and use it to store your data.
+
+You can link your local storage node to your Verida identity by running this command instead:
+
+```
+yarn run core-cli SetProfile -k <privateKey> --network banksia --storageNodes "http://localhost:5000/" -n "John" -c "Australia"
+```
+
+_Note: `storageNodes` are only linked the first time the profile is set, so it's important to specify your local storage node the first time you run `SetProfile`_
+
+You can learn how to use all the core Verida command line tools with:
+
+```
+yarn run core-cli --help
+yarn run core-cli CreateAccount --help
+```
+
+## Learn more
+
+- [How to contribute](./docs/Contributing.md)
+- [API Endpoints](./docs/Endpoints.md) to establish connections, sync data and get provider metadata
+- [Command Line Tools](./docs/CLI.md) to help establish provider connections, manually sync data and view data
+- [Implementation notes](./docs/Implementation.md) that explain the inner workings and design details

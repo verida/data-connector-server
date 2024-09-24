@@ -3,7 +3,10 @@ coverage
 .env
 .env*
 dist/
-keys/
-v*/
-serverconfig.*.json
+/v*/
+src/serverconfig*.json
+!src/serverconfig.example.json
 .DS_Store
+td.*
+tdlib*
+_td*/

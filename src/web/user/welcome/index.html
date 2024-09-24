@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - Verida Private Data Bridge</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/user/welcome">Verida Bridge [alpha]</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/user/welcome">Welcome</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/connections">Connections</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/ai">Private AI</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/security">Security</a>
+                </li>
+            </ul>
+            <!-- Extra nav item aligned to the right -->
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/developer">Developer Sandbox &rarr;</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h1 class="title">Private Data Bridge (alpha)</h1>
+        <p>Welcome to the alpha release of the Private Data Bridge.</p>
+        <p>The data bridge provides an <a href="#apis">API of services</a> enabling users to syncronize, query, view, search and use AI services with their private user data. It also provides this <a href="#sandbox">developer sandbox interface</a>, to easily interact with the private data bridge APIs.</p>
+
+        <a name="getting-started" />
+        <h2>Getting Started</h2>
+        <p>Here's the recommended steps to get started:</p>
+        <p>
+            <ol>
+                <li><a href="#create-identity">Create a Verida Network identity</a> by scanning the QR code and obtain a private key.</li>
+                <li><a href="../connections/">Connect some data to your identity</a> such as Google which includes gmail. You may need to wait 10-15 minutes for your first backlog of data to syncronize. View the sync logs to track the progress.</li>
+                <li><a href="../ai/">Try the private AI demo</a> that has access to any data syncronized to your identity.</li>
+            </ol>
+        </p>
+
+        <a name="create-identity" />
+        <h2>Create a Verida Network Account</h2>
+        <p>You must have a Verida Network private key to use the Verida Private Data Bridge services. Your Verida Network key is used to unlock access to your encrypted data stored on the Verida Network. It's also used to encrypt / decrypt your data for use by applications. You can generate a private key by scanning this QR code and downloading the Verida Mobile Wallet</p>
+        <p class="text-center"><img src="download-verida-wallet.svg" /></p>
+        <p>Once you have created an account on the Verida Mainnet (Myrtle), you can obtain your seed phrase by navigating to; <i>Settings &rarr; Seed Phrase</i>. Your seed phrase can be used anywhere you see <i>Private Key</i> in this developer sandbox.</p>
+        <p>It's also possible to create a Verida Network Identity using the Verida SDK Command Line Tools.</p>
+
+        <a name="security" />
+        <h2>Security</h2>
+        <p>This server is running within a <a href="https://docs.marlin.org/learn/what-is-oyster">Marlin Oyster</a> secure enclave that protects all data and computation. This means that no-one, not even the underlying infrastructure provider for this server, can access any user data. See <a href="../user/about#security">About &rarr; Security</a> for more details.</p>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

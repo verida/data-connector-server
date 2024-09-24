@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import BaseProviderConfig from '../BaseProviderConfig'
+import { BaseProviderConfig, ConnectionCallbackResponse, SyncProviderLogLevel } from '../../interfaces'
+import TokenExpiredError from '../TokenExpiredError'
+import RequestLimitReachedError from '../RequestLimitReachedError'
 
 const passport = require("passport")
 const FacebookStrategy = require("passport-facebook")
@@ -21,6 +23,18 @@ export default class FacebookProvider extends Base {
 
     protected config: FacebookProviderConfig
 
+    public getProviderName() {
+        return 'facebook'
+    }
+
+    public getProviderLabel() {
+        return 'Facebook'
+    }
+
+    public getProviderApplicationUrl() {
+        return 'https://facebook.com/'
+    }
+
     public syncHandlers(): any[] {
         return [
             Following,
@@ -38,7 +52,7 @@ export default class FacebookProvider extends Base {
         return auth(req, res, next)
     }
 
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         this.init()
 
         const promise = new Promise((resolve, rejects) => {
@@ -49,9 +63,8 @@ export default class FacebookProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
-                    const connectionToken = {
+                    const connectionToken: ConnectionCallbackResponse = {
                         id: data.profile.id,
-                        provider: data.profile.provider,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
                         profile: data.profile
@@ -64,7 +77,7 @@ export default class FacebookProvider extends Base {
             auth(req, res, next)
         })
 
-        const result = await promise
+        const result = <ConnectionCallbackResponse> await promise
         return result
     }
 
@@ -74,8 +87,38 @@ export default class FacebookProvider extends Base {
             appSecret: this.config.appSecret
         })
 
-        Fb.setAccessToken(accessToken)
-        return Fb
+        try {
+            Fb.setAccessToken(accessToken ? accessToken : this.connection.accessToken)
+
+            const me = await Fb.api('/me?fields=id,name,picture,link')
+
+            const readableId = `${me.name} (${me.id})`
+
+            if (this.connection) {
+                this.connection.profile = {
+                    ...(this.connection.profile ? this.connection.profile : {}),
+                    id: me.id,
+                    readableId,
+                    name: me.name,
+                    link: me.link,
+                    avatar: {
+                        uri: me.picture.data.url
+                    }
+                }
+            }
+
+            return Fb
+        } catch (err: any) {
+            if (err.response && err.response.error.code == 190) {
+                this.logMessage(SyncProviderLogLevel.INFO, 'Facebook token expired')
+                throw new TokenExpiredError(err.response.error.message)
+            } else if (err.message.match('request limit reached')) {
+                this.logMessage(SyncProviderLogLevel.INFO, 'Facebook request limit reached')
+                throw new RequestLimitReachedError(err.response.error.message)
+            }
+
+            throw err
+        }
     }
 
     public init() {
