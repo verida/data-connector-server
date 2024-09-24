@@ -92,7 +92,6 @@ export default class Controller {
                     handlers
                 })
             } catch (err) {
-                console.log(err)
                 // skip broken providers
             }
         }

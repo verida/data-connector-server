@@ -68,7 +68,7 @@ $(document).ready(function() {
     
                     const formattedSyncTimes = `Start: ${new Date(connection.syncStart).toLocaleString()}<br>End: ${new Date(connection.syncEnd).toLocaleString()}`;
     
-                    const providerDetails = getProviderDetails(connection.provider);
+                    const providerDetails = getProviderDetails(connection.providerId);
                     const avatar = connection.profile.avatar.uri ? `<img src="${connection.profile.avatar.uri}" alt="${connection.profile.name}" style="width: 30px; height: 30px;"></img>` : ''
     
                     const row = $(`

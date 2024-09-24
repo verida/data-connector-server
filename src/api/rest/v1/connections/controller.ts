@@ -1,7 +1,6 @@
-import { Request, Response } from 'express'
-import Providers from "../../../../providers"
+import { Response } from 'express'
 import SyncManager from '../../../../sync-manager'
-import { ConnectionHandler, ProviderHandler, SyncFrequency, SyncHandlerPosition, SyncStatus, UniqueRequest } from '../../../../interfaces'
+import { ConnectionHandler, SyncFrequency, SyncHandlerPosition, SyncStatus, UniqueRequest } from '../../../../interfaces'
 import { Utils } from '../../../../utils'
 import CONFIG from '../../../../config'
 import BaseSyncHandler from '../../../../providers/BaseSyncHandler'
