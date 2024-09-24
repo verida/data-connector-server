@@ -14,8 +14,8 @@ export default class BaseGoogleHandler extends BaseSyncHandler {
         const redirectUrl = "";
     
         const oAuth2Client = new google.auth.OAuth2(
-          this.config.clientId,
-          this.config.clientSecret,
+          this.config.clientId as string,
+          this.config.clientSecret as string,
           redirectUrl
         );
 

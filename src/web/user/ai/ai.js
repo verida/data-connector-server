@@ -41,23 +41,19 @@ $(document).ready(function() {
         addMessage(prompt, 'user');
         showTypingIndicator();
 
-        const userInput = $('#privateData-input').val();
-
-        let urlType = "prompt"
-        if (userInput == "on") {
-            urlType = "personal"
-        }
+        const urlType = $('#privateData-input').prop('checked') ? "personal" : 
+        "prompt";
 
         const body = { prompt: prompt, key: veridaKey };
 
         $.ajax({
-            url: `/api/v1/llm/${urlType}?key=${veridaKey}`,
+            url: `/api/rest/v1/llm/${urlType}?key=${veridaKey}`,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(body),
             success: function(response) {
                 removeTypingIndicator();
-                addMessage(response.result, 'bot');
+                addMessage(urlType == "personal" ? response.result : response.result.choices[0].message.content, 'bot');
             },
             error: function(xhr) {
                 removeTypingIndicator();
@@ -81,7 +77,7 @@ $(document).ready(function() {
     });
 
     // Hotload data
-    const eventSource = new EventSource(`/api/v1/llm/hotload?key=${savedVeridaKey}`);
+    const eventSource = new EventSource(`/api/rest/v1/llm/hotload?key=${savedVeridaKey}`);
     
     let loadComplete = false
     eventSource.onmessage = function(event) {

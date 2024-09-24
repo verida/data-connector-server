@@ -38,6 +38,7 @@
     "@slack/web-api": "^7.4.0",
     "@superfaceai/passport-twitter-oauth2": "^1.2.3",
     "@types/node": "^20.14.11",
+    "@types/passport": "^1.0.16",
     "@verida/account-node": "^4.1.0",
     "@verida/client-ts": "^4.1.1",
     "@verida/did-client": "^4.1.0",

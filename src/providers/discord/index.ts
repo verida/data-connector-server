@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import { BaseProviderConfig } from '../../interfaces'
+import { BaseProviderConfig, ConnectionCallbackResponse } from '../../interfaces'
 
 const passport = require("passport")
 import { Strategy as DiscordStrategy, Scope } from '@oauth-everything/passport-discord';
@@ -49,7 +49,7 @@ export default class DiscordProvider extends Base {
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
         this.init()
-        const auth = await passport.authenticate(this.getProviderId())
+        const auth = await passport.authenticate(this.getAccountId())
         return auth(req, res, next)
     }
 
@@ -61,11 +61,11 @@ export default class DiscordProvider extends Base {
      * @param next 
      * @returns 
      */
-    public async callback(req: Request, res: Response, next: any): Promise<any> {
+    public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         this.init()
 
         const promise = new Promise((resolve, rejects) => {
-            const auth = passport.authenticate(this.getProviderId(), {
+            const auth = passport.authenticate(this.getAccountId(), {
                 scope: SCOPE,
                 failureRedirect: '/failure/discord',
                 failureMessage: true
@@ -73,7 +73,7 @@ export default class DiscordProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
-                    const connectionToken = {
+                    const connectionToken: ConnectionCallbackResponse = {
                         id: data.profile.id,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
@@ -87,7 +87,7 @@ export default class DiscordProvider extends Base {
             auth(req, res, next)
         })
 
-        const result = await promise
+        const result = <ConnectionCallbackResponse> await promise
         return result
     }
 
@@ -147,7 +147,8 @@ export default class DiscordProvider extends Base {
             ...this.connection.profile,
             id: me.id,
             name: me.display_name ? me.display_name : me.username,
-            username: me.username,
+            username: me.username ? me.username : `${me.display_name} (${me.id})`,
+            readableId: me.username ? me.username : `${me.display_name} (${me.id})`,
             // use user custom avatar if set, otherwise use default discord avatar
             avatar: {
                 uri: me.avatar ? client.cdn.avatar(me.id, me.avatar) : client.cdn.defaultAvatar(me.discriminator % 5)

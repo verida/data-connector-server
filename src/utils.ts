@@ -39,7 +39,6 @@ export class Utils {
     public static async getNetworkFromRequest(req: Request): Promise<NetworkConnection> {
         const headers = req.headers
         const key = headers["key"] ? headers["key"].toString() : req.query.key.toString()
-        const contextName = headers["context-name"] ? headers["context-name"].toString() : VAULT_CONTEXT_NAME
 
         return Utils.getNetwork(key)
     }
@@ -170,10 +169,10 @@ export class Utils {
         // Build up a list of providers
         const providerList = []
         for (let p in providers) {
-            const providerName = providers[p]
-            const provider = Providers(providerName)
+            const providerId = providers[p]
+            const provider = Providers(providerId)
             providerList.push({
-                name: providerName, 
+                id: providerId,
                 label: provider.getProviderLabel(),
                 icon: provider.getProviderImageUrl()
             })

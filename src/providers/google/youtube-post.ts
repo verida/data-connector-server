@@ -9,7 +9,7 @@ import {
 import { SchemaPostType, SchemaPost } from "../../schemas";
 import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
-import { YoutubeActivityType } from "./interfaces";
+import { GoogleHandlerConfig, YoutubeActivityType } from "./interfaces";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 
 const _ = require("lodash");
@@ -23,6 +23,8 @@ export interface SyncPostItemsResult extends SyncItemsResult {
 }
 
 export default class YouTubePost extends GoogleHandler {
+
+    protected config: GoogleHandlerConfig
 
     public getLabel(): string {
         return "Youtube Posts"
@@ -207,7 +209,7 @@ export default class YouTubePost extends GoogleHandler {
                 content: description,
                 sourceId: postId,
                 sourceData: snippet,
-                sourceAccountId: this.provider.getProviderId(),
+                sourceAccountId: this.provider.getAccountId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 insertedAt: insertedAt,
             });

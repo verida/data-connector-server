@@ -73,17 +73,31 @@ export default class SyncManager {
 
     }
 
-    public async getProviders(providerName?: string, providerId?: string): Promise<BaseProvider[]> {
+    public async getConnection(connectionId: string): Promise<Connection | undefined> {
+        const connectionDs = await this.getConnectionDatastore()
+        const connectionRecord = <Connection | undefined> await connectionDs.get(connectionId, {})
+        return connectionRecord
+    }
+
+    public async getProvider(connectionId: string): Promise<BaseProvider | undefined> {
+        const connectionRecord = await this.getConnection(connectionId)
+        const providers = <BaseProvider[]> await this.getProviders(connectionRecord.providerId, connectionRecord.accountId)
+        if (providers.length) {
+            return providers[0]
+        }
+    }
+
+    public async getProviders(providerId?: string, accountId?: string): Promise<BaseProvider[]> {
         if (this.connections) {
-            if (providerName) {
+            if (providerId) {
                 const connections = []
 
                 for (const connection of this.connections) {
-                    if (connection.getProviderName() != providerName) {
+                    if (connection.getProviderId() != providerId) {
                         continue
                     }
 
-                    if (!providerId || connection.getProviderId() == providerId) {
+                    if (!accountId || connection.getAccountId() == accountId) {
                         connections.push(connection)
                     }
                 }
@@ -95,23 +109,21 @@ export default class SyncManager {
         }
 
         const datastore = await this.getConnectionDatastore()
-        const allProviders = providerName ? [providerName] : Object.keys(CONFIG.providers)
+        const allProviders = providerId ? [providerId] : Object.keys(CONFIG.providers)
         const userConnections = []
-        for (let p in allProviders) {
-            const providerName = allProviders[p]
-            
+        for (let currentProviderId of allProviders) {
             try {
                 const filter: Record<string, string> = {
-                    provider: providerName
+                    providerId: currentProviderId
                 }
 
-                if (providerId) {
-                    filter.providerId = providerId
+                if (accountId) {
+                    filter.accountId = accountId
                 }
 
                 const connections = <Connection[]> await datastore.getMany(filter, {})
                 for (const connection of connections) {
-                    const provider = Providers(providerName, this.vault, connection)
+                    const provider = Providers(currentProviderId, this.vault, connection)
                     userConnections.push(provider)
                 }
                 
@@ -121,7 +133,7 @@ export default class SyncManager {
             }
         }
 
-        if (providerName) {
+        if (accountId) {
             return userConnections
         } else {
             // Save the connections if we fetched all of them
@@ -142,17 +154,17 @@ export default class SyncManager {
         return this.connectionDatastore
     }
 
-    public async saveProvider(providerName: string, accessToken: string, refreshToken: string, profile: PassportProfile) {
+    public async saveNewConnection(providerId: string, accessToken: string, refreshToken: string, profile: PassportProfile): Promise<Connection> {
         const connectionDatastore = await this.getConnectionDatastore()
 
-        const providerId = `${providerName}:${profile.id}`
+        const connectionId = `${providerId}:${profile.id}`
 
         let providerConnection: Connection
         try {
-            providerConnection = await connectionDatastore.get(providerId, {})
+            providerConnection = await connectionDatastore.get(connectionId, {})
         } catch (err: any) {
             if (!err.message.match('missing')) {
-                throw new Error(`Unknown error saving ${providerName} (${providerId}) auth tokens: ${err.message}`)
+                throw new Error(`Unknown error saving ${providerId} (${connectionId}) auth tokens: ${err.message}`)
             }
         }
 
@@ -162,17 +174,19 @@ export default class SyncManager {
             avatar: {
                 uri: profile.photos && profile.photos.length ? profile.photos[0].value : undefined
             },
-            //uri: 
+            readableId: profile.connectionProfile.readableId || `${profile.displayName} (${profile.id})`,
+            username: profile.connectionProfile.username || profile.username || profile.id,
             givenName: profile.name.givenName,
             familyName: profile.name.familyName,
             email: profile.emails && profile.emails.length ? profile.emails[0].value : undefined,
             ...(profile.connectionProfile ? profile.connectionProfile : {})
         }
 
-        const provider = Providers(providerName)
+        const provider = Providers(providerId)
         const handlers = await provider.getSyncHandlers()
         const connectionHandlers: ConnectionHandler[] = []
 
+        // Set default values for connection handlers
         for (const handler of handlers) {
             const handlerOptions = handler.getOptions()
             const handlerConfig: Record<string, string> = {}
@@ -182,7 +196,7 @@ export default class SyncManager {
             }
 
             connectionHandlers.push({
-                name: handler.getName(),
+                id: handler.getId(),
                 enabled: true,
                 config: handlerConfig
             })
@@ -195,10 +209,10 @@ export default class SyncManager {
 
         providerConnection = {
             ...(providerConnection ? providerConnection : {}),
-            _id: providerId,
-            name: providerId,
-            provider: providerName,
-            providerId: profile.id,
+            _id: connectionId,
+            name: connectionId,
+            providerId,
+            accountId: profile.id,
             accessToken,
             refreshToken,
             profile: connectionProfile,
@@ -213,17 +227,8 @@ export default class SyncManager {
         if (!result) {
             throw new Error(`Unable to save connection: ${JSON.stringify(connectionDatastore.errors, null, 2)}`)
         }
+
+        return providerConnection
     }
-
-    // public async disconnectProvider(providerName: string, providerId: string): Promise<void> {
-    //     const providers = await this.getProviders(providerName, providerId)
-
-    //     if (!providers.length) {
-    //         throw new Error(`Unable to locate provider: ${providerName} (${providerId})`)
-    //     }
-
-    //     const provider = providers[0]
-    //     await provider.disconnect()
-    // }
 
 }

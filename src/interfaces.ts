@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { Profile as PassportBaseProfile } from "passport"
 import { SchemaRecord } from "./schemas"
 
 export interface UniqueRequest extends Request {
@@ -29,28 +30,12 @@ export interface ConnectionOption {
     defaultValue: string
 }
 
-export interface PassportName {
-    givenName?: string
-    familyName?: string
-    middleName?: string
+export interface BaseHandlerConfig extends Record<string, string | boolean | number> {
+    batchSize?: number
+    breakTimestamp?: string
 }
 
-export interface PassportEmail {
-    type?: string
-    value: string
-}
-
-export interface PassportPhoto {
-    value: string
-}
-
-export interface PassportProfile {
-    id: string,
-    provider: string,
-    displayName?: string
-    name?: PassportName
-    emails?: PassportEmail[]
-    photos?: PassportPhoto[]
+export interface PassportProfile extends PassportBaseProfile {
     connectionProfile?: Partial<ConnectionProfile>
 }
 
@@ -80,8 +65,16 @@ export interface ConnectionProfile {
     phoneVerified?: boolean
     verified?: boolean
     username?: string
+    readableId: string
     createdAt?: string
     sourceData?: object
+}
+
+export interface ConnectionCallbackResponse {
+    id: string
+    accessToken: string
+    refreshToken?: string
+    profile: PassportProfile
 }
 
 export enum SyncFrequency {
@@ -98,17 +91,17 @@ export enum SyncStatus {
 }
 
 export interface ConnectionHandler {
-    name: string
+    id: string
     enabled: boolean
-    config: Record<string, string>
+    config: BaseHandlerConfig
 }
 
 export interface Connection {
     _id?: string
     _rev?: string
     name: string
-    provider: string
     providerId: string
+    accountId: string
     accessToken: string
     refreshToken?: string
     profile: ConnectionProfile
@@ -126,7 +119,7 @@ export interface BaseProviderConfig {
     sbtImage: string
     batchSize?: number
     maxSyncLoops?: number
-    breakTimestamp?: object
+    breakTimestamp?: string
     // Custom config for each handler
     handlers?: Record<string, object>
 }
@@ -147,9 +140,9 @@ export interface SyncHandlerPosition {
     // id = `${providerName}:${handlerName]}:${status}`
     _id: string
     _rev?: string
-    providerName: string
     providerId: string
-    handlerName: string
+    accountId: string
+    handlerId: string
     status: SyncHandlerStatus
 
     // Message describing the status of the sync
@@ -176,9 +169,9 @@ export interface SyncResponse {
 export interface SyncProviderLogEntry {
     _id?: string
     insertedAt?: string
-    providerName: string
-    providerId?: string
-    handlerName?: string
+    providerId: string
+    accountId?: string
+    handlerId?: string
     schemaUri?: string
     message: string
     level: SyncProviderLogLevel

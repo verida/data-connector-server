@@ -1,13 +1,11 @@
 const _ = require('lodash')
-import { defaultModel } from "../llm"
+import { defaultModel, LLM } from "../llm"
 import { PromptSearch, PromptSearchLLMResponse, PromptSearchSort, PromptSearchType } from "../tools/promptSearch"
 import { ChatThreadResult, SearchService, SearchSortType, SearchType } from "../search"
 import { VeridaService } from '../veridaService'
 import { SchemaEmail, SchemaFavourite, SchemaFile, SchemaFollowing, SchemaSocialChatMessage } from '../../schemas'
 import { Helpers } from "../helpers"
 import { EmailShortlist } from "../tools/emailShortlist"
-
-const llm = defaultModel
 
 const MAX_EMAIL_LENGTH = 500
 const MAX_DOC_LENGTH = 2000
@@ -24,7 +22,7 @@ const MAX_DATERANGE_FILES = 20
 
 export class PromptSearchService extends VeridaService {
 
-    public async prompt(prompt: string): Promise<{
+    public async prompt(prompt: string, llm: LLM): Promise<{
         result: string,
         duration: number,
         process: PromptSearchLLMResponse
