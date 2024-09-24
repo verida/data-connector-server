@@ -2,8 +2,7 @@ const assert = require("assert");
 import {
   Connection,
   SyncHandlerPosition,
-  SyncHandlerStatus,
-  SyncSchemaPositionType,
+  SyncHandlerStatus
 } from "../../../src/interfaces";
 import Providers from "../../../src/providers";
 import CommonUtils, { NetworkInstance } from "../../common.utils";
@@ -12,9 +11,9 @@ import TelegramChatMessageHandler from "../../../src/providers/telegram/chat-mes
 import BaseProvider from "../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../common.tests";
 import { TelegramConfig } from "../../../src/providers/telegram/interfaces";
-import { SchemaRecord, SchemaSocialChatGroup, SchemaSocialChatMessage } from "../../../src/schemas";
+import { SchemaSocialChatGroup, SchemaSocialChatMessage } from "../../../src/schemas";
 
-const providerName = "telegram";
+const providerId = "telegram";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
@@ -36,26 +35,26 @@ let providerConfig: Omit<TelegramConfig, "sbtImage" | "label" | "apiId" | "apiHa
 // - message batch size respected (y)
 // - messages per group limit respected (y)
 
-describe(`${providerName} chat tests`, function () {
+describe(`${providerId} chat tests`, function () {
   this.timeout(100000);
 
   this.beforeAll(async function () {
     network = await CommonUtils.getNetwork();
-    connection = await CommonUtils.getConnection(providerName);
-    provider = Providers(providerName, network.context, connection);
+    connection = await CommonUtils.getConnection(providerId);
+    provider = Providers(providerId, network.context, connection);
     
     testConfig = {
-      idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
+      idPrefix: `${provider.getProviderId()}-${connection.profile.id}`,
       timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     };
   });
 
-  describe(`Fetch ${providerName} data`, () => {
+  describe(`Fetch ${providerId} data`, () => {
 
     it(`Can pass basic tests: ${handlerName}`, async () => {
-      const { api, handler, schemaUri, provider } = await CommonTests.buildTestObjects(
-        providerName,
+      const { api, handler, provider } = await CommonTests.buildTestObjects(
+        providerId,
         TelegramChatMessageHandler,
         providerConfig,
         connection
@@ -63,14 +62,12 @@ describe(`${providerName} chat tests`, function () {
 
       try {
         const syncPosition: SyncHandlerPosition = {
-          _id: `${providerName}-${handlerName}`,
-          type: SyncSchemaPositionType.SYNC,
-          providerName,
-          handlerName: handler.getName(),
-          providerId: provider.getProviderId(),
-          status: SyncHandlerStatus.ACTIVE,
+          _id: `${providerId}-${handlerName}`,
+          providerId,
+          handlerId: handler.getId(),
+          accountId: provider.getAccountId(),
+          status: SyncHandlerStatus.ENABLED,
         };
-        console.log(syncPosition)
 
         // Batch 1
         const response = await handler._sync(api, syncPosition);
@@ -79,12 +76,12 @@ describe(`${providerName} chat tests`, function () {
         let groupMessages: Record<string, SchemaSocialChatMessage[]> = {}
         let groups: SchemaSocialChatGroup[] = []
         for (const result of (<any[]> response.results)) {
-          if (result.chatGroupId) {
-            if (!groupMessages[result.chatGroupId]) {
-              groupMessages[result.chatGroupId] = []
+          if (result.groupId) {
+            if (!groupMessages[result.groupId]) {
+              groupMessages[result.groupId] = []
             }
 
-            groupMessages[result.chatGroupId].push(result)
+            groupMessages[result.groupId].push(result)
           } else {
             groups.push(result)
           }
@@ -98,117 +95,6 @@ describe(`${providerName} chat tests`, function () {
           const groupMessageCount = groupMessages[groupId].length
           assert.equal(groupMessageCount, providerConfig.messagesPerGroupLimit, `Total messages in group ${group.name} is correct (${groupMessageCount})`)
         }
-
-        // console.log(response)
-        return
-  
-        const results = <SchemaRecord[]>response.results;
-  
-        assert.ok(results && results.length, "Have results returned");
-        assert.equal(3, results.length,
-          "Have correct number of results returned on page 1"
-        );
-  
-        assert.ok(
-          results[0][testConfig.timeOrderAttribute] >
-            results[1][testConfig.timeOrderAttribute],
-          "Results are most recent first"
-        );
-  
-        assert.equal(results[0].sourceApplication, handler.getProviderApplicationUrl(), "Items have correct source application")
-        assert.equal(results[0].sourceAccountId, provider.getProviderId(), "Items have correct source account / provider id")
-        assert.ok(results[0].sourceId, "Items have sourceId set")
-        assert.ok(results[0].sourceData, "Items have sourceData set")
-  
-        assert.equal(
-          SyncHandlerStatus.ACTIVE,
-          response.position.status,
-          "Sync is set to connected"
-        );
-        assert.ok(response.position.thisRef, "Have a next page reference");
-        assert.equal(response.position.breakId, undefined, "Break ID is undefined");
-        assert.equal(
-          `${idPrefix}-${response.position.futureBreakId}`,
-          results[0]._id,
-          "Future break ID matches the first result ID"
-        );
-  
-        // // Snapshot: Page 2
-        // const response2 = await handler._sync(api, syncPosition);
-        // const results2 = <SchemaRecord[]>response2.results;
-  
-        // assert.ok(
-        //   results2 && results2.length,
-        //   "Have second page of results returned"
-        // );
-        // assert.ok(
-        //   results2 && results2.length == 3,
-        //   "Have correct number of results returned in second page"
-        // );
-        // assert.ok(
-        //   results2[0][testConfig.timeOrderAttribute] >
-        //     results2[1][testConfig.timeOrderAttribute],
-        //   "Results are most recent first"
-        // );
-        // assert.ok(
-        //   results2[0][testConfig.timeOrderAttribute] <
-        //     results[2][testConfig.timeOrderAttribute],
-        //   "First item on second page of results have earlier timestamp than last item on first page"
-        // );
-  
-        // assert.equal(
-        //   response.position.status,
-        //   SyncHandlerStatus.ACTIVE,
-        //   "Sync is still active"
-        // );
-        // assert.ok(response.position.thisRef, "Have a next page reference");
-        // // assert.equal(PostSyncRefTypes.Url, response.position.thisRefType, 'This position reference type is URL fetch')
-        // assert.equal(response.position.breakId, undefined, "Break ID is undefined");
-        // assert.equal(
-        //   results[0]._id,
-        //   `${idPrefix}-${response.position.futureBreakId}`,
-        //   "Future break ID matches the first result ID"
-        // );
-  
-        // // Update: Page 1 (ensure 1 result only)
-        // // Fetch the update set of results to confirm `position.pos` is correct
-        // // Make sure we fetch the first post only, by setting the break to the second item
-        // const position = response2.position;
-        // position.thisRef = undefined;
-        // // position.thisRefType = PostSyncRefTypes.Api
-        // position.breakId = results[1]._id.replace(`${idPrefix}-`, "");
-        // position.futureBreakId = undefined;
-  
-        // const response3 = await handler._sync(api, position);
-        // const results3 = <SchemaRecord[]>response3.results;
-        // assert.equal(results3.length, 1, "1 result returned");
-        // assert.equal(results3[0]._id, results[0]._id, "Correct ID returned");
-  
-        // assert.equal(
-        //   response.position.status,
-        //   SyncHandlerStatus.STOPPED,
-        //   "Sync is stopped"
-        // );
-        // assert.equal(
-        //   response.position.thisRef,
-        //   undefined,
-        //   "No next page reference"
-        // );
-        // // assert.equal(PostSyncRefTypes.Api, response.position.thisRefType, 'This position reference type is API fetch')
-        // assert.equal(
-        //   response.position.breakId,
-        //   results3[0]._id.replace(`${idPrefix}-`, ""),
-        //   "Break ID is the first result"
-        // );
-        // assert.equal(
-        //   response.position.futureBreakId,
-        //   undefined,
-        //   "Future break ID is undefined"
-        // );
-  
-        // Close the provider connection
-        console.log('closing provider')
-        await provider.close()
       } catch (err) {
         // ensure provider closes even if there's an error
         await provider.close()

@@ -31,7 +31,7 @@ let provider: BaseProvider, connection: Connection;
 
 export class CommonTests {
   static async runSyncTest(
-    providerName: string,
+    providerId: string,
     handlerType: typeof BaseSyncHandler,
     connection: Connection,
     testConfig: GenericTestConfig = {
@@ -42,14 +42,14 @@ export class CommonTests {
     providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
   ): Promise<SyncResponse> {
     const { api, handler, schemaUri } = await this.buildTestObjects(
-      providerName,
+      providerId,
       handlerType,
       providerConfig,
       connection
     );
 
     const syncPosition: SyncHandlerPosition = {
-      _id: `${providerName}-${schemaUri}`,
+      _id: `${providerId}-${schemaUri}`,
       ...syncPositionConfig,
     };
 
@@ -59,7 +59,7 @@ export class CommonTests {
   }
 
   static async buildTestObjects(
-    providerName: string,
+    providerId: string,
     handlerType: typeof BaseSyncHandler,
     providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">,
     connection?: Connection
@@ -71,10 +71,10 @@ export class CommonTests {
   }> {
     const network = await CommonUtils.getNetwork();
     if (!connection) {
-      connection = await CommonUtils.getConnection(providerName);
+      connection = await CommonUtils.getConnection(providerId);
     }
 
-    provider = providers(providerName, network.context, connection);
+    provider = providers(providerId, network.context, connection);
 
     const handler = await provider.getSyncHandler(handlerType);
     const schemaUri = handler.getSchemaUri();
@@ -87,7 +87,7 @@ export class CommonTests {
     );
 
     const handlerConfig = {
-      ...serverconfig.providers[providerName],
+      ...serverconfig.providers[providerId],
       ...providerConfig,
     };
     handler.setConfig(handlerConfig);
@@ -101,7 +101,7 @@ export class CommonTests {
   }
 
   static async runGenericTests(
-    providerName: string,
+    providerId: string,
     handlerType: typeof BaseSyncHandler,
     testConfig: GenericTestConfig = {
       timeOrderAttribute: "insertedAt",
@@ -124,7 +124,7 @@ export class CommonTests {
     providerConfig[testConfig.batchSizeLimitAttribute] = 3;
 
     const { api, handler, schemaUri, provider } = await this.buildTestObjects(
-      providerName,
+      providerId,
       handlerType,
       providerConfig,
       connection
@@ -136,10 +136,10 @@ export class CommonTests {
 
     try {
       const syncPosition: SyncHandlerPosition = {
-        _id: `${providerName}-${schemaUri}`,
-        providerName,
-        handlerName: handler.getName(),
-        providerId: provider.getProviderId(),
+        _id: `${providerId}-${schemaUri}`,
+        providerId,
+        handlerId: handler.getId(),
+        accountId: provider.getAccountId(),
         status: SyncHandlerStatus.SYNCING,
       };
       
@@ -345,8 +345,8 @@ export class CommonTests {
     );
     assert.equal(
       item.sourceAccountId,
-      provider.getProviderId(),
-      "Items have correct source account / provider id"
+      provider.getAccountId(),
+      "Items have correct source account / account id"
     );
     assert.ok(item.sourceId, "Items have sourceId set");
     assert.ok(item.sourceData, "Items have sourceData set");
