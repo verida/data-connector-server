@@ -305,7 +305,7 @@ $(document).ready(function() {
         const veridaKey = $('#veridaKey').val();
 
         $.ajax({
-            url: `/api/v1/ds/${btoa(schemaUrl)}?destroy=true`,
+            url: `${apiUrl}/ds/${btoa(schemaUrl)}?destroy=true`,
             method: 'DELETE',
             headers: {
                 key: veridaKey
