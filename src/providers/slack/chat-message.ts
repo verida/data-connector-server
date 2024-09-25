@@ -81,6 +81,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
                 const group: SchemaSocialChatGroup = {
                     _id: this.buildItemId(channel.id),
                     name: channel.name || channel.user,
+                    sourceAccountId: this.provider.getAccountId(),
                     sourceApplication: this.getProviderApplicationUrl(),
                     sourceId: channel.id,
                     schema: CONFIG.verida.schemas.CHAT_GROUP,
@@ -117,6 +118,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
                 groupName: chatGroup.name,
                 messageText: message.text,
                 fromHandle: user.profile.email ?? "Unknown",
+                sourceAccountId: this.provider.getAccountId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 sourceId: message.ts,
                 sourceData: message,
