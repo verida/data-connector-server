@@ -213,6 +213,10 @@ export default class BaseSyncHandler extends EventEmitter {
             if (!item.schema) {
                 item.schema = this.getSchemaUri()
             }
+
+            if (item.sourceAccountId) {
+                item.sourceAccountId = this.provider.getAccountId()
+            }
             
             const schemaDatastore = await this.provider.getDatastore(item.schema)
 
