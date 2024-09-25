@@ -13,7 +13,7 @@ import {
     SchemaSocialChatGroup,
     SchemaSocialChatMessage,
 } from "../../schemas";
-import { SlackChatGroupType, SlackProviderConfig } from "./interfaces";
+import { SlackChatGroupType, SlackHandlerConfig } from "./interfaces";
 import BaseSyncHandler from "../BaseSyncHandler";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 import { ItemsRange } from "../../helpers/interfaces";
@@ -22,7 +22,7 @@ import { SlackHelpers } from "./helpers";
 const _ = require("lodash");
 
 export default class SlackChatMessageHandler extends BaseSyncHandler {
-    protected config: SlackProviderConfig;
+    protected config: SlackHandlerConfig;
 
     public getName(): string {
         return "slack-messages";
