@@ -217,9 +217,12 @@ export class DataService extends EventEmitter {
     public async hotLoad(): Promise<void> {
         this.startProgress(Object.keys(schemas).length * 3)
 
+        const promises: Promise<MiniSearch<any>>[] = []
         for (const schemaUri of Object.keys(schemas)) {
-            await this.getIndex(schemaUri)
+            promises.push(this.getIndex(schemaUri))
         }
+
+        await Promise.all(promises)
     }
 
 }

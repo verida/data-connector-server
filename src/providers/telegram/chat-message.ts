@@ -304,7 +304,6 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       for (const chatGroup of chatGroupsBacklog) {
         // Respect group limit
         if (groupCount++ >= this.config.groupLimit) {
-          console.log(`- Group limit hit`)
           groupLimitHit = true
           break
         }
@@ -369,6 +368,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       fromHandle,
       fromName,
       messageText: content,
+      schema: CONFIG.verida.schemas.CHAT_MESSAGE,
       sourceApplication: this.getProviderApplicationUrl(),
       sourceId: rawMessage.id.toString(),
       sourceData: rawMessage,

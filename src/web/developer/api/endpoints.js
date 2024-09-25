@@ -171,7 +171,7 @@ Defaults to \`"emails,chat-messages"\`.
         }
     },
     "/search/datastore/{schemaUrl}": {
-        "method": "GET",
+        "method": "POST",
         "path": `${apiPrefix}/search/datastore/{schemaUrl}`,
         "documentation": `Execute a keyword search on a datastore.
 
@@ -196,23 +196,29 @@ Returns:
                 "default": "robert gray",
                 "required": true
             },
+            "index": {
+                "type": "object",
+                "documentation": "Array of fields to include in the search index",
+                "default": JSON.stringify(`["name", "description", "favouriteType", "sourceApplication"]`),
+                "required": true
+            },
             "options": {
                 "type": "object",
-                "documentation": `Search options that match the options availalbe from the [minisearch documentation](https://www.npmjs.com/package/minisearch).
+                "documentation": `Search options that match the options available from the [minisearch documentation](https://www.npmjs.com/package/minisearch).
 
 **Example:**
 
 \`\`\`
 {
-    fields: ['title', 'text'],
-    searchOptions: {
-        boost: { title: 2 },
-        fuzzy: 0.2
+    "fields": ["name", "description"],
+    "searchOptions": {
+        "boost": { "name": 2 },
+        "fuzzy": 0.2
     }
 }
-\`\`\`,
+\`\`\`
 `,
-                "default": "{}"
+                "default": JSON.stringify("{}")
             },
             "limit": {
                 "type": "number",
@@ -220,14 +226,14 @@ Returns:
                 "default": 20
             },
             "fields": {
-                "type": "string",
-                "documentation": "Comma separated list of fields to inlude in search index (ie: `name,description`)",
-                "default": "name,description"
+                "type": "object",
+                "documentation": "Comma separated list of fields to include in search index (ie: `name,description`)",
+                "default": JSON.stringify(`["name", "description"]`)
             },
             "store": {
-                "type": "string",
+                "type": "object",
                 "documentation": "Comma separated list of fields to store in the index and return with results (ie: `name,description`)",
-                "default": "name,description"
+                "default": JSON.stringify(`["name", "description"]`)
             }
         }
     },

@@ -5,6 +5,6 @@ const router = express.Router()
 
 router.get("/universal", controller.universal)
 router.get("/chatThreads", controller.chatThreads)
-router.get(/datastore\/(.*)$/, controller.datastore)
+router.post(/datastore\/(.*)$/, controller.datastore)
 
 export default router
