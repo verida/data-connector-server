@@ -163,7 +163,7 @@ $(document).ready(function() {
                         url: `/api/rest/v1/connections/${connectionId}/sync?key=${veridaKey}`,
                         type: 'POST',
                         data: JSON.stringify({
-                            force: (syncType == 'force')
+                            forceSync: (syncType == 'force')
                         }),
                         contentType: 'application/json',
                         success: function(response) {
