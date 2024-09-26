@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import { BaseProviderConfig, ConnectionCallbackResponse } from '../../interfaces'
+import { BaseProviderConfig, ConnectionCallbackResponse, PassportProfile } from '../../interfaces'
 
 const passport = require("passport")
 import { Strategy as DiscordStrategy, Scope } from '@oauth-everything/passport-discord';
@@ -73,11 +73,32 @@ export default class DiscordProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
+                    console.log("=======")
+                    
+                    const profile: PassportProfile = {
+                        id: data.profile.id,  // Discord user ID
+                        provider: data.profile.provider,  // discord
+                        displayName: data.profile.displayName,
+                        name: {
+                            familyName: '',  // Discord does not provide family name
+                            givenName: data.profile._json.global_name,  // Global name as the given name
+                        },
+                        emails: data.profile.emails,
+                        photos: data.profile.photos,  // Photos array from Discord profile
+                        connectionProfile: {
+                            username: data.profile.username,  // Discord username
+                            email: data.profile._json.email,  // Email from profile
+                            readableId: data.profile.displayName, 
+                            verified: data.profile._json.verified  // Verified status from Discord profile
+                        }
+                    };
+                    
+                    console.log(profile);
                     const connectionToken: ConnectionCallbackResponse = {
                         id: data.profile.id,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
-                        profile: data.profile
+                        profile: profile
                     }
     
                     resolve(connectionToken)
