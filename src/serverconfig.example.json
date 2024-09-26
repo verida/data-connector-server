@@ -30,7 +30,9 @@
         "llms": {
             "bedrockEndpoint": "",
             "bedrockKey": ""
-        }
+        },
+        "maxHandlerRetries": 5,
+        "providerTimeoutMins": 15
     },
     "providers": {
         "mock": {

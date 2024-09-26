@@ -79,7 +79,11 @@ export interface ConnectionCallbackResponse {
 
 export enum SyncFrequency {
     HOUR = "hour",
+    HOUR_3 = "3hour",
+    HOUR_6 = "6hour",
+    HOUR_12 = "12hour",
     DAY = "day",
+    DAY_3 = "3day",
     WEEK = "week"
 }
 
@@ -110,6 +114,8 @@ export interface Connection {
     syncStart?: string
     syncEnd?: string
     syncNext?: string
+    syncMessage?: string
+    authExpired?: boolean
     handlers: ConnectionHandler[]
     config: Record<string, string>
 }
@@ -158,6 +164,12 @@ export interface SyncHandlerPosition {
 
     // Future record ID to break on, for the next sync
     futureBreakId?: string
+
+    // How many retries have had errors
+    errorRetries?: number
+
+    // Is access denied to this data source (ie: scope wasn't granted by user)
+    accessDenied?: boolean
 }
 
 export interface SyncResponse {

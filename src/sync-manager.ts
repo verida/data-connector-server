@@ -218,8 +218,11 @@ export default class SyncManager {
             profile: connectionProfile,
             syncStatus: SyncStatus.CONNECTED,
             syncFrequency: SyncFrequency.HOUR,
+            syncNext: (new Date()).toISOString(),
             handlers: connectionHandlers,
-            config: providerConfig
+            config: providerConfig,
+            syncMessage: "",
+            authExpired: false
         }
 
         const result = await connectionDatastore.save(providerConnection, {})

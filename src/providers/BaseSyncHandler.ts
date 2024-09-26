@@ -4,6 +4,7 @@ import { EventEmitter } from "events"
 import { Utils } from "../utils"
 import { SchemaRecord } from "../schemas"
 import BaseProvider from "./BaseProvider"
+import AccessDeniedError from "./AccessDeniedError"
 const _ = require("lodash")
 
 export default class BaseSyncHandler extends EventEmitter {
@@ -18,8 +19,8 @@ export default class BaseSyncHandler extends EventEmitter {
         super()
         // Handle any custom config for this handler
         if (config.handlers) {
-            if (config.handlers[this.getName()]) {
-                config = _.merge({}, config, config.handlers[this.getName()])
+            if (config.handlers[this.getId()]) {
+                config = _.merge({}, config, config.handlers[this.getId()])
             }
 
             delete config["handlers"]
@@ -45,7 +46,7 @@ export default class BaseSyncHandler extends EventEmitter {
      * Set a default label
      */
     public getLabel(): string {
-        let label = this.getName()
+        let label = this.getId()
         // Replace all instances of "-" with a space
         label = label.replace(/-/g, ' ');
 
@@ -148,19 +149,29 @@ export default class BaseSyncHandler extends EventEmitter {
         api: any,
         syncPosition: SyncHandlerPosition,
         syncSchemaPositionDs: IDatastore): Promise<SyncHandlerResponse> {
-        
         let syncResults
         try {
             const syncResult = await this._sync(api, syncPosition)
             syncResults = <SchemaRecord[]> syncResult.results
             await this.handleResults(syncResult.position, syncResults, syncSchemaPositionDs)
-        }
-        catch (err: any) {
-            const message = `Unknown error handling sync results: ${err.message}`
+        } catch (err: any) {
+            let message: string
+            if (err instanceof AccessDeniedError) {
+                message = `Access denied, ensure access has been granted`
+                syncPosition.accessDenied = true
+            } else {
+                message = `Unknown error handling sync results: ${err.message}`
+            }
+
             this.emit('log', {
                 level: SyncProviderLogLevel.ERROR,
                 message
             })
+
+            syncPosition.status = SyncHandlerStatus.ERROR
+            if (syncPosition.errorRetries) {
+                syncPosition.errorRetries++
+            }
         }
 
         return {
