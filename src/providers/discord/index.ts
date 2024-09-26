@@ -73,8 +73,7 @@ export default class DiscordProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
-                    console.log("=======")
-                    
+                                       
                     const profile: PassportProfile = {
                         id: data.profile.id,  // Discord user ID
                         provider: data.profile.provider,  // discord
@@ -92,8 +91,7 @@ export default class DiscordProvider extends Base {
                             verified: data.profile._json.verified  // Verified status from Discord profile
                         }
                     };
-                    
-                    console.log(profile);
+                  
                     const connectionToken: ConnectionCallbackResponse = {
                         id: data.profile.id,
                         accessToken: data.accessToken,
