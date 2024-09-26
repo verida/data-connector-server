@@ -156,6 +156,7 @@ export default class SlackProvider extends Base {
                 connectionProfile: {
                     username: userInfo.profile.display_name,  // Display name as username
                     email: userInfo.profile.email,  // Email from profile
+                    readableId: userInfo.profile.display_name,
                     phone: userInfo.profile.phone,  
                     verified: userInfo.is_email_confirmed
                 }
