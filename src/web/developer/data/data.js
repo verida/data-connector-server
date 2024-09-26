@@ -229,19 +229,6 @@ $(document).ready(function() {
 
     // Example of listing schemas
     $('#schemaModal').on('show.bs.modal', function() {
-        const schemas = {
-            "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.1.0/schema.json",
-            "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
-            "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
-            "Social Following": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
-            "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
-            "Favourites": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
-            "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
-            "File": "https://common.schemas.verida.io/file/v0.1.0/schema.json",
-            "Chat Group": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
-            "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
-        };
-
         // Clear previous list
         $('#schemaList').empty();
 
