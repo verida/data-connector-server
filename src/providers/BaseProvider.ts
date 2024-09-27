@@ -6,7 +6,7 @@ import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 import { SchemaRecord } from '../schemas'
 import EventEmitter from 'events'
-import TokenExpiredError from './TokenExpiredError'
+import InvalidTokenError from './InvalidTokenError'
 const _ = require("lodash")
 
 const SCHEMA_SYNC_POSITIONS = serverconfig.verida.schemas.SYNC_POSITION
@@ -215,11 +215,14 @@ export default class BaseProvider extends EventEmitter {
             accessToken = connection.accessToken
             refreshToken = refreshToken ? refreshToken : connection.refreshToken
         }
-        if (this.connection.syncStatus == SyncStatus.PAUSED) {
+
+        if (this.connection.syncStatus == SyncStatus.INVALID_AUTH) {
+            return this.connection
+        } else if (this.connection.syncStatus == SyncStatus.PAUSED) {
             await this.logMessage(SyncProviderLogLevel.WARNING, `Sync is paused, so not syncing`)
             this.connection.syncMessage = `Sync is paused, so not syncing`
             return this.connection
-        } 
+        }
 
         let forceHandlerSync = false
         if (force) {
@@ -278,7 +281,7 @@ export default class BaseProvider extends EventEmitter {
         for (const handlerResult of syncHandlerResults) {
             if (handlerResult.status == "rejected") {
                 const err = handlerResult.reason
-                if (err instanceof TokenExpiredError) {
+                if (err instanceof InvalidTokenError) {
                     this.connection.syncStatus = SyncStatus.PAUSED
                     this.connection.syncMessage = `Permission denied due to token expiry. Reconnect required.`
                     await this.logMessage(SyncProviderLogLevel.WARNING, this.connection.syncMessage)
@@ -384,7 +387,7 @@ export default class BaseProvider extends EventEmitter {
 
         const syncPosition = await this.getSyncPosition(handler.getId(), syncPositionsDs)
 
-        if (syncPosition.accessDenied) {
+        if (syncPosition.status == SyncHandlerStatus.INVALID_AUTH) {
             // If access is denied, don't even try to sync
             return {
                 syncPosition,
@@ -472,7 +475,6 @@ export default class BaseProvider extends EventEmitter {
                     providerId: this.getProviderId(),
                     accountId: this.getAccountId(),
                     handlerId,
-                    accessDenied: false,
                     errorRetries: 0,
                     status: SyncHandlerStatus.SYNCING
                 }

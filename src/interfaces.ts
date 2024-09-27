@@ -93,6 +93,7 @@ export enum SyncStatus {
     ERROR = "error",            // sync had an error on its last run
     PAUSED = "paused",          // sync is temporarily paused
     ACTIVE = "active",        // sync is currently running
+    INVALID_AUTH = "invalid-auth", // invalid auth token to the third party connector
 }
 
 export interface ConnectionHandler {
@@ -140,6 +141,7 @@ export enum SyncHandlerStatus {
     ERROR = "error",
     DISABLED = "disabled",
     SYNCING = "syncing",
+    INVALID_AUTH = "invalid-auth",  // permission denied for this handler
 }
 
 export interface SyncHandlerPosition {
@@ -168,9 +170,6 @@ export interface SyncHandlerPosition {
 
     // How many retries have had errors
     errorRetries?: number
-
-    // Is access denied to this data source (ie: scope wasn't granted by user)
-    accessDenied?: boolean
 }
 
 export interface SyncResponse {

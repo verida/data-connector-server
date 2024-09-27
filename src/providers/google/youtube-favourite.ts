@@ -13,7 +13,7 @@ import { GaxiosResponse } from "gaxios";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 import { GoogleHandlerConfig } from "./interfaces";
 import AccessDeniedError from "../AccessDeniedError";
-import TokenExpiredError from "../TokenExpiredError";
+import InvalidTokenError from "../InvalidTokenError";
 
 const _ = require("lodash");
 
@@ -174,7 +174,7 @@ export default class YouTubeFavourite extends GoogleHandler {
             if (err.status == 403) {
                 throw new AccessDeniedError(err.message)
             } else if (err.status == 401 && err.errors[0].reason == 'authError') {
-                throw new TokenExpiredError(err.message)
+                throw new InvalidTokenError(err.message)
               }
 
             throw err
