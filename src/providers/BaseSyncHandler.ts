@@ -33,22 +33,24 @@ export default class BaseSyncHandler extends EventEmitter {
         this.provider = provider
         this.enabled = true
 
-        const handlerConfigs = this.connection.handlers.reduce((handlers: Record<string, ConnectionHandler>, handler: ConnectionHandler) => {
-            handlers[handler.id] = handler
-            return handlers
-        }, {})
+        if (this.connection?.handlers) {
+            const handlerConfigs = this.connection.handlers.reduce((handlers: Record<string, ConnectionHandler>, handler: ConnectionHandler) => {
+                handlers[handler.id] = handler
+                return handlers
+            }, {})
 
-        if (handlerConfigs[this.getId()]) {
-            const handlerConfig = handlerConfigs[this.getId()]
+            if (handlerConfigs[this.getId()]) {
+                const handlerConfig = handlerConfigs[this.getId()]
 
-            if (!handlerConfig.enabled) {
-                this.enabled = false
-            } else {
-                for (const option of this.getOptions()) {
-                    if (handlerConfig.config[option.id]) {
-                        this.config[option.id] = handlerConfig.config[option.id]
-                    } else {
-                        this.config[option.id] = option.defaultValue
+                if (!handlerConfig.enabled) {
+                    this.enabled = false
+                } else {
+                    for (const option of this.getOptions()) {
+                        if (handlerConfig.config[option.id]) {
+                            this.config[option.id] = handlerConfig.config[option.id]
+                        } else {
+                            this.config[option.id] = option.defaultValue
+                        }
                     }
                 }
             }
