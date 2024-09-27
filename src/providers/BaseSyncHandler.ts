@@ -18,8 +18,8 @@ export default class BaseSyncHandler extends EventEmitter {
         super()
         // Handle any custom config for this handler
         if (config.handlers) {
-            if (config.handlers[this.getName()]) {
-                config = _.merge({}, config, config.handlers[this.getName()])
+            if (config.handlers[this.getId()]) {
+                config = _.merge({}, config, config.handlers[this.getId()])
             }
 
             delete config["handlers"]
