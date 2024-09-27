@@ -213,7 +213,6 @@ export default class BaseSyncHandler extends EventEmitter {
         api: any,
         syncPosition: SyncHandlerPosition,
         syncSchemaPositionDs: IDatastore): Promise<SyncHandlerResponse> {
-
         if (!this.enabled) {
             this.emit('log', {
                 level: SyncProviderLogLevel.DEBUG,
@@ -222,7 +221,7 @@ export default class BaseSyncHandler extends EventEmitter {
             return
         }
         
-        let syncResults
+        let syncResults: SchemaRecord[] = []
         let savePosition = false
         try {
             const syncResult = await this._sync(api, syncPosition)
