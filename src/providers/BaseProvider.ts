@@ -282,7 +282,7 @@ export default class BaseProvider extends EventEmitter {
             if (handlerResult.status == "rejected") {
                 const err = handlerResult.reason
                 if (err instanceof InvalidTokenError) {
-                    this.connection.syncStatus = SyncStatus.PAUSED
+                    this.connection.syncStatus = SyncStatus.INVALID_AUTH
                     this.connection.syncMessage = `Permission denied due to token expiry. Reconnect required.`
                     await this.logMessage(SyncProviderLogLevel.WARNING, this.connection.syncMessage)
                     break
