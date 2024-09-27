@@ -56,53 +56,69 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
     }
 
     public getDiscordClient(): Client {
+        
         const token = this.connection.accessToken;
-        return new Client({
+        
+        const client = new Client({
             intents: [
                 GatewayIntentBits.Guilds,
                 GatewayIntentBits.GuildMessages,
                 GatewayIntentBits.DirectMessages,
+                GatewayIntentBits.MessageContent
             ],
-        }).login(token);
-    }
+        });
+    
+        client.login(token);
+        return client;
+    }  
 
-    protected async buildChatGroupList(): Promise<SchemaSocialChatGroup[]> {
-        const client = await this.getDiscordClient();
-
+    protected async buildChatGroupList(api: any): Promise<SchemaSocialChatGroup[]> {
         let channelList: SchemaSocialChatGroup[] = [];
+        let channels = []
+        
+        const guilds: any = await api.get('/users/@me/guilds')
+        
+        for (const guild of guilds) {
+            channels = await api.get(`/guilds/${guild.id}/channels`)
+            
+            console.log(`Channels in guild ${guild.name}:`, channels);
+        }
 
-        // Fetch all types of conversations: DMs and Text Channels
-        const channels = client.channels.cache;
-
+    
         for (const [id, channel] of channels) {
-            if (channel.isText()) {
-                const group: SchemaSocialChatGroup = {
-                    _id: this.buildItemId(channel.id),
-                    name: channel.name,
-                    sourceAccountId: this.provider.getAccountId(),
-                    sourceApplication: this.getProviderApplicationUrl(),
-                    sourceId: channel.id,
-                    schema: CONFIG.verida.schemas.CHAT_GROUP,
-                    sourceData: channel,
-                    insertedAt: new Date().toISOString(),
-                };
-                channelList.push(group);
-            } else if (channel.isDM()) {
-                const group: SchemaSocialChatGroup = {
-                    _id: this.buildItemId(channel.id),
-                    name: `DM with ${channel.recipient.username}`,
-                    sourceAccountId: this.provider.getAccountId(),
-                    sourceApplication: this.getProviderApplicationUrl(),
-                    sourceId: channel.id,
-                    schema: CONFIG.verida.schemas.CHAT_GROUP,
-                    sourceData: channel,
-                    insertedAt: new Date().toISOString(),
-                };
-                channelList.push(group);
+            if (channel.isTextBased()) {
+                if (channel instanceof TextChannel) {
+                    const textChannel = channel as TextChannel;
+                    const group: SchemaSocialChatGroup = {
+                        _id: this.buildItemId(textChannel.id),
+                        name: textChannel.name,
+                        sourceAccountId: this.provider.getAccountId(),
+                        sourceApplication: this.getProviderApplicationUrl(),
+                        sourceId: textChannel.id,
+                        schema: CONFIG.verida.schemas.CHAT_GROUP,
+                        sourceData: textChannel,
+                        insertedAt: new Date().toISOString(),
+                    };
+                    channelList.push(group);
+                } else if (channel.isDMBased()) {
+                    const dmChannel = channel as DMChannel;
+                    const group: SchemaSocialChatGroup = {
+                        _id: this.buildItemId(dmChannel.id),
+                        name: `DM with ${dmChannel.recipient?.username}`,
+                        sourceAccountId: this.provider.getAccountId(),
+                        sourceApplication: this.getProviderApplicationUrl(),
+                        sourceId: dmChannel.id,
+                        schema: CONFIG.verida.schemas.CHAT_GROUP,
+                        sourceData: dmChannel,
+                        insertedAt: new Date().toISOString(),
+                    };
+                    channelList.push(group);
+                }
             }
         }
         return channelList;
     }
+    
 
     protected async fetchMessageRange(
         chatGroup: SchemaSocialChatGroup,
@@ -149,9 +165,10 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
         api: any,
         syncPosition: SyncHandlerPosition
     ): Promise<SyncResponse> {
+        
         try {
-            const apiClient = await this.getDiscordClient();
-            const groupList = await this.buildChatGroupList(); // Fetch all Text Channels and DM groups
+            //const apiClient = await this.getDiscordClient();
+            const groupList = await this.buildChatGroupList(api); // Fetch all Text Channels and DM groups
 
             let totalMessages = 0;
             let chatHistory: SchemaSocialChatMessage[] = [];
@@ -172,7 +189,7 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
                 const fetchedMessages = await this.fetchAndTrackMessages(
                     group,
                     rangeTracker,
-                    apiClient
+                    api
                 );
 
                 // Concatenate the fetched messages to the total chat history
@@ -225,7 +242,7 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
     private async fetchAndTrackMessages(
         group: SchemaSocialChatGroup,
         rangeTracker: ItemsRangeTracker,
-        apiClient: Client
+        apiClient: any
     ): Promise<SchemaSocialChatMessage[]> {
         // Validate group and group.id
         if (!group || !group.sourceId) {

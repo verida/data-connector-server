@@ -12,6 +12,7 @@ import axios from 'axios'
 //import SBTs from './sbts'
 import Following from './following'
 import TokenExpiredError from '../TokenExpiredError'
+import DiscordChatMessageHandler from './chat-message';
 
 export interface DiscordProviderConfig extends BaseProviderConfig {
     clientID: string
@@ -42,7 +43,8 @@ export default class DiscordProvider extends Base {
     public syncHandlers(): any[] {
         return [
             //SBTs
-            Following
+            //Following,
+            DiscordChatMessageHandler
         ]
         return []
     }
