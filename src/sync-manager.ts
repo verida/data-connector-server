@@ -228,10 +228,17 @@ export default class SyncManager {
             config: providerConfig
         }
 
-        const result = await connectionDatastore.save(providerConnection, {})
+        try {
+            const result = await connectionDatastore.save(providerConnection, {
+                forceUpdate: true
+            })
 
-        if (!result) {
-            throw new Error(`Unable to save connection: ${JSON.stringify(connectionDatastore.errors, null, 2)}`)
+            if (!result) {
+                throw new Error(`Unable to save connection: ${JSON.stringify(connectionDatastore.errors, null, 2)}`)
+            }
+        } catch (err: any) {
+            console.log(providerConnection)
+            throw new Error(`Unable to save connection: ${err.message}`)
         }
 
         return providerConnection

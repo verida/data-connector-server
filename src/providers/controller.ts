@@ -1,14 +1,12 @@
 import { Request, Response } from 'express'
 import Providers from "../providers"
 import SyncManager from '../sync-manager'
-import { ProviderHandler, SyncHandlerPosition, UniqueRequest } from '../interfaces'
+import { UniqueRequest } from '../interfaces'
 import { Utils } from '../utils'
 import CONFIG from '../config'
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
-
-const SCHEMA_SYNC_LOG = CONFIG.verida.schemas.SYNC_LOG
 
 /**
  * Sign in process:
@@ -131,8 +129,6 @@ export default class Controller {
                         </div>
                     </body>
                     </html>`
-                
-                Utils.closeConnection(did, req.requestId)
                 
                 res.send(output)
             }
