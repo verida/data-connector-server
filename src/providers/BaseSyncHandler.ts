@@ -210,29 +210,53 @@ export default class BaseSyncHandler extends EventEmitter {
         api: any,
         syncPosition: SyncHandlerPosition,
         syncSchemaPositionDs: IDatastore): Promise<SyncHandlerResponse> {
+
+        if (!this.enabled) {
+            this.emit('log', {
+                level: SyncProviderLogLevel.DEBUG,
+                message: `Disabled, skipping sync`
+            })
+            return
+        }
+        
         let syncResults
+        let savePosition = false
         try {
             const syncResult = await this._sync(api, syncPosition)
             syncResults = <SchemaRecord[]> syncResult.results
             await this.handleResults(syncResult.position, syncResults, syncSchemaPositionDs)
         } catch (err: any) {
             let message: string
+            savePosition = true
             if (err instanceof AccessDeniedError) {
-                message = `Access denied, ensure access has been granted`
+                message = `Access denied. Re-connect and ensure you enable ${this.getLabel()}.`
                 syncPosition.accessDenied = true
+                syncPosition.status = SyncHandlerStatus.DISABLED
+                syncPosition.sync = message
+
+                this.emit('log', {
+                    level: SyncProviderLogLevel.WARNING,
+                    message
+                })
             } else {
                 message = `Unknown error handling sync results: ${err.message}`
-            }
+                this.emit('log', {
+                    level: SyncProviderLogLevel.ERROR,
+                    message
+                })
 
-            this.emit('log', {
-                level: SyncProviderLogLevel.ERROR,
-                message
+                syncPosition.status = SyncHandlerStatus.ERROR
+                if (syncPosition.errorRetries) {
+                    syncPosition.errorRetries++
+                }
+            }
+        }
+
+        if (savePosition) {
+            await syncSchemaPositionDs.save(syncPosition, {
+                // The position record may already exist, if so, force update
+                forceUpdate: true
             })
-
-            syncPosition.status = SyncHandlerStatus.ERROR
-            if (syncPosition.errorRetries) {
-                syncPosition.errorRetries++
-            }
         }
 
         return {
