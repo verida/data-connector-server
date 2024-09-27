@@ -15,6 +15,7 @@ import { SchemaEmail, SchemaEmailType, SchemaRecord } from "../../schemas";
 import { GmailHelpers } from "./helpers";
 import { GmailSyncSchemaPosition, GoogleHandlerConfig } from "./interfaces";
 import AccessDeniedError from "../AccessDeniedError";
+import TokenExpiredError from "../TokenExpiredError";
 
 const _ = require("lodash");
 
@@ -109,7 +110,6 @@ export default class Gmail extends GoogleHandler {
         gmail,
         latestResponse,
         currentRange.endId,
-        SchemaEmailType.RECEIVE,
         _.has(this.config, "breakTimestamp")
           ? this.config.breakTimestamp as string
           : undefined
@@ -145,7 +145,6 @@ export default class Gmail extends GoogleHandler {
           gmail,
           backfillResponse,
           currentRange.endId,
-          SchemaEmailType.RECEIVE,
           _.has(this.config, "breakTimestamp")
             ? this.config.breakTimestamp
             : undefined
@@ -189,6 +188,8 @@ export default class Gmail extends GoogleHandler {
     } catch (err: any) {
       if (err.status == 403) {
           throw new AccessDeniedError(err.message)
+      } else if (err.status == 401 && err.errors[0].reason == 'authError') {
+        throw new TokenExpiredError(err.message)
       }
 
       throw err
@@ -199,7 +200,6 @@ export default class Gmail extends GoogleHandler {
     gmail: gmail_v1.Gmail,
     serverResponse: GaxiosResponse<gmail_v1.Schema$ListMessagesResponse>,
     breakId: string,
-    messageType: SchemaEmailType,
     breakTimestamp?: string
   ): Promise<SyncEmailItemsResult> {
     const results: SchemaEmail[] = [];
@@ -243,6 +243,13 @@ export default class Gmail extends GoogleHandler {
       );
       const threadId = msg.threadId || "Unknown";
       const attachments = await GmailHelpers.getAttachments(gmail, msg);
+
+      let messageType = SchemaEmailType.RECEIVE
+      if (from.email == this.connection.profile.email) {
+        messageType = SchemaEmailType.SEND
+      }
+
+      console.log(from, this.connection.profile.email, messageType)
 
       results.push({
         _id: this.buildItemId(messageId),

@@ -12,6 +12,7 @@ import { GaxiosResponse } from "gaxios";
 import { GoogleHandlerConfig, YoutubeActivityType } from "./interfaces";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 import AccessDeniedError from "../AccessDeniedError";
+import TokenExpiredError from "../TokenExpiredError";
 
 const _ = require("lodash");
 
@@ -171,7 +172,9 @@ export default class YouTubePost extends GoogleHandler {
         } catch (err: any) {
             if (err.status == 403) {
                 throw new AccessDeniedError(err.message)
-            }
+            } else if (err.status == 401 && err.errors[0].reason == 'authError') {
+                throw new TokenExpiredError(err.message)
+              }
 
             throw err
         }
