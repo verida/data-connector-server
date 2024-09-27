@@ -102,6 +102,9 @@ export default class Controller {
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
             const connection = await syncManager.saveNewConnection(providerId, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
+            // Start syncing (async so we don't block)
+            syncManager.sync(providerId, connection.accountId)
+
             if (redirect) {
                 const redirectedUrl = new URL(redirect)
                 redirectedUrl.searchParams.append("connectionId", connection._id)
