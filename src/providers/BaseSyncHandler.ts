@@ -5,6 +5,7 @@ import { Utils } from "../utils"
 import { SchemaRecord } from "../schemas"
 import BaseProvider from "./BaseProvider"
 import AccessDeniedError from "./AccessDeniedError"
+import TokenExpiredError from "./TokenExpiredError"
 const _ = require("lodash")
 
 export default class BaseSyncHandler extends EventEmitter {
@@ -232,12 +233,15 @@ export default class BaseSyncHandler extends EventEmitter {
                 message = `Access denied. Re-connect and ensure you enable ${this.getLabel()}.`
                 syncPosition.accessDenied = true
                 syncPosition.status = SyncHandlerStatus.DISABLED
-                syncPosition.sync = message
+                syncPosition.syncMessage = message
 
                 this.emit('log', {
                     level: SyncProviderLogLevel.WARNING,
                     message
                 })
+            } else if (err instanceof TokenExpiredError) {
+                // Re-throw so the provider can handle
+                throw err
             } else {
                 message = `Unknown error handling sync results: ${err.message}`
                 this.emit('log', {

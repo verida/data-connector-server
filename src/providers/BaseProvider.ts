@@ -6,6 +6,7 @@ import { IContext, IDatastore } from '@verida/types'
 import BaseSyncHandler from './BaseSyncHandler'
 import { SchemaRecord } from '../schemas'
 import EventEmitter from 'events'
+import TokenExpiredError from './TokenExpiredError'
 const _ = require("lodash")
 
 const SCHEMA_SYNC_POSITIONS = serverconfig.verida.schemas.SYNC_POSITION
@@ -131,7 +132,7 @@ export default class BaseProvider extends EventEmitter {
             
             const result = await syncLog.save(logEntry, {})
             if (!result) {
-                console.error(`Error logging message: ${syncLog.errors}`)
+                console.error(`Error logging message: ${JSON.stringify(syncLog.errors, null, 2)}`)
             }
 
             this.emit('logMessage', logEntry)
@@ -214,8 +215,11 @@ export default class BaseProvider extends EventEmitter {
             accessToken = connection.accessToken
             refreshToken = refreshToken ? refreshToken : connection.refreshToken
         }
-
-        console.log('sync()', this.connection.syncStatus, this.connection.syncNext, force)
+        if (this.connection.syncStatus == SyncStatus.PAUSED) {
+            await this.logMessage(SyncProviderLogLevel.WARNING, `Sync is paused, so not syncing`)
+            this.connection.syncMessage = `Sync is paused, so not syncing`
+            return this.connection
+        } 
 
         let forceHandlerSync = false
         if (force) {
@@ -233,11 +237,7 @@ export default class BaseProvider extends EventEmitter {
                 return this.connection
             }
 
-            if (this.connection.syncStatus == SyncStatus.PAUSED) {
-                await this.logMessage(SyncProviderLogLevel.DEBUG, `Sync is paused, so not syncing`)
-                this.connection.syncMessage = `Sync is paused`
-                return this.connection
-            } else if (this.connection.syncStatus == SyncStatus.ERROR) {
+            if (this.connection.syncStatus == SyncStatus.ERROR) {
                 await this.logMessage(SyncProviderLogLevel.DEBUG, `Sync has errors, so retrying`)
                 this.connection.syncMessage = `Sync has errors, so retrying`
                 // One or more handlers have an error, so retry
@@ -274,18 +274,27 @@ export default class BaseProvider extends EventEmitter {
         }
 
         const syncHandlerResults = await Promise.allSettled(syncPromises)
+        this.connection.syncStatus = SyncStatus.CONNECTED
         for (const handlerResult of syncHandlerResults) {
-            if (handlerResult.status == "rejected" || handlerResult.value.syncPosition.status == SyncHandlerStatus.ERROR) {
+            if (handlerResult.status == "rejected") {
+                const err = handlerResult.reason
+                if (err instanceof TokenExpiredError) {
+                    this.connection.syncStatus = SyncStatus.PAUSED
+                    this.connection.syncMessage = `Permission denied due to token expiry. Reconnect required.`
+                    await this.logMessage(SyncProviderLogLevel.WARNING, this.connection.syncMessage)
+                    break
+                } else {
+                    this.connection.syncStatus = SyncStatus.ERROR
+                    this.connection.syncMessage = `Unknown error: ${err.message}`
+                    await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
+                }
+            } else if (handlerResult.value.syncPosition.status == SyncHandlerStatus.ERROR) {
                 this.connection.syncStatus = SyncStatus.ERROR
                 this.connection.syncMessage = `One or more data sources had an error`
+                await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
             }
 
             // @todo if handlerResult.value.syncPosition.status == SyncHandlerStatus.SYNCING -- do we sync the handler again or let it stop?
-            // @todo test disconnecting gmail, telegram, etc.
-            // @todo make sure invalid token is handled
-            // @todo don't allow scopes for gmail, facebook
-            // @todo make sure access denied is handled
-
             // @todo if we do stop, change sync status to enabled
         }
 
@@ -297,7 +306,6 @@ export default class BaseProvider extends EventEmitter {
 
         this.setNextSync()
 
-        this.connection.syncStatus = SyncStatus.CONNECTED
         this.connection.syncEnd = Utils.nowTimestamp()
         await this.saveConnection()
         await this.logMessage(SyncProviderLogLevel.INFO, `Sync complete for ${this.getProviderId()} (${syncHandlerNames.join(', ')})`)
