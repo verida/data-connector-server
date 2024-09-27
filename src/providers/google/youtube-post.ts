@@ -11,6 +11,7 @@ import { google, youtube_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { GoogleHandlerConfig, YoutubeActivityType } from "./interfaces";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
+import AccessDeniedError from "../AccessDeniedError";
 
 const _ = require("lodash");
 
@@ -74,98 +75,106 @@ export default class YouTubePost extends GoogleHandler {
         api: any,
         syncPosition: SyncHandlerPosition
     ): Promise<SyncResponse> {
-        if (this.config.batchSize > MAX_BATCH_SIZE) {
-            throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`);
-        }
+        try {
+            if (this.config.batchSize > MAX_BATCH_SIZE) {
+                throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`);
+            }
 
-        const youtube = this.getYouTube();
-        const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
+            const youtube = this.getYouTube();
+            const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
 
-        let items: SchemaPost[] = [];
+            let items: SchemaPost[] = [];
 
-        // Fetch any new items
-        let currentRange = rangeTracker.nextRange();
-        let query: youtube_v3.Params$Resource$Activities$List = {
-            part: ["snippet", "contentDetails"],
-            mine: true,
-            maxResults: this.config.batchSize,
-        };
-
-        if (currentRange.startId) {
-            query.pageToken = currentRange.startId;
-        }
-
-        const latestResponse = await youtube.activities.list(query);
-        const latestResult = await this.buildResults(
-            latestResponse,
-            currentRange.endId
-        );
-
-        items = latestResult.items;
-
-        let nextPageToken = _.has(latestResponse, "data.nextPageToken") ? latestResponse.data.nextPageToken : undefined;
-
-        if (items.length) {
-            rangeTracker.completedRange({
-                startId: items[0].sourceId,
-                endId: nextPageToken
-            }, latestResult.breakHit == SyncItemsBreak.ID);
-        } else {
-            rangeTracker.completedRange({
-                startId: undefined,
-                endId: undefined
-            }, false);
-        }
-
-        currentRange = rangeTracker.nextRange();
-        if (items.length != this.config.batchSize && currentRange.startId) {
-            query = {
+            // Fetch any new items
+            let currentRange = rangeTracker.nextRange();
+            let query: youtube_v3.Params$Resource$Activities$List = {
                 part: ["snippet", "contentDetails"],
                 mine: true,
-                maxResults: this.config.batchSize - items.length,
-                pageToken: currentRange.startId
+                maxResults: this.config.batchSize,
             };
 
-            const backfillResponse = await youtube.activities.list(query);
-            const backfillResult = await this.buildResults(
-                backfillResponse,
+            if (currentRange.startId) {
+                query.pageToken = currentRange.startId;
+            }
+
+            const latestResponse = await youtube.activities.list(query);
+            const latestResult = await this.buildResults(
+                latestResponse,
                 currentRange.endId
             );
 
-            items = items.concat(backfillResult.items);
-            nextPageToken = _.has(backfillResponse, "data.nextPageToken") ? backfillResponse.data.nextPageToken : undefined;
+            items = latestResult.items;
 
-            if (backfillResult.items.length) {
+            let nextPageToken = _.has(latestResponse, "data.nextPageToken") ? latestResponse.data.nextPageToken : undefined;
+
+            if (items.length) {
                 rangeTracker.completedRange({
-                    startId: backfillResult.items[0].sourceId,
+                    startId: items[0].sourceId,
                     endId: nextPageToken
-                }, backfillResult.breakHit == SyncItemsBreak.ID);
+                }, latestResult.breakHit == SyncItemsBreak.ID);
             } else {
                 rangeTracker.completedRange({
                     startId: undefined,
                     endId: undefined
-                }, backfillResult.breakHit == SyncItemsBreak.ID);
+                }, false);
             }
-        }
 
-        if (!items.length) {
-            syncPosition.syncMessage = `Stopping. No results found.`;
-            syncPosition.status = SyncHandlerStatus.ENABLED;
-        } else {
-            if (items.length != this.config.batchSize && !nextPageToken) {
-                syncPosition.syncMessage = `Processed ${items.length} items. Stopping. No more results.`;
+            currentRange = rangeTracker.nextRange();
+            if (items.length != this.config.batchSize && currentRange.startId) {
+                query = {
+                    part: ["snippet", "contentDetails"],
+                    mine: true,
+                    maxResults: this.config.batchSize - items.length,
+                    pageToken: currentRange.startId
+                };
+
+                const backfillResponse = await youtube.activities.list(query);
+                const backfillResult = await this.buildResults(
+                    backfillResponse,
+                    currentRange.endId
+                );
+
+                items = items.concat(backfillResult.items);
+                nextPageToken = _.has(backfillResponse, "data.nextPageToken") ? backfillResponse.data.nextPageToken : undefined;
+
+                if (backfillResult.items.length) {
+                    rangeTracker.completedRange({
+                        startId: backfillResult.items[0].sourceId,
+                        endId: nextPageToken
+                    }, backfillResult.breakHit == SyncItemsBreak.ID);
+                } else {
+                    rangeTracker.completedRange({
+                        startId: undefined,
+                        endId: undefined
+                    }, backfillResult.breakHit == SyncItemsBreak.ID);
+                }
+            }
+
+            if (!items.length) {
+                syncPosition.syncMessage = `Stopping. No results found.`;
                 syncPosition.status = SyncHandlerStatus.ENABLED;
             } else {
-                syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`;
+                if (items.length != this.config.batchSize && !nextPageToken) {
+                    syncPosition.syncMessage = `Processed ${items.length} items. Stopping. No more results.`;
+                    syncPosition.status = SyncHandlerStatus.ENABLED;
+                } else {
+                    syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`;
+                }
             }
+
+            syncPosition.thisRef = rangeTracker.export();
+
+            return {
+                results: items,
+                position: syncPosition,
+            };
+        } catch (err: any) {
+            if (err.status == 403) {
+                throw new AccessDeniedError(err.message)
+            }
+
+            throw err
         }
-
-        syncPosition.thisRef = rangeTracker.export();
-
-        return {
-            results: items,
-            position: syncPosition,
-        };
     }
 
     protected async buildResults(

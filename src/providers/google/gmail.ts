@@ -14,6 +14,7 @@ import {
 import { SchemaEmail, SchemaEmailType, SchemaRecord } from "../../schemas";
 import { GmailHelpers } from "./helpers";
 import { GmailSyncSchemaPosition, GoogleHandlerConfig } from "./interfaces";
+import AccessDeniedError from "../AccessDeniedError";
 
 const _ = require("lodash");
 
@@ -76,114 +77,122 @@ export default class Gmail extends GoogleHandler {
     api: any,
     syncPosition: GmailSyncSchemaPosition
   ): Promise<SyncResponse> {
-    if (this.config.batchSize > MAX_BATCH_SIZE) {
-      throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`)
-    }
+    try {
+      if (this.config.batchSize > MAX_BATCH_SIZE) {
+        throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`)
+      }
 
-    const gmail = this.getGmail();
-    // Range tracker is used where completed startId = item ID, endId = pageToken
-    // And conversely, pending startId = page token, endId = item ID
-    const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef)
+      const gmail = this.getGmail();
+      // Range tracker is used where completed startId = item ID, endId = pageToken
+      // And conversely, pending startId = page token, endId = item ID
+      const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef)
 
-    let items: SchemaEmail[] = []
+      let items: SchemaEmail[] = []
 
-    /**
-     * Fetch any new items
-     */
-    // Current range has `startId` = undefined, `endId` = breakId
-    let currentRange = rangeTracker.nextRange()
+      /**
+       * Fetch any new items
+       */
+      // Current range has `startId` = undefined, `endId` = breakId
+      let currentRange = rangeTracker.nextRange()
 
-    let query: gmail_v1.Params$Resource$Users$Messages$List = {
-      userId: "me",
-      maxResults: this.config.batchSize, // default = 100, max = 500
-    };
-
-    if (currentRange.startId) {
-      query.pageToken = currentRange.startId
-    }
-
-    const latestResponse = await gmail.users.messages.list(query);
-    const latestResult = await this.buildResults(
-      gmail,
-      latestResponse,
-      currentRange.endId,
-      SchemaEmailType.RECEIVE,
-      _.has(this.config, "breakTimestamp")
-        ? this.config.breakTimestamp as string
-        : undefined
-    );
-
-    items = latestResult.items
-
-    let nextPageToken = _.has(latestResponse, "data.nextPageToken") ? latestResponse.data.nextPageToken : undefined
-
-    if (items.length) {
-      rangeTracker.completedRange({
-        startId: items[0].sourceId,
-        endId: nextPageToken
-      }, latestResult.breakHit == SyncItemsBreak.ID)
-    } else {
-      rangeTracker.completedRange({
-        startId: undefined,
-        endId: undefined
-      }, false) // No results and first batch, so break ID couldn't have been hit
-    }
-
-    currentRange = rangeTracker.nextRange();
-    if (items.length != this.config.batchSize && currentRange.startId) {
-      // Not enough items, fetch more from the next page of results
-      query = {
+      let query: gmail_v1.Params$Resource$Users$Messages$List = {
         userId: "me",
-        maxResults: this.config.batchSize - items.length, // only fetch enough items needed to complete the batch size
-        pageToken: currentRange.startId
+        maxResults: this.config.batchSize, // default = 100, max = 500
       };
 
-      const backfillResponse = await gmail.users.messages.list(query);
-      const backfillResult = await this.buildResults(
+      if (currentRange.startId) {
+        query.pageToken = currentRange.startId
+      }
+
+      const latestResponse = await gmail.users.messages.list(query);
+      const latestResult = await this.buildResults(
         gmail,
-        backfillResponse,
+        latestResponse,
         currentRange.endId,
         SchemaEmailType.RECEIVE,
         _.has(this.config, "breakTimestamp")
-          ? this.config.breakTimestamp
+          ? this.config.breakTimestamp as string
           : undefined
       );
 
-      items = items.concat(backfillResult.items)
+      items = latestResult.items
 
-      nextPageToken = _.has(backfillResponse, "data.nextPageToken") ? backfillResponse.data.nextPageToken : undefined
-  
-      if (backfillResult.items.length) {
+      let nextPageToken = _.has(latestResponse, "data.nextPageToken") ? latestResponse.data.nextPageToken : undefined
+
+      if (items.length) {
         rangeTracker.completedRange({
-          startId: backfillResult.items[0].sourceId,
+          startId: items[0].sourceId,
           endId: nextPageToken
-        }, backfillResult.breakHit == SyncItemsBreak.ID)
+        }, latestResult.breakHit == SyncItemsBreak.ID)
       } else {
         rangeTracker.completedRange({
           startId: undefined,
           endId: undefined
-        },  backfillResult.breakHit == SyncItemsBreak.ID)
+        }, false) // No results and first batch, so break ID couldn't have been hit
       }
-    }
 
-    if (!items.length) {
-      syncPosition.syncMessage = `Stopping. No results found.`
-      syncPosition.status = SyncHandlerStatus.ENABLED
-    } else {
-      if (items.length != this.config.batchSize && !nextPageToken) {
-        syncPosition.syncMessage = `Processed ${items.length} items. Stopping. No more results.`
+      currentRange = rangeTracker.nextRange();
+      if (items.length != this.config.batchSize && currentRange.startId) {
+        // Not enough items, fetch more from the next page of results
+        query = {
+          userId: "me",
+          maxResults: this.config.batchSize - items.length, // only fetch enough items needed to complete the batch size
+          pageToken: currentRange.startId
+        };
+
+        const backfillResponse = await gmail.users.messages.list(query);
+        const backfillResult = await this.buildResults(
+          gmail,
+          backfillResponse,
+          currentRange.endId,
+          SchemaEmailType.RECEIVE,
+          _.has(this.config, "breakTimestamp")
+            ? this.config.breakTimestamp
+            : undefined
+        );
+
+        items = items.concat(backfillResult.items)
+
+        nextPageToken = _.has(backfillResponse, "data.nextPageToken") ? backfillResponse.data.nextPageToken : undefined
+    
+        if (backfillResult.items.length) {
+          rangeTracker.completedRange({
+            startId: backfillResult.items[0].sourceId,
+            endId: nextPageToken
+          }, backfillResult.breakHit == SyncItemsBreak.ID)
+        } else {
+          rangeTracker.completedRange({
+            startId: undefined,
+            endId: undefined
+          },  backfillResult.breakHit == SyncItemsBreak.ID)
+        }
+      }
+
+      if (!items.length) {
+        syncPosition.syncMessage = `Stopping. No results found.`
         syncPosition.status = SyncHandlerStatus.ENABLED
       } else {
-        syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`
+        if (items.length != this.config.batchSize && !nextPageToken) {
+          syncPosition.syncMessage = `Processed ${items.length} items. Stopping. No more results.`
+          syncPosition.status = SyncHandlerStatus.ENABLED
+        } else {
+          syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`
+        }
       }
-    }
 
-    syncPosition.thisRef = rangeTracker.export()
+      syncPosition.thisRef = rangeTracker.export()
 
-    return {
-      results: items,
-      position: syncPosition,
-    };
+      return {
+        results: items,
+        position: syncPosition,
+      };
+    } catch (err: any) {
+      if (err.status == 403) {
+          throw new AccessDeniedError(err.message)
+      }
+
+      throw err
+  }
   }
 
   protected async buildResults(
