@@ -13,6 +13,7 @@ export default class BaseSyncHandler extends EventEmitter {
     protected config: BaseHandlerConfig
     protected connection: Connection
 
+    protected enabled: boolean
     protected syncStatus: SyncHandlerStatus
 
     constructor(config: any, connection: Connection, provider: BaseProvider) {
@@ -29,6 +30,48 @@ export default class BaseSyncHandler extends EventEmitter {
         this.config = config
         this.connection = connection
         this.provider = provider
+        this.enabled = true
+
+        const handlerConfigs = this.connection.handlers.reduce((handlers: Record<string, ConnectionHandler>, handler: ConnectionHandler) => {
+            handlers[handler.id] = handler
+            return handlers
+        }, {})
+
+        if (handlerConfigs[this.getId()]) {
+            const handlerConfig = handlerConfigs[this.getId()]
+
+            if (!handlerConfig.enabled) {
+                this.enabled = false
+            } else {
+                for (const option of this.getOptions()) {
+                    if (handlerConfig.config[option.id]) {
+                        this.config[option.id] = handlerConfig.config[option.id]
+                    } else {
+                        this.config[option.id] = option.defaultValue
+                    }
+                }
+            }
+        }
+
+        // Set break timestamp based on config
+        if (this.config.backdate) {
+            const monthMilliseconds = 1000 * 60 * 60 * 24 * 30
+            let months = 1
+
+            switch (this.config.backdate) {
+                case '3-months':
+                    months = 3
+                    break
+                case '6-months':
+                    months = 6
+                    break
+                case '12-months':
+                    months = 12
+                    break
+            }
+
+            this.config.breakTimestamp = (new Date((new Date()).getTime() - monthMilliseconds * months)).toISOString()
+        }
     }
 
     /**
@@ -59,8 +102,26 @@ export default class BaseSyncHandler extends EventEmitter {
     }
 
     public getOptions(): ProviderHandlerOption[] {
-        return []
-    }
+        return [{
+          id: 'backdate',
+          label: 'Backdate history',
+          type: ConnectionOptionType.ENUM,
+          enumOptions: [{
+            value: '1-month',
+            label: '1 month'
+          }, {
+            value: '3-months',
+            label: '3 months'
+          }, {
+            value: '6-months',
+            label: '6 months'
+          }, {
+            value: '12-months',
+            label: '12 months'
+          }],
+          defaultValue: '3-months'
+        }]
+      }
 
     public setConfig(config: any) {
         this.config = config

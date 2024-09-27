@@ -475,7 +475,7 @@ export default class BaseProvider extends EventEmitter {
     }
 
     public async getSyncHandler(handler: typeof BaseSyncHandler): Promise<BaseSyncHandler> {
-        return new handler(this.config, this.connection, this)
+        return new handler({...this.config}, this.connection, this)
     }
 
     /**
@@ -491,7 +491,7 @@ export default class BaseProvider extends EventEmitter {
         for (let h in handlers) {
             const handler = handlers[h]
 
-            const handlerInstance = new handler(this.config, this.connection, this)
+            const handlerInstance = new handler({...this.config}, this.connection, this)
             syncHandlers.push(handlerInstance)
         }
 

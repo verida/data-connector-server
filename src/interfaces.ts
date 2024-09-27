@@ -33,6 +33,7 @@ export interface ConnectionOption {
 export interface BaseHandlerConfig extends Record<string, string | boolean | number> {
     batchSize?: number
     breakTimestamp?: string
+    backdate?: string
 }
 
 export interface PassportProfile extends PassportBaseProfile {
