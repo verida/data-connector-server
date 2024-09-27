@@ -192,7 +192,8 @@ export interface SyncProviderLogEntry {
 export enum SyncProviderLogLevel {
     INFO = "info",
     DEBUG = "debug",
-    ERROR = "error"
+    ERROR = "error",
+    WARNING = "warning"
 }
 
 export interface SyncProviderLogEvent {
