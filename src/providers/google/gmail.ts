@@ -249,8 +249,6 @@ export default class Gmail extends GoogleHandler {
         messageType = SchemaEmailType.SEND
       }
 
-      console.log(from, this.connection.profile.email, messageType)
-
       results.push({
         _id: this.buildItemId(messageId),
         type: messageType,
