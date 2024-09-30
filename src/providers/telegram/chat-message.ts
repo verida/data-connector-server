@@ -18,6 +18,8 @@ import { TelegramChatGroupType, TelegramConfig } from "./interfaces";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 import { ItemsRange } from "../../helpers/interfaces";
 import { UsersCache } from "./usersCache";
+import { TDError } from "tdlib-native";
+import InvalidTokenError from "../InvalidTokenError";
 
 const _ = require("lodash");
 
@@ -304,7 +306,6 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       for (const chatGroup of chatGroupsBacklog) {
         // Respect group limit
         if (groupCount++ >= this.config.groupLimit) {
-          console.log(`- Group limit hit`)
           groupLimitHit = true
           break
         }
@@ -333,7 +334,11 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         position: syncPosition
       }
     } catch (err: any) {
-        console.log(err)
+      if (err instanceof TDError) {
+        if (err.code == 401) {
+          throw new InvalidTokenError(err.message)
+        }
+      }
         throw err
     }
   }
@@ -369,6 +374,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       fromHandle,
       fromName,
       messageText: content,
+      schema: CONFIG.verida.schemas.CHAT_MESSAGE,
       sourceApplication: this.getProviderApplicationUrl(),
       sourceId: rawMessage.id.toString(),
       sourceData: rawMessage,

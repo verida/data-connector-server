@@ -4,6 +4,8 @@ import { EventEmitter } from "events"
 import { Utils } from "../utils"
 import { SchemaRecord } from "../schemas"
 import BaseProvider from "./BaseProvider"
+import AccessDeniedError from "./AccessDeniedError"
+import InvalidTokenError from "./InvalidTokenError"
 const _ = require("lodash")
 
 export default class BaseSyncHandler extends EventEmitter {
@@ -12,14 +14,15 @@ export default class BaseSyncHandler extends EventEmitter {
     protected config: BaseHandlerConfig
     protected connection: Connection
 
+    protected enabled: boolean
     protected syncStatus: SyncHandlerStatus
 
     constructor(config: any, connection: Connection, provider: BaseProvider) {
         super()
         // Handle any custom config for this handler
         if (config.handlers) {
-            if (config.handlers[this.getName()]) {
-                config = _.merge({}, config, config.handlers[this.getName()])
+            if (config.handlers[this.getId()]) {
+                config = _.merge({}, config, config.handlers[this.getId()])
             }
 
             delete config["handlers"]
@@ -28,6 +31,50 @@ export default class BaseSyncHandler extends EventEmitter {
         this.config = config
         this.connection = connection
         this.provider = provider
+        this.enabled = true
+
+        if (this.connection?.handlers) {
+            const handlerConfigs = this.connection.handlers.reduce((handlers: Record<string, ConnectionHandler>, handler: ConnectionHandler) => {
+                handlers[handler.id] = handler
+                return handlers
+            }, {})
+
+            if (handlerConfigs[this.getId()]) {
+                const handlerConfig = handlerConfigs[this.getId()]
+
+                if (!handlerConfig.enabled) {
+                    this.enabled = false
+                } else {
+                    for (const option of this.getOptions()) {
+                        if (handlerConfig.config[option.id]) {
+                            this.config[option.id] = handlerConfig.config[option.id]
+                        } else {
+                            this.config[option.id] = option.defaultValue
+                        }
+                    }
+                }
+            }
+        }
+
+        // Set break timestamp based on config
+        if (this.config.backdate) {
+            const monthMilliseconds = 1000 * 60 * 60 * 24 * 30
+            let months = 1
+
+            switch (this.config.backdate) {
+                case '3-months':
+                    months = 3
+                    break
+                case '6-months':
+                    months = 6
+                    break
+                case '12-months':
+                    months = 12
+                    break
+            }
+
+            this.config.breakTimestamp = (new Date((new Date()).getTime() - monthMilliseconds * months)).toISOString()
+        }
     }
 
     /**
@@ -45,7 +92,7 @@ export default class BaseSyncHandler extends EventEmitter {
      * Set a default label
      */
     public getLabel(): string {
-        let label = this.getName()
+        let label = this.getId()
         // Replace all instances of "-" with a space
         label = label.replace(/-/g, ' ');
 
@@ -58,8 +105,26 @@ export default class BaseSyncHandler extends EventEmitter {
     }
 
     public getOptions(): ProviderHandlerOption[] {
-        return []
-    }
+        return [{
+          id: 'backdate',
+          label: 'Backdate history',
+          type: ConnectionOptionType.ENUM,
+          enumOptions: [{
+            value: '1-month',
+            label: '1 month'
+          }, {
+            value: '3-months',
+            label: '3 months'
+          }, {
+            value: '6-months',
+            label: '6 months'
+          }, {
+            value: '12-months',
+            label: '12 months'
+          }],
+          defaultValue: '3-months'
+        }]
+      }
 
     public setConfig(config: any) {
         this.config = config
@@ -148,18 +213,53 @@ export default class BaseSyncHandler extends EventEmitter {
         api: any,
         syncPosition: SyncHandlerPosition,
         syncSchemaPositionDs: IDatastore): Promise<SyncHandlerResponse> {
+        if (!this.enabled) {
+            this.emit('log', {
+                level: SyncProviderLogLevel.DEBUG,
+                message: `Disabled, skipping sync`
+            })
+            return
+        }
         
-        let syncResults
+        let syncResults: SchemaRecord[] = []
+        let savePosition = false
         try {
             const syncResult = await this._sync(api, syncPosition)
             syncResults = <SchemaRecord[]> syncResult.results
             await this.handleResults(syncResult.position, syncResults, syncSchemaPositionDs)
+        } catch (err: any) {
+            let message: string
+            savePosition = true
+            if (err instanceof AccessDeniedError) {
+                message = `Access denied. Re-connect and ensure you enable ${this.getLabel()}.`
+                syncPosition.status = SyncHandlerStatus.INVALID_AUTH
+                syncPosition.syncMessage = message
+
+                this.emit('log', {
+                    level: SyncProviderLogLevel.WARNING,
+                    message
+                })
+            } else if (err instanceof InvalidTokenError) {
+                // Re-throw so the provider can handle
+                throw err
+            } else {
+                message = `Unknown error handling sync results: ${err.message}`
+                this.emit('log', {
+                    level: SyncProviderLogLevel.ERROR,
+                    message
+                })
+
+                syncPosition.status = SyncHandlerStatus.ERROR
+                if (syncPosition.errorRetries) {
+                    syncPosition.errorRetries++
+                }
+            }
         }
-        catch (err: any) {
-            const message = `Unknown error handling sync results: ${err.message}`
-            this.emit('log', {
-                level: SyncProviderLogLevel.ERROR,
-                message
+
+        if (savePosition) {
+            await syncSchemaPositionDs.save(syncPosition, {
+                // The position record may already exist, if so, force update
+                forceUpdate: true
             })
         }
 
@@ -212,6 +312,10 @@ export default class BaseSyncHandler extends EventEmitter {
             // This allows a sync handler to return results of different schema types
             if (!item.schema) {
                 item.schema = this.getSchemaUri()
+            }
+
+            if (item.sourceAccountId) {
+                item.sourceAccountId = this.provider.getAccountId()
             }
             
             const schemaDatastore = await this.provider.getDatastore(item.schema)

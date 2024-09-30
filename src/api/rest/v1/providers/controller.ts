@@ -70,6 +70,12 @@ export default class Controller {
         const results: ProviderResult[] = []
         for (let p in providers) {
             const providerName = providers[p]
+            const providerConfig = CONFIG.providers[providerName]
+            if (typeof providerConfig['enabled'] === 'boolean' && !providerConfig['enabled']) {
+                // Ignore disabled providers
+                continue
+            }
+
 
             try {
                 const provider = Providers(providerName)
@@ -92,7 +98,6 @@ export default class Controller {
                     handlers
                 })
             } catch (err) {
-                console.log(err)
                 // skip broken providers
             }
         }

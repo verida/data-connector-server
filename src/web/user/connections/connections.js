@@ -68,7 +68,7 @@ $(document).ready(function() {
     
                     const formattedSyncTimes = `Start: ${new Date(connection.syncStart).toLocaleString()}<br>End: ${new Date(connection.syncEnd).toLocaleString()}`;
     
-                    const providerDetails = getProviderDetails(connection.provider);
+                    const providerDetails = getProviderDetails(connection.providerId);
                     const avatar = connection.profile.avatar.uri ? `<img src="${connection.profile.avatar.uri}" alt="${connection.profile.name}" style="width: 30px; height: 30px;"></img>` : ''
     
                     const row = $(`
@@ -163,7 +163,7 @@ $(document).ready(function() {
                         url: `/api/rest/v1/connections/${connectionId}/sync?key=${veridaKey}`,
                         type: 'POST',
                         data: JSON.stringify({
-                            force: (syncType == 'force')
+                            forceSync: (syncType == 'force')
                         }),
                         contentType: 'application/json',
                         success: function(response) {
