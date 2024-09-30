@@ -253,7 +253,7 @@ export default class CalendarEvent extends GoogleHandler {
       results.push({
         _id: this.buildItemId(eventId),
         name: event.summary ?? 'No event title',
-        sourceAccountId: this.provider.getProviderId(),
+        sourceAccountId: this.provider.getAccountId(),
         sourceData: event,
         sourceApplication: this.getProviderApplicationUrl(),
         sourceId: eventId,

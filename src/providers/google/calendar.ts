@@ -217,7 +217,7 @@ export default class Calendar extends GoogleHandler {
       results.push({
         _id: this.buildItemId(calendarId),
         name: summary,
-        sourceAccountId: this.provider.getProviderId(),
+        sourceAccountId: this.provider.getAccountId(),
         sourceData: listItem,
         sourceApplication: this.getProviderApplicationUrl(),
         sourceId: calendarId,
