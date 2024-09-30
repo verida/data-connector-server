@@ -126,7 +126,11 @@ export class LLMController {
             res.end()
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.write(`data: ${JSON.stringify({
+                success: false,
+                error: error.message
+            })}\n\n`)
+            res.end()
         }
     }
 }

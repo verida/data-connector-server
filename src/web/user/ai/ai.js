@@ -85,14 +85,15 @@ $(document).ready(function() {
         const progressBar = $('#progress-bar');
         const statusMessage = $('#loading-overlay p');
 
-        if (data.schema) {
+        if (data.success == false) {
+            $('#loading-overlay p').text(`Error from server: ${data.error}`);
+            eventSource.close()
+        } else if (data.schema) {
             statusMessage.text(`${data.schema} (${data.status})`);
-        }
-        if (data.totalProgress) {
+        } else if (data.totalProgress) {
             const progressPercentage = Math.floor(data.totalProgress * 100);
             progressBar.css('width', `${progressPercentage}%`).attr('aria-valuenow', data.totalProgress);
-        }
-        if (data.status === 'Load Complete' && data.totalProgress >= 1) {
+        } else if (data.status === 'Load Complete' && data.totalProgress >= 1) {
             loadComplete = true
             $('#loading-overlay').fadeOut();
             eventSource.close()
