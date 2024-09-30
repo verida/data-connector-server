@@ -49,7 +49,6 @@ export default class TelegramProvider extends Base {
     }
 
     public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
-        console.log('callback')
         const clientId = req.query.id!.toString()
 
         const api = new TelegramApi(clientId)
@@ -57,7 +56,6 @@ export default class TelegramProvider extends Base {
 
         // @todo: get profile
         const tgProfile = await client.api.getMe({})
-        console.log('telegram profile', tgProfile)
 
         const username = tgProfile.usernames && tgProfile.usernames.active_usernames ? tgProfile.usernames.active_usernames[0] : undefined
         const displayName = `${tgProfile.first_name} ${tgProfile.last_name}`.trim()
@@ -87,7 +85,6 @@ export default class TelegramProvider extends Base {
         }
 
         // close API connection
-        console.log('close connection')
         const binFile = await api.closeClient()
 
         // get bin file and sae it in the refresh token)
@@ -101,9 +98,7 @@ export default class TelegramProvider extends Base {
     }
 
     public async getApi(accessToken?: string, refreshToken?: string): Promise<TelegramApi> {
-        console.log('get telegram api')
         if (this.api) {
-            console.log('returning api from cache')
             return this.api
         }
         
@@ -124,9 +119,7 @@ export default class TelegramProvider extends Base {
     }
 
     public async close() {
-        console.log('telegram close')
         const api = await this.getApi()
-        console.log('close client')
         const binFile = await api.closeClient()
 
         this.connection!.refreshToken = binFile

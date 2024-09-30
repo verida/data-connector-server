@@ -32,8 +32,8 @@ export interface NetworkInstance {
 
 let cachedNetworkInstance: NetworkInstance
 
-const providerIdArg = process.argv.find(arg => arg.startsWith('--providerId='))
-const cliProviderId = providerIdArg ? providerIdArg.split('=')[1] : undefined
+const accountIdArg = process.argv.find(arg => arg.startsWith('--accountId='))
+const cliAccountId = accountIdArg ? accountIdArg.split('=')[1] : undefined
 
 export default class CommonUtils {
 
@@ -67,34 +67,34 @@ export default class CommonUtils {
         return cachedNetworkInstance
     }
 
-    static getConnection = async(providerName: string, providerId?: string): Promise<Connection> => {
-        if (!providerId) {
-            providerId = cliProviderId
+    static getConnection = async(providerId: string, accountId?: string): Promise<Connection> => {
+        if (!accountId) {
+            accountId = cliAccountId
         }
 
-        if (!cliProviderId) {
-            console.log(`Provider ID is not defined, using first. Specify with --providerId=<providerId>`)
+        if (!cliAccountId) {
+            console.log(`Account ID is not defined, using first account. Specify with --accountId=<accountId>`)
         }
 
         const { context } = await CommonUtils.getNetwork()
         const connectionsDs = await context.openDatastore(SCHEMA_DATA_CONNECTION)
         
         const filter = {
-            provider: providerName,
-            providerId
+            providerId,
+            accountId
         }
 
         const connection = <Connection | undefined> await connectionsDs.getOne(filter, {})
 
         if (!connection) {
-            throw new Error(`Unable to locate connection ${providerName} ${providerId}`)
+            throw new Error(`Unable to locate connection: ${providerId} ${accountId}`)
         }
 
         return connection
     }
 
-    static syncConnector = async (provider: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string, syncSchemas: Record<string, SyncSchemaConfig>): Promise<any> => {
-        return await axios.post(`${SERVER_URL}/syncStart/${provider}`, {
+    static syncConnector = async (providerId: string, accessToken: string, refreshToken: string, did: string, encryptionKey: string, syncSchemas: Record<string, SyncSchemaConfig>): Promise<any> => {
+        return await axios.post(`${SERVER_URL}/syncStart/${providerId}`, {
             accessToken,
             refreshToken,
             did,
@@ -103,8 +103,8 @@ export default class CommonUtils {
         })
     }
 
-    static syncDone = async (provider: string, did: string): Promise<any> => {
-        return await axios.get(`${SERVER_URL}/syncDone/${provider}`, {
+    static syncDone = async (providerId: string, did: string): Promise<any> => {
+        return await axios.get(`${SERVER_URL}/syncDone/${providerId}`, {
             params: {
                 did
             }

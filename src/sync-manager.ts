@@ -52,16 +52,22 @@ export default class SyncManager {
         return false
     }
 
-    public async sync(providerName?: string, providerId?: string, force: boolean = false): Promise<Connection[]> {
+    public async sync(providerId?: string, accountId?: string, force: boolean = false): Promise<Connection[]> {
         const connections: Connection[] = []
 
-        const providers = await this.getProviders(providerName, providerId)
-        // @todo: Do these in parallel?
-        // May need a shared cache of datastore connections so we 
-        // don't try to open the same one multiple times
+        const providers = await this.getProviders(providerId, accountId)
+        const promises = []
+        
         for (let p in providers) {
             const provider = providers[p]
-            connections.push(await provider.sync(undefined, undefined, force))
+            promises.push(provider.sync(undefined, undefined, force))
+        }
+
+        const promiseResults = await Promise.allSettled(promises)
+        for (const result of promiseResults) {
+            if (result.status == 'fulfilled') {
+                connections.push(result.value)
+            }
         }
 
         return connections
@@ -222,10 +228,17 @@ export default class SyncManager {
             config: providerConfig
         }
 
-        const result = await connectionDatastore.save(providerConnection, {})
+        try {
+            const result = await connectionDatastore.save(providerConnection, {
+                forceUpdate: true
+            })
 
-        if (!result) {
-            throw new Error(`Unable to save connection: ${JSON.stringify(connectionDatastore.errors, null, 2)}`)
+            if (!result) {
+                throw new Error(`Unable to save connection: ${JSON.stringify(connectionDatastore.errors, null, 2)}`)
+            }
+        } catch (err: any) {
+            console.log(providerConnection)
+            throw new Error(`Unable to save connection: ${err.message}`)
         }
 
         return providerConnection
