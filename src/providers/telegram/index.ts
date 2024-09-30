@@ -119,10 +119,14 @@ export default class TelegramProvider extends Base {
     }
 
     public async close() {
-        const api = await this.getApi()
-        const binFile = await api.closeClient()
+        try {
+            const api = await this.getApi()
+            const binFile = await api.closeClient()
 
-        this.connection!.refreshToken = binFile
+            this.connection!.refreshToken = binFile
+        } catch (err: any) {
+            // Error with binFile (possibly because auth has been disconnected), do nothing
+        }
     }
 
 }

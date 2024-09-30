@@ -80,7 +80,11 @@ export interface ConnectionCallbackResponse {
 
 export enum SyncFrequency {
     HOUR = "hour",
+    HOUR_3 = "3hour",
+    HOUR_6 = "6hour",
+    HOUR_12 = "12hour",
     DAY = "day",
+    DAY_3 = "3day",
     WEEK = "week"
 }
 
@@ -89,6 +93,7 @@ export enum SyncStatus {
     ERROR = "error",            // sync had an error on its last run
     PAUSED = "paused",          // sync is temporarily paused
     ACTIVE = "active",        // sync is currently running
+    INVALID_AUTH = "invalid-auth", // invalid auth token to the third party connector
 }
 
 export interface ConnectionHandler {
@@ -111,6 +116,8 @@ export interface Connection {
     syncStart?: string
     syncEnd?: string
     syncNext?: string
+    syncMessage?: string
+    authExpired?: boolean
     handlers: ConnectionHandler[]
     config: Record<string, string>
 }
@@ -134,6 +141,7 @@ export enum SyncHandlerStatus {
     ERROR = "error",
     DISABLED = "disabled",
     SYNCING = "syncing",
+    INVALID_AUTH = "invalid-auth",  // permission denied for this handler
 }
 
 export interface SyncHandlerPosition {
@@ -159,6 +167,9 @@ export interface SyncHandlerPosition {
 
     // Future record ID to break on, for the next sync
     futureBreakId?: string
+
+    // How many retries have had errors
+    errorRetries?: number
 }
 
 export interface SyncResponse {
@@ -180,7 +191,8 @@ export interface SyncProviderLogEntry {
 export enum SyncProviderLogLevel {
     INFO = "info",
     DEBUG = "debug",
-    ERROR = "error"
+    ERROR = "error",
+    WARNING = "warning"
 }
 
 export interface SyncProviderLogEvent {

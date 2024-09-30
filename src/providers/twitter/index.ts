@@ -9,7 +9,7 @@ import dayjs from 'dayjs'
 
 import Following from './following'
 import Posts from './posts'
-import TokenExpiredError from '../TokenExpiredError'
+import InvalidTokenError from '../../providers/InvalidTokenError'
 
 export interface TwitterProviderConfig extends BaseProviderConfig {
     clientID: string
@@ -130,7 +130,7 @@ export default class TwitterProvider extends Base {
                     })
                 } catch (err) {
                     // Unrecoverable auth error
-                    throw new TokenExpiredError(err.message)
+                    throw new InvalidTokenError(err.message)
                 }
             } else {
                 throw err
