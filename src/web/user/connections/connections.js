@@ -1,49 +1,46 @@
-const SYNC_LOG_SCHEMA = `https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json`
+const SYNC_LOG_SCHEMA = `https://vault.schemas.verida.io/data-connections/activity-log/v0.2.0/schema.json`
 
 $(document).ready(function() {
     // Load the private key from local storage
     let savedVeridaKey = localStorage.getItem('veridaKey');
-    $('#veridaKey').val(savedVeridaKey);
+    if (savedVeridaKey) {
+        $('#veridaKey').val(savedVeridaKey);
+    }
+
     handleButtonStates();
 
     // Load providers on page load for the dropdown and fetch connections if a key is saved
     loadProviders(() => {
         if (savedVeridaKey) {
-            loadProvidersAndConnections(savedVeridaKey);
+            loadProvidersAndConnections();
         }
     });
 
-    $('#veridaKey').on('input', handleButtonStates);
+    $('#veridaKey').on('change', handleButtonStates);
 
     function handleButtonStates() {
         const veridaKey = $('#veridaKey').val().trim();
-        $('#loadBtn').prop('disabled', !veridaKey);
-        $('#generateIdentityBtn').toggle(!veridaKey);
-        $('#clearBtn').toggle(!!veridaKey);
-        savedVeridaKey = veridaKey
+
+        if (veridaKey) {
+            $('#loadBtn').prop('disabled', !veridaKey);
+            $('#generateIdentityBtn').toggle(!veridaKey);
+            $('#clearBtn').toggle(!!veridaKey);
+            savedVeridaKey = veridaKey
+            localStorage.setItem('veridaKey', veridaKey)
+        } else {
+            savedVeridaKey = undefined
+            localStorage.removeItem('veridaKey');
+            $('#providerTable').empty();
+        }
     }
 
     $('#loadBtn').click(function() {
-        const veridaKey = $('#veridaKey').val().trim();
-        if (!veridaKey) {
-            alert('Please enter a Verida Private Key.');
-            return;
-        }
-
-        // Save the private key in local storage
-        localStorage.setItem('veridaKey', veridaKey);
-
-        // Clear existing table rows
-        $('#providerTable').empty();
-
         // Fetch and display connections
-        loadProvidersAndConnections(veridaKey);
+        loadProvidersAndConnections();
     });
 
     $('#clearBtn').click(function() {
         $('#veridaKey').val('');
-        localStorage.removeItem('veridaKey');
-        $('#providerTable').empty();
         handleButtonStates();
     });
 
@@ -52,13 +49,18 @@ $(document).ready(function() {
         // Implement identity generation logic here
     });
 
-    function loadProvidersAndConnections(veridaKey) {
+    function loadProvidersAndConnections() {
+        // Clear existing table rows
+        $('#providerTable').empty();
+
         // Show the loading indicator
         $('#loadingIndicator').show();
         $('#loadBtn').prop('disabled', true);
 
+        const veridaKey = localStorage.getItem('veridaKey');
+
         $.ajax({
-            url: `/api/rest/v1/connections?key=${veridaKey}`,
+            url: `/api/rest/v1/connections?key=${savedVeridaKey}`,
             type: 'GET',
             contentType: 'application/json',
             success: function(syncStatusResponse) {
@@ -113,7 +115,6 @@ $(document).ready(function() {
                         url: `/api/rest/v1/connections/${connectionId}?key=${veridaKey}`,
                         type: 'DELETE',
                         success: function(response) {
-                            console.log(response.data)
                         }
                     })
                 });
@@ -156,6 +157,7 @@ $(document).ready(function() {
                     // Handle modal closing
                     $('#eventLogModal').on('hidden.bs.modal', function (e) {
                         eventSource.close()
+                        loadProvidersAndConnections()
                       });
     
                     // Initialize sync
@@ -179,6 +181,15 @@ $(document).ready(function() {
     
                 $('#loadingIndicator').hide(); // Hide the loading indicator
                 $('#loadBtn').prop('disabled', false);
+            },
+            error: function(response) {
+                const errorMessage = response.responseJSON.error
+                $('#loadingIndicator').hide()
+                $('#errorIndicator').html(`<strong>Error:</strong> ${errorMessage}`)
+                $('#errorIndicator').show()
+                setTimeout(() => {
+                    $('#errorIndicator').hide()
+                }, 5000)
             }
         })
     }
