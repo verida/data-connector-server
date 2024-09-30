@@ -69,18 +69,18 @@
         </ul>
 
         <h2>Confidential Storage</h2>
-
         <p>Verida APIs integrate the Verida Client SDK within the secure enclave on each confidential compute node. User data is syncronized from the Verida network, decrypted and then loaded into memory for rapid access via API endpoints.</p>
-
         <p>As such, user data retains all the security and privacy benefits of the Verida Network and user data never leaves the secure enclave, accept via user authorized API requests.</p>
-        
 
-        <h2>Private Key</h2>
+        <h2>LLM Privacy</h2>
+        <p>The large language models (LLM) used by this deployment is <i>not</i> running an LLM in a Verida Confidential Compute secure enclave. This deployment is currently using Amazon Web Services Bedrock for LLM access. Secure enclaves do not currently support GPU access which is necessary for performant LLM operations. This is a temporary solution as we are collaborating with partners to enable LLM's to run efficiently and cost effectively within secure enclaves.</p>
 
-        <p>You enter your private key into this application to connect to the Verida Confidential Storage network. Your private key is stored in local storage. You can clear it at any time by clicking the <strong>Clear</strong> button on each page.</p>
+        <h2>Private Key / Seed Phrase</h2>
+        <p>You enter your private key or seed phrase into this application to connect to the Verida Confidential Storage network. Your credentials are stored in local storage. You can clear them at any time by clicking the <strong>Clear</strong> button on each page.</p>
+
+        <p><a href="https://aws.amazon.com/bedrock/security-compliance/">Learn earn about the Bedrock privacy architecture and security model</a></p>
 
         <h2>Source Code</h2>
-
         <p>TThe source code for the User Data APIs are open source and are contained within the <a href="https://github.com/verida/data-connector-server">Data Connector Server Github Repo</a></p>
     </div>
 
