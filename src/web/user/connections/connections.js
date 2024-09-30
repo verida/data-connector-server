@@ -93,7 +93,7 @@ $(document).ready(function() {
                                         <a class="dropdown-item sync-btn" href="#" data-sync-type="force"  data-connection="${connection._id}">Force</a>
                                     </div>
                                 </div>
-                                <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Full Logs</button>
+                                <button class="btn btn-secondary logs-btn" data-provider="${connection.providerId}" data-provider-id="${connection.accountId}">Full Logs</button>
                                 <button class="btn btn-danger disconnect-btn" data-connection="${connection._id}">Disconnect</button>
                             </td>
                         </tr>
@@ -104,7 +104,7 @@ $(document).ready(function() {
                 $('.logs-btn').click(function() {
                     const provider = $(this).data('provider');
                     const providerId = $(this).data('provider-id');
-                    window.open(`/developer/data?limit=50&filter=providerName:${provider},providerId:${providerId}&schema=${SYNC_LOG_SCHEMA}&sort=insertedAt:desc`, '_blank');
+                    window.open(`/developer/data?limit=50&filter=providerId:${provider},accountId:${providerId}&schema=${SYNC_LOG_SCHEMA}&sort=insertedAt:desc`, '_blank');
                 });
     
                 $('.disconnect-btn').click(function() {
