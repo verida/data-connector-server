@@ -90,23 +90,31 @@ export class Utils {
         }
 
         Utils.networkCache[did].currentPromise = new Promise(async (resolve, reject) => {
-            await network.connect(account)
-            const context = await network.openContext(VAULT_CONTEXT_NAME)
-    
-            const networkConnection = {
-                network,
-                context,
-                account,
-                did
-            }
-    
-            Utils.networkCache[did] = {
-                requestIds: [requestId],
-                lastTouch: new Date(),
-                networkConnection
-            }
+            try {
+                await network.connect(account)
+                const context = await network.openContext(VAULT_CONTEXT_NAME)
+        
+                const networkConnection = {
+                    network,
+                    context,
+                    account,
+                    did
+                }
+        
+                Utils.networkCache[did] = {
+                    requestIds: [requestId],
+                    lastTouch: new Date(),
+                    networkConnection
+                }
 
-            resolve()
+                resolve()
+            } catch (err: any) {
+                if (err.message.match('Unable to locate')) {
+                    reject(new Error(`Invalid credentials or account is not registered to this network: ${serverconfig.verida.environment}`))
+                } else {
+                    reject(err)
+                }
+            }
         })
 
         await Utils.networkCache[did].currentPromise
