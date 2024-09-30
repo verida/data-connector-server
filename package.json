@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/verida/server-template#readme",
   "dependencies": {
+    "@discordjs/rest": "^2.4.0",
     "@oauth-everything/passport-discord": "^1.0.2",
     "@sapphire/snowflake": "^3.4.2",
     "@superfaceai/passport-twitter-oauth2": "^1.2.3",
@@ -52,6 +53,7 @@
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.1",
+    "discord-api-types": "^0.37.101",
     "discord.js": "^14.9.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
