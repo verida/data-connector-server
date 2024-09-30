@@ -4,7 +4,7 @@ import { BaseProviderConfig, ConnectionCallbackResponse, PassportProfile } from 
 
 const passport = require("passport")
 import { Strategy as DiscordStrategy, Scope } from '@oauth-everything/passport-discord';
-import { REST, Client, GatewayIntentBits } from 'discord.js'
+import { REST } from '@discordjs/rest'
 import { DiscordSnowflake } from '@sapphire/snowflake'
 import dayjs from 'dayjs'
 import axios from 'axios'

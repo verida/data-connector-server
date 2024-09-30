@@ -1,4 +1,5 @@
 import { Client, GatewayIntentBits, TextChannel, DMChannel } from 'discord.js';
+import { Routes } from 'discord-api-types/v10';
 import CONFIG from '../../config';
 import {
     SyncItemsResult,
@@ -76,14 +77,20 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
         let channelList: SchemaSocialChatGroup[] = [];
         let channels = []
         
-        const guilds: any = await api.get('/users/@me/guilds')
+        try {
+            const guilds: any = await api.get(Routes.userGuilds());
         
-        for (const guild of guilds) {
-            channels = await api.get(`/guilds/${guild.id}/channels`)
-            
-            console.log(`Channels in guild ${guild.name}:`, channels);
+            for (const guild of guilds) {
+                channels = await api.get(Routes.guildChannels(guild.id))
+                
+                console.log(`Channels in guild ${guild.name}:`, channels);
+            }
+    
+        } catch (error) {
+            console.error('Error fetching user guilds & channels:', error);
+            return [];
         }
-
+        
     
         for (const [id, channel] of channels) {
             if (channel.isTextBased()) {
