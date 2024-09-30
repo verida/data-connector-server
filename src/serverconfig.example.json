@@ -67,7 +67,8 @@
                 "posts": {
                     "batchSize": 20
                 }
-            }
+            },
+            "enabled": false
         },
         "discord": {
             "label": "Discord",
@@ -85,7 +86,10 @@
             "breakTimestamp": "2000-07-21T12:07:11.000Z",
             "handlers": {
                 "gmail": {
-                    "batchSize": 200
+                    "batchSize": 2
+                },
+                "google-drive-document": {
+                    "batchSize": 2
                 }
             }
         },
