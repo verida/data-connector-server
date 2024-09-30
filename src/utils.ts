@@ -112,6 +112,7 @@ export class Utils {
                 if (err.message.match('Unable to locate')) {
                     reject(new Error(`Invalid credentials or account is not registered to this network: ${serverconfig.verida.environment}`))
                 } else {
+                    delete Utils.networkCache[did]
                     reject(err)
                 }
             }
@@ -134,8 +135,11 @@ export class Utils {
             const duration = ((new Date()).getTime() - cache.lastTouch.getTime())/1000
             // console.log("gcNetworkCache()", duration)
             if (duration > NETWORK_CONNECTION_CACHE_EXPIRY) {
-                // console.log("gcNetworkCache() -- expired!", did)
-                await Utils.networkCache[did].networkConnection.context.close()
+                // Check network connection exists (may not because connection may have failed)
+                if (Utils.networkCache[did].networkConnection) {
+                    await Utils.networkCache[did].networkConnection.context.close()
+                }
+
                 delete Utils.networkCache[did]
             }
         }
@@ -277,7 +281,6 @@ export class Utils {
 
                     if (stats.isDirectory()) {
                         // Recursively delete the directory
-                        console.log('rm ', filePath)
                         fs.rm(filePath, { recursive: true, force: true }, (err) => {
                             if (err) {
                                 console.error(`Error deleting folder: ${err}`);
