@@ -476,7 +476,7 @@ export default class BaseProvider extends EventEmitter {
                     accountId: this.getAccountId(),
                     handlerId,
                     errorRetries: 0,
-                    status: SyncHandlerStatus.SYNCING
+                    status: SyncHandlerStatus.ENABLED
                 }
             }
 
