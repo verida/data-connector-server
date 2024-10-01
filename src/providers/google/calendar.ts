@@ -5,8 +5,6 @@ import { google, calendar_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 
-import moment from "moment-timezone";
-
 import {
   SyncResponse,
   SyncHandlerStatus,
