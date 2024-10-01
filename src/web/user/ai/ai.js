@@ -88,15 +88,19 @@ $(document).ready(function() {
         if (data.success == false) {
             $('#loading-overlay p').text(`Error from server: ${data.error}`);
             eventSource.close()
-        } else if (data.schema) {
-            statusMessage.text(`${data.schema} (${data.status})`);
-        } else if (data.totalProgress) {
-            const progressPercentage = Math.floor(data.totalProgress * 100);
-            progressBar.css('width', `${progressPercentage}%`).attr('aria-valuenow', data.totalProgress);
-        } else if (data.status === 'Load Complete' && data.totalProgress >= 1) {
-            loadComplete = true
-            $('#loading-overlay').fadeOut();
-            eventSource.close()
+        } else {
+            if (data.schema) {
+                statusMessage.text(`${data.schema} (${data.status})`);
+            }
+            if (data.totalProgress) {
+                const progressPercentage = Math.floor(data.totalProgress * 100);
+                progressBar.css('width', `${progressPercentage}%`).attr('aria-valuenow', data.totalProgress);
+            }
+            if (data.status === 'Load Complete' && data.totalProgress >= 1) {
+                loadComplete = true
+                $('#loading-overlay').fadeOut();
+                eventSource.close()
+            }
         }
     };
 
@@ -105,6 +109,6 @@ $(document).ready(function() {
             return
         }
         
-        $('#loading-overlay p').text('An error occurred while hotloading data.');
+        $('#loading-overlay p').text('An unknown error occurred while hotloading data.');
     };
 });
