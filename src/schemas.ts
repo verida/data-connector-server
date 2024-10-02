@@ -138,6 +138,7 @@ export interface SchemaCalendar extends SchemaRecord {
     description?: string
     timezone: string
     location?: string
+    syncData?: string
 }
 
 export interface SchemaEvent extends SchemaRecord {
