@@ -384,11 +384,13 @@ export default class BaseProvider extends EventEmitter {
         const providerInstance = this
         let syncCount = 0
         const schemaUri = handler.getSchemaUri()
+        console.debug(`${handler.getLabel()}: _syncHandler()`)
 
         const syncPosition = await this.getSyncPosition(handler.getId(), syncPositionsDs)
 
         if (syncPosition.status == SyncHandlerStatus.INVALID_AUTH) {
             // If access is denied, don't even try to sync
+            console.debug(`invalid auth`)
             return {
                 syncPosition,
                 syncResults: []
@@ -397,13 +399,14 @@ export default class BaseProvider extends EventEmitter {
 
         if (syncPosition.status == SyncHandlerStatus.SYNCING && !force) {
             await this.logMessage(SyncProviderLogLevel.INFO, `Sync is active for ${handler.getLabel()}, skipping`)
-            console.log(`Sync is active for ${handler.getLabel()}, skipping`)
+            console.debug(`${handler.getLabel()}: Sync is active, skipping`)
             return {
                 syncPosition,
                 syncResults: []
             }
         } else if (syncPosition.status == SyncHandlerStatus.ERROR) {
             if (syncPosition.errorRetries >= MAX_ERROR_RETRIES) {
+                console.debug(`${handler.getLabel()}: Maximum retries hit`)
                 // Have hit maximum erorr retries, don't even try to sync
                 return {
                     syncPosition,
@@ -423,13 +426,16 @@ export default class BaseProvider extends EventEmitter {
         })
 
         await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getId()}`, handler.getId(),schemaUri)
+        console.debug(`${handler.getLabel()}: Syncing`)
         let syncResults = await handler.sync(api, syncPosition, syncPositionsDs)
+        console.debug(`${handler.getLabel()}: Syncronized ${syncResults.syncResults.length} sync items`)
         await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items`, handler.getId(), schemaUri)
         syncCount++
 
         while (!this.config.maxSyncLoops || syncCount < this.config.maxSyncLoops) {
             if (syncResults.syncPosition.status == SyncHandlerStatus.SYNCING) {
                 // sync again
+                console.debug(`${handler.getLabel()}: Syncing again`)
                 await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getId()}`, handler.getId(), schemaUri)
                 syncResults = await handler.sync(api, syncPosition, syncPositionsDs)
                 await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items`, handler.getId(), schemaUri)
