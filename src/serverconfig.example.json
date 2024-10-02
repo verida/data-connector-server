@@ -2,7 +2,7 @@
     "serverUrl": "https://127.0.0.1:5021",
     "apiVersion": "v1",
     "assetsUrl": "https://127.0.0.1:5021/assets",
-    "logLevel": "debug", 
+    "logLevel": "debug",
     "verida": {
         "devMode": true,
         "environment": "banksia",
@@ -12,8 +12,7 @@
         "didClientConfig": {
             "callType": "web3",
             "network": "banksia",
-            "web3Config": {   
-            }
+            "web3Config": {}
         },
         "schemas": {
             "DATA_CONNECTIONS": "https://vault.schemas.verida.io/data-connections/connection/v0.3.0/schema.json",
@@ -85,13 +84,17 @@
             "batchSize": 50,
             "sizeLimit": 10,
             "maxSyncLoops": 1,
-            "breakTimestamp": "2000-07-21T12:07:11.000Z",
             "handlers": {
                 "gmail": {
                     "batchSize": 2
                 },
                 "google-drive-document": {
                     "batchSize": 2
+                },
+                "calendar-event": {
+                    "backdate": "12-months",
+                    "calendarLimit": 20,
+                    "eventsPerCalendarLimit": 50
                 }
             }
         },
@@ -112,6 +115,3 @@
         "limitResults": false
     }
 }
-
-
-
