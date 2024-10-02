@@ -1,47 +1,49 @@
-import GoogleHandler from "./GoogleHandler";
-import CONFIG from "../../config";
-import { SyncHandlerPosition, SyncItemsBreak, SyncItemsResult, SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces';
 import { google, calendar_v3 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
-import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
-
+import GoogleHandler from "./GoogleHandler";
+import CONFIG from "../../config";
 import {
+  SyncItemsResult,
   SyncResponse,
   SyncHandlerStatus,
   ProviderHandlerOption,
   ConnectionOptionType,
+  SyncHandlerPosition,
+  SyncProviderLogEvent,
+  SyncProviderLogLevel
 } from "../../interfaces";
-import { SchemaEvent } from "../../schemas";
-import { CalendarAttachment, DateTimeInfo, Person } from "./interfaces";
+import {
+  SchemaCalendar,
+  SchemaEvent,
+} from "../../schemas";
+import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
+import { ItemsRange } from "../../helpers/interfaces";
 import { CalendarHelpers } from "./helpers";
+import { CalendarAttachment, DateTimeInfo, GoogleCalendarHandlerConfig, Person } from "./interfaces";
 
 const _ = require("lodash");
 
-// Set MAX_BATCH_SIZE to 2500 because the Google Calendar API v3 'maxResults' parameter is capped at 2500.
-// For more details, see: https://developers.google.com/calendar/api/v3/reference/events/list 
-const MAX_BATCH_SIZE = 2500;
+// Set MAX_BATCH_SIZE to 250 because the Google Calendar API v3 'maxResults' parameter is capped at 250.
+// For more details, see: https://developers.google.com/calendar/api/v3/reference/calendarList/list 
+const MAX_BATCH_SIZE = 250;
+export default class CalendarEventHandler extends GoogleHandler {
 
-export interface SyncCalendarItemsResult extends SyncItemsResult {
-  items: SchemaEvent[];
-}
-
-export default class CalendarEvent extends GoogleHandler {
+  protected config: GoogleCalendarHandlerConfig;
 
   public getName(): string {
-    return 'calendar-event';
+    return "calendar-event";
+  }
+
+  public getLabel(): string {
+    return "Calendar Event";
   }
 
   public getSchemaUri(): string {
-    return CONFIG.verida.schemas.EVENT;
+    return CONFIG.verida.schemas.CALENDAR_EVENT;
   }
 
-  public getProviderApplicationUrl() {
-    return 'https://calendar.google.com/';
-  }
-
-  public getCalendar(): calendar_v3.Calendar {
-    const oAuth2Client = this.getGoogleAuth();
-    return google.calendar({ version: "v3", auth: oAuth2Client });
+  public getProviderApplicationUrl(): string {
+    return "https://calendar.google.com/"; // Change URL depending on provider (Google, Microsoft)
   }
 
   public getOptions(): ProviderHandlerOption[] {
@@ -66,137 +68,101 @@ export default class CalendarEvent extends GoogleHandler {
     }];
   }
 
-  public async _sync(
-    api: any,
-    syncPosition: SyncHandlerPosition
-  ): Promise<SyncResponse> {
-    if (this.config.batchSize > MAX_BATCH_SIZE) {
-      throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`);
-    }
-
-    const calendar = this.getCalendar();
-    const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
-
-    let items: SchemaEvent[] = [];
-
-    // Fetch any new items
-    let currentRange = rangeTracker.nextRange();
-
-    let query: calendar_v3.Params$Resource$Events$List = {
-      calendarId: 'primary',
-      maxResults: this.config.batchSize, // default = 250, max = 2500
-      singleEvents: true,
-      orderBy: "startTime",
-    };
-
-    if (currentRange.startId) {
-      query.pageToken = currentRange.startId;
-    }
-
-    const latestResponse = await calendar.events.list(query);
-    const latestResult = await this.buildResults(
-      calendar,
-      latestResponse,
-      currentRange.endId,
-      this.config.breakTimestamp ?? undefined
-    );
-
-    items = latestResult.items;
-
-    let nextPageToken = latestResponse.data.nextPageToken ?? undefined;
-
-    if (items.length) {
-      rangeTracker.completedRange({
-        startId: items[0].sourceId,
-        endId: nextPageToken
-      }, latestResult.breakHit == SyncItemsBreak.ID);
-    } else {
-      rangeTracker.completedRange({
-        startId: undefined,
-        endId: undefined
-      }, false);
-    }
-
-    if (items.length != this.config.batchSize) {
-      currentRange = rangeTracker.nextRange();
-
-      query = {
-        calendarId: 'primary',
-        maxResults: this.config.batchSize - items.length,
-        singleEvents: true,
-        orderBy: "startTime",
-      };
-
-      if (currentRange.startId) {
-        query.pageToken = currentRange.startId;
-      }
-
-      const backfillResponse = await calendar.events.list(query);
-      const backfillResult = await this.buildResults(
-        calendar,
-        backfillResponse,
-        currentRange.endId,
-        this.config.breakTimestamp ?? undefined
-      );
-
-      items = items.concat(backfillResult.items);
-
-      nextPageToken = backfillResponse.data.nextPageToken ?? undefined;
-
-      if (backfillResult.items.length) {
-        rangeTracker.completedRange({
-          startId: backfillResult.items[0].sourceId,
-          endId: nextPageToken
-        }, backfillResult.breakHit == SyncItemsBreak.ID);
-      } else {
-        rangeTracker.completedRange({
-          startId: undefined,
-          endId: undefined
-        }, backfillResult.breakHit == SyncItemsBreak.ID);
-      }
-    }
-
-    if (!items.length) {
-      syncPosition.syncMessage = `Stopping. No results found.`;
-      syncPosition.status = SyncHandlerStatus.ENABLED;
-    } else {
-      if (items.length != this.config.batchSize && !nextPageToken) {
-        syncPosition.syncMessage = `Processed ${items.length} items. Stopping. No more results.`;
-        syncPosition.status = SyncHandlerStatus.ENABLED;
-      } else {
-        syncPosition.syncMessage = `Batch complete (${this.config.batchSize}). More results pending.`;
-      }
-    }
-
-    syncPosition.thisRef = rangeTracker.export();
-
-    return {
-      results: items,
-      position: syncPosition,
-    };
+  public getCalendarClient(): calendar_v3.Calendar {
+    const oAuth2Client = this.getGoogleAuth();
+    return google.calendar({ version: "v3", auth: oAuth2Client });
   }
 
-  protected async buildResults(
-    calendar: calendar_v3.Calendar,
-    serverResponse: GaxiosResponse<calendar_v3.Schema$Events>,
-    breakId: string,
-    breakTimestamp?: string
-  ): Promise<SyncCalendarItemsResult> {
-    const results: SchemaEvent[] = [];
-    let breakHit: SyncItemsBreak;
+  protected async buildCalendarList(): Promise<SchemaCalendar[]> {
+    const calendarClient = this.getCalendarClient();
 
-    for (const event of serverResponse.data.items) {
-      const eventId = event.id ?? '';
+    let calendarList: SchemaCalendar[] = [];
 
-      if (eventId == breakId) {
-        const logEvent: SyncProviderLogEvent = {
-          level: SyncProviderLogLevel.DEBUG,
-          message: `Break ID hit (${breakId})`
+    let nextPageToken: string | undefined;
+    let query: calendar_v3.Params$Resource$Calendarlist$List = {
+      maxResults: MAX_BATCH_SIZE,  // Fetch in batches up to the max limit
+      pageToken: nextPageToken,
+    };
+
+    // Loop through paginated results
+    do {
+      const response = await calendarClient.calendarList.list(query);
+
+      for (const calendar of response.data.items || []) {
+        // Extract essential details for the calendar entry
+        const calendarId = calendar.id;
+
+        if (!calendarId) {
+          this.emit("log", {
+            level: SyncProviderLogLevel.DEBUG,
+            message: `Invalid calendar ID. Ignoring this calendar.`,
+          });
+          continue;
+        }
+
+        const summary = calendar.summary ?? "No calendar title";
+        let timeZone = calendar.timeZone;
+
+        if (!timeZone) {
+          this.emit("log", {
+            level: SyncProviderLogLevel.DEBUG,
+            message: `Invalid timezone for calendar ${calendarId}. Ignoring this calendar.`,
+          });
+          continue;
+        }
+
+        timeZone = CalendarHelpers.getUTCOffsetTimezone(timeZone);
+        const description = calendar.description ?? "No description";
+        const location = calendar.location ?? "No location";
+        const insertedAt = new Date().toISOString();
+
+        const group: SchemaCalendar = {
+          _id: this.buildItemId(calendarId),
+          name: summary,
+          sourceAccountId: this.provider.getAccountId(),
+          sourceApplication: this.getProviderApplicationUrl(),
+          sourceId: calendarId,
+          timezone: timeZone,
+          description,
+          location,
+          insertedAt,
+          sourceData: calendar,
+          schema: CONFIG.verida.schemas.CALENDAR,
         };
-        this.emit('log', logEvent);
-        breakHit = SyncItemsBreak.ID;
-        break;
+
+        calendarList.push(group);
       }
+
+      nextPageToken = response.data.nextPageToken; // Update the pageToken to fetch the next batch
+      query.pageToken = nextPageToken;
+    } while (nextPageToken);
+
+
+    return calendarList;
+  }
+
+  protected async fetchEventRange(
+    calendar: SchemaCalendar,
+    range: ItemsRange,
+    apiClient: calendar_v3.Calendar
+  ): Promise<SchemaEvent[]> {
+    const events: SchemaEvent[] = [];
+
+    // Define API request parameters
+    let query: calendar_v3.Params$Resource$Events$List = {
+      calendarId: calendar.sourceId!,
+      timeMin: new Date(range.startId).toISOString(),
+      timeMax: new Date(range.endId).toISOString(),
+      maxResults: this.config.eventsPerCalendarLimit,
+      orderBy: "startTime"
+    };
+
+    // Fetch events from Google Calendar API
+    const response = await apiClient.events.list(query);
+    const items = response.data.items || [];
+
+    for (const event of items) {
+      const eventId = event.id ?? '';
 
       let start: DateTimeInfo = {
         dateTime: event.start?.dateTime
@@ -221,25 +187,15 @@ export default class CalendarEvent extends GoogleHandler {
       start.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.start?.timeZone)
       end.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.end?.timeZone)
 
-      if (breakTimestamp && start.dateTime < breakTimestamp) {
-        const logEvent: SyncProviderLogEvent = {
-          level: SyncProviderLogLevel.DEBUG,
-          message: `Break timestamp hit (${breakTimestamp})`
-        };
-        this.emit('log', logEvent);
-        breakHit = SyncItemsBreak.TIMESTAMP;
-        break;
-      }
-
       const insertedAt = new Date().toISOString();
 
       const creator: Person = {
-        email: event.creator.email ?? 'info@example.com',
+        email: event.creator.email,
         displayName: event.creator.displayName
       }
 
       const organizer: Person = {
-        email: event.organizer.email ?? 'info@example.com',
+        email: event.organizer.email,
         displayName: event.organizer.displayName
       }
 
@@ -250,31 +206,166 @@ export default class CalendarEvent extends GoogleHandler {
 
       const attachments: CalendarAttachment[] = event.attachments as CalendarAttachment[];
 
-      results.push({
+      events.push({
         _id: this.buildItemId(eventId),
-        name: event.summary ?? 'No event title',
+        name: event.summary,
         sourceAccountId: this.provider.getAccountId(),
         sourceData: event,
         sourceApplication: this.getProviderApplicationUrl(),
         sourceId: eventId,
-        calendarId: "primary",
+        calendarId: calendar._id,
         start,
         end,
         creator,
         organizer,
-        location: event.location ?? 'No location',
-        description: event.description ?? 'No description',
+        location: event.location,
+        description: event.description,
         status: event.status ?? 'Unkown',
         conferenceData: event.conferenceData,
         attendees,
         attachments,
         insertedAt
       });
+    
+    }
+    return events;
+  }
+
+  public async _sync(
+    api: any,
+    syncPosition: SyncHandlerPosition
+  ): Promise<SyncResponse> {
+    try {
+      const apiClient = this.getCalendarClient();
+      const calendarList = await this.buildCalendarList(); // Fetch all personal, work, and shared calendars
+
+      let totalEvents = 0;
+      let eventHistory: SchemaEvent[] = [];
+
+      // Determine the current calendar position
+      let calendarPosition = this.getCalendarPositionIndex(calendarList, syncPosition);
+
+      const calendarCount = calendarList.length;
+
+      // Iterate over each calendar
+      for (let i = 0; i < Math.min(calendarCount, this.config.calendarLimit); i++) {
+        const calendarIndex = (calendarPosition + i) % calendarCount; // Rotate through calendars
+        const calendar = calendarList[calendarIndex];
+
+        // Use a separate ItemsRangeTracker for each calendar
+        let rangeTracker = new ItemsRangeTracker(calendar.syncData);
+
+        const fetchedEvents = await this.fetchAndTrackEvents(
+          calendar,
+          rangeTracker,
+          apiClient
+        );
+
+        // Concatenate the fetched events to the total event history
+        eventHistory = eventHistory.concat(fetchedEvents);
+        totalEvents += fetchedEvents.length;
+
+        // Update the calendar's sync data with the latest rangeTracker state
+        calendar.syncData = rangeTracker.export();
+
+        // Stop if the total events fetched reach the batch size
+        if (totalEvents >= this.config.batchSize) {
+          syncPosition.thisRef = calendarList[(calendarIndex + 1) % calendarCount].sourceId; // Continue from the next calendar in the next sync
+          break;
+        }
+      }
+
+      // Finalize sync position and status based on event count
+      this.updateSyncPosition(
+        syncPosition,
+        totalEvents,
+        calendarCount
+      );
+
+      // Concatenate only items after syncPosition.thisRef
+      const remainingCalendars = calendarList.slice(calendarPosition + 1);
+
+      return {
+        results: remainingCalendars.concat(eventHistory),
+        position: syncPosition,
+      };
+    } catch (err: any) {
+      console.error(err);
+      throw err;
+    }
+  }
+
+  private getCalendarPositionIndex(
+    calendarList: SchemaCalendar[],
+    syncPosition: SyncHandlerPosition
+  ): number {
+    const calendarPosition = calendarList.findIndex(
+      (calendar) => calendar.sourceId === syncPosition.thisRef
+    );
+
+    // If not found, return 0 to start from the beginning
+    return calendarPosition === -1 ? 0 : calendarPosition;
+  }
+
+  private async fetchAndTrackEvents(
+    calendar: SchemaCalendar,
+    rangeTracker: ItemsRangeTracker,
+    apiClient: calendar_v3.Calendar
+  ): Promise<SchemaEvent[]> {
+    // Validate calendar and calendar.id
+    if (!calendar || !calendar.sourceId) {
+      throw new Error('Invalid calendar or missing calendar sourceId');
     }
 
-    return {
-      items: results,
-      breakHit
-    };
+    // Initialize range from tracker
+    let currentRange = rangeTracker.nextRange();
+    let items: SchemaEvent[] = [];
+
+    while (true) {
+      // Fetch events for the current range using fetchEventRange
+      const events = await this.fetchEventRange(calendar, currentRange, apiClient);
+
+      if (!events.length) break;
+
+      // Add fetched events to the main list
+      items = items.concat(events);
+
+      // Break loop if events reached calendar limit
+      if (items.length > this.config.eventsPerCalendarLimit) {
+        // Mark the current range as complete and stop
+        rangeTracker.completedRange({
+          startId: events[0].start.dateTime,
+          endId: events[events.length - 1].end.dateTime
+        }, false);
+        break;
+      } else {
+        // Update rangeTracker and continue fetching
+        rangeTracker.completedRange({
+          startId: events[0].start.dateTime,
+          endId: events[events.length - 1].end.dateTime
+        }, false);
+
+        // Move to the next range
+        currentRange = rangeTracker.nextRange();
+      }
+    }
+
+    return items;
+  }
+
+  private updateSyncPosition(
+    syncPosition: SyncHandlerPosition,
+    totalEvents: number,
+    calendarCount: number,
+  ) {
+    if (totalEvents === 0) {
+      syncPosition.status = SyncHandlerStatus.ERROR;
+      syncPosition.syncMessage = "No new events found.";
+    } else if (totalEvents < this.config.batchSize) {
+      syncPosition.syncMessage = `Processed ${totalEvents} events across ${calendarCount} calendars. Sync complete.`;
+      syncPosition.status = SyncHandlerStatus.ENABLED;
+    } else {
+      syncPosition.syncMessage = `Batch complete (${this.config.eventBatchSize}). More results pending.`;
+    }
   }
 }
