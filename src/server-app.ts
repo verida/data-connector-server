@@ -73,4 +73,6 @@ if (CONFIG.verida.devMode) {
   Utils.deleteCachedData()
 }
 
+console.log('In alpha release')
+
 module.exports=app
