@@ -59,3 +59,8 @@ export interface CalendarAttachment {
   iconLink?: string;  // URL of the icon representing the file
   fileId?: string;    // Unique identifier for the file
 }
+
+export interface GoogleCalendarHandlerConfig extends BaseHandlerConfig {
+  calendarLimit?: number;  // Max number of calendar per sync
+  eventsPerCalendarLimit?: number; // Max number of event to process in a calendar
+}
