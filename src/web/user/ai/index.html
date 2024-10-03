@@ -83,7 +83,7 @@
             width: 3rem;
             height: 3rem;
         }
-        
+
         .loading-overlay .progress {
             width: 100%; /* Ensure the progress bar is full width of its container */
             max-width: 600px; /* Optional: Set a max-width to keep it from getting too large */
@@ -94,7 +94,7 @@
             width: 0%;
             transition: width 0.4s ease; /* Smooth transition effect for width change */
         }
-        
+
         .loading-overlay p {
             text-align: center; /* Center the status text */
         }
@@ -166,6 +166,9 @@
                     <label for="verida-key">Verida Private Key / Seed Phrase:</label>
                     <input type="password" class="form-control" id="verida-key" placeholder="Your Verida Key">
                 </div>
+                <div id="errorAlert" class="alert alert-danger text-center mt-3 alert-dismissable d-none" role="alert">
+                    <strong>Error:</strong> <span id="errorMessage"></span>
+                </div>
                 <div id="loadingIndicator" class="alert alert-info text-center mt-3 alert-dismissable" role="alert">
                     <strong>Notes:</strong> User data is cleared after 30 minutes of inactivity and will require re-loading after that time.
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
@@ -197,7 +200,7 @@
 
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loading-overlay">
-        
+
             <div class="spinner-dots">
                 <div></div>
                 <div></div>
