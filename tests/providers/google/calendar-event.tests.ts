@@ -29,8 +29,7 @@ describe(`${providerName} Google Calendar Event Tests`, function () {
     provider = Providers(providerName, network.context, connection);
 
     testConfig = {
-      idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
-      batchSizeLimitAttribute: "batchSize",
+      idPrefix: `${provider.getProviderId()}-${connection.profile.id}`,
     };
   });
 

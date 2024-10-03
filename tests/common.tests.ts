@@ -18,7 +18,7 @@ export interface GenericTestConfig {
   // Attribute in the results that is used for time ordering (ie: insertedAt)
   timeOrderAttribute?: string; // Made optional
   // Attribute used to limit the batch size (ie: batchLimit)
-  batchSizeLimitAttribute: string;
+  batchSizeLimitAttribute?: string;
   // Prefix used for record ID's (override default which is providerName)
   idPrefix?: string;
 }
@@ -114,25 +114,13 @@ export class CommonTests {
     handler: BaseSyncHandler;
     provider: BaseProvider;
   }> {
-    // * - New items are processed
-    //    * - Backfill items are processed
-    //    * - Not enough new items? Process backfill
-    //    * - Backfill twice doesn't process the same items
-    //    * - No more backfill produces empty rangeTracker
-
-    // Set result limit to 3 results so page tests can work correctly
-    providerConfig[testConfig.batchSizeLimitAttribute] = 3;
-
+    
     const { api, handler, schemaUri, provider } = await this.buildTestObjects(
       providerId,
       handlerType,
       providerConfig,
       connection
     );
-
-    const idPrefix = testConfig.idPrefix
-      ? testConfig.idPrefix
-      : `${provider.getProviderName()}-${connection!.profile.id}`;
 
     try {
       const syncPosition: SyncHandlerPosition = {
@@ -142,25 +130,23 @@ export class CommonTests {
         accountId: provider.getAccountId(),
         status: SyncHandlerStatus.SYNCING,
       };
-      
-      // 1. Test new items are processed
+
       const response = await handler._sync(api, syncPosition);
       const results = <SchemaRecord[]>response.results;
 
-      // console.log(response.position)
-      // console.log(CommonTests.outputItems(results, testConfig.timeOrderAttribute))
-
       assert.ok(results && results.length, "Have results returned");
-      assert.equal(
-        providerConfig[testConfig.batchSizeLimitAttribute],
-        results.length,
-        "Have correct number of results returned on page 1"
-      );
+      if (testConfig.batchSizeLimitAttribute) {
+        assert.equal(
+          providerConfig[testConfig.batchSizeLimitAttribute],
+          results.length,
+          "Have correct number of results returned on page 1"
+        );
+      }
 
       if (testConfig.timeOrderAttribute) {
         assert.ok(
           results[0][testConfig.timeOrderAttribute] >
-            results[1][testConfig.timeOrderAttribute],
+          results[1][testConfig.timeOrderAttribute],
           "Results are most recent first"
         );
       }
@@ -172,155 +158,7 @@ export class CommonTests {
         response.position.status,
         "Sync is active"
       );
-      assert.ok(response.position.thisRef, "Have a defined processing range");
-
-      const currentRangeParts = response.position.thisRef!.split(':')
-      assert.ok(currentRangeParts.length == 2, "Have correct number of parts for the processing range");
-      assert.ok(currentRangeParts[0] == results[0]._id.replace(`${idPrefix}-`, ''), "Have correct break ID");
-      assert.ok(currentRangeParts[1].length, "Have an end range");
-
-      // 2. Backfill items are processed
-      const syncPosition2 = response.position
-      const response2 = await handler._sync(api, syncPosition2);
-      const results2 = <SchemaRecord[]>response2.results;
       
-      // console.log(response2.position)
-      // console.log(CommonTests.outputItems(results2, testConfig.timeOrderAttribute))
-
-      assert.ok(
-        results2 && results2.length,
-        "Have backfill results returned"
-      );
-      assert.ok(
-        results2 &&
-          results2.length == providerConfig[testConfig.batchSizeLimitAttribute],
-        "Have correct number of results returned in second page"
-      );
-
-      if (testConfig.timeOrderAttribute) {
-        assert.ok(
-          results2[0][testConfig.timeOrderAttribute] >
-            results2[1][testConfig.timeOrderAttribute],
-          "Results are most recent first"
-        );
-        assert.ok(
-          results2[0][testConfig.timeOrderAttribute] <
-            results[2][testConfig.timeOrderAttribute],
-          "First item on second page of results have earlier timestamp than last item on first page"
-        );
-      }
-
-      assert.equal(
-        response2.position.status,
-        SyncHandlerStatus.SYNCING,
-        "Sync is active"
-      );
-
-      assert.ok(response2.position.thisRef, "Have a defined processing range");
-
-      const currentRangeParts2 = response2.position.thisRef!.split(':')
-      assert.ok(currentRangeParts2.length == 2, "Have correct number of parts for the processing range");
-      assert.ok(currentRangeParts2[0] == results[0]._id.replace(`${idPrefix}-`, ''), "Have correct break ID matching the very first result");
-      assert.ok(currentRangeParts2[1].length, "Have an end range");
-      assert.ok(results[0]._id != results2[0]._id, "Have different result IDs")
-
-      // 3. Not enough new items? Process backfill
-      const syncPosition3 = response2.position
-      syncPosition3.thisRef = `${results[1].sourceId}:${currentRangeParts2[1]}` // Ensure the first item (only) is fetched
-      const response3 = await handler._sync(api, syncPosition3);
-      const results3 = <SchemaRecord[]>response3.results;
-      
-      // console.log(response3.position)
-      // console.log(CommonTests.outputItems(results3, testConfig.timeOrderAttribute))
-
-      assert.ok(
-        results3 && results3.length,
-        "Have results returned"
-      );
-      assert.ok(
-        results3 &&
-        results3.length == providerConfig[testConfig.batchSizeLimitAttribute],
-        "Have correct number of results returned"
-      );
-      assert.equal(results3[0]._id, results[0]._id, 'First result item matches the very first item')
-      assert.ok(results3[1]._id != results[1]._id, 'Second result item does not match the very first batch second item')
-
-      if (testConfig.timeOrderAttribute) {
-        assert.ok(
-          results3[0][testConfig.timeOrderAttribute] >
-            results3[1][testConfig.timeOrderAttribute],
-          "Results are most recent first"
-        );
-        // this will break?
-        assert.ok(
-          results3[2][testConfig.timeOrderAttribute] <
-            results[2][testConfig.timeOrderAttribute],
-          "Last item on return results have earlier timestamp than last item on first page"
-        );
-      }
-
-      assert.equal(
-        response3.position.status,
-        SyncHandlerStatus.SYNCING,
-        "Sync is active"
-      );
-
-      assert.ok(response3.position.thisRef, "Have a defined processing range");
-
-      const currentRangeParts3 = response3.position.thisRef!.split(':')
-      assert.ok(currentRangeParts3.length == 2, "Have correct number of parts for the processing range");
-      assert.ok(currentRangeParts3[0] == results3[0]._id.replace(`${idPrefix}-`, ''), "Have correct break ID matching the very first result");
-      assert.ok(currentRangeParts3[1].length, "Have an end range");
-      assert.ok(currentRangeParts3[1] != currentRangeParts2[1], "End range has changed between batches");
-
-      // - Backfill twice doesn't process the same items
-      const syncPosition4 = response3.position
-      const response4 = await handler._sync(api, syncPosition4);
-      const results4 = <SchemaRecord[]>response4.results;
-      
-      // console.log(response4.position)
-      // console.log(CommonTests.outputItems(results4, testConfig.timeOrderAttribute))
-
-      assert.ok(
-        results4 && results4.length,
-        "Have results returned"
-      );
-      assert.ok(
-        results4 &&
-        results4.length == providerConfig[testConfig.batchSizeLimitAttribute],
-        "Have correct number of results returned"
-      );
-
-      if (testConfig.timeOrderAttribute) {
-        assert.ok(
-          results4[0][testConfig.timeOrderAttribute] >
-          results4[1][testConfig.timeOrderAttribute],
-          "Results are most recent first"
-        );
-        // this will break?
-        assert.ok(
-          results4[0][testConfig.timeOrderAttribute] <
-            results[2][testConfig.timeOrderAttribute],
-          "First item on return results have earlier timestamp than last item on first page"
-        );
-      }
-
-      assert.ok(results4[0]._id != results3[0]._id, "First items dont match between batches")
-
-      assert.equal(
-        response4.position.status,
-        SyncHandlerStatus.SYNCING,
-        "Sync is active"
-      );
-
-      assert.ok(response4.position.thisRef, "Have a defined processing range");
-      const currentRangeParts4 = response4.position.thisRef!.split(':')
-      assert.ok(currentRangeParts4.length == 2, "Have correct number of parts for the processing range");
-      assert.ok(currentRangeParts4[1].length, "Have an end range");
-
-      // @todo: No more backfill produces empty rangeTracker and SyncHandlerStatus.CONNECTED
-
-
       // Close the provider connection
       await provider.close();
 

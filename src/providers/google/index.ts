@@ -7,7 +7,6 @@ import { GoogleProviderConfig, GoogleProviderConnection } from "./interfaces";
 import YouTubeFavourite from "./youtube-favourite";
 import GoogleDriveDocument from "./gdrive-document";
 import { ConnectionCallbackResponse, PassportProfile } from "../../interfaces";
-import Calendar from "./calendar";
 import CalendarEvent from "./calendar-event";
 
 const passport = require("passport");
@@ -31,12 +30,11 @@ export default class GoogleProvider extends Base {
 
   public syncHandlers(): any[] {
     return [
-      Gmail,
+      /*Gmail,
       YouTubeFollowing,
       YouTubePost,
       YouTubeFavourite,
-      GoogleDriveDocument,
-      Calendar,
+      GoogleDriveDocument,*/
       CalendarEvent
     ];
   }

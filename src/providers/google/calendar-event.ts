@@ -112,8 +112,8 @@ export default class CalendarEventHandler extends GoogleHandler {
         }
 
         timeZone = CalendarHelpers.getUTCOffsetTimezone(timeZone);
-        const description = calendar.description ?? "No description";
-        const location = calendar.location ?? "No location";
+        const description = calendar.description;
+        const location = calendar.location;
         const insertedAt = new Date().toISOString();
 
         const group: SchemaCalendar = {
@@ -122,7 +122,7 @@ export default class CalendarEventHandler extends GoogleHandler {
           sourceAccountId: this.provider.getAccountId(),
           sourceApplication: this.getProviderApplicationUrl(),
           sourceId: calendarId,
-          timezone: timeZone,
+          timezone: timeZone ?? "Unkown",
           description,
           location,
           insertedAt,
@@ -148,14 +148,20 @@ export default class CalendarEventHandler extends GoogleHandler {
   ): Promise<SchemaEvent[]> {
     const events: SchemaEvent[] = [];
 
-    // Define API request parameters
     let query: calendar_v3.Params$Resource$Events$List = {
-      calendarId: calendar.sourceId!,
-      timeMin: new Date(range.startId).toISOString(),
-      timeMax: new Date(range.endId).toISOString(),
+      calendarId: calendar.sourceId,
       maxResults: this.config.eventsPerCalendarLimit,
+      singleEvents: true,
       orderBy: "startTime"
     };
+
+    if (range.startId) {
+      query.timeMin = new Date(range.startId).toISOString();
+    }
+
+    if (range.endId) {
+      query.timeMax = new Date(range.endId).toISOString();
+    }
 
     // Fetch events from Google Calendar API
     const response = await apiClient.events.list(query);
@@ -176,8 +182,8 @@ export default class CalendarEventHandler extends GoogleHandler {
 
       if (!start.dateTime) {
         const logEvent: SyncProviderLogEvent = {
-            level: SyncProviderLogLevel.DEBUG,
-            message: `Invalid date for the event ${eventId}. Ignoring this event.`,
+          level: SyncProviderLogLevel.DEBUG,
+          message: `Invalid date for the event ${eventId}. Ignoring this event.`,
         };
         this.emit('log', logEvent);
         continue;
@@ -190,12 +196,12 @@ export default class CalendarEventHandler extends GoogleHandler {
       const insertedAt = new Date().toISOString();
 
       const creator: Person = {
-        email: event.creator.email,
+        email: event.creator.email ?? "info@example.com",
         displayName: event.creator.displayName
       }
 
       const organizer: Person = {
-        email: event.organizer.email,
+        email: event.organizer.email ?? "info@example.com",
         displayName: event.organizer.displayName
       }
 
@@ -208,12 +214,13 @@ export default class CalendarEventHandler extends GoogleHandler {
 
       events.push({
         _id: this.buildItemId(eventId),
-        name: event.summary,
+        name: event.summary ?? "Unknown",
         sourceAccountId: this.provider.getAccountId(),
         sourceData: event,
         sourceApplication: this.getProviderApplicationUrl(),
         sourceId: eventId,
-        calendarId: calendar._id,
+        schema: CONFIG.verida.schemas.EVENT,
+        calendarId: calendar.sourceId ?? "primary",
         start,
         end,
         creator,
@@ -226,7 +233,7 @@ export default class CalendarEventHandler extends GoogleHandler {
         attachments,
         insertedAt
       });
-    
+
     }
     return events;
   }
@@ -237,18 +244,37 @@ export default class CalendarEventHandler extends GoogleHandler {
   ): Promise<SyncResponse> {
     try {
       const apiClient = this.getCalendarClient();
-      const calendarList = await this.buildCalendarList(); // Fetch all personal, work, and shared calendars
+      let calendarList = await this.buildCalendarList(); // Fetch all personal, work, and shared calendars
+      const calendarDs = await this.provider.getDatastore(CONFIG.verida.schemas.CALENDAR)
+      const calendarDbItems = <SchemaCalendar[]> await calendarDs.getMany({
+        "sourceAccountId": this.provider.getAccountId()
+      });
+
+      calendarList = calendarList.map((calendarItem) => {
+        // Find the corresponding item in calendarDbItems by 'sourceId'
+        const matchingDbItem = calendarDbItems.find(
+          (dbItem) => dbItem.sourceId === calendarItem.sourceId
+        );
+    
+        // If a matching item is found in calendarDbItems, merge them, retaining `syncData` field
+        if (matchingDbItem) {
+          return _.merge({}, matchingDbItem, calendarItem);
+        }
+    
+        // If no matching item, return the calendarItem as is
+        return calendarItem;
+      });
 
       let totalEvents = 0;
       let eventHistory: SchemaEvent[] = [];
 
       // Determine the current calendar position
-      let calendarPosition = this.getCalendarPositionIndex(calendarList, syncPosition);
+      const calendarPosition = this.getCalendarPositionIndex(calendarList, syncPosition);
 
       const calendarCount = calendarList.length;
 
       // Iterate over each calendar
-      for (let i = 0; i < Math.min(calendarCount, this.config.calendarLimit); i++) {
+      for (let i = 1; i <= Math.min(calendarCount, this.config.calendarLimit); i++) {
         const calendarIndex = (calendarPosition + i) % calendarCount; // Rotate through calendars
         const calendar = calendarList[calendarIndex];
 
@@ -359,7 +385,7 @@ export default class CalendarEventHandler extends GoogleHandler {
     calendarCount: number,
   ) {
     if (totalEvents === 0) {
-      syncPosition.status = SyncHandlerStatus.ERROR;
+      syncPosition.status = SyncHandlerStatus.SYNCING;
       syncPosition.syncMessage = "No new events found.";
     } else if (totalEvents < this.config.batchSize) {
       syncPosition.syncMessage = `Processed ${totalEvents} events across ${calendarCount} calendars. Sync complete.`;
