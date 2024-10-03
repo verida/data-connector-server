@@ -1,9 +1,15 @@
 {
     "serverUrl": "https://127.0.0.1:5021",
     "apiVersion": "v1",
+    "build": "1.0.1",
     "assetsUrl": "https://127.0.0.1:5021/assets",
-    "logLevel": "debug",
     "verida": {
+        "logging": {
+            "level": "debug",
+            "logToFile": "logs/app.log",
+            "exposeLogs": false,
+            "logsPassword": "a890s7dfna9df7"
+        },
         "devMode": true,
         "environment": "banksia",
         "testVeridaKey": "0x...",
@@ -86,10 +92,10 @@
             "breakTimestamp": "2000-07-21T12:07:11.000Z",
             "handlers": {
                 "gmail": {
-                    "batchSize": 2
+                    "batchSize": 200
                 },
                 "google-drive-document": {
-                    "batchSize": 2
+                    "batchSize": 50
                 }
             }
         },

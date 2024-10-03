@@ -46,6 +46,10 @@ export class Utils {
         return Utils.getNetwork(key)
     }
 
+    public static didCount() {
+        return Object.keys(Utils.networkCache).length
+    }
+
     /**
      * Get a network, context and account instance
      *
