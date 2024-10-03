@@ -385,12 +385,13 @@ export default class CalendarEventHandler extends GoogleHandler {
     calendarCount: number,
   ) {
     if (totalEvents === 0) {
-      syncPosition.status = SyncHandlerStatus.SYNCING;
+      syncPosition.status = SyncHandlerStatus.ENABLED;
       syncPosition.syncMessage = "No new events found.";
     } else if (totalEvents < this.config.batchSize) {
       syncPosition.syncMessage = `Processed ${totalEvents} events across ${calendarCount} calendars. Sync complete.`;
       syncPosition.status = SyncHandlerStatus.ENABLED;
     } else {
+      syncPosition.status = SyncHandlerStatus.SYNCING;
       syncPosition.syncMessage = `Batch complete (${this.config.eventBatchSize}). More results pending.`;
     }
   }
