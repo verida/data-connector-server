@@ -7,6 +7,7 @@ import path from 'path'
 import serverconfig from './config'
 import { AutoAccount } from '@verida/account-node'
 import { Request } from 'express'
+import { Service as AccessService } from './api/rest/v1/access/service'
 
 export const VERIDA_DID_REGEXP =
   /did:vda:(devnet|mainnet|testnet):0x[0-9a-fA-F]{40}/;
@@ -72,6 +73,14 @@ export class Utils {
         //}, did, VAULT_CONTEXT_NAME)
 
         const did = await account.did()
+
+        const accessService = new AccessService()
+
+        const access = await accessService.getAccess(did)
+
+        if (access === "denied") {
+            throw new Error("Access denied")
+        }
 
         // If we have a promise for changing state, wait for it to complete
         if (Utils.networkCache[did] && Utils.networkCache[did].currentPromise) {
