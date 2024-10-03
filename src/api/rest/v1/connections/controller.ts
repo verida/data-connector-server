@@ -67,7 +67,10 @@ export default class Controller {
             }
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
         }
     }
 
@@ -99,7 +102,10 @@ export default class Controller {
             }
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
         }
     }
 
@@ -148,7 +154,10 @@ export default class Controller {
             })
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
         }
     }
 
@@ -261,7 +270,10 @@ export default class Controller {
             })
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
         }
     }
 
@@ -292,7 +304,8 @@ export default class Controller {
             });
         } catch (error) {
             console.log(error)
-            res.status(400).send({
+            res.status(500).send({
+                success: false,
                 error: error.message
             });
         }

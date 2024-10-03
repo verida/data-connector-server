@@ -24,7 +24,6 @@ export default class Controller {
             switch (req.body.type) {
                 case 'authcode':
                     const code = req.body.code
-                    console.log('checkAuthenticationCode', code)
                     const codeStatus = await client.api.checkAuthenticationCode({
                         code
                     })
@@ -32,20 +31,16 @@ export default class Controller {
                     break
                 case 'phone':
                     const phone_number = req.body.phone
-                    console.log('setAuthenticationPhoneNumber', phone_number)
                     const setphoneresponse = await client.api.setAuthenticationPhoneNumber({
                         phone_number
                     })
-                    console.log(setphoneresponse)
                     const status = await client.api.getAuthorizationState({})
-                    console.log(status)
                     break
                 case 'password':
                     const password = req.body.password
                     const passwordStatus = await client.api.checkAuthenticationPassword({
                         password
                     })
-                    console.log(passwordStatus)
                     break
             }
 
@@ -81,9 +76,6 @@ export default class Controller {
             client.updates.subscribe(async (data: any) => {
                 switch(data._) {
                     case 'updateAuthorizationState':
-                        console.log('have auth state')
-                        console.log(data.authorization_state)
-
                         if (data.authorization_state._ == "authorizationStateWaitOtherDeviceConfirmation") {
                             const link = data.authorization_state.link
                             res.write(`data: ${JSON.stringify({

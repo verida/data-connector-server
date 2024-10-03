@@ -12,7 +12,7 @@
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="/user/welcome">Verida Bridge [alpha]</a>
+        <a class="navbar-brand" href="/user/welcome">Private Data Bridge [alpha]</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -40,26 +40,48 @@
         </div>
     </nav>
     <div class="container mt-5">
-        <h1 class="title">About</h1>
+        <h1 class="text-center">Privacy &amp; Security</h1>
 
-        <a name="architecture" />
-        <h2>Architecture</h2>
-        
-        <a name="security" />
-        <h2>Security</h2>
+        <p><i>Learn how the Verida Network enforces privacy and security of user data within a decentralized environment</i></p>
 
-        <h3>Confidential Storage</h3>
-        <p></p>
+        <p>The <strong>Verida Private Data Bridge</strong> (this application) and <strong>Verida Private Data APIs</strong> (also part of this application) are deployed on the first iteration of Verida's Confidential Compute infrastructure. This infrastructure is designed to find the optimum balance between decentralization, security, privacy and performance.</p>
 
-        <h3>Confidential Computation</h3>
-        <p></p>
+        <h2>Confidential Compute</h2>
 
-        <h3>Private Key</h3>
-        <p>Your private key is stored in local storage. You can clear it at any time by clicking the <strong>Clear</strong> button on each page.</p>
+        <p>This application is running within a confidential computation environment. This means that no-one, not even the underlying infrastructure provider or Verida can access any user data or view the computation occurring on the node.</p>
 
-        <h3>Source Code</h3>
+        <p>The first iteration of Verida's Confidential Compute nodes are running inside <a href="https://www.marlin.org/oyster">Marlin Oyster</a> Trusted Execution Environments (TEE). These nodes provide numerous security guarantees and capabilities:</p>
 
-        <p>The Verida Private Data Bridge is open source: <a href="https://github.com/verida/data-connector-server">https://github.com/verida/data-connector-server</a></p>
+        <ul>
+            <li>Computation occurs within a secure enclave where the node operator has zero visibility</li>
+            <li>SSL terminates within the secure enclave, eliminating man-in-the-middle attacks</li>
+            <li>Server code is verified to be the expected code</li>
+            <li>No data is stored to external disks. All data is secured in memory.</li>
+        </ul>
+
+        <p>The Verida Foundation is operating the first cohort of Confidential Compute nodes and will open up to node operators in the future.</p>
+
+        <p>Learn more:</p>
+
+        <ul>
+            <li><a href="https://news.verida.network/verida-technical-litepaper-self-sovereign-confidential-compute-network-to-secure-private-ai-part-fb57146c3a02">Verida Litepaper: Self-Sovereign Confidential Compute</a></li>
+            <li><a href="https://docs.marlin.org/learn/oyster/introduction">Marlin Oyster in depth</a></li>
+        </ul>
+
+        <h2>Confidential Storage</h2>
+        <p>Verida APIs integrate the Verida Client SDK within the secure enclave on each confidential compute node. User data is syncronized from the Verida network, decrypted and then loaded into memory for rapid access via API endpoints.</p>
+        <p>As such, user data retains all the security and privacy benefits of the Verida Network and user data never leaves the secure enclave, accept via user authorized API requests.</p>
+
+        <h2>LLM Privacy</h2>
+        <p>The large language models (LLM) used by this deployment is <i>not</i> running an LLM in a Verida Confidential Compute secure enclave. This deployment is currently using Amazon Web Services Bedrock for LLM access. Secure enclaves do not currently support GPU access which is necessary for performant LLM operations. This is a temporary solution as we are collaborating with partners to enable LLM's to run efficiently and cost effectively within secure enclaves.</p>
+
+        <h2>Private Key / Seed Phrase</h2>
+        <p>You enter your private key or seed phrase into this application to connect to the Verida Confidential Storage network. Your credentials are stored in local storage. You can clear them at any time by clicking the <strong>Clear</strong> button on each page.</p>
+
+        <p><a href="https://aws.amazon.com/bedrock/security-compliance/">Learn earn about the Bedrock privacy architecture and security model</a></p>
+
+        <h2>Source Code</h2>
+        <p>TThe source code for the User Data APIs are open source and are contained within the <a href="https://github.com/verida/data-connector-server">Data Connector Server Github Repo</a></p>
     </div>
 
     <!-- jQuery -->

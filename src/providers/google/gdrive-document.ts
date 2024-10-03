@@ -7,6 +7,7 @@ import { GoogleDriveHelpers } from "./helpers";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 import GoogleHandler from "./GoogleHandler";
 import { GoogleDriveDocumentHandlerConfig } from "./interfaces";
+import AccessDeniedError from "../AccessDeniedError";
 
 const _ = require("lodash");
 
@@ -67,100 +68,108 @@ export default class GoogleDriveDocument extends GoogleHandler {
         api: any,
         syncPosition: SyncHandlerPosition
     ): Promise<SyncResponse> {
-        if (this.config.batchSize > MAX_BATCH_SIZE) {
-            throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`);
-        }
-    
-        const drive = this.getGoogleDrive();
-        const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
-    
-        let items: SchemaFile[] = [];
-        let currentRange = rangeTracker.nextRange();
-        let query: drive_v3.Params$Resource$Files$List = {
-            pageSize: this.config.batchSize,
-            fields: 'nextPageToken, files(id, name, mimeType, modifiedTime, webViewLink, thumbnailLink)',
-            q: "mimeType != 'application/vnd.google-apps.folder'", // Fetch all files without restricting mimeType
-            orderBy: "modifiedTime desc", // Fetch files ordered by modifiedTime descending
-        };
-    
-        if (currentRange.startId) {
-            query.pageToken = currentRange.startId;
-        }
-    
-        const latestResponse = await drive.files.list(query);
-        const latestResult = await this.buildResults(
-            drive,
-            latestResponse,
-            currentRange.endId,
-            _.has(this.config, "breakTimestamp")
-                ? this.config.breakTimestamp
-                : undefined
-        );
-    
-        items = latestResult.items;
-        let nextPageToken = _.get(latestResponse, "data.nextPageToken");
-    
-        if (items.length) {
-            rangeTracker.completedRange({
-                startId: items[0].sourceId,
-                endId: nextPageToken
-            }, latestResult.breakHit === SyncItemsBreak.ID);
-        } else {
-            rangeTracker.completedRange({
-                startId: undefined,
-                endId: undefined
-            }, false);
-        }
-    
-        currentRange = rangeTracker.nextRange();
-        if (items.length != this.config.batchSize && currentRange.startId) {
-            query = {
-                ...query,
-                pageSize: this.config.batchSize - items.length,
-                pageToken: currentRange.startId
+        try {
+            if (this.config.batchSize > MAX_BATCH_SIZE) {
+                throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`);
+            }
+        
+            const drive = this.getGoogleDrive();
+            const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
+        
+            let items: SchemaFile[] = [];
+            let currentRange = rangeTracker.nextRange();
+            let query: drive_v3.Params$Resource$Files$List = {
+                pageSize: this.config.batchSize,
+                fields: 'nextPageToken, files(id, name, mimeType, modifiedTime, webViewLink, thumbnailLink)',
+                q: "mimeType != 'application/vnd.google-apps.folder'", // Fetch all files without restricting mimeType
+                orderBy: "modifiedTime desc", // Fetch files ordered by modifiedTime descending
             };
-    
-            const backfillResponse = await drive.files.list(query);
-            const backfillResult = await this.buildResults(
+        
+            if (currentRange.startId) {
+                query.pageToken = currentRange.startId;
+            }
+        
+            const latestResponse = await drive.files.list(query);
+            const latestResult = await this.buildResults(
                 drive,
-                backfillResponse,
+                latestResponse,
                 currentRange.endId,
                 _.has(this.config, "breakTimestamp")
                     ? this.config.breakTimestamp
                     : undefined
             );
-    
-            items = items.concat(backfillResult.items);
-            nextPageToken = _.get(backfillResponse, "data.nextPageToken");
-    
-            if (backfillResult.items.length) {
+        
+            items = latestResult.items;
+            let nextPageToken = _.get(latestResponse, "data.nextPageToken");
+        
+            if (items.length) {
                 rangeTracker.completedRange({
-                    startId: backfillResult.items[0].sourceId,
+                    startId: items[0].sourceId,
                     endId: nextPageToken
-                }, backfillResult.breakHit === SyncItemsBreak.ID);
+                }, latestResult.breakHit === SyncItemsBreak.ID);
             } else {
                 rangeTracker.completedRange({
                     startId: undefined,
                     endId: undefined
-                }, backfillResult.breakHit === SyncItemsBreak.ID);
+                }, false);
             }
+        
+            currentRange = rangeTracker.nextRange();
+            if (items.length != this.config.batchSize && currentRange.startId) {
+                query = {
+                    ...query,
+                    pageSize: this.config.batchSize - items.length,
+                    pageToken: currentRange.startId
+                };
+        
+                const backfillResponse = await drive.files.list(query);
+                const backfillResult = await this.buildResults(
+                    drive,
+                    backfillResponse,
+                    currentRange.endId,
+                    _.has(this.config, "breakTimestamp")
+                        ? this.config.breakTimestamp
+                        : undefined
+                );
+        
+                items = items.concat(backfillResult.items);
+                nextPageToken = _.get(backfillResponse, "data.nextPageToken");
+        
+                if (backfillResult.items.length) {
+                    rangeTracker.completedRange({
+                        startId: backfillResult.items[0].sourceId,
+                        endId: nextPageToken
+                    }, backfillResult.breakHit === SyncItemsBreak.ID);
+                } else {
+                    rangeTracker.completedRange({
+                        startId: undefined,
+                        endId: undefined
+                    }, backfillResult.breakHit === SyncItemsBreak.ID);
+                }
+            }
+        
+            if (!items.length) {
+                syncPosition.syncMessage = `Stopping. No results found.`;
+                syncPosition.status = SyncHandlerStatus.ENABLED;
+            } else {
+                syncPosition.syncMessage = items.length != this.config.batchSize && !nextPageToken
+                    ? `Processed ${items.length} items. Stopping. No more results.`
+                    : `Batch complete (${this.config.batchSize}). More results pending.`;
+            }
+        
+            syncPosition.thisRef = rangeTracker.export();
+        
+            return {
+                results: items,
+                position: syncPosition,
+            };
+        } catch (err: any) {
+            if (err.status == 403) {
+                throw new AccessDeniedError(err.message)
+            }
+
+            throw err
         }
-    
-        if (!items.length) {
-            syncPosition.syncMessage = `Stopping. No results found.`;
-            syncPosition.status = SyncHandlerStatus.ENABLED;
-        } else {
-            syncPosition.syncMessage = items.length != this.config.batchSize && !nextPageToken
-                ? `Processed ${items.length} items. Stopping. No more results.`
-                : `Batch complete (${this.config.batchSize}). More results pending.`;
-        }
-    
-        syncPosition.thisRef = rangeTracker.export();
-    
-        return {
-            results: items,
-            position: syncPosition,
-        };
     }
    
     protected async buildResults(

@@ -57,21 +57,22 @@ export class DsController {
             const pouchDb = await db.getDb()
             const info = await pouchDb.info()
 
+            // Build total number of rows, excluding special CouchDB index rows
+            // Note: total_rows includes the special _id index which isn't included in rows, hence the + 1
+            const indexInfo = await pouchDb.getIndexes()
+            const dbRows = info.doc_count - indexInfo.total_rows + 1
+
             res.json({
                 items,
                 limit: options.limit ? options.limit : 20,
                 skip: options.skip ? options.skip : 0,
-                dbCount: info.doc_count
+                dbRows
             })
         } catch (error) {
             let message = error.message
             if (error.message.match('invalid encoding')) {
                 message = 'Invalid encoding (check permissions header)'
             }
-            
-            res.status(500).send({
-                "error": message
-            });
             
             res.status(500).send({
                 error: message
