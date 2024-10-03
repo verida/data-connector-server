@@ -1,7 +1,7 @@
 import { Client as NotionClient } from "@notionhq/client";
 import { RestrictedAccessStatus } from "./types";
 
-import serverconfig from '../../../../serverconfig.local.json'
+import serverconfig from '../../../../config'
 
 export class Service {
   constructor() {
