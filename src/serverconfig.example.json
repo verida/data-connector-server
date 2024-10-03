@@ -2,7 +2,7 @@
     "serverUrl": "https://127.0.0.1:5021",
     "apiVersion": "v1",
     "assetsUrl": "https://127.0.0.1:5021/assets",
-    "logLevel": "debug", 
+    "logLevel": "debug",
     "verida": {
         "devMode": true,
         "environment": "banksia",
@@ -12,7 +12,7 @@
         "didClientConfig": {
             "callType": "web3",
             "network": "banksia",
-            "web3Config": {   
+            "web3Config": {
             }
         },
         "schemas": {
@@ -108,6 +108,10 @@
     },
     "providerDefaults": {
         "limitResults": false
+    },
+    "notion": {
+        "apiKey": "",
+        "restrictedAccessDatabaseId": ""
     }
 }
 
