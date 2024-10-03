@@ -83,7 +83,7 @@
             width: 3rem;
             height: 3rem;
         }
-        
+
         .loading-overlay .progress {
             width: 100%; /* Ensure the progress bar is full width of its container */
             max-width: 600px; /* Optional: Set a max-width to keep it from getting too large */
@@ -94,7 +94,7 @@
             width: 0%;
             transition: width 0.4s ease; /* Smooth transition effect for width change */
         }
-        
+
         .loading-overlay p {
             text-align: center; /* Center the status text */
         }
@@ -130,6 +130,23 @@
     </style>
 </head>
 <body>
+    <script
+        src="https://browser.sentry-cdn.com/8.33.1/bundle.feedback.min.js"
+        integrity="sha384-Mxv/vPNCoSSGpRryvvX4rPWZo4IL1ZQOG2VxGPI8yypzyhJse3GS4yD2Ct47oBMm"
+        crossorigin="anonymous"
+    ></script>
+    <script>
+        Sentry.onLoad(function() {
+            Sentry.init({
+                dsn: "https://cd923d4434a725db36ea55d994624686@o4503997119725568.ingest.us.sentry.io/4508061430644736",
+                integrations: [
+                    Sentry.feedbackIntegration({
+                        colorScheme: "light",
+                    }),
+                ],
+            });
+        });
+    </script>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="/user/welcome">Private Data Bridge [alpha]</a>
@@ -197,7 +214,7 @@
 
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loading-overlay">
-        
+
             <div class="spinner-dots">
                 <div></div>
                 <div></div>
