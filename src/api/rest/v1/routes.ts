@@ -1,5 +1,6 @@
 import express from 'express'
 
+import { routerV1 as accessRouterV1 } from './access/routes'
 import ProviderRoutes from './providers/routes'
 import ConnectionRoutes from './connections/routes'
 import DbRoutes from './db/routes'
@@ -11,6 +12,7 @@ import Search from "./search/routes"
 
 const router = express.Router()
 
+router.use('/access', accessRouterV1)
 router.use('/providers', ProviderRoutes)
 router.use('/connections', ConnectionRoutes)
 router.use('/db', DbRoutes)
