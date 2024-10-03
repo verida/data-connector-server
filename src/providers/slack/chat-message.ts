@@ -1,7 +1,6 @@
 import { WebClient } from "@slack/web-api";
 import CONFIG from "../../config";
 import {
-    SyncItemsResult,
     SyncResponse,
     SyncHandlerStatus,
     ProviderHandlerOption,
@@ -185,8 +184,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
             this.updateSyncPosition(
                 syncPosition,
                 totalMessages,
-                groupCount,
-                chatHistory
+                groupCount
             );
 
             // Concatenate only items after syncPosition.thisRef and chatHistory
@@ -263,17 +261,16 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     private updateSyncPosition(
         syncPosition: SyncHandlerPosition,
         totalMessages: number,
-        groupCount: number,
-        chatHistory: SchemaSocialChatMessage[]
+        groupCount: number
     ) {
         if (totalMessages === 0) {
-            syncPosition.status = SyncHandlerStatus.COMPLETED;
+            syncPosition.status = SyncHandlerStatus.ENABLED;
             syncPosition.syncMessage = "No new messages found.";
         } else if (totalMessages < this.config.messageBatchSize) {
             syncPosition.syncMessage = `Processed ${totalMessages} messages across ${groupCount} groups. Sync complete.`;
             syncPosition.status = SyncHandlerStatus.ENABLED;
         } else {
-            //syncPosition.status = SyncHandlerStatus.ENABLED;
+            syncPosition.status = SyncHandlerStatus.SYNCING;
             syncPosition.syncMessage = `Batch complete (${this.config.messageBatchSize}). More results pending.`;
         }
     }
