@@ -433,7 +433,7 @@ export default class BaseProvider extends EventEmitter {
                 await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getId()}`, handler.getId(), schemaUri)
                 syncResults = await handler.sync(api, syncPosition, syncPositionsDs)
                 await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items`, handler.getId(), schemaUri)
-                await this.logMessage(SyncProviderLogLevel.DEBUG, syncResults.syncPosition.syncMessage, handler.getId(), schemaUri)
+                await this.logMessage(SyncProviderLogLevel.DEBUG, `Handler sync message: ${syncResults.syncPosition.syncMessage}`, handler.getId(), schemaUri)
             }
 
             syncCount++
@@ -476,7 +476,7 @@ export default class BaseProvider extends EventEmitter {
                     accountId: this.getAccountId(),
                     handlerId,
                     errorRetries: 0,
-                    status: SyncHandlerStatus.SYNCING
+                    status: SyncHandlerStatus.ENABLED
                 }
             }
 

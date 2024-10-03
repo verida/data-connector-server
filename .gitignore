@@ -10,3 +10,4 @@ src/serverconfig*.json
 td.*
 tdlib*
 _td*/
+logs/
