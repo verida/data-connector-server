@@ -392,7 +392,7 @@ export default class CalendarEventHandler extends GoogleHandler {
       syncPosition.status = SyncHandlerStatus.ENABLED;
     } else {
       syncPosition.status = SyncHandlerStatus.SYNCING;
-      syncPosition.syncMessage = `Batch complete (${this.config.eventBatchSize}). More results pending.`;
+      syncPosition.syncMessage = `Batch complete (${totalEvents}). More results pending.`;
     }
   }
 }
