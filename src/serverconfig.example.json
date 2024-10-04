@@ -99,8 +99,8 @@
                 },
                 "calendar-event": {
                     "backdate": "12-months",
-                    "calendarLimit": 10,
-                    "eventsPerCalendarLimit": 20
+                    "calendarLimit": 20,
+                    "eventsPerCalendarLimit": 30
                 }
             }
         },

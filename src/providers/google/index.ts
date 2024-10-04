@@ -30,11 +30,11 @@ export default class GoogleProvider extends Base {
 
   public syncHandlers(): any[] {
     return [
-      /*Gmail,
+      Gmail,
       YouTubeFollowing,
       YouTubePost,
       YouTubeFavourite,
-      GoogleDriveDocument,*/
+      GoogleDriveDocument,
       CalendarEvent
     ];
   }

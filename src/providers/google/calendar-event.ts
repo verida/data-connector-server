@@ -155,11 +155,11 @@ export default class CalendarEventHandler extends GoogleHandler {
       orderBy: "startTime"
     };
 
-    if (range.startId) {
+    if (range.startId && !isNaN(Date.parse(range.startId))) {
       query.timeMin = new Date(range.startId).toISOString();
     }
 
-    if (range.endId) {
+    if (range.endId && !isNaN(Date.parse(range.endId))) {
       query.timeMax = new Date(range.endId).toISOString();
     }
 
@@ -245,25 +245,33 @@ export default class CalendarEventHandler extends GoogleHandler {
     try {
       const apiClient = this.getCalendarClient();
       let calendarList = await this.buildCalendarList(); // Fetch all personal, work, and shared calendars
+
+      console.log('==========Calendars from API========')
+      console.log(calendarList)
       const calendarDs = await this.provider.getDatastore(CONFIG.verida.schemas.CALENDAR)
-      const calendarDbItems = <SchemaCalendar[]> await calendarDs.getMany({
+      const calendarDbItems = <SchemaCalendar[]>await calendarDs.getMany({
         "sourceAccountId": this.provider.getAccountId()
       });
 
+      console.log('======Calendars from DB=====')
+      console.log(calendarDbItems)
       calendarList = calendarList.map((calendarItem) => {
         // Find the corresponding item in calendarDbItems by 'sourceId'
         const matchingDbItem = calendarDbItems.find(
           (dbItem) => dbItem.sourceId === calendarItem.sourceId
         );
-    
+
         // If a matching item is found in calendarDbItems, merge them, retaining `syncData` field
         if (matchingDbItem) {
           return _.merge({}, matchingDbItem, calendarItem);
         }
-    
+
         // If no matching item, return the calendarItem as is
         return calendarItem;
       });
+
+      console.log("========Calendars after Merge========")
+      console.log(calendarList)
 
       let totalEvents = 0;
       let eventHistory: SchemaEvent[] = [];
