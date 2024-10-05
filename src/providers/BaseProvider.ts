@@ -445,6 +445,9 @@ export default class BaseProvider extends EventEmitter {
             syncCount++
         }
 
+        // Sync is complete, so set to enabled so it will run again in the future
+        syncResults.syncPosition.status = SyncHandlerStatus.ENABLED
+
         return syncResults
     }
 
