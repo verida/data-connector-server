@@ -23,19 +23,26 @@ export class TelegramApi {
     }
 
     public async getClient(startClient: boolean = false): Promise<Client> {
+        console.log('getting telegram client')
         if (this.client) {
             return this.client
         }
 
         // Loading addon
+        console.log('loading adapter')
         const adapter = await TDLibAddon.create();
+        console.log('adapter loaded')
     
         // Make TDLib shut up. Immediately
         Client.disableLogs(adapter);
     
+        console.log('creating new client')
         const client = new Client(adapter);
+        console.log('client created')
     
+        console.log('starting client')
         await client.start()
+        console.log('client started')
         this.client = client
 
         if (startClient) {
@@ -46,11 +53,13 @@ export class TelegramApi {
     }
     
     public async startClient() {
+        console.log('startClient()')
         const client = await this.getClient()
 
         // load saved binary file to disk
         // const nowMinutes = Math.floor(Date.now() / 1000 / 60)
     
+        console.log('setting params')
         await client.api.setTdlibParameters({
             api_id: CONFIG.providers.telegram.apiId,
             api_hash: CONFIG.providers.telegram.apiHash,
@@ -63,6 +72,8 @@ export class TelegramApi {
             use_message_database: false,
             use_file_database: false
         })
+
+        console.log('params set')
     }
 
     public async closeClient(deleteSession: boolean = true): Promise<string> {
@@ -191,6 +202,7 @@ export class TelegramApi {
     }
 
     public restoreBinFile(binFile: string) {
+        console.debug('restoring bin file')
         const path = `${tdPathPrefix}/${this.clientId}/db/td.binlog`
         this.ensureDirectoryExists(path)
 
@@ -202,6 +214,8 @@ export class TelegramApi {
         } catch(err: any) {
             throw new Error(`Error writing telegram binlog file: ${err.message}`)
         }
+
+        console.debug('bin file restored')
     }
 
     public getBinFile() {

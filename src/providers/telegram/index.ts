@@ -102,7 +102,9 @@ export default class TelegramProvider extends Base {
             return this.api
         }
         
+        console.debug('getting our telegram api')
         const api = new TelegramApi(accessToken ? accessToken : this.connection!.accessToken)
+        console.debug('got our telegram api')
         if (!refreshToken) {
             refreshToken = this.connection ? this.connection.refreshToken : undefined
         }
