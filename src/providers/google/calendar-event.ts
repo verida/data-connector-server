@@ -277,13 +277,12 @@ export default class CalendarEventHandler extends GoogleHandler {
       // Iterate over each calendar
       for (let i = 1; i <= Math.min(calendarCount, this.config.calendarLimit); i++) {
         const calendarIndex = (calendarPosition + i) % calendarCount; // Rotate through calendars
-        const calendar = calendarList[calendarIndex];
-
+        
         // Use a separate ItemsRangeTracker for each calendar
-        let rangeTracker = new ItemsRangeTracker(calendar.syncData);
+        let rangeTracker = new ItemsRangeTracker(calendarList[calendarIndex].syncData);
 
         const fetchedEvents = await this.fetchAndTrackEvents(
-          calendar,
+          calendarList[calendarIndex],
           rangeTracker,
           apiClient
         );
@@ -293,7 +292,7 @@ export default class CalendarEventHandler extends GoogleHandler {
         totalEvents += fetchedEvents.length;
 
         // Update the calendar's sync data with the latest rangeTracker state
-        calendar.syncData = rangeTracker.export();
+        calendarList[calendarIndex].syncData = rangeTracker.export();
 
       }
 
@@ -306,11 +305,8 @@ export default class CalendarEventHandler extends GoogleHandler {
         calendarCount
       );
 
-      // Concatenate only items after syncPosition.thisRef
-      const remainingCalendars = calendarList.slice(calendarPosition);
-
       return {
-        results: remainingCalendars.concat(eventHistory),
+        results: calendarList.concat(eventHistory),
         position: syncPosition,
       };
     } catch (err: any) {
