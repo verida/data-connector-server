@@ -183,22 +183,24 @@
     <div class="container mt-5 pt-5">
         <div class="row">
             <div class="col-md-10 offset-md-1">
-                <div id="loadingIndicator" class="alert alert-info text-center mt-3 alert-dismissable" role="alert">
-                    <strong>Notes:</strong> User data is cleared after 30 minutes of inactivity and will require re-loading after that time.
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                      </button>
+                <h1 class="text-center">Talk to Your Data</h1>
+                <div class="text-center" style="margin-bottom: 30px">
+                    <strong>Privacy:</strong> LLM prompts and inference are not executed within confidential compute in the Alpha. <a href="/user/security#llm-privacy">Learn more</a>.<br />
+                    <strong>Performance:</strong> User data is cleared after 30 minutes of inactivity and will be automatically "hot loaded" again after timeout.
                 </div>
+                
                 <div class="form-check" style="float: right">
                     <!-- <input class="form-check-input" type="checkbox" id="demoMode-input">
                     <label class="form-check-label" for="demoMode">
                         Demo mode
                     </label> -->
+                    <strong>Model:</strong> Llama 3 70B
+                    <strong>Platform:</strong> AWS Bedrock
                 </div>
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="privateData-input" checked="checked">
                     <label class="form-check-label" for="privateData">
-                        Use private data
+                        LLM can access your data
                     </label>
                 </div>
                 <div class="chat-container" id="chat-container"></div>
