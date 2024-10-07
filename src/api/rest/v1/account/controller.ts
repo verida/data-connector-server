@@ -16,7 +16,7 @@ export class AccountController {
             }
 
             if (profile) {
-                result.account = profile.getMany({},{})
+                result.account = await profile.getMany({},{})
             }
 
             return res.send({
