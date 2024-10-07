@@ -246,15 +246,11 @@ export default class CalendarEventHandler extends GoogleHandler {
       const apiClient = this.getCalendarClient();
       let calendarList = await this.buildCalendarList(); // Fetch all personal, work, and shared calendars
 
-      console.log('==========Calendars from API========')
-      console.log(calendarList)
       const calendarDs = await this.provider.getDatastore(CONFIG.verida.schemas.CALENDAR)
       const calendarDbItems = <SchemaCalendar[]>await calendarDs.getMany({
         "sourceAccountId": this.provider.getAccountId()
       });
-
-      console.log('======Calendars from DB=====')
-      console.log(calendarDbItems)
+      
       calendarList = calendarList.map((calendarItem) => {
         // Find the corresponding item in calendarDbItems by 'sourceId'
         const matchingDbItem = calendarDbItems.find(
@@ -269,9 +265,6 @@ export default class CalendarEventHandler extends GoogleHandler {
         // If no matching item, return the calendarItem as is
         return calendarItem;
       });
-
-      console.log("========Calendars after Merge========")
-      console.log(calendarList)
 
       let totalEvents = 0;
       let eventHistory: SchemaEvent[] = [];
@@ -302,13 +295,10 @@ export default class CalendarEventHandler extends GoogleHandler {
         // Update the calendar's sync data with the latest rangeTracker state
         calendar.syncData = rangeTracker.export();
 
-        // Stop if the total events fetched reach the batch size
-        if (totalEvents >= this.config.batchSize) {
-          syncPosition.thisRef = calendarList[(calendarIndex + 1) % calendarCount].sourceId; // Continue from the next calendar in the next sync
-          break;
-        }
       }
 
+      syncPosition.thisRef = calendarList[(Math.min(calendarCount, this.config.calendarLimit) + calendarPosition) % calendarCount].sourceId; // Continue from the next calendar in the next sync
+      
       // Finalize sync position and status based on event count
       this.updateSyncPosition(
         syncPosition,
@@ -317,7 +307,7 @@ export default class CalendarEventHandler extends GoogleHandler {
       );
 
       // Concatenate only items after syncPosition.thisRef
-      const remainingCalendars = calendarList.slice(calendarPosition + 1);
+      const remainingCalendars = calendarList.slice(calendarPosition);
 
       return {
         results: remainingCalendars.concat(eventHistory),
@@ -395,9 +385,6 @@ export default class CalendarEventHandler extends GoogleHandler {
     if (totalEvents === 0) {
       syncPosition.status = SyncHandlerStatus.ENABLED;
       syncPosition.syncMessage = "No new events found.";
-    } else if (totalEvents < this.config.batchSize) {
-      syncPosition.syncMessage = `Processed ${totalEvents} events across ${calendarCount} calendars. Sync complete.`;
-      syncPosition.status = SyncHandlerStatus.ENABLED;
     } else {
       syncPosition.status = SyncHandlerStatus.SYNCING;
       syncPosition.syncMessage = `Batch complete (${totalEvents}). More results pending.`;
