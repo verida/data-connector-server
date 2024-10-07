@@ -22,6 +22,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const userName = data.account.name || '';
             const avatarUrl = data.account.avatar?.uri || '';
 
+            const avatarHTML = avatarUrl ? `<img src="${avatarUrl}" alt="${userName}" class="rounded-circle" style="width: 30px; height: 30px;">` : ``
+
             // Inject user info into the Bootstrap navigation bar
             const navbar = document.querySelector('#navbarNav');
             if (navbar) {
@@ -29,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <img src="${avatarUrl}" alt="${userName}" class="rounded-circle" style="width: 30px; height: 30px;"> ${userName}
+                            ${avatarHTML} ${userName}
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
                             <a class="dropdown-item" href="#" id="logoutButton">Logout</a>
