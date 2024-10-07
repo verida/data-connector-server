@@ -1,0 +1,1345 @@
+{
+	"info": {
+		"_postman_id": "b7d54d68-a116-4f59-8374-4486b591db85",
+		"name": "User Data API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_uid": "20367237-b7d54d68-a116-4f59-8374-4486b591db85"
+	},
+	"item": [
+		{
+			"name": "Databases",
+			"item": [
+				{
+					"name": "Query Database: /api/v1/db/query/{dbName}",
+					"id": "d3dbb313-cda2-4fd0-9eb8-f0b6cbab80e2",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filter\": {\n        \"sourceApplication\": \"https://youtube.com/\"\n    },\n    \"options\": {\n        \"sort\": [\n            {\n                \"_id\": \"desc\"\n            }\n        ],\n        \"limit\": 2,\n        \"skip\": 0\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/db/query/{{testDb}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"db",
+								"query",
+								"{{testDb}}"
+							]
+						},
+						"description": "### Query a User Database\n\nThis endpoint allows you to make a POST request to query a specific database containing user data.\n\n#### Request URL\n\nThe request URL is in the following format `/db/query/{testDb}`, where:\n\n- **{testDb}**: The database to query (ie: `favourite`)\n    \n\n#### Request Body\n\n- **filter** (object) - Specifies the filter criteria for the query. Matches the [PouchDB filter syntax](https://pouchdb.com/api.html#query_index).\n    \n- **options** (object) - Specifies the additional query options. Matches the \\[PouchDB options syntax\\]([https://pouchdb.com/api.html#query_index](https://pouchdb.com/api.html#query_index)).\n    \n    - **sort** (array) - Specifies the sorting criteria for the query.\n        \n    - **limit** (number) - Limits the number of results to be returned.\n        \n    - **skip** (number) - Specifies the number of results to skip.\n        \n\nExample:\n\n``` json\n{\n  \"filter\": {\n    \"sourceApplication\": \"https://youtube.com/\"\n  },\n  \"sort\": [\n    {\n      \"_id\": \"desc\"\n    }\n  ],\n  \"limit\": 5,\n  \"skip\": 0\n}\n\n ```\n\n#### Response\n\n- **Status**: 200\n    \n- **Content-Type**: application/json\n    \n- **items** (array) - Contains the result items\n    \n- **limit** (integer) - Results per page\n    \n- **skip** (integer) - How many results to skip\n    \n- **dbCount** (integer) - Total records in the database (ignoring any filter)"
+					},
+					"response": [
+						{
+							"id": "8be79006-591d-4c5c-afce-bc5c68a97a9c",
+							"name": "Favourite Query",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"filter\": {\n        \"sourceApplication\": \"https://youtube.com/\"\n    },\n    \"options\": {\n        \"sort\": [\n            {\n                \"_id\": \"desc\"\n            }\n        ],\n        \"limit\": 2,\n        \"skip\": 0\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://localhost:5021/api/v1/db/query/favourite",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"v1",
+										"db",
+										"query",
+										"favourite"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "7101"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"1bbd-RCVvOJRou2fMf7Dg3Ca5UuFgHRs\""
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "connect.sid=s%3A4MYlT30XF-20gRb2o7CgXPJudHj1i17a.lYrvembkhoMBNTJkQsAIogtMd%2BJpAdfeMZFs3sp8eXo; Path=/; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 16 Sep 2024 00:31:45 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"items\": [\n        {\n            \"_id\": \"google-114389302261538986945-xskZ50giJkw\",\n            \"name\": \"I take on 100 PROS for the oldest trophy in golf!\",\n            \"icon\": \"https://i.ytimg.com/vi/xskZ50giJkw/default.jpg\",\n            \"uri\": \"https://www.youtube.com/watch?v=xskZ50giJkw\",\n            \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\",\n            \"favouriteType\": \"like\",\n            \"contentType\": \"video\",\n            \"sourceId\": \"xskZ50giJkw\",\n            \"sourceData\": {\n                \"publishedAt\": \"2024-08-21T17:35:49Z\",\n                \"channelId\": \"UCFoez1Xjc90CsHvCzqKnLcw\",\n                \"title\": \"I take on 100 PROS for the oldest trophy in golf!\",\n                \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\",\n                \"thumbnails\": {\n                    \"default\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/default.jpg\",\n                        \"width\": 120,\n                        \"height\": 90\n                    },\n                    \"medium\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/mqdefault.jpg\",\n                        \"width\": 320,\n                        \"height\": 180\n                    },\n                    \"high\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/hqdefault.jpg\",\n                        \"width\": 480,\n                        \"height\": 360\n                    },\n                    \"standard\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/sddefault.jpg\",\n                        \"width\": 640,\n                        \"height\": 480\n                    },\n                    \"maxres\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/maxresdefault.jpg\",\n                        \"width\": 1280,\n                        \"height\": 720\n                    }\n                },\n                \"channelTitle\": \"Peter Finch Golf\",\n                \"tags\": [\n                    \"golf\",\n                    \"channel\",\n                    \"tips\",\n                    \"drills\",\n                    \"instruction\",\n                    \"lessons\",\n                    \"easy swing tips\",\n                    \"easy swing drills\",\n                    \"easy golf swing\",\n                    \"golf tips\",\n                    \"golf drills\",\n                    \"downswing golf drills\",\n                    \"backswing golf tips\",\n                    \"impact position\",\n                    \"effortless golf swing\",\n                    \"driver swing tips\",\n                    \"learn to strike your irons\",\n                    \"chip the\",\n                    \"chipping and pitching tips\",\n                    \"improve driver strike\"\n                ],\n                \"categoryId\": \"17\",\n                \"liveBroadcastContent\": \"none\",\n                \"localized\": {\n                    \"title\": \"I take on 100 PROS for the oldest trophy in golf!\",\n                    \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\"\n                },\n                \"defaultAudioLanguage\": \"en-GB\"\n            },\n            \"sourceAccountId\": \"114389302261538986945\",\n            \"sourceApplication\": \"https://youtube.com/\",\n            \"insertedAt\": \"2024-08-21T17:35:49Z\",\n            \"schema\": \"https://common.schemas.verida.io/favourite/v0.1.0/schema.json\",\n            \"_rev\": \"23-d996f8418012b7e2b60250732c54384d\",\n            \"modifiedAt\": \"2024-09-02T01:19:48.637Z\",\n            \"signatures\": {\n                \"did:vda:polamoy:0x5c564fe4850d4353c427f95d706241ce5aed5bbe?context=0x6af864b232b7cecefdda54df552ac6138259bc2d387dededf837984fe47d940d\": {\n                    \"secp256k1\": \"0x12f2115ccde518f0e5058c2e9f69c83cfc1757b63f2833de1a24039c93476e4550faf40911d3afd91263a7941a812d3fa866744b91cb16b627964e82e08b5c8c1b\"\n                }\n            }\n        },\n        {\n            \"_id\": \"google-114389302261538986945-wUtPwhbZra8\",\n            \"name\": \"Can I Break 50 With John Daly From The Red Tees?\",\n            \"icon\": \"https://i.ytimg.com/vi/wUtPwhbZra8/default.jpg\",\n            \"uri\": \"https://www.youtube.com/watch?v=wUtPwhbZra8\",\n            \"description\": \"I attempted to Break 50 from the red tees with the one and only, John Daly...\\n\\nJohn Daly ➤ https://www.instagram.com/pga_johndaly/\\n\\nThe Crushers ➤  https://www.youtube.com/@CrushersGC\\n\\nMy Socials\\nInstagram ➤ https://www.instagram.com/brysondechambeau/\\nTwitter ➤ https://twitter.com/b_dechambeau\\n\\nVideo Production ➤ https://www.instagram.com/akacollective/\",\n            \"favouriteType\": \"like\",\n            \"contentType\": \"video\",\n            \"sourceId\": \"wUtPwhbZra8\",\n            \"sourceData\": {\n                \"publishedAt\": \"2024-08-14T16:39:42Z\",\n                \"channelId\": \"UCCxF55adGXOscJ3L8qdKnrQ\",\n                \"title\": \"Can I Break 50 With John Daly From The Red Tees?\",\n                \"description\": \"I attempted to Break 50 from the red tees with the one and only, John Daly...\\n\\nJohn Daly ➤ https://www.instagram.com/pga_johndaly/\\n\\nThe Crushers ➤  https://www.youtube.com/@CrushersGC\\n\\nMy Socials\\nInstagram ➤ https://www.instagram.com/brysondechambeau/\\nTwitter ➤ https://twitter.com/b_dechambeau\\n\\nVideo Production ➤ https://www.instagram.com/akacollective/\",\n                \"thumbnails\": {\n                    \"default\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/default.jpg\",\n                        \"width\": 120,\n                        \"height\": 90\n                    },\n                    \"medium\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/mqdefault.jpg\",\n                        \"width\": 320,\n                        \"height\": 180\n                    },\n                    \"high\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/hqdefault.jpg\",\n                        \"width\": 480,\n                        \"height\": 360\n                    },\n                    \"standard\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/sddefault.jpg\",\n                        \"width\": 640,\n                        \"height\": 480\n                    },\n                    \"maxres\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/maxresdefault.jpg\",\n                        \"width\": 1280,\n                        \"height\": 720\n                    }\n                },\n                \"channelTitle\": \"Bryson DeChambeau\",\n                \"tags\": [\n                    \"Can I Break 50 With John Daly From The Red Tees?\",\n                    \"bryson dechambeau\",\n                    \"john daly\",\n                    \"break 50\",\n                    \"golf\",\n                    \"golfing\",\n                    \"golf match\",\n                    \"golf scramble\",\n                    \"bryson dechambeau and john daly break 50\",\n                    \"john daly golf swing\",\n                    \"john daly best moments\",\n                    \"professional golfers\",\n                    \"good good\",\n                    \"grant horvat\",\n                    \"gm golf\",\n                    \"gm golf vs john daly jr\",\n                    \"john daly jr\",\n                    \"bryan bros\",\n                    \"the major cut series\",\n                    \"golf from the red tees\",\n                    \"professional golf match\",\n                    \"rick shiels\",\n                    \"golfing with no shoes\",\n                    \"golf drinking challenge\",\n                    \"john daly swing\"\n                ],\n                \"categoryId\": \"17\",\n                \"liveBroadcastContent\": \"none\",\n                \"localized\": {\n                    \"title\": \"Can I Break 50 With John Daly From The Red Tees?\",\n                    \"description\": \"I attempted to Break 50 from the red tees with the one and only, John Daly...\\n\\nJohn Daly ➤ https://www.instagram.com/pga_johndaly/\\n\\nThe Crushers ➤  https://www.youtube.com/@CrushersGC\\n\\nMy Socials\\nInstagram ➤ https://www.instagram.com/brysondechambeau/\\nTwitter ➤ https://twitter.com/b_dechambeau\\n\\nVideo Production ➤ https://www.instagram.com/akacollective/\"\n                },\n                \"defaultAudioLanguage\": \"en\"\n            },\n            \"sourceAccountId\": \"114389302261538986945\",\n            \"sourceApplication\": \"https://youtube.com/\",\n            \"insertedAt\": \"2024-08-14T16:39:42Z\",\n            \"schema\": \"https://common.schemas.verida.io/favourite/v0.1.0/schema.json\",\n            \"_rev\": \"23-7b08557dfe34b45805f2aca8e4c9da37\",\n            \"modifiedAt\": \"2024-09-02T01:19:48.784Z\",\n            \"signatures\": {\n                \"did:vda:polamoy:0x5c564fe4850d4353c427f95d706241ce5aed5bbe?context=0x6af864b232b7cecefdda54df552ac6138259bc2d387dededf837984fe47d940d\": {\n                    \"secp256k1\": \"0xf2f1272c5eb3f28ca03f6640e8199fe49b00db362e0eda1273f4a180365526675b44450a7ba3571f995dd4bde67b756b2d69709ec540f158ce07d55767ca71871b\"\n                }\n            }\n        }\n    ],\n    \"limit\": 2,\n    \"skip\": 0,\n    \"dbRows\": 18\n}"
+						}
+					]
+				},
+				{
+					"name": "Fetch Database Record: /api/v1/db/get/{dbName}/{recordId}",
+					"id": "4ccf889b-6b06-4496-9962-073af4e07fa6",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "permissions",
+								"value": "read=public,write=owner",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/db/get/profile_public/basicProfile",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"db",
+								"get",
+								"profile_public",
+								"basicProfile"
+							]
+						},
+						"description": "### Fetch a User Database Record\n\nThis endpoint allows you to make a GET request to fetch a specific database record containing user data.\n\nThe request should include the database name (`favourite` in this example) and the record ID (`google-114389302261538986945-xskZ50giJkw` in this example) in the URL path.\n\n#### Request URL\n\nThe request URL is in the following format `/db/get/{testDb}/{recordId}`, where:\n\n- **{testDb}**: The database to query (ie: `favourite`)\n    \n- **{recordId}**: The database record to fetch (ie: `google-114389302261538986945-xskZ50giJkw`)\n    \n\n### Request Body\n\nThis request does not require a request body.\n\n### Headers\n\n- **permissions**: Specify the permissions for the database that is being access. ie: `read=owner,write=owner`. You can typically leave this blank as the default permissions are configured to work for all private databases. See the `Fetch User Profile` example of a request that specifies custom database permissions.\n    \n- **key**: Private key or seed phrase of the Verida Network account being accessed\n    \n\n### Response Body\n\n- **Status**: 200\n    \n- **Content-Type**: application/json\n    \n- **item** (object) - Contains the result item, if found\n    \n\n### Error Responses\n\nIf the requested database record is not found, the response will have a status code of 404 with an empty body.\n\nIf there is a server error, the response will have a status code of 5xx with a body containing a JSON object with an `error` message attribute."
+					},
+					"response": [
+						{
+							"id": "83f43eb9-b91a-497d-97e9-81f13c674453",
+							"name": "Favourite Record",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://localhost:5021/api/v1/db/get/favourite/google-114389302261538986945-xskZ50giJkw",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"v1",
+										"db",
+										"get",
+										"favourite",
+										"google-114389302261538986945-xskZ50giJkw"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "3698"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"e72-dMXteQpk69UDMCgIUC+jEHQr60M\""
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 12 Sep 2024 01:43:05 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"item\": {\n        \"_id\": \"google-114389302261538986945-xskZ50giJkw\",\n        \"name\": \"I take on 100 PROS for the oldest trophy in golf!\",\n        \"icon\": \"https://i.ytimg.com/vi/xskZ50giJkw/default.jpg\",\n        \"uri\": \"https://www.youtube.com/watch?v=xskZ50giJkw\",\n        \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\",\n        \"favouriteType\": \"like\",\n        \"contentType\": \"video\",\n        \"sourceId\": \"xskZ50giJkw\",\n        \"sourceData\": {\n            \"publishedAt\": \"2024-08-21T17:35:49Z\",\n            \"channelId\": \"UCFoez1Xjc90CsHvCzqKnLcw\",\n            \"title\": \"I take on 100 PROS for the oldest trophy in golf!\",\n            \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\",\n            \"thumbnails\": {\n                \"default\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/default.jpg\",\n                    \"width\": 120,\n                    \"height\": 90\n                },\n                \"medium\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/mqdefault.jpg\",\n                    \"width\": 320,\n                    \"height\": 180\n                },\n                \"high\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/hqdefault.jpg\",\n                    \"width\": 480,\n                    \"height\": 360\n                },\n                \"standard\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/sddefault.jpg\",\n                    \"width\": 640,\n                    \"height\": 480\n                },\n                \"maxres\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/maxresdefault.jpg\",\n                    \"width\": 1280,\n                    \"height\": 720\n                }\n            },\n            \"channelTitle\": \"Peter Finch Golf\",\n            \"tags\": [\n                \"golf\",\n                \"channel\",\n                \"tips\",\n                \"drills\",\n                \"instruction\",\n                \"lessons\",\n                \"easy swing tips\",\n                \"easy swing drills\",\n                \"easy golf swing\",\n                \"golf tips\",\n                \"golf drills\",\n                \"downswing golf drills\",\n                \"backswing golf tips\",\n                \"impact position\",\n                \"effortless golf swing\",\n                \"driver swing tips\",\n                \"learn to strike your irons\",\n                \"chip the\",\n                \"chipping and pitching tips\",\n                \"improve driver strike\"\n            ],\n            \"categoryId\": \"17\",\n            \"liveBroadcastContent\": \"none\",\n            \"localized\": {\n                \"title\": \"I take on 100 PROS for the oldest trophy in golf!\",\n                \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\"\n            },\n            \"defaultAudioLanguage\": \"en-GB\"\n        },\n        \"sourceAccountId\": \"114389302261538986945\",\n        \"sourceApplication\": \"https://youtube.com/\",\n        \"insertedAt\": \"2024-08-21T17:35:49Z\",\n        \"schema\": \"https://common.schemas.verida.io/favourite/v0.1.0/schema.json\",\n        \"_rev\": \"23-d996f8418012b7e2b60250732c54384d\",\n        \"modifiedAt\": \"2024-09-02T01:19:48.637Z\",\n        \"signatures\": {\n            \"did:vda:polamoy:0x5c564fe4850d4353c427f95d706241ce5aed5bbe?context=0x6af864b232b7cecefdda54df552ac6138259bc2d387dededf837984fe47d940d\": {\n                \"secp256k1\": \"0x12f2115ccde518f0e5058c2e9f69c83cfc1757b63f2833de1a24039c93476e4550faf40911d3afd91263a7941a812d3fa866744b91cb16b627964e82e08b5c8c1b\"\n            }\n        }\n    }\n}"
+						},
+						{
+							"id": "66e6f973-2391-49b8-856d-b0068f7614df",
+							"name": "Record Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://localhost:5021/api/v1/db/get/favourite/abc",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"v1",
+										"db",
+										"get",
+										"favourite",
+										"abc"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "21"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"15-bm7tJgu8FHlq5QU+Y6gDxOGPfRc\""
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 12 Sep 2024 01:52:21 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": \"Not found\"\n}"
+						},
+						{
+							"id": "31f0dee7-16c9-4c63-8de9-b8edd3b184ae",
+							"name": "Fetch User Profile",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "permissions",
+										"value": "read=public,write=owner",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "https://localhost:5021/api/v1/db/get/profile_public/basicProfile",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"v1",
+										"db",
+										"get",
+										"profile_public",
+										"basicProfile"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "573"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"23d-YZgpINI+/H4GSI4AupGUiuoaxIg\""
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 12 Sep 2024 01:56:38 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"item\": {\n        \"_id\": \"basicProfile\",\n        \"_rev\": \"1-82c3abe72bdcc753233f268bfe0fd02a\",\n        \"name\": \"Chris_localhost\",\n        \"description\": \"Verida CEO\",\n        \"country\": \"Australia\",\n        \"schema\": \"https://common.schemas.verida.io/profile/basicProfile/v0.1.0/schema.json\",\n        \"modifiedAt\": \"2024-07-19T06:11:44.786Z\",\n        \"signatures\": {\n            \"did:vda:polamoy:0x5c564fe4850d4353c427f95d706241ce5aed5bbe?context=0x6af864b232b7cecefdda54df552ac6138259bc2d387dededf837984fe47d940d\": {\n                \"secp256k1\": \"0x5306274345d87510dc4a17abffb33d83ca3b8eddb13b269b7badbb41cfe00bd74a3f9bb417438a3ca6c104cfec97e72c4f633fe6d02e7949c5c71a11551458b11c\"\n            }\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Watch Database: /api/v1/db/watch/{testDb}",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "ea98930a-56fc-4c0b-8cb5-ecb8312ec4c4",
+								"exec": [
+									"pm.collectionVariables.set(\"testDsEncoded\", btoa(pm.collectionVariables.get(\"testWatchDsName\")))"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "18cdaf65-edc9-4765-9118-6eedbd188a07",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": {\n        \"filter\": {\n            \"level\": \"info\"\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/db/watch/{{testDb}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"db",
+								"watch",
+								"{{testDb}}"
+							]
+						},
+						"description": "### Watch a User Database\n\nThis endpoint allows you to make a POST request to watch a specific database containing user data. Any new (or modified) database records are returned in the stream.\n\nThis is not a typical HTTP request, it uses `EventSource` to stream the database changes.\n\n#### Request URL\n\nThe request URL is in the following format `/db/watch/{testDb}`, where:\n\n- **{testDb}**: The database to query (ie: `favourite`)\n    \n\n#### Request Body\n\n- **options** (object) - Specifies the additional query options. Matches the \\[PouchDB options syntax for `changes`\\]([https://pouchdb.com/api.html#changes](https://pouchdb.com/api.html#changes)).\n    \n    - **sort** (array) - Specifies the sorting criteria for the query.\n        \n    - **limit** (number) - Limits the number of results to be returned.\n        \n    - **skip** (number) - Specifies the number of results to skip.\n        \n\nExample:\n\n``` json\n{\n  \"options\": {\n    \"descending\": true\n  }\n}\n\n ```\n\n#### Response\n\n- **Status**: 200\n    \n- **Content-Type**: application/json\n    \n- **type** (string) - Type of event response. One of the following:\n    \n    - `record`: Full database record that has been inserted or modified\n        \n    - `complete`: Change log has been cancelled and is now complete\n        \n    - `error`: Error has occurred\n        \n- **value** (any) - Response value, which depends on the response `type`:\n    \n    - `record`: Object containing the inserted or modified database record\n        \n    - `complete`: Empty\n        \n    - `error`: String containing the error message"
+					},
+					"response": []
+				}
+			],
+			"id": "a4723dbd-4286-45cc-841f-d36abbfee7e9"
+		},
+		{
+			"name": "Datastores",
+			"item": [
+				{
+					"name": "Query Datastore: /api/v1/ds/query/{encodedDs}",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "ea98930a-56fc-4c0b-8cb5-ecb8312ec4c4",
+								"exec": [
+									"pm.collectionVariables.set(\"testDsEncoded\", btoa(pm.collectionVariables.get(\"testDsName\")))"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "65c75973-7b0b-4582-8f1d-1a36d8eaa11e",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"filter\": {\n        \"sourceApplication\": \"https://youtube.com/\"\n    },\n    \"options\": {\n        \"sort\": [\n            {\n                \"_id\": \"desc\"\n            }\n        ],\n        \"limit\": 2,\n        \"skip\": 0\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/ds/query/{{testDsEncoded}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"ds",
+								"query",
+								"{{testDsEncoded}}"
+							]
+						},
+						"description": "### Query a User Datastore\n\nThis endpoint allows you to make a POST request to query a specific datastore containing user data.\n\nA datastore is a database that is guaranteed to match a specific schema.\n\n#### Request URL\n\nThe request URL is in the following format `/ds/query/{testDsEncoded}`, where:\n\n- **{testDsEncoded}**: Base64 encoded URL of the datastore schema (ie: `https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json` is encoded to `aHR0cHM6Ly9jb21tb24uc2NoZW1hcy52ZXJpZGEuaW8vc29jaWFsL2NoYXQvZ3JvdXAvdjAuMS4wL3NjaGVtYS5qc29u`).\n    \n\n#### Request Body\n\n- **filter** (object) - Specifies the filter criteria for the query. Matches the [PouchDB filter syntax](https://pouchdb.com/api.html#query_index).\n    \n- **options** (object) - Specifies the additional query options. Matches the \\[PouchDB options syntax\\]([https://pouchdb.com/api.html#query_index](https://pouchdb.com/api.html#query_index)).\n    \n    - **sort** (array) - Specifies the sorting criteria for the query.\n        \n    - **limit** (number) - Limits the number of results to be returned.\n        \n    - **skip** (number) - Specifies the number of results to skip.\n        \n\nExample:\n\n``` json\n{\n  \"filter\": {\n    \"sourceApplication\": \"https://youtube.com/\"\n  },\n  \"sort\": [\n    {\n      \"_id\": \"desc\"\n    }\n  ],\n  \"limit\": 5,\n  \"skip\": 0\n}\n\n ```\n\n#### Response\n\n- **Status**: 200\n    \n- **Content-Type**: application/json\n    \n- **items** (array) - Contains the result items\n    \n- **limit** (integer) - Results per page\n    \n- **skip** (integer) - How many results to skip\n    \n- **dbCount** (integer) - Total records in the database (ignoring any filter)"
+					},
+					"response": [
+						{
+							"id": "e4280e35-b173-4e02-a6e7-963757c64771",
+							"name": "Favourite Query",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"filter\": {\n        \"sourceApplication\": \"https://youtube.com/\"\n    },\n    \"options\": {\n        \"sort\": [\n            {\n                \"_id\": \"desc\"\n            }\n        ],\n        \"limit\": 2,\n        \"skip\": 0\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://localhost:5021/api/v1/ds/query/aHR0cHM6Ly9jb21tb24uc2NoZW1hcy52ZXJpZGEuaW8vZmF2b3VyaXRlL3YwLjEuMC9zY2hlbWEuanNvbg==",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"v1",
+										"ds",
+										"query",
+										"aHR0cHM6Ly9jb21tb24uc2NoZW1hcy52ZXJpZGEuaW8vZmF2b3VyaXRlL3YwLjEuMC9zY2hlbWEuanNvbg=="
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "7102"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"1bbe-u4AjV4pxop+lgkYhzqiy6vduWqg\""
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 16 Sep 2024 00:32:12 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"items\": [\n        {\n            \"_id\": \"google-114389302261538986945-xskZ50giJkw\",\n            \"name\": \"I take on 100 PROS for the oldest trophy in golf!\",\n            \"icon\": \"https://i.ytimg.com/vi/xskZ50giJkw/default.jpg\",\n            \"uri\": \"https://www.youtube.com/watch?v=xskZ50giJkw\",\n            \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\",\n            \"favouriteType\": \"like\",\n            \"contentType\": \"video\",\n            \"sourceId\": \"xskZ50giJkw\",\n            \"sourceData\": {\n                \"publishedAt\": \"2024-08-21T17:35:49Z\",\n                \"channelId\": \"UCFoez1Xjc90CsHvCzqKnLcw\",\n                \"title\": \"I take on 100 PROS for the oldest trophy in golf!\",\n                \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\",\n                \"thumbnails\": {\n                    \"default\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/default.jpg\",\n                        \"width\": 120,\n                        \"height\": 90\n                    },\n                    \"medium\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/mqdefault.jpg\",\n                        \"width\": 320,\n                        \"height\": 180\n                    },\n                    \"high\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/hqdefault.jpg\",\n                        \"width\": 480,\n                        \"height\": 360\n                    },\n                    \"standard\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/sddefault.jpg\",\n                        \"width\": 640,\n                        \"height\": 480\n                    },\n                    \"maxres\": {\n                        \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/maxresdefault.jpg\",\n                        \"width\": 1280,\n                        \"height\": 720\n                    }\n                },\n                \"channelTitle\": \"Peter Finch Golf\",\n                \"tags\": [\n                    \"golf\",\n                    \"channel\",\n                    \"tips\",\n                    \"drills\",\n                    \"instruction\",\n                    \"lessons\",\n                    \"easy swing tips\",\n                    \"easy swing drills\",\n                    \"easy golf swing\",\n                    \"golf tips\",\n                    \"golf drills\",\n                    \"downswing golf drills\",\n                    \"backswing golf tips\",\n                    \"impact position\",\n                    \"effortless golf swing\",\n                    \"driver swing tips\",\n                    \"learn to strike your irons\",\n                    \"chip the\",\n                    \"chipping and pitching tips\",\n                    \"improve driver strike\"\n                ],\n                \"categoryId\": \"17\",\n                \"liveBroadcastContent\": \"none\",\n                \"localized\": {\n                    \"title\": \"I take on 100 PROS for the oldest trophy in golf!\",\n                    \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\"\n                },\n                \"defaultAudioLanguage\": \"en-GB\"\n            },\n            \"sourceAccountId\": \"114389302261538986945\",\n            \"sourceApplication\": \"https://youtube.com/\",\n            \"insertedAt\": \"2024-08-21T17:35:49Z\",\n            \"schema\": \"https://common.schemas.verida.io/favourite/v0.1.0/schema.json\",\n            \"_rev\": \"23-d996f8418012b7e2b60250732c54384d\",\n            \"modifiedAt\": \"2024-09-02T01:19:48.637Z\",\n            \"signatures\": {\n                \"did:vda:polamoy:0x5c564fe4850d4353c427f95d706241ce5aed5bbe?context=0x6af864b232b7cecefdda54df552ac6138259bc2d387dededf837984fe47d940d\": {\n                    \"secp256k1\": \"0x12f2115ccde518f0e5058c2e9f69c83cfc1757b63f2833de1a24039c93476e4550faf40911d3afd91263a7941a812d3fa866744b91cb16b627964e82e08b5c8c1b\"\n                }\n            }\n        },\n        {\n            \"_id\": \"google-114389302261538986945-wUtPwhbZra8\",\n            \"name\": \"Can I Break 50 With John Daly From The Red Tees?\",\n            \"icon\": \"https://i.ytimg.com/vi/wUtPwhbZra8/default.jpg\",\n            \"uri\": \"https://www.youtube.com/watch?v=wUtPwhbZra8\",\n            \"description\": \"I attempted to Break 50 from the red tees with the one and only, John Daly...\\n\\nJohn Daly ➤ https://www.instagram.com/pga_johndaly/\\n\\nThe Crushers ➤  https://www.youtube.com/@CrushersGC\\n\\nMy Socials\\nInstagram ➤ https://www.instagram.com/brysondechambeau/\\nTwitter ➤ https://twitter.com/b_dechambeau\\n\\nVideo Production ➤ https://www.instagram.com/akacollective/\",\n            \"favouriteType\": \"like\",\n            \"contentType\": \"video\",\n            \"sourceId\": \"wUtPwhbZra8\",\n            \"sourceData\": {\n                \"publishedAt\": \"2024-08-14T16:39:42Z\",\n                \"channelId\": \"UCCxF55adGXOscJ3L8qdKnrQ\",\n                \"title\": \"Can I Break 50 With John Daly From The Red Tees?\",\n                \"description\": \"I attempted to Break 50 from the red tees with the one and only, John Daly...\\n\\nJohn Daly ➤ https://www.instagram.com/pga_johndaly/\\n\\nThe Crushers ➤  https://www.youtube.com/@CrushersGC\\n\\nMy Socials\\nInstagram ➤ https://www.instagram.com/brysondechambeau/\\nTwitter ➤ https://twitter.com/b_dechambeau\\n\\nVideo Production ➤ https://www.instagram.com/akacollective/\",\n                \"thumbnails\": {\n                    \"default\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/default.jpg\",\n                        \"width\": 120,\n                        \"height\": 90\n                    },\n                    \"medium\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/mqdefault.jpg\",\n                        \"width\": 320,\n                        \"height\": 180\n                    },\n                    \"high\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/hqdefault.jpg\",\n                        \"width\": 480,\n                        \"height\": 360\n                    },\n                    \"standard\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/sddefault.jpg\",\n                        \"width\": 640,\n                        \"height\": 480\n                    },\n                    \"maxres\": {\n                        \"url\": \"https://i.ytimg.com/vi/wUtPwhbZra8/maxresdefault.jpg\",\n                        \"width\": 1280,\n                        \"height\": 720\n                    }\n                },\n                \"channelTitle\": \"Bryson DeChambeau\",\n                \"tags\": [\n                    \"Can I Break 50 With John Daly From The Red Tees?\",\n                    \"bryson dechambeau\",\n                    \"john daly\",\n                    \"break 50\",\n                    \"golf\",\n                    \"golfing\",\n                    \"golf match\",\n                    \"golf scramble\",\n                    \"bryson dechambeau and john daly break 50\",\n                    \"john daly golf swing\",\n                    \"john daly best moments\",\n                    \"professional golfers\",\n                    \"good good\",\n                    \"grant horvat\",\n                    \"gm golf\",\n                    \"gm golf vs john daly jr\",\n                    \"john daly jr\",\n                    \"bryan bros\",\n                    \"the major cut series\",\n                    \"golf from the red tees\",\n                    \"professional golf match\",\n                    \"rick shiels\",\n                    \"golfing with no shoes\",\n                    \"golf drinking challenge\",\n                    \"john daly swing\"\n                ],\n                \"categoryId\": \"17\",\n                \"liveBroadcastContent\": \"none\",\n                \"localized\": {\n                    \"title\": \"Can I Break 50 With John Daly From The Red Tees?\",\n                    \"description\": \"I attempted to Break 50 from the red tees with the one and only, John Daly...\\n\\nJohn Daly ➤ https://www.instagram.com/pga_johndaly/\\n\\nThe Crushers ➤  https://www.youtube.com/@CrushersGC\\n\\nMy Socials\\nInstagram ➤ https://www.instagram.com/brysondechambeau/\\nTwitter ➤ https://twitter.com/b_dechambeau\\n\\nVideo Production ➤ https://www.instagram.com/akacollective/\"\n                },\n                \"defaultAudioLanguage\": \"en\"\n            },\n            \"sourceAccountId\": \"114389302261538986945\",\n            \"sourceApplication\": \"https://youtube.com/\",\n            \"insertedAt\": \"2024-08-14T16:39:42Z\",\n            \"schema\": \"https://common.schemas.verida.io/favourite/v0.1.0/schema.json\",\n            \"_rev\": \"23-7b08557dfe34b45805f2aca8e4c9da37\",\n            \"modifiedAt\": \"2024-09-02T01:19:48.784Z\",\n            \"signatures\": {\n                \"did:vda:polamoy:0x5c564fe4850d4353c427f95d706241ce5aed5bbe?context=0x6af864b232b7cecefdda54df552ac6138259bc2d387dededf837984fe47d940d\": {\n                    \"secp256k1\": \"0xf2f1272c5eb3f28ca03f6640e8199fe49b00db362e0eda1273f4a180365526675b44450a7ba3571f995dd4bde67b756b2d69709ec540f158ce07d55767ca71871b\"\n                }\n            }\n        }\n    ],\n    \"limit\": 2,\n    \"skip\": 0,\n    \"dbCount\": 18\n}"
+						}
+					]
+				},
+				{
+					"name": "Watch Datastore: /api/v1/ds/watch/{encodedDs}",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "ea98930a-56fc-4c0b-8cb5-ecb8312ec4c4",
+								"exec": [
+									"pm.collectionVariables.set(\"testDsEncoded\", btoa(pm.collectionVariables.get(\"testWatchDsName\")))"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "23e08cc1-01a8-44f1-b321-3e7b03845b2e",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"options\": {\n        \"filter\": {\n            \"level\": \"info\"\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/ds/watch/{{testDsEncoded}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"ds",
+								"watch",
+								"{{testDsEncoded}}"
+							]
+						},
+						"description": "### Watch a User Datastore\n\nThis endpoint allows you to make a POST request to watch a specific datastore containing user data. Any new (or modified) database records are returned in the stream.\n\nA datastore is a database that is guaranteed to match a specific schema.\n\nThis is not a typical HTTP request, it uses `EventSource` to stream the database changes.\n\n#### Request URL\n\nThe request URL is in the following format `/ds/watch/{testDsEncoded}`, where:\n\n- **{testDsEncoded}**: Base64 encoded URL of the datastore schema (ie: `https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json` is encoded to `aHR0cHM6Ly9jb21tb24uc2NoZW1hcy52ZXJpZGEuaW8vc29jaWFsL2NoYXQvZ3JvdXAvdjAuMS4wL3NjaGVtYS5qc29u`).\n    \n\n#### Request Body\n\n- **options** (object) - Specifies the additional query options. Matches the \\[PouchDB options syntax for `changes`\\]([https://pouchdb.com/api.html#changes](https://pouchdb.com/api.html#changes)).\n    \n    - **sort** (array) - Specifies the sorting criteria for the query.\n        \n    - **limit** (number) - Limits the number of results to be returned.\n        \n    - **skip** (number) - Specifies the number of results to skip.\n        \n\nExample:\n\n``` json\n{\n  \"options\": {\n    \"descending\": true\n  }\n}\n\n ```\n\n#### Response\n\n- **Status**: 200\n    \n- **Content-Type**: application/json\n    \n- **type** (string) - Type of event response. One of the following:\n    \n    - `record`: Full database record that has been inserted or modified\n        \n    - `complete`: Change log has been cancelled and is now complete\n        \n    - `error`: Error has occurred\n        \n- **value** (any) - Response value, which depends on the response `type`:\n    \n    - `record`: Object containing the inserted or modified database record\n        \n    - `complete`: Empty\n        \n    - `error`: String containing the error message"
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Database Record: /api/v1/ds/get/{encodedDs}/{recordId}",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1910daf3-b61b-47cb-a7c5-98a0e64fb76a",
+								"exec": [
+									"pm.collectionVariables.set(\"testDsEncoded\", btoa(pm.collectionVariables.get(\"testDsName\")))"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"id": "9f37ee80-62ae-4123-91e4-6507af8be9cb",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/ds/get/{{testDsEncoded}}/{{testRecordId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"ds",
+								"get",
+								"{{testDsEncoded}}",
+								"{{testRecordId}}"
+							]
+						},
+						"description": "### Fetch a User Datastore Record\n\nThis endpoint allows you to make a GET request to fetch a specific datastore record containing user data.\n\nA datastore is a database that is guaranteed to match a specific schema.\n\n#### Request URL\n\nThe request URL is in the following format `/ds/query/{testDsEncoded}/{recordId}`, where:\n\n- **{testDsEncoded}**: Base64 encoded URL of the datastore schema (ie: `https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json` is encoded to `aHR0cHM6Ly9jb21tb24uc2NoZW1hcy52ZXJpZGEuaW8vc29jaWFsL2NoYXQvZ3JvdXAvdjAuMS4wL3NjaGVtYS5qc29u`).\n    \n- **{recordId}**: The database record to fetch (ie: `google-114389302261538986945-xskZ50giJkw`)\n    \n\n### Request Body\n\nThis request does not require a request body.\n\n### Headers\n\n- **permissions**: Specify the permissions for the database that is being access. ie: `read=owner,write=owner`. You can typically leave this blank as the default permissions are configured to work for all private databases. See the `Fetch User Profile` example of a request that specifies custom database permissions.\n    \n- **key**: Private key or seed phrase of the Verida Network account being accessed\n    \n\n### Response Body\n\n- **Status**: 200\n    \n- **Content-Type**: application/json\n    \n- **item** (object) - Contains the result item, if found\n    \n\n### Error Responses\n\nIf the requested database record is not found, the response will have a status code of 404 with an empty body.\n\nIf there is a server error, the response will have a status code of 5xx with a body containing a JSON object with an `error` message attribute."
+					},
+					"response": [
+						{
+							"id": "e16e8a6d-b98f-446f-b797-26f70699ddc5",
+							"name": "Favourite Record",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://localhost:5021/api/v1/ds/get/aHR0cHM6Ly9jb21tb24uc2NoZW1hcy52ZXJpZGEuaW8vZmF2b3VyaXRlL3YwLjEuMC9zY2hlbWEuanNvbg==/google-114389302261538986945-xskZ50giJkw",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"v1",
+										"ds",
+										"get",
+										"aHR0cHM6Ly9jb21tb24uc2NoZW1hcy52ZXJpZGEuaW8vZmF2b3VyaXRlL3YwLjEuMC9zY2hlbWEuanNvbg==",
+										"google-114389302261538986945-xskZ50giJkw"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "3698"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"e72-dMXteQpk69UDMCgIUC+jEHQr60M\""
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 12 Sep 2024 02:08:27 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"item\": {\n        \"_id\": \"google-114389302261538986945-xskZ50giJkw\",\n        \"name\": \"I take on 100 PROS for the oldest trophy in golf!\",\n        \"icon\": \"https://i.ytimg.com/vi/xskZ50giJkw/default.jpg\",\n        \"uri\": \"https://www.youtube.com/watch?v=xskZ50giJkw\",\n        \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\",\n        \"favouriteType\": \"like\",\n        \"contentType\": \"video\",\n        \"sourceId\": \"xskZ50giJkw\",\n        \"sourceData\": {\n            \"publishedAt\": \"2024-08-21T17:35:49Z\",\n            \"channelId\": \"UCFoez1Xjc90CsHvCzqKnLcw\",\n            \"title\": \"I take on 100 PROS for the oldest trophy in golf!\",\n            \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\",\n            \"thumbnails\": {\n                \"default\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/default.jpg\",\n                    \"width\": 120,\n                    \"height\": 90\n                },\n                \"medium\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/mqdefault.jpg\",\n                    \"width\": 320,\n                    \"height\": 180\n                },\n                \"high\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/hqdefault.jpg\",\n                    \"width\": 480,\n                    \"height\": 360\n                },\n                \"standard\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/sddefault.jpg\",\n                    \"width\": 640,\n                    \"height\": 480\n                },\n                \"maxres\": {\n                    \"url\": \"https://i.ytimg.com/vi/xskZ50giJkw/maxresdefault.jpg\",\n                    \"width\": 1280,\n                    \"height\": 720\n                }\n            },\n            \"channelTitle\": \"Peter Finch Golf\",\n            \"tags\": [\n                \"golf\",\n                \"channel\",\n                \"tips\",\n                \"drills\",\n                \"instruction\",\n                \"lessons\",\n                \"easy swing tips\",\n                \"easy swing drills\",\n                \"easy golf swing\",\n                \"golf tips\",\n                \"golf drills\",\n                \"downswing golf drills\",\n                \"backswing golf tips\",\n                \"impact position\",\n                \"effortless golf swing\",\n                \"driver swing tips\",\n                \"learn to strike your irons\",\n                \"chip the\",\n                \"chipping and pitching tips\",\n                \"improve driver strike\"\n            ],\n            \"categoryId\": \"17\",\n            \"liveBroadcastContent\": \"none\",\n            \"localized\": {\n                \"title\": \"I take on 100 PROS for the oldest trophy in golf!\",\n                \"description\": \"👋  Thanks for watching! Make sure to check out…\\n\\nMy Coaching Channel: https://bit.ly/3Q6juSH\\nMy Rough Cut Golf Podcast: http://bit.ly/3qP2AKj\\nMy Instagram: https://bit.ly/3skJT1I\\nMy Facebook: http://bit.ly/3dGdz51\\nMy TikTok: https://bit.ly/3qA6Q2l\\nMy X: https://bit.ly/2ZHZ7Bt\\n\\n🔥  My awesome partners (and our most recent vids)…\\n\\nFootJoy: https://bit.ly/PF_FJ\\nGolfbidder: https://bit.ly/PF_GB\\nShot Scope: https://bit.ly/PF_SS\\nBMW: https://bit.ly/PF_BMW\\nOGIO: https://bit.ly/PF_OGIO\\nStewart Golf: Coming soon!\"\n            },\n            \"defaultAudioLanguage\": \"en-GB\"\n        },\n        \"sourceAccountId\": \"114389302261538986945\",\n        \"sourceApplication\": \"https://youtube.com/\",\n        \"insertedAt\": \"2024-08-21T17:35:49Z\",\n        \"schema\": \"https://common.schemas.verida.io/favourite/v0.1.0/schema.json\",\n        \"_rev\": \"23-d996f8418012b7e2b60250732c54384d\",\n        \"modifiedAt\": \"2024-09-02T01:19:48.637Z\",\n        \"signatures\": {\n            \"did:vda:polamoy:0x5c564fe4850d4353c427f95d706241ce5aed5bbe?context=0x6af864b232b7cecefdda54df552ac6138259bc2d387dededf837984fe47d940d\": {\n                \"secp256k1\": \"0x12f2115ccde518f0e5058c2e9f69c83cfc1757b63f2833de1a24039c93476e4550faf40911d3afd91263a7941a812d3fa866744b91cb16b627964e82e08b5c8c1b\"\n            }\n        }\n    }\n}"
+						},
+						{
+							"id": "67852b92-6a43-4bcc-9ae7-6461b4f27de5",
+							"name": "Record Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{endpointUrl}}/api/{{apiVersion}}/ds/get/{{testDsEncoded}}/abc",
+									"host": [
+										"{{endpointUrl}}"
+									],
+									"path": [
+										"api",
+										"{{apiVersion}}",
+										"ds",
+										"get",
+										"{{testDsEncoded}}",
+										"abc"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "21"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"15-bm7tJgu8FHlq5QU+Y6gDxOGPfRc\""
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "connect.sid=s%3AxlzPovb6m3zIuTF3aOpvWOhM2hfGub7G.ukRBw2rmQ6RoDVpm0KuuKBK2FWBTKq2CLsjNRl73RrQ; Path=/; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 12 Sep 2024 02:16:23 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": \"Not found\"\n}"
+						}
+					]
+				}
+			],
+			"id": "d4a232d5-a85b-4dee-829a-81b8406e3dab"
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Memory usage: /api/v1/admin/memory",
+					"id": "94e78a0a-fa35-47a9-8e09-2e340a141ec0",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/admin/memory",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"admin",
+								"memory"
+							]
+						},
+						"description": "### GET /api/v1/admin/memory\n\nThis endpoint retrieves memory usage information for the server.\n\n#### Request\n\nNo request body is required for this endpoint.\n\n#### Response\n\nThe response will be a JSON object with the following properties:\n\n- `rss` (number): Resident Set Size memory usage.\n    \n- `heapTotal` (number): Total heap memory usage.\n    \n- `heapUsed` (number): Used heap memory usage.\n    \n- `external` (number): Memory usage of Array buffers.\n    \n- `arrayBuffers` (number): Memory usage of Array buffers.\n    \n\nExample response:\n\n``` json\n{\n    \"rss\": 0,\n    \"heapTotal\": 0,\n    \"heapUsed\": 0,\n    \"external\": 0,\n    \"arrayBuffers\": 0\n}\n\n ```"
+					},
+					"response": [
+						{
+							"id": "c1f040cf-a997-4829-8eb6-c7a331cf0bdc",
+							"name": "Memory Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "https://localhost:5021/api/v1/admin/memory",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"memory"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "99"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"63-/lRAXxYKQ4EkMp1wMF7JDXYj+Ds\""
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 12 Sep 2024 02:17:54 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"rss\": 148389888,\n    \"heapTotal\": 74240000,\n    \"heapUsed\": 64745016,\n    \"external\": 3135564,\n    \"arrayBuffers\": 182999\n}"
+						}
+					]
+				}
+			],
+			"id": "40da9f71-84bf-46f1-813c-8b17c09838d3"
+		},
+		{
+			"name": "LLM",
+			"item": [
+				{
+					"name": "Basic Prompt",
+					"id": "725af81c-4700-43cb-9089-b8d45758a3a4",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"How big is the sun?\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/llm/prompt",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"llm",
+								"prompt"
+							]
+						},
+						"description": "Valid **providers**:\n\n- `bedrock`\n    \n- `groq`\n    \n- `custom`\n    \n\nValid **models** for **bedrock**:\n\n- LLAMA3_70B\n    \n- LLAMA3_8B\n    \n- MIXTRAL_8_7B\n    \n\nValid **models** for **groq**:\n\n- LLAMA3_70B\n    \n- LLAMA31_70B\n    \n- LLAMA3_8B\n    \n- MIXTRAL8_7B"
+					},
+					"response": [
+						{
+							"id": "fe23c399-3b71-40d0-bd61-4ae5f5675dd7",
+							"name": "Default Prompt",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"prompt\": \"How big is the sun?\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://localhost:5021/api/rest/v1/llm/prompt",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"rest",
+										"v1",
+										"llm",
+										"prompt"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1992"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"7c8-ujZcTq4+S9q1f3odDZq/UYbV+Uo\""
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "connect.sid=s%3AHVXC3bRWLIYYN7yQB92B_kPRYsZgz6DF.eGjWOd50O9f%2BdWpbkD6pLSdzdKGYBPa9%2FWJ%2BidK4Z7o; Path=/; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 01:18:36 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"result\": {\n        \"id\": \"chatcmpl-4522dd6a\",\n        \"created\": 1726535915,\n        \"model\": \"meta.llama3-70b-instruct-v1:0\",\n        \"system_fingerprint\": \"fp\",\n        \"choices\": [\n            {\n                \"index\": 0,\n                \"finish_reason\": \"stop\",\n                \"logprobs\": null,\n                \"message\": {\n                    \"role\": \"assistant\",\n                    \"content\": \"\\n\\nWhat a great question! The sun is truly massive, and its size is difficult to comprehend using everyday comparisons. Here are some facts to help put its enormity into perspective:\\n\\n1. **Diameter:** The sun's diameter is approximately 1,392,684 kilometers (865,374 miles). To put that in perspective, the Earth's diameter is about 12,742 kilometers (7,918 miles), so the sun is about 109 times bigger in diameter than our planet.\\n2. **Radius:** The sun's radius is about 696,000 kilometers (432,000 miles), which means it would take a spacecraft about 150 days to fly from the center of the sun to its surface, traveling at a speed of 40,000 km/h (25,000 mph).\\n3. **Volume:** The sun's volume is so enormous that it would take about 1.3 million Earths to fill it. Yes, you read that right – 1.3 million!\\n4. **Mass:** The sun's mass is approximately 330,000 times that of Earth, making up about 99.8% of the mass of our solar system. Its mass is so great that it warps the fabric of spacetime around it, keeping the planets in their orbits.\\n5. **Surface area:** The sun's surface area is about 5.1 billion square kilometers (1.97 billion square miles), which is more than 200 times the surface area of Earth.\\n\\nTo help visualize the sun's size, consider this: if the Earth were the size of a basketball, the sun would be about the size of a beach ball. Alternatively, if the Earth were the size of a pea, the sun would be about the size of a grapefruit.\\n\\nThe sun's enormous size and mass are what make it possible for life to exist on Earth. Its energy output, in the form of sunlight, is what powers the Earth's climate and supports the food chain.\"\n                }\n            }\n        ],\n        \"object\": \"chat.completion\",\n        \"usage\": {\n            \"prompt_tokens\": 20,\n            \"completion_tokens\": 403,\n            \"total_tokens\": 423\n        }\n    }\n}"
+						},
+						{
+							"id": "4a8a368e-2ac4-4a01-b8b3-463e221d1c4c",
+							"name": "Specify Provider and Model",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"provider\": \"bedrock\",\n    \"model\": \"MIXTRAL_8_7B\",\n    \"prompt\": \"How big is the sun?\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://localhost:5021/api/rest/v1/llm/prompt",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"rest",
+										"v1",
+										"llm",
+										"prompt"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "746"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"2ea-vTZOS8q144FYr33vaAdTK9y16cc\""
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "connect.sid=s%3AfQCj-WTXCSKUCQxoaS5K3pR4mWn3qTNo.%2Bp9vbBo9MGY9M0ZKH6M2U9DF8uqDHuD0EW19SbyJgMw; Path=/; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 01:21:45 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"result\": {\n        \"id\": \"chatcmpl-dce6da7d\",\n        \"created\": 1726536105,\n        \"model\": \"mistral.mixtral-8x7b-instruct-v0:1\",\n        \"system_fingerprint\": \"fp\",\n        \"choices\": [\n            {\n                \"index\": 0,\n                \"finish_reason\": \"stop\",\n                \"logprobs\": null,\n                \"message\": {\n                    \"role\": \"assistant\",\n                    \"content\": \" The Sun is much larger than the Earth. The Sun has a diameter of about 1.39 million kilometers (865,000 miles), which is about 109 times larger than the diameter of the Earth. The volume of the Sun is about 1.4 x 10^18 times larger than the volume of the Earth. In terms of mass, the Sun is about 330,000 times more massive than the Earth. It is so large that about 1.3 million Earths could fit inside the Sun.\"\n                }\n            }\n        ],\n        \"object\": \"chat.completion\",\n        \"usage\": {\n            \"prompt_tokens\": 15,\n            \"completion_tokens\": 121,\n            \"total_tokens\": 136\n        }\n    }\n}"
+						},
+						{
+							"id": "2f505970-c7b1-42b0-83ef-d3f29cdacebc",
+							"name": "Basic Prompt - Custom Endpoint",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"prompt\": \"How big is the sun?\",\n    \"provider\": \"custom\",\n    \"model\": \"meta.llama3-70b-instruct-v1:0\",\n    \"customEndpoint\": \"https://...\",\n    \"customKey\": \"...\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": ""
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1930"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"78a-ctUV76wVI9QmV/GXRXAsYa42Hm8\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 01:26:38 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"result\": {\n        \"id\": \"chatcmpl-73f20c5b\",\n        \"created\": 1726536398,\n        \"model\": \"meta.llama3-70b-instruct-v1:0\",\n        \"system_fingerprint\": \"fp\",\n        \"choices\": [\n            {\n                \"index\": 0,\n                \"finish_reason\": \"stop\",\n                \"logprobs\": null,\n                \"message\": {\n                    \"role\": \"assistant\",\n                    \"content\": \"\\n\\nWhat a great question! The sun is truly massive, and its size is difficult to comprehend using everyday measurements. Here are some mind-boggling facts to help you understand just how big the sun is:\\n\\n1. **Diameter:** The sun's diameter is approximately 1,392,684 kilometers (865,374 miles). To put that in perspective, the Earth's diameter is about 12,742 kilometers (7,918 miles), so the sun is about 109 times larger in diameter than our planet.\\n2. **Radius:** The sun's radius is about 696,000 kilometers (432,000 miles), which is about 10 times larger than the radius of Jupiter, the largest planet in our solar system.\\n3. **Circumference:** If you were to drive your car around the sun at a speed of 100 km/h (62 mph), it would take you about 176 years to complete one lap.\\n4. **Volume:** The sun's volume is about 1.42 x 10^18 km^3 (3.92 x 10^17 mi^3), which is so massive that it makes up about 99.8% of the total mass of our solar system!\\n5. **Mass:** The sun's mass is approximately 1.989 x 10^30 kilograms (4.38 x 10^30 pounds), which is roughly 330,000 times the mass of Earth.\\n6. **Surface area:** The sun's surface area is about 5.10 x 10^8 km^2 (1.97 x 10^8 mi^2), which is more than 100 times larger than the surface area of Earth.\\n\\nTo help you visualize the sun's size, consider this: if the Earth were the size of a basketball, the sun would be about the size of a beach ball!\\n\\nRemember, these numbers are almost impossible to fully grasp, as they are so enormous. But hopefully, they give you an idea of the sun's incredible scale and importance in our solar system.\"\n                }\n            }\n        ],\n        \"object\": \"chat.completion\",\n        \"usage\": {\n            \"prompt_tokens\": 20,\n            \"completion_tokens\": 421,\n            \"total_tokens\": 441\n        }\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Personal Prompt",
+					"id": "efec3b80-7c1d-4067-8906-1fb77199197d",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"prompt\": \"How much was my last electricity bill?\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/llm/personal",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"llm",
+								"personal"
+							]
+						},
+						"description": "Valid **providers**:\n\n- `bedrock`\n    \n- `groq`\n    \n- `custom`\n    \n\nValid **models** for **bedrock**:\n\n- LLAMA3_70B\n    \n- LLAMA3_8B\n    \n- MIXTRAL_8_7B\n    \n\nValid **models** for **groq**:\n\n- LLAMA3_70B\n    \n- LLAMA31_70B\n    \n- LLAMA3_8B\n    \n- MIXTRAL8_7B"
+					},
+					"response": [
+						{
+							"id": "dbc04867-4824-4f3a-92c4-550fd747a86b",
+							"name": "Personal Prompt",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"prompt\": \"How much was my last electricity bill?\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://localhost:5021/api/rest/v1/llm/personal",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"rest",
+										"v1",
+										"llm",
+										"personal"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "401"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"191-SudcDCJjRx5EPZKxuYFG1BMXHTQ\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 01:35:46 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"result\": \"\\n\\nBased on the provided messages, your last electricity bill was $409.47, which is stated in the email from Amber Electric dated August 19, 2024.\",\n    \"duration\": 26820,\n    \"process\": {\n        \"search_type\": \"keywords\",\n        \"keywords\": [\n            \"electricity\",\n            \"bill\",\n            \"payment\",\n            \"cost\",\n            \"utility\",\n            \"invoice\"\n        ],\n        \"timeframe\": \"month\",\n        \"databases\": [\n            \"emails\",\n            \"files\"\n        ],\n        \"sort\": \"recent\",\n        \"output_type\": \"summary\",\n        \"profile_information\": []\n    }\n}"
+						},
+						{
+							"id": "08cc59c0-8ca2-4d1f-8c61-696b650a6b7d",
+							"name": "Personal Prompt- Custom Endpoint",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"prompt\": \"How much was my last electricity bill?\",\n    \"provider\": \"custom\",\n    \"model\": \"meta.llama3-70b-instruct-v1:0\",\n    \"customEndpoint\": \"https://...\",\n    \"customKey\": \"...\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "https://localhost:5021/api/rest/v1/llm/personal",
+									"protocol": "https",
+									"host": [
+										"localhost"
+									],
+									"port": "5021",
+									"path": [
+										"api",
+										"rest",
+										"v1",
+										"llm",
+										"personal"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "401"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"191-SudcDCJjRx5EPZKxuYFG1BMXHTQ\""
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 01:35:46 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"result\": \"\\n\\nBased on the provided messages, your last electricity bill was $409.47, which is stated in the email from Amber Electric dated August 19, 2024.\",\n    \"duration\": 26820,\n    \"process\": {\n        \"search_type\": \"keywords\",\n        \"keywords\": [\n            \"electricity\",\n            \"bill\",\n            \"payment\",\n            \"cost\",\n            \"utility\",\n            \"invoice\"\n        ],\n        \"timeframe\": \"month\",\n        \"databases\": [\n            \"emails\",\n            \"files\"\n        ],\n        \"sort\": \"recent\",\n        \"output_type\": \"summary\",\n        \"profile_information\": []\n    }\n}"
+						}
+					]
+				}
+			],
+			"id": "5d341c20-3567-4256-82ff-5aba16f7ffdb"
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "value",
+				"value": "{{key}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "key",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "699df110-79a4-46ea-96dd-ba3601e54bca",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "5947eb7d-b472-4960-a31d-0208f6b52561",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "d452d5f2-77e5-4fd6-955b-8dfe25c0655c",
+			"key": "key",
+			"value": "0x..",
+			"type": "string"
+		},
+		{
+			"id": "86f12339-60cf-4b94-9f53-827ed1effc97",
+			"key": "apiVersion",
+			"value": "v1",
+			"type": "string"
+		},
+		{
+			"id": "a4a2fd57-42ea-4933-9c0a-d28c08ec24aa",
+			"key": "testDb",
+			"value": "favourite",
+			"type": "string"
+		},
+		{
+			"id": "8aba3502-24e9-4539-a2df-595298c6f3c6",
+			"key": "testRecordId",
+			"value": "google-abc-123",
+			"type": "string"
+		},
+		{
+			"id": "1346effb-abcb-4ba9-8149-a3d8a4c8699e",
+			"key": "testDsName",
+			"value": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
+			"type": "string"
+		},
+		{
+			"id": "e1a856d7-7900-4b56-b737-71558bac3984",
+			"key": "testDsEncoded",
+			"value": "aHR0cHM6Ly9jb21tb24uc2NoZW1hcy52ZXJpZGEuaW8vZmF2b3VyaXRlL3YwLjEuMC9zY2hlbWEuanNvbg==",
+			"type": "string"
+		},
+		{
+			"id": "df0a018f-bbf6-4c1d-82c6-078f51ff3b15",
+			"key": "testWatchDsName",
+			"value": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
+			"type": "string"
+		}
+	]
+}

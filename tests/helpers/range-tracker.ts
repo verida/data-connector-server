@@ -1,5 +1,5 @@
 const assert = require("assert");
-import { CompletedRangeTracker } from "../../src/helpers/completedRangeTracker";
+import { ItemsRangeTracker } from "../../src/helpers/itemsRangeTracker"
 
 const batchLimit = 6
 const batchSize = 10
@@ -41,7 +41,7 @@ function processItems(items: number[], limit: number, breakId?: string, startId?
 describe(`Range tracker tests`, function () {
 
     it(`Can handle starting empty`, () => {
-        const tracker = new CompletedRangeTracker()
+        const tracker = new ItemsRangeTracker()
         const newItems = tracker.nextRange()
         assert.deepEqual(newItems, {}, "New items range is empty")
 
@@ -50,7 +50,7 @@ describe(`Range tracker tests`, function () {
     })
 
     it(`Can handle completing all`, () => {
-        const tracker = new CompletedRangeTracker()
+        const tracker = new ItemsRangeTracker()
         const batch1 = buildBatch(40)
         let messages: number[] = []
 
@@ -70,13 +70,13 @@ describe(`Range tracker tests`, function () {
         }, batch1Break)
 
         const trackerExport = tracker.export()
-        assert.equal(trackerExport, "40:49", "Tracker has correct exported value after processing all")
+        assert.equal(trackerExport, JSON.stringify([["40", "49"]]), "Tracker has correct exported value after processing all")
     })
 
     it(`Can handle an unchanged list, in multiple batches`, () => {
         const batch1 = buildBatch(40)
 
-        const tracker = new CompletedRangeTracker()
+        const tracker = new ItemsRangeTracker()
         let messages: number[] = []
 
         // message list is 40-49
@@ -109,14 +109,14 @@ describe(`Range tracker tests`, function () {
             endId: processedBatch2[processedBatch2.length-1].toString(),
         }, batch2Break)
         const trackerExport = tracker.export()
-        assert.equal(trackerExport, "40:49", "Tracker has correct exported value after processing two batches")
+        assert.equal(trackerExport, JSON.stringify([["40", "49"]]), "Tracker has correct exported value after processing two batches")
     })
 
-    it.only(`Can handle a changing list, in multiple batches`, () => {
+    it(`Can handle a changing list, in multiple batches`, () => {
         const batch1 = buildBatch(40)
         const batch2 = buildBatch(30)
 
-        let tracker = new CompletedRangeTracker()
+        let tracker = new ItemsRangeTracker()
         let messages: number[] = []
         let trackerExport
 
@@ -136,14 +136,14 @@ describe(`Range tracker tests`, function () {
         }, batch1Break)
 
         trackerExport = tracker.export()
-        assert.equal(trackerExport, "40:45", "Tracker has correct exported value after processing one batch")
+        assert.equal(trackerExport, JSON.stringify([["40","45"]]), "Tracker has correct exported value after processing one batch")
 
         // Reset messages, add more
         messages = []
         messages = messages.concat(batch2).concat(batch1)
         
         // Reset tracker to start processing new items
-        tracker = new CompletedRangeTracker(tracker.export())
+        tracker = new ItemsRangeTracker(tracker.export())
         
         // Process new items (includes new items; 30-39)
         const range2 = tracker.nextRange()
@@ -157,14 +157,14 @@ describe(`Range tracker tests`, function () {
         }, batch2Break)
 
         trackerExport = tracker.export()
-        assert.equal(trackerExport, "30:35,40:45", "Tracker has correct exported value after processing two batches")
+        assert.equal(trackerExport, JSON.stringify([["30","35"],["40","45"]]), "Tracker has correct exported value after processing two batches")
 
         // Reset messages
         messages = []
         messages = messages.concat(batch2).concat(batch1)
 
         // Reset tracker to start processing new items
-        tracker = new CompletedRangeTracker(tracker.export())
+        tracker = new ItemsRangeTracker(tracker.export())
 
         // Process next batch, no new items so should be empty
         const range3 = tracker.nextRange()
@@ -189,7 +189,7 @@ describe(`Range tracker tests`, function () {
         }, batch4Break)
 
         trackerExport = tracker.export()
-        assert.equal(trackerExport, "30:45", "Tracker has correct exported value after processing four batches")
+        assert.equal(trackerExport, JSON.stringify([["30", "45"]]), "Tracker has correct exported value after processing four batches")
 
         // range 5 was deleted
 
@@ -204,14 +204,14 @@ describe(`Range tracker tests`, function () {
         }, batch6Break)
 
         trackerExport = tracker.export()
-        assert.equal(trackerExport, "30:47", "Tracker has correct exported value after processing six batches")
+        assert.equal(trackerExport, JSON.stringify([["30","47"]]), "Tracker has correct exported value after processing six batches")
 
         // Reset messages
         messages = []
         messages = messages.concat(batch2).concat(batch1)
 
         // Reset tracker to start processing new items
-        tracker = new CompletedRangeTracker(tracker.export())
+        tracker = new ItemsRangeTracker(tracker.export())
 
         // Process next batch, no new items so should be empty
         const range7 = tracker.nextRange()
@@ -237,7 +237,7 @@ describe(`Range tracker tests`, function () {
         }, batch8Break)
 
         trackerExport = tracker.export()
-        assert.equal(trackerExport, "30:49", "Tracker has correct exported value after processing eight batches")
+        assert.equal(trackerExport, JSON.stringify([["30","49"]]), "Tracker has correct exported value after processing eight batches")
 
         // Insert a single item at the start and several at the end, they are processed correctly
 
@@ -246,7 +246,7 @@ describe(`Range tracker tests`, function () {
         messages = messages.concat([29]).concat(batch2).concat(batch1).concat([50,51,52,53,54,55,56,57,58,59])
         
         // Reset tracker to start processing new items
-        tracker = new CompletedRangeTracker(tracker.export())
+        tracker = new ItemsRangeTracker(tracker.export())
 
         // Process next batch of new items (1)
         const range9 = tracker.nextRange()
@@ -272,7 +272,7 @@ describe(`Range tracker tests`, function () {
         }, batch10Break)
 
         trackerExport = tracker.export()
-        assert.equal(trackerExport, "29:55", "Tracker has correct exported value after processing ten batches")
+        assert.equal(trackerExport, JSON.stringify([["29","55"]]), "Tracker has correct exported value after processing ten batches")
 
     })
 

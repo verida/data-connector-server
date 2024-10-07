@@ -1,12 +1,5 @@
 $(document).ready(function() {
-    const savedVeridaKey = localStorage.getItem('veridaKey');
-    $('#verida-key').val(savedVeridaKey);
-
-    function getVeridaKey() {
-        const veridaKey = $('#verida-key').val().trim();
-        localStorage.setItem('veridaKey', veridaKey);
-        return veridaKey;
-    }
+    const veridaKey = localStorage.getItem('veridaKey');
 
     function addMessage(content, type) {
         const messageClass = type === 'user' ? 'user' : 'bot';
@@ -32,7 +25,6 @@ $(document).ready(function() {
     }
 
     function sendMessage(prompt) {
-        const veridaKey = getVeridaKey();
         if (!veridaKey) {
             addMessage('Please enter your Verida key.', 'bot');
             return;
@@ -77,7 +69,7 @@ $(document).ready(function() {
     });
 
     // Hotload data
-    const eventSource = new EventSource(`/api/rest/v1/llm/hotload?key=${savedVeridaKey}`);
+    const eventSource = new EventSource(`/api/rest/v1/llm/hotload?key=${veridaKey}`);
     
     let loadComplete = false
     eventSource.onmessage = function(event) {

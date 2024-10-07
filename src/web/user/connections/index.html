@@ -52,29 +52,20 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/user/ai">Private AI</a>
                 </li>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="/developer/data">Browse Data</a>
+                </li>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="/developer/api">Explore APIs</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/user/security">Security</a>
-                </li>
-            </ul>
-            <!-- Extra nav item aligned to the right -->
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/developer">Developer Sandbox &rarr;</a>
                 </li>
             </ul>
         </div>
     </nav>
     <div class="container mt-5">
         <h1 class="text-center">Data Connections</h1>
-
-        <!-- Verida Private Key Input, Load, Clear, and Generate Identity Button -->
-        <div class="form-group">
-            <label for="veridaKey">Verida Private Key / Seed Phrase:</label>
-            <input type="password" class="form-control" id="veridaKey" placeholder="Enter your Verida Private Key">
-            <button id="loadBtn" class="btn btn-primary mt-2" disabled="true">Load</button>
-            <button id="clearBtn" class="btn btn-secondary mt-2">Clear</button>
-            <button id="generateIdentityBtn" class="btn btn-info mt-2">Generate Identity</button>
-        </div>
 
         <!-- Add Connection Dropdown -->
         <div class="dropdown mt-2">
@@ -84,6 +75,7 @@
             <div class="dropdown-menu" aria-labelledby="addConnectionDropdown" id="providerListDropdown">
                 <!-- Provider list filled by JavaScript -->
             </div>
+            <button id="loadBtn" class="btn btn-primary" disabled="true">Reload Connections</button>
         </div>
 
         <!-- Loading Indicator -->
@@ -147,5 +139,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="connections.js"></script>
+    <script src="../../account.js"></script>
 </body>
 </html>
