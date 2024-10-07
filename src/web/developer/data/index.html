@@ -16,20 +16,22 @@
         crossorigin="anonymous"
     ></script>
     <script>
-        Sentry?.onLoad(function() {
-            Sentry?.init({
-                dsn: "https://cd923d4434a725db36ea55d994624686@o4503997119725568.ingest.us.sentry.io/4508061430644736",
-                integrations: [
-                    Sentry?.feedbackIntegration({
-                        colorScheme: "light",
-                        triggerLabel: "Share feedback",
-                        formTitle: "Share Feedback",
-                        submitButtonLabel: "Send Feedback",
-                        messagePlaceholder: "Please describe your feedback...",
-                    }),
-                ],
+        if (typeof Sentry !== 'undefined') {
+            Sentry.onLoad(function() {
+                Sentry.init({
+                    dsn: "https://cd923d4434a725db36ea55d994624686@o4503997119725568.ingest.us.sentry.io/4508061430644736",
+                    integrations: [
+                        Sentry.feedbackIntegration({
+                            colorScheme: "light",
+                            triggerLabel: "Share feedback",
+                            formTitle: "Share Feedback",
+                            submitButtonLabel: "Send Feedback",
+                            messagePlaceholder: "Please describe your feedback...",
+                        }),
+                    ],
+                });
             });
-        });
+        }
     </script>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
