@@ -18,7 +18,7 @@ $(document).ready(function() {
     };
 
     // Load Verida Key and Schema from local storage
-    $('#veridaKey').val(localStorage.getItem('veridaKey') || '');
+    const veridaKey = localStorage.getItem('veridaKey')
 
     // Function to get query parameters
     function getQueryParams() {
@@ -56,7 +56,6 @@ $(document).ready(function() {
     }
 
     function fetchData() {
-        const veridaKey = $('#veridaKey').val();
         const schema = $('#schema').val();
         const limit = parseInt($('#limit').val());
         const offset = parseInt($('#offset').val());
@@ -154,11 +153,6 @@ $(document).ready(function() {
             }
         });
     }
-
-    // Save Verida Key and Schema to local storage
-    $('#veridaKey').on('input', function() {
-        localStorage.setItem('veridaKey', $(this).val());
-    });
 
     $('#schema').on('input', function() {
         localStorage.setItem('schema', $(this).val());
@@ -258,7 +252,6 @@ $(document).ready(function() {
     $('#tableBody').on('click', '.delete-row', function() {
         const id = $(this).data('id');
         const schemaUrl = $('#schema').val();
-        const veridaKey = $('#veridaKey').val();
 
         if (confirm('Are you sure you want to delete this row?')) {
             $.ajax({
@@ -287,7 +280,6 @@ $(document).ready(function() {
     // Handle Destroy confirmation
     $('#confirmDestroy').click(function() {
         const schemaUrl = $('#schema').val();
-        const veridaKey = $('#veridaKey').val();
 
         $.ajax({
             url: `${apiUrl}/ds/${btoa(schemaUrl)}?destroy=true`,

@@ -49,14 +49,7 @@ function loadState() {
 
 $(document).ready(function() {
     // Load the private key from local storage
-    const savedVeridaKey = localStorage.getItem('veridaKey');
-    $('#privateKey').val(savedVeridaKey);
-    
-    $('#privateKey').on('change', function() {
-        const veridaKey = $('#privateKey').val().trim();
-        // Save the private key in local storage
-        localStorage.setItem('veridaKey', veridaKey);
-    })
+    const veridaKey = localStorage.getItem('veridaKey');
 
     // Populate endpoint dropdown
     for (let endpoint in apiEndpoints) {
