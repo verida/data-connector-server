@@ -17,15 +17,31 @@ export class ItemsRangeTracker {
 
     constructor(completedRangesString?: string) {
         if (completedRangesString) {
-          const ranges = completedRangesString.split(',')
-          for (const range of ranges) {
-            const [ startId, endId ] = range.split(':')
-            this.completedRanges.push({
-              startId,
-              endId
-            })
-          }
+            this.import(completedRangesString)
         }
+    }
+
+    public import(rangeString: string) {
+        for (const entry of JSON.parse(rangeString)) {
+            this.completedRanges.push({
+                startId: entry[0] ? entry[0] : undefined,
+                endId: entry[1] ? entry[1] : undefined,
+            })
+        }
+    }
+
+    /**
+     * Convert the completed ranges array into a string for saving into the database
+     * 
+     * @returns 
+     */
+    public export(): string {
+        const entries = []
+        for (const range of this.completedRanges) {
+            entries.push([range.startId, range.endId])
+        }
+
+        return JSON.stringify(entries)
     }
 
     /**
@@ -128,20 +144,6 @@ export class ItemsRangeTracker {
         }
 
         return {}
-    }
-
-    /**
-     * Convert the completed ranges array into a string for saving into the database
-     * 
-     * @returns 
-     */
-    public export(): string {
-        const groups: string[] = []
-        for (const item of this.completedRanges) {
-            groups.push([item.startId,item.endId].join(':'))
-        }
-
-        return groups.join(',')
     }
 
 }
