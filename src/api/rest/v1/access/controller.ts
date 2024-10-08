@@ -15,11 +15,11 @@ export class ControllerV1 {
     try {
       const did = extractDidFromRequestParams(req)
 
-      const access = await this.service.getAccess(did)
+      const accessRecord = await this.service.getAccessRecord(did)
 
       return res.status(200).send({
         status: "success",
-        access,
+        access: accessRecord?.access ? "allowed" : "denied",
       })
     } catch (error: unknown) {
       if (error instanceof BadRequestError) {

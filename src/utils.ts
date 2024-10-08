@@ -76,9 +76,9 @@ export class Utils {
 
         const accessService = new AccessService()
 
-        const access = await accessService.getAccess(did)
+        const accessRecord = await accessService.getAccessRecord(did)
 
-        if (access === "denied") {
+        if (!accessRecord?.access) {
             throw new Error("Access denied")
         }
 

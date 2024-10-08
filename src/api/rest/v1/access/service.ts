@@ -1,14 +1,15 @@
 import { Client as NotionClient } from "@notionhq/client";
-import { RestrictedAccessStatus } from "./types";
+import { AccessRecord } from "./types";
 
 import serverconfig from '../../../../config'
+import { getAccessRecord } from "./utils";
 
 export class Service {
   constructor() {
     // Move the Notion client as a class instance property
   }
 
-  public async getAccess(did: string): Promise<RestrictedAccessStatus> {
+  public async getAccessRecord(did: string): Promise<AccessRecord | undefined> {
     try {
       if (!serverconfig.notion.apiKey) {
         console.warn("Notion API key is not set")
@@ -22,29 +23,13 @@ export class Service {
         auth: serverconfig.notion.apiKey,
       });
 
-      if (!serverconfig.notion.restrictedAccessDatabaseId) {
-        console.warn("Notion restricted access database ID is not set")
-        // TODO: Use dedicated Error for missing config property
-        throw new Error("Notion restricted access database ID is not set")
-      }
+      const record = await getAccessRecord(notionClient, did)
 
-      const response = await notionClient.databases.query({
-        database_id: serverconfig.notion.restrictedAccessDatabaseId,
-        filter: {
-          property: "DID",
-          rich_text: {
-            equals: did,
-          },
-        },
-      })
+      // TODO: If no record create one with access set to false
 
-      const isAllowed = response.results.length > 0
+      console.debug("Access record", record)
 
-      // TODO: Check for an access property in the Notion record so we can save
-      // some DIDs on waitlist in this DB and grant them access simply with a
-      // property update
-
-      return isAllowed ? "allowed" : "denied"
+      return record
     } catch (error) {
       // TODO: Update tsconfig target to allow passing a cause to the Error
       throw new Error("Something went wrong checking user access")

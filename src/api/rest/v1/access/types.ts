@@ -17,3 +17,10 @@ export type ErrorResponse = {
 export type GetAccessV1ErrorResponse = ErrorResponse & {
   access: RestrictedAccessStatus;
 };
+
+export type AccessRecord = {
+  id: string;
+  did: string;
+  admin: boolean;
+  access: boolean;
+}
