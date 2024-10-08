@@ -17,7 +17,7 @@
                     </div>
                     <div class="card-body">
                         <div class="alert alert-danger d-none" id="errorBox">
-                            Invalid private key or seed phrase
+                            Access denied: Invalid private key or seed phrase or account not authorized
                         </div>
                         <div class="alert alert-info d-none" id="infoBox">
                             Login successful! Redirecting...
@@ -60,7 +60,7 @@
             // Handle form submission
             $('#loginForm').on('submit', function (e) {
                 e.preventDefault();
-                
+
                 const privateKey = $('#privateKey').val();
                 $('#errorBox').addClass('d-none');  // Hide any previous error message
                 $('#infoBox').addClass('d-none');   // Hide the info message
@@ -75,7 +75,7 @@
                         if (response.success) {
                             localStorage.setItem('veridaKey', privateKey);  // Save the key in local storage
                             $('#infoBox').removeClass('d-none');  // Show success message
-                            
+
                             setTimeout(function () {
                                 window.location.href = '/user';  // Redirect after 3 seconds
                             }, 3000);
