@@ -196,12 +196,12 @@ export default class CalendarEventHandler extends GoogleHandler {
       const insertedAt = new Date().toISOString();
 
       const creator: Person = {
-        email: event.creator.email ?? "info@example.com",
+        email: event.creator.email,
         displayName: event.creator.displayName
       }
 
       const organizer: Person = {
-        email: event.organizer.email ?? "info@example.com",
+        email: event.organizer.email,
         displayName: event.organizer.displayName
       }
 
