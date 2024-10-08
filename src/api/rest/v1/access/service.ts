@@ -2,7 +2,7 @@ import { Client as NotionClient } from "@notionhq/client";
 import { AccessRecord } from "./types";
 
 import serverconfig from '../../../../config'
-import { getAccessRecord } from "./utils";
+import { createAccessRecord, getAccessRecord } from "./utils";
 
 export class Service {
   constructor() {
@@ -25,7 +25,9 @@ export class Service {
 
       const record = await getAccessRecord(notionClient, did)
 
-      // TODO: If no record create one with access set to false
+      if (!record) {
+        await createAccessRecord(notionClient, did)
+      }
 
       console.debug("Access record", record)
 

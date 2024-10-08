@@ -28,6 +28,42 @@ export function extractDidFromRequestParams(req: Request): string {
   throw new BadRequestError("Invalid DID parameter in request");
 }
 
+export async function createAccessRecord(notionClient: NotionClient, did: string): Promise<void> {
+  const record = await getAccessRecord(notionClient, did)
+
+  if (record) {
+    return
+  }
+
+  try {
+    await notionClient.pages.create({
+      parent: {
+        type: "database_id",
+        database_id: serverconfig.notion.restrictedAccessDatabaseId,
+      },
+      properties: {
+        DID: {
+          type: "title",
+          title: [{
+            type: "text",
+            text: { content: did }
+          }],
+        },
+        Admin: {
+          type: "checkbox",
+          checkbox: false,
+        },
+        Access: {
+          type: "checkbox",
+          checkbox: false,
+        },
+      },
+    })
+  } catch (error: unknown) {
+    throw new NotionError("Error while creating the access record")
+  }
+}
+
 
 export async function getAccessRecord(notionClient: NotionClient, did: string): Promise<AccessRecord | undefined> {
   if (!serverconfig.notion.restrictedAccessDatabaseId) {
@@ -74,6 +110,6 @@ export function transformNotionRecordToAccessRecord(record: DatabaseObjectRespon
     id: record.id,
     did: getValueFromNotionTitleProperty(properties["DID"]),
     admin: getValueFromNotionCheckboxProperty(properties["Admin"]),
-    access: true,
+    access: getValueFromNotionCheckboxProperty(properties["Access"]),
   }
 }
