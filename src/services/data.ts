@@ -194,7 +194,7 @@ export class DataService extends EventEmitter {
                     if (!row) {
                         return
                     }
-                    console.log('adding record to index', record.id, record.schema, record.name)
+                    // console.log('adding record to index', record.id, record.schema, record.name)
 
                     try {
                         miniSearch.add(row)

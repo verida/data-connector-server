@@ -1,12 +1,36 @@
-$(document).ready(function() {
-    const savedVeridaKey = localStorage.getItem('veridaKey');
-    $('#verida-key').val(savedVeridaKey);
-
-    function getVeridaKey() {
-        const veridaKey = $('#verida-key').val().trim();
-        localStorage.setItem('veridaKey', veridaKey);
-        return veridaKey;
+// Model and platform data
+const ProviderModels = {
+    'bedrock': {
+        "Llama3 70B": "LLAMA3_70B",
+        "Llama3 8B": "LLAMA3_8B",
+        // "Mixtral8 7B": "MIXTRAL_8_7B"
+    },
+    'groq': {
+        "Llama3.1 70B": "LLAMA31_70B",
+        "Llama3 70B": "LLAMA3_70B",
+        "Llama3 8B": "LLAMA3_8B",
+        // "Mixtral8 7B": "MIXTRAL_8_7B"
     }
+};
+
+$(document).ready(function() {
+    const veridaKey = localStorage.getItem('veridaKey');
+    const customLLMString = localStorage.getItem('customLLM')
+    if (customLLMString) {
+        const customLLM = JSON.parse(customLLMString)
+        $('#byo-endpoint').val(customLLM.endpoint);
+        $('#byo-auth-key').val(customLLM.authKey);
+        $('#byo-model').val(customLLM.model);
+    }
+
+    const llmPlatform = localStorage.getItem('llmPlatform')
+    if (llmPlatform) {
+        $('#platform-select').val(llmPlatform)
+    } else {
+        $('#platform-select').val('bedrock')
+    }
+
+    const llmModel = localStorage.getItem('llmModel')
 
     function addMessage(content, type) {
         const messageClass = type === 'user' ? 'user' : 'bot';
@@ -32,7 +56,6 @@ $(document).ready(function() {
     }
 
     function sendMessage(prompt) {
-        const veridaKey = getVeridaKey();
         if (!veridaKey) {
             addMessage('Please enter your Verida key.', 'bot');
             return;
@@ -44,7 +67,26 @@ $(document).ready(function() {
         const urlType = $('#privateData-input').prop('checked') ? "personal" : 
         "prompt";
 
-        const body = { prompt: prompt, key: veridaKey };
+        const provider = $('#platform-select').val()
+        let model = $('#model-select').val()
+
+        const body = {
+            prompt: prompt,
+            key: veridaKey,
+            provider,
+            model
+        };
+
+        if (provider == 'byo-llm') {
+            const endpoint = $('#byo-endpoint').val();
+            const key = $('#byo-auth-key').val();
+
+            body.provider = 'custom'
+            body.customEndpoint = endpoint
+            body.customKey = key
+
+            body.model = $('#byo-model').val();
+        }
 
         $.ajax({
             url: `/api/rest/v1/llm/${urlType}?key=${veridaKey}`,
@@ -56,8 +98,9 @@ $(document).ready(function() {
                 addMessage(urlType == "personal" ? response.result : response.result.choices[0].message.content, 'bot');
             },
             error: function(xhr) {
+                console.log(xhr)
                 removeTypingIndicator();
-                addMessage('An error occurred. Please try again.', 'bot');
+                addMessage(`An error occurred. Please try again.\n\n\`${xhr.responseText}\``, 'bot');
             }
         });
     }
@@ -77,7 +120,7 @@ $(document).ready(function() {
     });
 
     // Hotload data
-    const eventSource = new EventSource(`/api/rest/v1/llm/hotload?key=${savedVeridaKey}`);
+    const eventSource = new EventSource(`/api/rest/v1/llm/hotload?key=${veridaKey}`);
     
     let loadComplete = false
     eventSource.onmessage = function(event) {
@@ -111,4 +154,65 @@ $(document).ready(function() {
         
         $('#loading-overlay p').text('An unknown error occurred while hotloading data.');
     };
+
+    // Function to populate models based on platform
+    function populateModels(platform, selectedModel, dontShowModal) {
+        const modelSelect = $('#model-select');
+        modelSelect.empty(); // Clear current options
+
+        if (platform in ProviderModels) {
+            $('.model-form-input').show();
+            const models = ProviderModels[platform];
+            $.each(models, function (modelName, modelValue) {
+                modelSelect.append(new Option(modelName.replace(/_/g, ' '), modelValue));
+            });
+        } else if (platform === 'byo-llm') {
+            // Trigger the modal for BYO LLM
+            if (!dontShowModal) {
+                $('#byoLlmModal').modal('show');
+            }
+
+            $('.model-form-input').hide();
+        }
+
+        if (selectedModel) {
+            modelSelect.val(selectedModel)
+        }
+    }
+
+    // Event listener for platform selection
+    $('#platform-select').on('change', function() {
+        const selectedPlatform = $(this).val();
+        localStorage.setItem('llmPlatform', selectedPlatform)
+        populateModels(selectedPlatform);
+        const selectedModel = $('#model-select').val();
+        localStorage.setItem('llmModel', selectedModel)
+    });
+
+    // Event listener for model selection
+    $('#model-select').on('change', function() {
+        const selectedModel = $(this).val();
+        localStorage.setItem('llmModel', selectedModel)
+    });
+
+    // Handle "Save" action from the BYO LLM modal
+    $('#save-byo-llm').on('click', function() {
+        const endpoint = $('#byo-endpoint').val();
+        const authKey = $('#byo-auth-key').val();
+        const model = $('#byo-model').val();
+
+        const customLLLM = {
+            endpoint,
+            authKey,
+            model
+        }
+
+        localStorage.setItem('customLLM', JSON.stringify(customLLLM))
+
+        // Hide the modal after saving
+        $('#byoLlmModal').modal('hide');
+    });
+
+    // Initialize with the default platform from local storage or 'bedrock'
+    populateModels(llmPlatform || 'bedrock', llmModel, true);
 });

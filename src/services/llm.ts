@@ -23,6 +23,8 @@ export const ProviderModels = {
   [LLMProviders.CUSTOM]: {}
 }
 
+export class LLMError extends Error {}
+
 const BEDROCK_KEY = CONFIG.verida.llms.bedrockKey
 const BEDROCK_ENDPOINT = CONFIG.verida.llms.bedrockEndpoint
 
@@ -145,17 +147,25 @@ export class OpenAILLM implements LLM {
       })
     }
 
-    const response = await Axios.post(this.config.endpoint, {
-      format: jsonFormat ? "json" : undefined,
-      messages,
-      model,
-      temperature: 1,
-      top_p: 1
-    }, {
-      headers
-    });
+    try {
+      const response = await Axios.post(this.config.endpoint, {
+        format: jsonFormat ? "json" : undefined,
+        messages,
+        model,
+        temperature: 1,
+        top_p: 1
+      }, {
+        headers
+      });
 
-    return response.data
+      return response.data
+    } catch (err: any) {
+      if (err.response?.data?.detail) {
+        throw new LLMError(err.response.data.detail)
+      }
+
+      throw err
+    }
   }
 }
 
