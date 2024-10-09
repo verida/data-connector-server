@@ -122,7 +122,7 @@ export default class CalendarEventHandler extends GoogleHandler {
           sourceAccountId: this.provider.getAccountId(),
           sourceApplication: this.getProviderApplicationUrl(),
           sourceId: calendarId,
-          timezone: timeZone ?? "Unkown",
+          timezone: timeZone,
           description,
           location,
           insertedAt,
@@ -339,6 +339,7 @@ export default class CalendarEventHandler extends GoogleHandler {
 
     // Initialize range from tracker
     let currentRange = rangeTracker.nextRange();
+
     let items: SchemaEvent[] = [];
 
     while (true) {
