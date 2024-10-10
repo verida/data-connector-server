@@ -1,5 +1,4 @@
 import { google, calendar_v3 } from "googleapis";
-import { GaxiosResponse } from "gaxios";
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
 import {
@@ -10,14 +9,14 @@ import {
   ConnectionOptionType,
   SyncHandlerPosition,
   SyncProviderLogEvent,
-  SyncProviderLogLevel
+  SyncProviderLogLevel,
+  SyncItemsBreak
 } from "../../interfaces";
 import {
   SchemaCalendar,
   SchemaEvent,
 } from "../../schemas";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
-import { ItemsRange } from "../../helpers/interfaces";
 import { CalendarHelpers } from "./helpers";
 import { CalendarAttachment, DateTimeInfo, GoogleCalendarHandlerConfig, Person } from "./interfaces";
 
@@ -26,6 +25,10 @@ const _ = require("lodash");
 // Set MAX_BATCH_SIZE to 250 because the Google Calendar API v3 'maxResults' parameter is capped at 250.
 // For more details, see: https://developers.google.com/calendar/api/v3/reference/calendarList/list 
 const MAX_BATCH_SIZE = 250;
+
+export interface SyncEventItemsResult extends SyncItemsResult {
+  items: SchemaEvent[]
+}
 export default class CalendarEventHandler extends GoogleHandler {
 
   protected config: GoogleCalendarHandlerConfig;
@@ -80,7 +83,7 @@ export default class CalendarEventHandler extends GoogleHandler {
 
     let nextPageToken: string | undefined;
     let query: calendar_v3.Params$Resource$Calendarlist$List = {
-      maxResults: MAX_BATCH_SIZE,  // Fetch in batches up to the max limit
+      maxResults: Math.min(MAX_BATCH_SIZE, this.config.calendarBatchSize),  // Fetch in batches up to the max limit
       pageToken: nextPageToken,
     };
 
@@ -100,7 +103,7 @@ export default class CalendarEventHandler extends GoogleHandler {
           continue;
         }
 
-        const summary = calendar.summary ?? "No calendar title";
+        const summary = calendar.summary ?? "No title";
         let timeZone = calendar.timeZone;
 
         if (!timeZone) {
@@ -141,103 +144,6 @@ export default class CalendarEventHandler extends GoogleHandler {
     return calendarList;
   }
 
-  protected async fetchEventRange(
-    calendar: SchemaCalendar,
-    range: ItemsRange,
-    apiClient: calendar_v3.Calendar
-  ): Promise<SchemaEvent[]> {
-    const events: SchemaEvent[] = [];
-
-    let query: calendar_v3.Params$Resource$Events$List = {
-      calendarId: calendar.sourceId,
-      maxResults: this.config.eventsPerCalendarLimit,
-      singleEvents: true,
-      orderBy: "startTime"
-    };
-
-    if (range.startId && !isNaN(Date.parse(range.startId))) {
-      query.timeMin = new Date(range.startId).toISOString();
-    }
-
-    if (range.endId && !isNaN(Date.parse(range.endId))) {
-      query.timeMax = new Date(range.endId).toISOString();
-    }
-
-    // Fetch events from Google Calendar API
-    const response = await apiClient.events.list(query);
-    const items = response.data.items || [];
-
-    for (const event of items) {
-      const eventId = event.id ?? '';
-
-      let start: DateTimeInfo = {
-        dateTime: event.start?.dateTime
-      };
-      let end: DateTimeInfo = {
-        dateTime: event.end?.dateTime
-      };
-
-      start.dateTime = event.start?.dateTime;
-      end.dateTime = event.end?.dateTime;
-
-      if (!start.dateTime) {
-        const logEvent: SyncProviderLogEvent = {
-          level: SyncProviderLogLevel.DEBUG,
-          message: `Invalid date for the event ${eventId}. Ignoring this event.`,
-        };
-        this.emit('log', logEvent);
-        continue;
-      }
-
-      // UTC offset time zone
-      start.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.start?.timeZone)
-      end.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.end?.timeZone)
-
-      const insertedAt = new Date().toISOString();
-
-      const creator: Person = {
-        email: event.creator.email,
-        displayName: event.creator.displayName
-      }
-
-      const organizer: Person = {
-        email: event.organizer.email,
-        displayName: event.organizer.displayName
-      }
-
-      let attendees: Person[] = []
-      if (event.attendees) {
-        attendees = event.attendees.filter(attendee => attendee.email) as Person[];
-      }
-
-      const attachments: CalendarAttachment[] = event.attachments as CalendarAttachment[];
-
-      events.push({
-        _id: this.buildItemId(eventId),
-        name: event.summary ?? "Unknown",
-        sourceAccountId: this.provider.getAccountId(),
-        sourceData: event,
-        sourceApplication: this.getProviderApplicationUrl(),
-        sourceId: eventId,
-        schema: CONFIG.verida.schemas.EVENT,
-        calendarId: calendar.sourceId ?? "primary",
-        start,
-        end,
-        creator,
-        organizer,
-        location: event.location,
-        description: event.description,
-        status: event.status ?? 'Unkown',
-        conferenceData: event.conferenceData,
-        attendees,
-        attachments,
-        insertedAt
-      });
-
-    }
-    return events;
-  }
-
   public async _sync(
     api: any,
     syncPosition: SyncHandlerPosition
@@ -250,7 +156,7 @@ export default class CalendarEventHandler extends GoogleHandler {
       const calendarDbItems = <SchemaCalendar[]>await calendarDs.getMany({
         "sourceAccountId": this.provider.getAccountId()
       });
-      
+
       calendarList = calendarList.map((calendarItem) => {
         // Find the corresponding item in calendarDbItems by 'sourceId'
         const matchingDbItem = calendarDbItems.find(
@@ -275,9 +181,9 @@ export default class CalendarEventHandler extends GoogleHandler {
       const calendarCount = calendarList.length;
 
       // Iterate over each calendar
-      for (let i = 1; i <= Math.min(calendarCount, this.config.calendarLimit); i++) {
+      for (let i = 1; i <= Math.min(calendarCount, this.config.calendarBatchSize); i++) {
         const calendarIndex = (calendarPosition + i) % calendarCount; // Rotate through calendars
-        
+
         // Use a separate ItemsRangeTracker for each calendar
         let rangeTracker = new ItemsRangeTracker(calendarList[calendarIndex].syncData);
 
@@ -296,8 +202,8 @@ export default class CalendarEventHandler extends GoogleHandler {
 
       }
 
-      syncPosition.thisRef = calendarList[(Math.min(calendarCount, this.config.calendarLimit) + calendarPosition) % calendarCount].sourceId; // Continue from the next calendar in the next sync
-      
+      syncPosition.thisRef = calendarList[(Math.min(calendarCount, this.config.calendarBatchSize) + calendarPosition) % calendarCount].sourceId; // Continue from the next calendar in the next sync
+
       // Finalize sync position and status based on event count
       this.updateSyncPosition(
         syncPosition,
@@ -327,52 +233,178 @@ export default class CalendarEventHandler extends GoogleHandler {
     return calendarPosition === -1 ? 0 : calendarPosition;
   }
 
+  private async buildResults(
+    calendarId: string,
+    response: calendar_v3.Schema$Events,
+    breakId: string
+  ): Promise<SyncEventItemsResult> {
+    const results: SchemaEvent[] = [];
+    let breakHit: SyncItemsBreak;
+
+    for (const event of response.items || []) {
+      const eventId = event.id || "";
+
+      // Break if the event ID matches breakId
+      if (eventId === breakId) {
+        const logEvent: SyncProviderLogEvent = {
+          level: SyncProviderLogLevel.DEBUG,
+          message: `Break ID hit (${breakId}) in calendar (${calendarId})`
+        };
+        this.emit("log", logEvent);
+        breakHit = SyncItemsBreak.ID;
+        break;
+      }
+
+      const start: DateTimeInfo = {
+        dateTime: event.start?.dateTime
+      };
+      const end: DateTimeInfo = {
+        dateTime: event.end?.dateTime
+      };
+
+      if (!start.dateTime) {
+        const logEvent: SyncProviderLogEvent = {
+          level: SyncProviderLogLevel.DEBUG,
+          message: `Invalid start date for event ${eventId}. Skipping this event.`,
+        };
+        this.emit("log", logEvent);
+        continue;
+      }
+      // Check for a break based on timestamp
+      const updatedTime = event.updated ? new Date(event.updated).toISOString() : new Date().toISOString();
+
+      start.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.start?.timeZone);
+      end.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.end?.timeZone);
+
+      const creator: Person = {
+        email: event.creator?.email,
+        displayName: event.creator?.displayName
+      };
+
+      const organizer: Person = {
+        email: event.organizer?.email,
+        displayName: event.organizer?.displayName
+      };
+
+      let attendees: Person[] = [];
+      if (event.attendees) {
+        attendees = event.attendees.filter(attendee => attendee.email) as Person[];
+      }
+
+      const attachments: CalendarAttachment[] = event.attachments as CalendarAttachment[];
+
+      results.push({
+        _id: this.buildItemId(eventId),
+        name: event.summary ?? "Unknown",
+        sourceAccountId: this.provider.getAccountId(),
+        sourceData: event,
+        sourceApplication: this.getProviderApplicationUrl(),
+        sourceId: eventId,
+        schema: CONFIG.verida.schemas.EVENT,
+        calendarId: calendarId,
+        start,
+        end,
+        creator,
+        organizer,
+        location: event.location,
+        description: event.description,
+        status: event.status,
+        conferenceData: event.conferenceData,
+        attendees,
+        attachments,
+        insertedAt: updatedTime
+      });
+    }
+
+    return {
+      items: results,
+      breakHit
+    };
+  }
+
   private async fetchAndTrackEvents(
     calendar: SchemaCalendar,
     rangeTracker: ItemsRangeTracker,
     apiClient: calendar_v3.Calendar
   ): Promise<SchemaEvent[]> {
-    // Validate calendar and calendar.id
     if (!calendar || !calendar.sourceId) {
-      throw new Error('Invalid calendar or missing calendar sourceId');
+      throw new Error("Invalid calendar or missing calendar sourceId");
     }
 
-    // Initialize range from tracker
+    let items: SchemaEvent[];
     let currentRange = rangeTracker.nextRange();
+    let query: calendar_v3.Params$Resource$Events$List = {
+      calendarId: calendar.sourceId,
+      maxResults: this.config.eventBatchSize,
+      singleEvents: true,
+      orderBy: "updated"
+    };
 
-    let items: SchemaEvent[] = [];
+    if (currentRange.startId) {
+      query.pageToken = currentRange.startId;
+    }
 
-    while (true) {
-      // Fetch events for the current range using fetchEventRange
-      const events = await this.fetchEventRange(calendar, currentRange, apiClient);
+    // Fetch events from Google Calendar API
+    const response = await apiClient.events.list(query);
 
-      if (!events.length) break;
+    // Use buildResults to process the response
+    const latestResult = await this.buildResults(
+      calendar.sourceId,
+      response.data,
+      currentRange.endId
+    );
 
-      // Add fetched events to the main list
-      items = items.concat(events);
+    items = latestResult.items;
+    // Update the range tracker
+    if (items.length) {
+      rangeTracker.completedRange(
+        {
+          startId: items[0].sourceId,
+          endId: response.data?.nextPageToken
+        },
+        latestResult.breakHit === SyncItemsBreak.ID
+      );
+    } else {
+      rangeTracker.completedRange({ startId: undefined, endId: undefined }, false);
+    }
 
-      // Break loop if events reached calendar limit
-      if (items.length > this.config.eventsPerCalendarLimit) {
-        // Mark the current range as complete and stop
+    currentRange = rangeTracker.nextRange();
+    if (items.length != this.config.batchSize && currentRange.startId) {
+      // Not enough items, fetch more from the next page of results
+      let query: calendar_v3.Params$Resource$Events$List = {
+        calendarId: calendar.sourceId,
+        maxResults: this.config.eventBatchSize - items.length,
+        pageToken: currentRange.startId,
+        singleEvents: true,
+        orderBy: "updated"
+      };
+
+      const backfillResponse = await apiClient.events.list(query);
+      
+      const backfillResult = await this.buildResults(
+        calendar.sourceId,
+        response.data,
+        currentRange.endId
+      );
+
+      items = items.concat(backfillResult.items)
+
+      if (backfillResult.items.length) {
         rangeTracker.completedRange({
-          startId: events[0].start.dateTime,
-          endId: events[events.length - 1].end.dateTime
-        }, false);
-        break;
+          startId: backfillResult.items[0].sourceId,
+          endId: response.data?.nextPageToken
+        }, backfillResult.breakHit == SyncItemsBreak.ID)
       } else {
-        // Update rangeTracker and continue fetching
         rangeTracker.completedRange({
-          startId: events[0].start.dateTime,
-          endId: events[events.length - 1].end.dateTime
-        }, false);
-
-        // Move to the next range
-        currentRange = rangeTracker.nextRange();
+          startId: undefined,
+          endId: undefined
+        }, backfillResult.breakHit == SyncItemsBreak.ID)
       }
     }
 
     return items;
   }
+
 
   private updateSyncPosition(
     syncPosition: SyncHandlerPosition,
@@ -381,7 +413,7 @@ export default class CalendarEventHandler extends GoogleHandler {
   ) {
     if (totalEvents === 0) {
       syncPosition.status = SyncHandlerStatus.ENABLED;
-      syncPosition.syncMessage = "No new events found.";
+      syncPosition.syncMessage = "Stopping, No results found.";
     } else {
       syncPosition.status = SyncHandlerStatus.SYNCING;
       syncPosition.syncMessage = `Batch complete (${totalEvents}). More results pending.`;
