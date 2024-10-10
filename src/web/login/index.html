@@ -57,10 +57,27 @@
 
     <script>
         $(document).ready(function () {
-            // Check if key is already in local storage
+            // Check if key is already in local storage and validate it
             const storedKey = localStorage.getItem('veridaKey');
             if (storedKey) {
-                window.location.href = '/user';
+                // Validate the stored key
+                $.ajax({
+                    url: `/api/rest/v1/account/fromKey?key=${storedKey}`,
+                    type: 'GET',
+                    contentType: 'application/json',
+                    success: function (response) {
+                        if (response.success) {
+                            window.location.href = '/user';
+                        } else {
+                            // If the key is invalid, remove it from local storage
+                            localStorage.removeItem('veridaKey');
+                        }
+                    },
+                    error: function () {
+                        // If there's an error, remove the key from local storage
+                        localStorage.removeItem('veridaKey');
+                    }
+                });
             }
 
             // Handle form submission
@@ -70,9 +87,9 @@
                 const privateKey = $('#privateKey').val();
                 $('#errorBox').addClass('d-none');  // Hide any previous error message
                 $('#infoBox').addClass('d-none');   // Hide the info message
-                $('#loginBtn').prop('disabled', true)
+                $('#loginBtn').prop('disabled', true);
 
-                // Make the POST request to the server
+                // Make the GET request to the server
                 $.ajax({
                     url: `/api/rest/v1/account/fromKey?key=${privateKey}`,
                     type: 'GET',
@@ -85,14 +102,16 @@
                             setTimeout(function () {
                                 window.location.href = '/user';  // Redirect after 3 seconds
                             }, 3000);
+                        } else {
+                            $('#errorBox').removeClass('d-none');  // Show error message for invalid key
+                            $('#loginBtn').prop('disabled', false);
                         }
                     },
                     error: function (xhr) {
                         if (xhr.status === 401) {
                             $('#errorBox').removeClass('d-none');  // Show error message for invalid key
                         }
-
-                        $('#loginBtn').prop('disabled', false)
+                        $('#loginBtn').prop('disabled', false);
                     }
                 });
             });
