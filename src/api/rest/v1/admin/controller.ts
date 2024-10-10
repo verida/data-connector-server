@@ -12,7 +12,7 @@ function formatBytes(bytes: number): string {
     }
     return `${bytes.toFixed(2)} ${units[i]}`;
   }
-  
+
   interface MemoryUsage {
     rss: number;
     heapTotal: number;
@@ -20,7 +20,7 @@ function formatBytes(bytes: number): string {
     external: number;
     arrayBuffers: number;
   }
-  
+
   function convertMemoryUsage(memoryUsage: MemoryUsage): { [key: string]: string } {
     const readableMemoryUsage: { [key: string]: string } = {};
     for (const key in memoryUsage) {
@@ -28,14 +28,23 @@ function formatBytes(bytes: number): string {
     }
     return readableMemoryUsage;
   }
-  
+
 
 /**
- * 
+ *
  */
 export class AdminController {
-    
+
     public async memory(req: Request, res: Response) {
+        try {
+            await Utils.getNetworkFromRequest(req, { checkAdmin: true })
+        } catch (error: unknown) {
+            if (error instanceof Error && error.message.includes('Access denied')) {
+                return res.status(403).send('Access denied')
+            }
+            return res.status(500).send(error instanceof Error ? error.message : 'Something went wrong')
+        }
+
         const memoryUsage = process.memoryUsage()
         const humanReadable = convertMemoryUsage(memoryUsage);
         return res.json({
@@ -45,6 +54,15 @@ export class AdminController {
     }
 
     public async status(req: Request, res: Response) {
+        try {
+            await Utils.getNetworkFromRequest(req, { checkAdmin: true })
+        } catch (error: unknown) {
+            if (error instanceof Error && error.message.includes('Access denied')) {
+                return res.status(403).send('Access denied')
+            }
+            return res.status(500).send(error instanceof Error ? error.message : 'Something went wrong')
+        }
+
         return res.json({
             logsExposed: CONFIG.verida.logging.exposeLogs,
             environment: CONFIG.verida.environment,
@@ -56,6 +74,15 @@ export class AdminController {
     }
 
     public async logs(req: Request, res: Response) {
+        try {
+            await Utils.getNetworkFromRequest(req, { checkAdmin: true })
+        } catch (error: unknown) {
+            if (error instanceof Error && error.message.includes('Access denied')) {
+                return res.status(403).send('Access denied')
+            }
+            return res.status(500).send(error instanceof Error ? error.message : 'Something went wrong')
+        }
+
         if (!CONFIG.verida.logging.exposeLogs) {
             return res.status(403).send('Permission denied')
         }
@@ -81,6 +108,15 @@ export class AdminController {
     }
 
     public async clearLogs(req: Request, res: Response) {
+        try {
+            await Utils.getNetworkFromRequest(req, { checkAdmin: true })
+        } catch (error: unknown) {
+            if (error instanceof Error && error.message.includes('Access denied')) {
+                return res.status(403).send('Access denied')
+            }
+            return res.status(500).send(error instanceof Error ? error.message : 'Something went wrong')
+        }
+
         if (!CONFIG.verida.logging.exposeLogs) {
             return res.status(403).send('Permission denied')
         }

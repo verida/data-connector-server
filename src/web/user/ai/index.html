@@ -190,6 +190,9 @@
                     <strong>Privacy:</strong> LLM prompts and inference are not executed within confidential compute in the Alpha. <a href="/user/security#llm-privacy">Learn more</a>.<br />
                     <strong>Performance:</strong> User data is cleared after 30 minutes of inactivity and will be automatically "hot loaded" again after timeout.
                 </div>
+                <div id="errorAlert" class="alert alert-danger text-center mt-3 alert-dismissable d-none" role="alert">
+                    <strong>Error:</strong> <span id="errorMessage"></span>
+                </div>
             </div>
         </div>
         <div class="row">
@@ -203,7 +206,7 @@
                             <option value="byo-llm">BYO LLM</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-check model-form-input" style="float: right">
                         <label for="model-select"><strong>Model:</strong></label>
                         <select class="form-control" id="model-select">

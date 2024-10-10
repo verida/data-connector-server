@@ -64,7 +64,7 @@ $(document).ready(function() {
         addMessage(prompt, 'user');
         showTypingIndicator();
 
-        const urlType = $('#privateData-input').prop('checked') ? "personal" : 
+        const urlType = $('#privateData-input').prop('checked') ? "personal" :
         "prompt";
 
         const provider = $('#platform-select').val()
@@ -121,7 +121,7 @@ $(document).ready(function() {
 
     // Hotload data
     const eventSource = new EventSource(`/api/rest/v1/llm/hotload?key=${veridaKey}`);
-    
+
     let loadComplete = false
     eventSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
@@ -147,12 +147,33 @@ $(document).ready(function() {
         }
     };
 
-    eventSource.onerror = function(err) {
+    eventSource.onerror = function(event) {
         if (loadComplete) {
             return
         }
-        
-        $('#loading-overlay p').text('An unknown error occurred while hotloading data.');
+
+        $('#send-btn').prop('disabled', true)
+        $('#user-input').prop('disabled', true)
+
+        console.debug(event)
+
+        let errorMessage = 'An unknown error occurred while hotloading data.';
+        if (event.data) {
+            try {
+                const errorData = JSON.parse(event.data);
+                // FIXME: The event doesn't have the error data
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                console.error('Error parsing error data:', e);
+            }
+        }
+
+        $('#errorMessage').text(errorMessage);
+        $('#errorAlert').removeClass('d-none')
+
+        $('#loading-overlay p').text(errorMessage);
+
+        $('#loading-overlay').fadeOut();
     };
 
     // Function to populate models based on platform

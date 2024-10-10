@@ -18,7 +18,7 @@
         "didClientConfig": {
             "callType": "web3",
             "network": "banksia",
-            "web3Config": {   
+            "web3Config": {
             }
         },
         "schemas": {
@@ -117,6 +117,10 @@
     },
     "providerDefaults": {
         "limitResults": false
+    },
+    "notion": {
+        "apiKey": "",
+        "restrictedAccessDatabaseId": ""
     }
 }
 
