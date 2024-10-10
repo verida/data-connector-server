@@ -369,7 +369,7 @@ export default class CalendarEventHandler extends GoogleHandler {
     }
 
     currentRange = rangeTracker.nextRange();
-    if (items.length != this.config.batchSize && currentRange.startId) {
+    if (items.length != this.config.eventBatchSize && currentRange.startId) {
       // Not enough items, fetch more from the next page of results
       let query: calendar_v3.Params$Resource$Events$List = {
         calendarId: calendar.sourceId,
