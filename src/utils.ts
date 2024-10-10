@@ -44,7 +44,17 @@ export class Utils {
         const headers = req.headers
         const key = headers["key"] ? headers["key"].toString() : req.query.key.toString()
 
-        return Utils.getNetwork(key)
+        const networkConnection = await Utils.getNetwork(key)
+
+        const accessService = new AccessService()
+
+        const accessRecord = await accessService.getAccessRecord(networkConnection.did)
+
+        if (!accessRecord?.access) {
+            throw new Error("Access denied")
+        }
+
+        return networkConnection
     }
 
     public static didCount() {
@@ -73,14 +83,6 @@ export class Utils {
         //}, did, VAULT_CONTEXT_NAME)
 
         const did = await account.did()
-
-        const accessService = new AccessService()
-
-        const accessRecord = await accessService.getAccessRecord(did)
-
-        if (!accessRecord?.access) {
-            throw new Error("Access denied")
-        }
 
         // If we have a promise for changing state, wait for it to complete
         if (Utils.networkCache[did] && Utils.networkCache[did].currentPromise) {
