@@ -87,7 +87,7 @@
         "google": {
             "clientId": "",
             "clientSecret": "",
-            "batchSize": 30,
+            "batchSize": 50,
             "sizeLimit": 10,
             "maxSyncLoops": 1,
             "handlers": {
@@ -99,8 +99,8 @@
                 },
                 "calendar-event": {
                     "backdate": "12-months",
-                    "calendarLimit": 5,
-                    "eventsPerCalendarLimit": 10
+                    "calendarBatchSize": 5,
+                    "eventBatchSize": 10
                 }
             }
         },
