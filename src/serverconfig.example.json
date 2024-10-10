@@ -98,7 +98,7 @@
                     "batchSize": 200
                 },
                 "google-drive-document": {
-                    "batchSize": 2
+                    "batchSize": 50
                 },
                 "calendar-event": {
                     "backdate": "12-months",
