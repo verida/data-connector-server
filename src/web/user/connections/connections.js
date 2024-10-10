@@ -11,14 +11,9 @@ $(document).ready(function() {
         }
     });
 
-    function handleButtonStates() {
-
-        if (veridaKey) {
-            $('#loadBtn').prop('disabled', !veridaKey);
-        } else {
-            $('#providerTable').empty();
-        }
-    }
+    $('#eventLogModal').on('hidden.bs.modal', function (e) {
+        loadProvidersAndConnections()
+      });
 
     $('#loadBtn').click(function() {
         // Fetch and display connections
@@ -131,7 +126,6 @@ $(document).ready(function() {
                     // Handle modal closing
                     $('#eventLogModal').on('hidden.bs.modal', function (e) {
                         eventSource.close()
-                        loadProvidersAndConnections()
                       });
     
                     // Initialize sync
