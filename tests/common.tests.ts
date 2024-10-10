@@ -32,18 +32,20 @@ let provider: BaseProvider, connection: Connection;
 export class CommonTests {
   static async runSyncTest(
     providerId: string,
-    handlerType: typeof BaseSyncHandler,
+    handlerType: typeof BaseSyncHandler,    
     connection: Connection,
     testConfig: GenericTestConfig = {
       timeOrderAttribute: "insertedAt",
       batchSizeLimitAttribute: "batchSize",
     },
     syncPositionConfig: Omit<SyncHandlerPosition, "_id">,
-    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">
+    providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">,
+    handlerId?: string
   ): Promise<SyncResponse> {
     const { api, handler, schemaUri } = await this.buildTestObjects(
       providerId,
       handlerType,
+      handlerId,
       providerConfig,
       connection
     );
@@ -61,6 +63,7 @@ export class CommonTests {
   static async buildTestObjects(
     providerId: string,
     handlerType: typeof BaseSyncHandler,
+    handlerId?: string,    
     providerConfig?: Omit<BaseProviderConfig, "sbtImage" | "label">,
     connection?: Connection
   ): Promise<{
@@ -88,8 +91,10 @@ export class CommonTests {
 
     const handlerConfig = {
       ...serverconfig.providers[providerId],
+      ...(handlerId ? serverconfig.providers[providerId]["handlers"][handlerId] : {}),
       ...providerConfig,
     };
+
     handler.setConfig(handlerConfig);
 
     return {
@@ -108,6 +113,7 @@ export class CommonTests {
       batchSizeLimitAttribute: "batchSize",
     },
     providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {},
+    handlerId: string,
     connection?: Connection
   ): Promise<{
     api: any;
@@ -118,6 +124,7 @@ export class CommonTests {
     const { api, handler, schemaUri, provider } = await this.buildTestObjects(
       providerId,
       handlerType,
+      handlerId,
       providerConfig,
       connection
     );
@@ -154,7 +161,7 @@ export class CommonTests {
       CommonTests.checkItem(results[0], handler, provider)
 
       assert.equal(
-        SyncHandlerStatus.SYNCING,
+        SyncHandlerStatus.ENABLED,
         response.position.status,
         "Sync is active"
       );

@@ -13,10 +13,10 @@ import BaseProvider from "../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../common.tests";
 
 const providerName = "google";
+const handlerName = "calendar-event";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
-let handlerName = "calendar-event";
 let testConfig: GenericTestConfig;
 let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
 
@@ -41,6 +41,7 @@ describe(`${providerName} Google Calendar Event Tests`, function () {
         CalendarEvent,
         testConfig,
         providerConfig,
+        handlerName,
         connection
       );
     });
