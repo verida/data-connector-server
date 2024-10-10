@@ -40,18 +40,24 @@ export class Utils {
 
     protected static networkCache: Record<string, NetworkConnectionCache> = {}
 
-    public static async getNetworkFromRequest(req: Request): Promise<NetworkConnection> {
+    public static async getNetworkFromRequest(req: Request, options?: {ignoreAccessCheck?: boolean, checkAdmin?: boolean}): Promise<NetworkConnection> {
         const headers = req.headers
         const key = headers["key"] ? headers["key"].toString() : req.query.key.toString()
 
         const networkConnection = await Utils.getNetwork(key)
 
-        const accessService = new AccessService()
+        if (!options?.ignoreAccessCheck) {
+            const accessService = new AccessService()
 
-        const accessRecord = await accessService.getAccessRecord(networkConnection.did)
+            const accessRecord = await accessService.getAccessRecord(networkConnection.did)
 
-        if (!accessRecord?.access) {
-            throw new Error("Access denied")
+            if (!accessRecord?.access) {
+                throw new Error("Access denied")
+            }
+
+            if (options?.checkAdmin && !accessRecord?.admin) {
+                throw new Error("Access denied")
+            }
         }
 
         return networkConnection
