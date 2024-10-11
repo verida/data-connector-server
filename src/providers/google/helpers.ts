@@ -6,6 +6,7 @@ import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 import * as officeParser from "officeparser";
 import moment from "moment-timezone";
+import { SchemaCalendar } from '../../schemas';
 
 export const mimeExtensions: {[key: string]: string} = {
   // Google Drive MIME types
@@ -572,5 +573,17 @@ export class CalendarHelpers {
     const utcOffset = now.format("Z");
 
     return utcOffset;
+  }
+
+  static getCalendarPositionIndex(
+    calendarList: SchemaCalendar[],
+    calendarId: string|undefined
+  ): number {
+    const calendarPosition = calendarList.findIndex(
+      (calendar) => calendar.sourceId === calendarId
+    );
+
+    // If not found, return 0 to start from the beginning
+    return calendarPosition === -1 ? 0 : calendarPosition;
   }
 }

@@ -176,7 +176,7 @@ export default class CalendarEventHandler extends GoogleHandler {
       let eventHistory: SchemaEvent[] = [];
 
       // Determine the current calendar position
-      const calendarPosition = this.getCalendarPositionIndex(calendarList, syncPosition);
+      const calendarPosition = CalendarHelpers.getCalendarPositionIndex(calendarList, syncPosition.thisRef);
 
       const calendarCount = calendarList.length;
 
@@ -208,7 +208,7 @@ export default class CalendarEventHandler extends GoogleHandler {
       this.updateSyncPosition(
         syncPosition,
         totalEvents,
-        calendarCount
+        Math.min(calendarCount, this.config.calendarBatchSize)
       );
 
       return {
@@ -219,18 +219,6 @@ export default class CalendarEventHandler extends GoogleHandler {
       console.error(err);
       throw err;
     }
-  }
-
-  private getCalendarPositionIndex(
-    calendarList: SchemaCalendar[],
-    syncPosition: SyncHandlerPosition
-  ): number {
-    const calendarPosition = calendarList.findIndex(
-      (calendar) => calendar.sourceId === syncPosition.thisRef
-    );
-
-    // If not found, return 0 to start from the beginning
-    return calendarPosition === -1 ? 0 : calendarPosition;
   }
 
   private async buildResults(
@@ -380,10 +368,10 @@ export default class CalendarEventHandler extends GoogleHandler {
       };
 
       const backfillResponse = await apiClient.events.list(query);
-      
+
       const backfillResult = await this.buildResults(
         calendar.sourceId,
-        response.data,
+        backfillResponse.data,
         currentRange.endId
       );
 
@@ -411,12 +399,7 @@ export default class CalendarEventHandler extends GoogleHandler {
     totalEvents: number,
     calendarCount: number,
   ) {
-    if (totalEvents === 0) {
-      syncPosition.status = SyncHandlerStatus.ENABLED;
-      syncPosition.syncMessage = "Stopping, No results found.";
-    } else {
-      syncPosition.status = SyncHandlerStatus.SYNCING;
-      syncPosition.syncMessage = `Batch complete (${totalEvents}). More results pending.`;
-    }
+    syncPosition.status = SyncHandlerStatus.SYNCING;
+    syncPosition.syncMessage = `Batch complete (${totalEvents}) across (${calendarCount} calendars)`;
   }
 }
