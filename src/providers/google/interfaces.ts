@@ -61,6 +61,6 @@ export interface CalendarAttachment {
 }
 
 export interface GoogleCalendarHandlerConfig extends BaseHandlerConfig {
-  calendarBatchSize?: number;  // Max number of calendar per sync
-  eventBatchSize?: number; // Max number of event to process in a calendar
+  calendarBatchSize: number;  // Max number of calendar per sync
+  eventBatchSize: number; // Max number of event to process in a calendar
 }
