@@ -2,51 +2,22 @@ const SYNC_LOG_SCHEMA = `https://vault.schemas.verida.io/data-connections/activi
 
 $(document).ready(function() {
     // Load the private key from local storage
-    let savedVeridaKey = localStorage.getItem('veridaKey');
-    if (savedVeridaKey) {
-        $('#veridaKey').val(savedVeridaKey);
-    }
-
-    handleButtonStates();
+    const veridaKey = localStorage.getItem('veridaKey');
 
     // Load providers on page load for the dropdown and fetch connections if a key is saved
     loadProviders(() => {
-        if (savedVeridaKey) {
+        if (veridaKey) {
             loadProvidersAndConnections();
         }
     });
 
-    $('#veridaKey').on('change', handleButtonStates);
-
-    function handleButtonStates() {
-        const veridaKey = $('#veridaKey').val().trim();
-
-        if (veridaKey) {
-            $('#loadBtn').prop('disabled', !veridaKey);
-            $('#generateIdentityBtn').toggle(!veridaKey);
-            $('#clearBtn').toggle(!!veridaKey);
-            savedVeridaKey = veridaKey
-            localStorage.setItem('veridaKey', veridaKey)
-        } else {
-            savedVeridaKey = undefined
-            localStorage.removeItem('veridaKey');
-            $('#providerTable').empty();
-        }
-    }
+    $('#eventLogModal').on('hidden.bs.modal', function (e) {
+        loadProvidersAndConnections()
+      });
 
     $('#loadBtn').click(function() {
         // Fetch and display connections
         loadProvidersAndConnections();
-    });
-
-    $('#clearBtn').click(function() {
-        $('#veridaKey').val('');
-        handleButtonStates();
-    });
-
-    $('#generateIdentityBtn').click(function() {
-        alert("Generating a new identity...");
-        // Implement identity generation logic here
     });
 
     function loadProvidersAndConnections() {
@@ -57,10 +28,8 @@ $(document).ready(function() {
         $('#loadingIndicator').show();
         $('#loadBtn').prop('disabled', true);
 
-        const veridaKey = localStorage.getItem('veridaKey');
-
         $.ajax({
-            url: `/api/rest/v1/connections?key=${savedVeridaKey}`,
+            url: `/api/rest/v1/connections?key=${veridaKey}`,
             type: 'GET',
             contentType: 'application/json',
             success: function(syncStatusResponse) {
@@ -157,7 +126,6 @@ $(document).ready(function() {
                     // Handle modal closing
                     $('#eventLogModal').on('hidden.bs.modal', function (e) {
                         eventSource.close()
-                        loadProvidersAndConnections()
                       });
     
                     // Initialize sync
@@ -210,7 +178,7 @@ $(document).ready(function() {
         $dropdown.empty();
         $.each(providersData, function(key, provider) {
             if (provider.id === 'mock') return; // Skip 'mock' provider
-            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/${provider.id}/connect?key=${$('#veridaKey').val()}', '_blank');">
+            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/${provider.id}/connect?key=${veridaKey}', '_blank');">
                 <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
                 ${provider.label}
             </a>`);

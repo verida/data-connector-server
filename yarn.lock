@@ -443,26 +443,6 @@
   resolved "https://registry.yarnpkg.com/@oauth-everything/profile/-/profile-1.0.0.tgz#0b5e78749415519fa312dc83347a677903f456ba"
   integrity sha512-OmCuBPhjaLHh9MST9P5jRuVBZaP0z7hBk8nH4Yt7Id5kNM1AXGd5uud6CP7W2zuhKl2nk0KsYmeMT7SkzN6VWg==
 
-"@prebuilt-tdlib/darwin@0.1008034.0":
-  version "0.1008034.0"
-  resolved "https://registry.yarnpkg.com/@prebuilt-tdlib/darwin/-/darwin-0.1008034.0.tgz#a5983898df91b3017fc432874f258a17299dcf3c"
-  integrity sha512-L51CRXwBfMlpQhl2ebE+Yvi2pr2O8zGvIXKZaq4cFto4/vXZon5KkYpQmZ1odDbaobcUai3YPr1IT0/uAbzH2A==
-
-"@prebuilt-tdlib/linux-arm64-glibc@0.1008034.0":
-  version "0.1008034.0"
-  resolved "https://registry.yarnpkg.com/@prebuilt-tdlib/linux-arm64-glibc/-/linux-arm64-glibc-0.1008034.0.tgz#1f979ce657d6ab9bb83d8dca5c4c4e5f2202b099"
-  integrity sha512-T0qiaw4M82huvjS9Bnr+LS/nECe1+p0Tpyk8mGFmNsd0m2bheZxSs8JJGD5++RDHMBFGy6nddU6EUfVoVzOOJw==
-
-"@prebuilt-tdlib/linux-x64-glibc@0.1008034.0":
-  version "0.1008034.0"
-  resolved "https://registry.yarnpkg.com/@prebuilt-tdlib/linux-x64-glibc/-/linux-x64-glibc-0.1008034.0.tgz#71b917be8dc66368af7e9db7e2e624784e72ab33"
-  integrity sha512-2KRnu/lQGhnF7y799Q0C5hF9EugLApJ8FaP2uEx/vMmqntnBFTY7BVQINzpe3X0MduAuFvwa3ie0WFafK7vLBQ==
-
-"@prebuilt-tdlib/win32-x64@0.1008034.0":
-  version "0.1008034.0"
-  resolved "https://registry.yarnpkg.com/@prebuilt-tdlib/win32-x64/-/win32-x64-0.1008034.0.tgz#4cfd1463e7a21aa052afd174380b9773ffdb4744"
-  integrity sha512-GdkQVgeyXm5Fzj9Rh9UL/30WwuTTbqS+SAs3MKhwu5IxZXtmtv0kHerCfctW6jI926dBCbysSO1+d6wgEMOhbg==
-
 "@sapphire/async-queue@^1.5.0":
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/@sapphire/async-queue/-/async-queue-1.5.0.tgz#2f255a3f186635c4fb5a2381e375d3dfbc5312d8"
@@ -4624,11 +4604,6 @@ negotiator@0.6.3:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.3.tgz#58e323a72fedc0d6f9cd4d31fe49f51479590ccd"
   integrity sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==
 
-node-addon-api@^7.1.0:
-  version "7.1.1"
-  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-7.1.1.tgz#1aba6693b0f255258a049d621329329322aad558"
-  integrity sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==
-
 node-addon-api@^8.1.0:
   version "8.1.0"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-8.1.0.tgz#55a573685dd4bd053f189cffa4e6332d2b1f1645"
@@ -4657,11 +4632,6 @@ node-fetch@^2.6.7, node-fetch@^2.6.9:
   integrity sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==
   dependencies:
     whatwg-url "^5.0.0"
-
-node-gyp-build@^4.8.1:
-  version "4.8.1"
-  resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.8.1.tgz#976d3ad905e71b76086f4f0b0d3637fe79b6cda5"
-  integrity sha512-OSs33Z9yWr148JZcbZd5WiAXhh/n9z8TxQcdMhIOlpN9AhWpLfvVFO73+m77bBABQMaY9XSvIa+qk0jlI7Gcaw==
 
 node-gyp-build@~4.1.0:
   version "4.1.1"
@@ -5160,16 +5130,6 @@ pouchdb@^7.2.2:
     through2 "3.0.2"
     uuid "8.3.2"
     vuvuzela "1.0.3"
-
-prebuilt-tdlib@^0.1008034.0:
-  version "0.1008034.0"
-  resolved "https://registry.yarnpkg.com/prebuilt-tdlib/-/prebuilt-tdlib-0.1008034.0.tgz#f80d8f2b21a242e43739df54624ae20418ee251d"
-  integrity sha512-8BuDali/P5wz2kQ4prnFbjeA5wieHmNgDNOm+C6Wu4W2mZ7L/4vDy15EdknKhqMfB8OrRbCKZknp6rqJ16FcTw==
-  optionalDependencies:
-    "@prebuilt-tdlib/darwin" "0.1008034.0"
-    "@prebuilt-tdlib/linux-arm64-glibc" "0.1008034.0"
-    "@prebuilt-tdlib/linux-x64-glibc" "0.1008034.0"
-    "@prebuilt-tdlib/win32-x64" "0.1008034.0"
 
 prepend-http@^2.0.0:
   version "2.0.0"
@@ -5903,15 +5863,6 @@ tar-stream@^2.1.0, tar-stream@^2.1.4:
     fs-constants "^1.0.0"
     inherits "^2.0.3"
     readable-stream "^3.1.1"
-
-tdl@^8.0.1:
-  version "8.0.1"
-  resolved "https://registry.yarnpkg.com/tdl/-/tdl-8.0.1.tgz#0da97c69ea20fdaec7c29c68511b67d1cca13463"
-  integrity sha512-DzwZ96tXZfTC4YueQWXuJUJt4YLIMBSZY7JydxQpRU8X/My+tYY7t8OnG0zZBG468UroEhjTAlTk/y4hcFvkyQ==
-  dependencies:
-    debug "^4.3.4"
-    node-addon-api "^7.1.0"
-    node-gyp-build "^4.8.1"
 
 tdlib-native@^2.6.0:
   version "2.6.0"

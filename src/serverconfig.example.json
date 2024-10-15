@@ -39,6 +39,9 @@
             "bedrockEndpoint": "",
             "bedrockKey": ""
         },
+        "libs": {
+            "telegram": "libtdjson.so"
+        },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15
     },
