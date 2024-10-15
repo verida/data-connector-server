@@ -122,7 +122,6 @@
             "clientSecret": "",
             "stateSecret": "",
             "groupLimit": 20,
-            "messageBatchSize": 50,
             "messagesPerGroupLimit": 10            
         }
     },
