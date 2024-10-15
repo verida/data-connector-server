@@ -52,8 +52,8 @@ export const Connections: Command<ConnectionsOptions> = {
     const did = (await account.did()).toLowerCase();
     console.log(`Verida Account has DID: ${did}`);
 
-    const networkInstance = await Utils.getNetwork(options.key);
-    const vault = networkInstance.context;
+    const networkConnection = await Utils.getNetworkConnectionFromPrivateKey(options.key);
+    const vault = networkConnection.context;
 
     const syncManager = new SyncManager(
       vault
@@ -70,7 +70,7 @@ export const Connections: Command<ConnectionsOptions> = {
         const connection = provider.getConnection()
         console.log(`Provider ${provider.getProviderId()} (${provider.getAccountId()})`)
         if (options.showConnections) {
-          console.log(JSON.stringify(connection, null, 2))  
+          console.log(JSON.stringify(connection, null, 2))
         } else {
           console.log(JSON.stringify(connection.profile, null, 2))
         }

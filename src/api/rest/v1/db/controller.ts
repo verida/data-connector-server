@@ -2,13 +2,13 @@ import { Request, Response } from "express";
 import { Utils } from "../../../../utils";
 
 /**
- * 
+ *
  */
 export class DbController {
 
     public async getById(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkFromRequest(req)
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const dbName = req.params[0]
             const rowId = req.params[1]
             const permissions = Utils.buildPermissions(req)
@@ -32,7 +32,7 @@ export class DbController {
                 if (error.message.match('invalid encoding')) {
                     message = 'Invalid encoding (check permissions header)'
                 }
-                
+
                 res.status(500).send({
                     "error": message
                 });
@@ -42,7 +42,7 @@ export class DbController {
 
     public async query(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkFromRequest(req)
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const dbName = req.params[0]
 
             const permissions = Utils.buildPermissions(req)

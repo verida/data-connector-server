@@ -20,7 +20,7 @@ class SearchController {
 
     public async chatThreads(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
             const keywordString = req.query.keywords ? req.query.keywords.toString() : ""
             const keywords = keywordString.split(' ')
@@ -45,7 +45,7 @@ class SearchController {
 
     public async universal(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
             const keywordString = req.query.keywords ? req.query.keywords.toString() : ""
             const keywords = keywordString.split(' ')
@@ -77,7 +77,7 @@ class SearchController {
 
     public async datastore(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
 
             const schemaName = Utils.getSchemaFromParams(req.params[0])

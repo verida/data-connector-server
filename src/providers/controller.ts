@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import Providers from "../providers"
 import SyncManager from '../sync-manager'
 import { UniqueRequest } from '../interfaces'
-import { Utils } from '../utils'
+import { NetworkConnection, Utils } from '../utils'
 import { AccountSession } from '@verida/types'
 
 const log4js = require("log4js")
@@ -99,9 +99,17 @@ export default class Controller {
             const accountSession = req.session.accountSession as AccountSession | undefined
             const redirect = req.session.redirect as string
 
-            const networkInstance = await Utils.getNetwork(key, req.requestId, accountSession)
+            let networkConnection: NetworkConnection
 
-            const syncManager = new SyncManager(networkInstance.context, req.requestId)
+            if (accountSession) {
+                networkConnection = await Utils.getNetworkConnectionFromAccountSession(accountSession, req.requestId)
+            } else if (key) {
+                networkConnection = await Utils.getNetworkConnectionFromPrivateKey(key, req.requestId)
+            } else {
+                throw new Error("No credentials provided")
+            }
+
+            const syncManager = new SyncManager(networkConnection.context, req.requestId)
             const connection = await syncManager.saveNewConnection(providerId, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
             // Start syncing (async so we don't block)
