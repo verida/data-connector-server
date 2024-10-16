@@ -43,14 +43,14 @@ export const ResetProvider: Command<ResetProviderOptions> = {
       return;
     }
 
-    const networkInstance = await Utils.getNetwork(options.key);
-    const did = (await networkInstance.account.did()).toLowerCase();
+    const networkConnection = await Utils.getNetworkConnectionFromPrivateKey(options.key);
+    const did = (await networkConnection.account.did()).toLowerCase();
     console.log(`Verida Account has DID: ${did}`);
 
-    const vault = networkInstance.context;
+    const vault = networkConnection.context;
 
     const syncManager = new SyncManager(
-      networkInstance.context
+      networkConnection.context
     );
 
     const providers = await syncManager.getProviders(

@@ -37,7 +37,7 @@ export class AdminController {
 
     public async memory(req: Request, res: Response) {
         try {
-            await Utils.getNetworkFromRequest(req, { checkAdmin: true })
+            await Utils.getNetworkConnectionFromRequest(req, { checkAdmin: true })
         } catch (error: unknown) {
             if (error instanceof Error && error.message.includes('Access denied')) {
                 return res.status(403).send('Access denied')
@@ -55,7 +55,7 @@ export class AdminController {
 
     public async status(req: Request, res: Response) {
         try {
-            await Utils.getNetworkFromRequest(req, { checkAdmin: true })
+            await Utils.getNetworkConnectionFromRequest(req, { checkAdmin: true })
         } catch (error: unknown) {
             if (error instanceof Error && error.message.includes('Access denied')) {
                 return res.status(403).send('Access denied')
@@ -75,7 +75,7 @@ export class AdminController {
 
     public async logs(req: Request, res: Response) {
         try {
-            await Utils.getNetworkFromRequest(req, { checkAdmin: true })
+            await Utils.getNetworkConnectionFromRequest(req, { checkAdmin: true })
         } catch (error: unknown) {
             if (error instanceof Error && error.message.includes('Access denied')) {
                 return res.status(403).send('Access denied')
@@ -109,7 +109,7 @@ export class AdminController {
 
     public async clearLogs(req: Request, res: Response) {
         try {
-            await Utils.getNetworkFromRequest(req, { checkAdmin: true })
+            await Utils.getNetworkConnectionFromRequest(req, { checkAdmin: true })
         } catch (error: unknown) {
             if (error instanceof Error && error.message.includes('Access denied')) {
                 return res.status(403).send('Access denied')

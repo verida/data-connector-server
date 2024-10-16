@@ -2,13 +2,13 @@ import { Request, Response } from "express";
 import { Utils } from "../../../../utils";
 
 /**
- * 
+ *
  */
 export class DsController {
 
     public async getById(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkFromRequest(req)
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const permissions = Utils.buildPermissions(req)
             const schemaName = Utils.getSchemaFromParams(req.params[0])
             const rowId = req.params[1]
@@ -16,7 +16,7 @@ export class DsController {
                 // @ts-ignore
                 permissions
             })
-        
+
             const item = await ds.get(rowId, {})
             res.json({
                 item: item
@@ -31,7 +31,7 @@ export class DsController {
                 if (error.message.match('invalid encoding')) {
                     message = 'Invalid encoding (check permissions header)'
                 }
-                
+
                 res.status(500).send({
                     "error": message
                 });
@@ -41,7 +41,7 @@ export class DsController {
 
     public async query(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkFromRequest(req)
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const permissions = Utils.buildPermissions(req)
             const schemaName = Utils.getSchemaFromParams(req.params[0])
 
@@ -49,7 +49,7 @@ export class DsController {
                 // @ts-ignore
                 permissions
             })
-        
+
             const selector = req.body.query
             const options = req.body.options || {}
             const items = await ds.getMany(selector, options)
@@ -73,7 +73,7 @@ export class DsController {
             if (error.message.match('invalid encoding')) {
                 message = 'Invalid encoding (check permissions header)'
             }
-            
+
             res.status(500).send({
                 error: message
             });
@@ -82,7 +82,7 @@ export class DsController {
 
     public async watch(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkFromRequest(req)
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const permissions = Utils.buildPermissions(req)
             const schemaName = Utils.getSchemaFromParams(req.params[0])
             const options = req.body.options || {}
@@ -145,7 +145,7 @@ export class DsController {
 
     public async delete(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkFromRequest(req)
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const permissions = Utils.buildPermissions(req)
             const schemaName = Utils.getSchemaFromParams(req.params[0])
 

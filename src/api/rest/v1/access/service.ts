@@ -29,8 +29,6 @@ export class Service {
         await createAccessRecord(notionClient, did)
       }
 
-      console.debug("Access record", record)
-
       return record
     } catch (error) {
       // TODO: Update tsconfig target to allow passing a cause to the Error
