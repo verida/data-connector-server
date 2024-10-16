@@ -1,4 +1,4 @@
-import { Network as VeridaNetwork, IContext, AccountSession, IAccount } from '@verida/types'
+import { Network as VeridaNetwork, IContext, ContextSession, IAccount } from '@verida/types'
 import { Client } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
@@ -48,7 +48,7 @@ export class Utils {
      */
     public static async getNetworkConnectionFromRequest(req: Request, options?: { ignoreAccessCheck?: boolean, checkAdmin?: boolean }): Promise<NetworkConnection> {
         // Extract session
-        let session: AccountSession | undefined;
+        let session: ContextSession | undefined;
 
         const authHeader = req.headers.authorization;
         if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -63,7 +63,7 @@ export class Utils {
 
         let networkConnection: NetworkConnection
         if (session) {
-            networkConnection = await Utils.getNetworkConnectionFromAccountSession(session, 'none')
+            networkConnection = await Utils.getNetworkConnectionFromContextSession(session, 'none')
         } else if (key) {
             networkConnection = await Utils.getNetworkConnectionFromPrivateKey(key || '', 'none')
         } else {
@@ -110,16 +110,16 @@ export class Utils {
     }
 
     /**
-     * Get a network connection from a private key
+     * Get a network connection from a context session.
      *
-     * @param accountSession
+     * @param contextSession
      * @param requestId
      * @returns
      */
-    public static async getNetworkConnectionFromAccountSession(accountSession: AccountSession, requestId: string = 'none'): Promise<NetworkConnection> {
+    public static async getNetworkConnectionFromContextSession(contextSession: ContextSession, requestId: string = 'none'): Promise<NetworkConnection> {
         const account = new SessionAccount({
             network: serverconfig.verida.environment as VeridaNetwork,
-            session: accountSession
+            contextSession
         })
 
         return await Utils.getNetworkConnection(account, requestId)

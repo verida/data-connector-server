@@ -3,7 +3,7 @@ import Providers from "../providers"
 import SyncManager from '../sync-manager'
 import { UniqueRequest } from '../interfaces'
 import { NetworkConnection, Utils } from '../utils'
-import { AccountSession } from '@verida/types'
+import { ContextSession } from '@verida/types'
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -37,23 +37,23 @@ export default class Controller {
         try {
             const providerName = req.params.providerId
 
-            const accountSession: AccountSession | undefined = req.query.token ? JSON.parse(Buffer.from(req.query.token.toString(), 'base64').toString('utf-8')) : undefined;
+            const contextSession: ContextSession | undefined = req.query.token ? JSON.parse(Buffer.from(req.query.token.toString(), 'base64').toString('utf-8')) : undefined;
 
             const key = req.query.key ? req.query.key.toString() : undefined
 
-            if (!key && !accountSession) {
+            if (!key && !contextSession) {
                 return res.status(400).send({
                     error: `Missing key or token in query parameters`
                 });
             }
 
-            const did = accountSession?.did || await Utils.getDidFromKey(key)
+            const did = contextSession?.did || await Utils.getDidFromKey(key)
 
             let redirect = req.query.redirect ? req.query.redirect.toString() : ''
             // Session data isn't retained if using localhost, so use 127.0.0.1
             // @ts-ignore Session is injected as middleware
             req.session.redirect = redirect
-            req.session.accountSession = accountSession
+            req.session.contextSession = contextSession
             req.session.key = key
             req.session.did = did
 
@@ -95,14 +95,15 @@ export default class Controller {
 
             const connectionResponse = await provider.callback(req, res, next)
 
+            // TODO: Validate the express session object and remove the type assertions
             const key = req.session.key as string | undefined
-            const accountSession = req.session.accountSession as AccountSession | undefined
+            const contextSession = req.session.contextSession as ContextSession | undefined
             const redirect = req.session.redirect as string
 
             let networkConnection: NetworkConnection
 
-            if (accountSession) {
-                networkConnection = await Utils.getNetworkConnectionFromAccountSession(accountSession, req.requestId)
+            if (contextSession) {
+                networkConnection = await Utils.getNetworkConnectionFromContextSession(contextSession, req.requestId)
             } else if (key) {
                 networkConnection = await Utils.getNetworkConnectionFromPrivateKey(key, req.requestId)
             } else {
