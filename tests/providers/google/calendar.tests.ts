@@ -8,40 +8,38 @@ import {
 import Providers from "../../../src/providers";
 import CommonUtils, { NetworkInstance } from "../../common.utils";
 
-import YoutubeFollowing from "../../../src/providers/google/youtube-following";
+import GoogleCalendar from "../../../src/providers/google/calendar";
 import BaseProvider from "../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../common.tests";
-import { SchemaFollowing } from "../../../src/schemas";
 
-const providerId = "google";
+const providerName = "google";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
-let handlerName = "youtube-following";
+let handlerName = "calendar";
 let testConfig: GenericTestConfig;
 let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
 
-
-describe(`${providerId} Youtube Following Tests`, function () {
+describe(`${providerName} Google Calendar Tests`, function () {
   this.timeout(100000);
 
   this.beforeAll(async function () {
     network = await CommonUtils.getNetwork();
-    connection = await CommonUtils.getConnection(providerId);
-    provider = Providers(providerId, network.context, connection);
-  
+    connection = await CommonUtils.getConnection(providerName);
+    provider = Providers(providerName, network.context, connection);
+
     testConfig = {
-      idPrefix: `${provider.getProviderId()}-${connection.profile.id}`,
+      idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
       batchSizeLimitAttribute: "batchSize",
     };
   });
 
-  describe(`Fetch ${providerId} data`, () => {
+  describe(`Fetch ${providerName} data`, () => {
    
     it(`Can pass basic tests: ${handlerName}`, async () => {
       await CommonTests.runGenericTests(
-        providerId,
-        YoutubeFollowing,
+        providerName,
+        GoogleCalendar,
         testConfig,
         providerConfig,
         connection
