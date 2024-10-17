@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { SchemaSocialChatGroup } from '../../schemas';
 
 export class SlackHelpers {
   // Method to fetch user information using Slack's `users.info` API
@@ -21,5 +22,17 @@ export class SlackHelpers {
     } catch (error) {
       throw new Error(`Failed to fetch user info: ${error.message}`);
     }
+  }
+
+  static getGroupPositionIndex(
+    groupList: SchemaSocialChatGroup[],
+    groupId: string|undefined
+  ): number {
+    const groupPosition = groupList.findIndex(
+      (group) => group.sourceId === groupId
+    );
+
+    // If not found, return 0 to start from the beginning
+    return groupPosition === -1 ? 0 : groupPosition;
   }
 }

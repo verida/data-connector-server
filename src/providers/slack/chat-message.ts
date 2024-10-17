@@ -99,14 +99,18 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
             const apiClient = this.getSlackClient();
             const groupList = await this.buildChatGroupList();  // Fetch chat groups
 
-            const groupDbItems = await this.getExistingGroupsFromDb();  // Fetch existing groups from the database
+            const groupDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_GROUP);
+            const groupDbItems = <SchemaSocialChatGroup[]>await groupDs.getMany({
+                sourceAccountId: this.provider.getAccountId(),
+            });
+            
             const mergedGroupList = this.mergeGroupLists(groupList, groupDbItems);  // Merge new and existing groups
 
             let totalMessages = 0;
             let chatHistory: SchemaSocialChatMessage[] = [];
 
             // Determine the current group position
-            const groupPosition = this.getGroupPositionIndex(mergedGroupList, syncPosition);
+            const groupPosition = SlackHelpers.getGroupPositionIndex(mergedGroupList, syncPosition.thisRef);
             const groupCount = mergedGroupList.length;
 
             // Iterate over each group
@@ -249,13 +253,6 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
         return newGroups.map((group) => {
             const existingGroup = existingGroups.find(g => g.sourceId === group.sourceId);
             return existingGroup ? _.merge({}, existingGroup, group) : group;
-        });
-    }
-
-    private async getExistingGroupsFromDb(): Promise<SchemaSocialChatGroup[]> {
-        const groupDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_GROUP);
-        return await groupDs.getMany({
-            sourceAccountId: this.provider.getAccountId(),
         });
     }
 }
