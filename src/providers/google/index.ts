@@ -7,6 +7,7 @@ import { GoogleProviderConfig, GoogleProviderConnection } from "./interfaces";
 import YouTubeFavourite from "./youtube-favourite";
 import GoogleDriveDocument from "./gdrive-document";
 import { ConnectionCallbackResponse, PassportProfile } from "../../interfaces";
+import CalendarEvent from "./calendar-event";
 
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20");
@@ -33,7 +34,8 @@ export default class GoogleProvider extends Base {
       YouTubeFollowing,
       YouTubePost,
       YouTubeFavourite,
-      GoogleDriveDocument
+      GoogleDriveDocument,
+      CalendarEvent
     ];
   }
 
@@ -44,7 +46,8 @@ export default class GoogleProvider extends Base {
         "email",
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/youtube.readonly",
-        "https://www.googleapis.com/auth/drive.readonly"
+        "https://www.googleapis.com/auth/drive.readonly",
+        "https://www.googleapis.com/auth/calendar.readonly"
     ];
   }
 

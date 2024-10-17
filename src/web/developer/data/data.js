@@ -14,7 +14,9 @@ $(document).ready(function() {
         "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
         "Chat Group": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
         "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
-        "Files": "https://common.schemas.verida.io/file/v0.1.0/schema.json"
+        "Files": "https://common.schemas.verida.io/file/v0.1.0/schema.json",
+        "Calendar": "https://common.schemas.verida.io/social/calendar/v0.1.0/schema.json",
+        "Event": "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
     };
 
     // Load Verida Key and Schema from local storage
