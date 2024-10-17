@@ -8,3 +8,16 @@
 4. Add redirect URL and scopes in `OAuth & Permissions` section
     - Redirect URL: `https://127.0.0.1:5021/callback/slack`
     - There are two types of tokens: bot and user, and add following scopes: `channels:history`, `channels:read`, `groups:read`, `users:read`, `im:read`, `im:history`
+
+# Notes
+Slack workspaces might have many public channels and spam messages that are less relevant to users' privacy, so **DM/Private** groups have priority.
+
+Slack `ItemsRangeTracker` is based on timestamps, which are used as the IDs of chat message records due to the nature of its API.
+```
+const response = await apiClient.conversations.history({
+     channel,
+     limit,
+     oldest,           // from timestamp
+     latest            // end timestamp
+});
+```
