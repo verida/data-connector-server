@@ -121,8 +121,9 @@
             "clientId": "",
             "clientSecret": "",
             "stateSecret": "",
+            "maxSyncLoops": 1,
             "groupLimit": 20,
-            "messagesPerGroupLimit": 10            
+            "messagesPerGroupLimit": 50            
         }
     },
     "providerDefaults": {

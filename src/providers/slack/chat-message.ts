@@ -24,11 +24,11 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     protected config: SlackHandlerConfig;
 
     public getName(): string {
-        return "slack-messages";
+        return "chat-message";
     }
 
     public getLabel(): string {
-        return "Slack Messages";
+        return "Chat Messages";
     }
 
     public getSchemaUri(): string {
