@@ -90,8 +90,9 @@ export class DataService extends EventEmitter {
         return this.context.openDatastore(schemaUri)
     }
 
-    public async searchIndex(schemaUri: string, query: string, maxResults: number = 50, cutoffPercent: number = 0.5, searchOptions?: SearchOptions): Promise<SearchResult[]> {
-        const miniSearchIndex = await this.getIndex(schemaUri)
+    public async searchIndex(schemaUri: string, query: string, maxResults: number = 50, cutoffPercent: number = 0.5, searchOptions?: SearchOptions, indexFields?: string[],
+        storeFields?: string[]): Promise<SearchResult[]> {
+        const miniSearchIndex = await this.getIndex(schemaUri, indexFields, storeFields)
         const searchResults = await miniSearchIndex.search(query, searchOptions)
         
         if (!searchResults.length) {
@@ -113,20 +114,20 @@ export class DataService extends EventEmitter {
         return results
     }
 
-    public async getIndex(schemaUri: string): Promise<MiniSearch<any>> {
+    public async getIndex(schemaUri: string, indexFields?: string[], storeFields?: string[]): Promise<MiniSearch<any>> {
         const schemaConfig = schemas[schemaUri]
-        const indexFields = schemaConfig.indexFields
-        let storeFields = schemaConfig.storeFields
+        indexFields = [...(indexFields || schemaConfig.indexFields)]
+        storeFields = [...(storeFields || schemaConfig.storeFields)]
 
-        const cacheKey = CryptoJS.MD5(`${this.did}:${schemaUri}:${indexFields.join(',')}:${storeFields.join(',')}`).toString();
+        const cacheKey = CryptoJS.MD5(`${this.did}:${schemaUri}:${indexFields.join(',')}:${storeFields.join(',')}`).toString()
 
         if (!indexCache[cacheKey]) {
             this.emitProgress(schemaConfig.label, HotLoadStatus.StartData, 10)
             const datastore = await this.context.openDatastore(schemaUri)
 
             const database = await datastore.getDb()
-            const db = await database.getDb()
-            const result = await db.allDocs({
+            const pouchDb = await database.getDb()
+            const result = await pouchDb.allDocs({
                 include_docs: true,
                 attachments: false
             });
@@ -137,7 +138,7 @@ export class DataService extends EventEmitter {
             const schema = datastore.getSchema();
             const schemaSpec = await schema.getSpecification();
 
-            const arrayProperties = []
+            const arrayProperties: string[] = []
             for (const propertyKey of Object.keys(schemaSpec.properties)) {
                 const property = schemaSpec.properties[propertyKey]
 
@@ -153,42 +154,14 @@ export class DataService extends EventEmitter {
 
             const docs: any = []
             for (const i in result.rows) {
-                const row = result.rows[i].doc
-                // Ignore PouchDB design rows
-                if (row._id.match('_design')) {
+                const row = this.buildRow(result.rows[i].doc, arrayProperties, storeFields)
+                if (!row) {
                     continue
                 }
-
-                row.id = row._id
-                delete row['_id']
-
-                // Flatten array fields for indexing
-                for (const arrayProperty of arrayProperties) {
-                    if (row[arrayProperty] && row[arrayProperty].length) {
-                        let j = 0
-                        for (const arrayItem of row[arrayProperty]) {
-                            if (!arrayItem.filename.match('pdf')) {
-                                continue
-                            }
-
-                            const arrayItemProperty = `${arrayProperty}_${j}`
-                            row[arrayItemProperty] = arrayItem
-
-                            // Make sure this field is stored
-                            if (storeFields.indexOf(arrayItemProperty) === -1) {
-                                storeFields.push(arrayItemProperty)
-                            }
-
-                            // @todo: Make sure the original field isn't stored (`arrayProperty`)
-                            j++
-                        }
-                    }
-                }
-
                 docs.push(row)
             }
 
-            console.log(`Creating index for ${schemaUri}`, indexFields, storeFields)
+            // console.log(`Creating index for ${schemaUri}`, cacheKey)
             const miniSearch = new MiniSearch({
                 fields: indexFields, // fields to index for full-text search
                 storeFields,
@@ -199,13 +172,44 @@ export class DataService extends EventEmitter {
             })
 
             // Index all documents
-            miniSearch.addAll(docs)
+            await miniSearch.addAllAsync(docs)
 
             this.emitProgress(schemaConfig.label, HotLoadStatus.Complete, 10)
 
-            indexCache[cacheKey] = miniSearch
+            // Setup a change listener to add any new items
+            const changeOptions = {
+                // Don't include docs as there's a bug that sends `undefined` doc values which crashes the encryption library
+                include_docs: false,
+                // Live stream changes
+                live: true,
+                // Only include new changes from now
+                since: 'now'
+            }
 
-            console.log(`Index created for ${schemaUri}`)
+            // Listen and handle changes
+            const changeHandler = pouchDb.changes(changeOptions)
+                .on('change', async (change: any) => {
+                    const record = await pouchDb.get(change.id)
+                    const row = this.buildRow(record, arrayProperties, storeFields)
+                    if (!row) {
+                        return
+                    }
+                    // console.log('adding record to index', record.id, record.schema, record.name)
+
+                    try {
+                        miniSearch.add(row)
+                    } catch (err: any) {
+                        // console.log(record.id, record.name, 'already in search index')
+                        // Document may already be in the index
+                    }
+                })
+                .on('error', (error: any) => {
+                    console.log('error!')
+                    console.error(error)
+                })
+
+            indexCache[cacheKey] = miniSearch
+            // console.log(`Index created for ${schemaUri}`, cacheKey)
         } else {
             this.stepCount += 2
             this.emitProgress(schemaConfig.label, HotLoadStatus.Complete, 10)
@@ -223,6 +227,41 @@ export class DataService extends EventEmitter {
         }
 
         await Promise.all(promises)
+    }
+
+    protected buildRow(row: any, arrayProperties: string[], storeFields: string[]): any | undefined {
+        // Ignore PouchDB design rows
+        if (row._id.match('_design')) {
+            return
+        }
+
+        row.id = row._id
+        delete row['_id']
+
+        // Flatten array fields for indexing
+        for (const arrayProperty of arrayProperties) {
+            if (row[arrayProperty] && row[arrayProperty].length) {
+                let j = 0
+                for (const arrayItem of row[arrayProperty]) {
+                    if (!arrayItem.filename.match('pdf')) {
+                        continue
+                    }
+
+                    const arrayItemProperty = `${arrayProperty}_${j}`
+                    row[arrayItemProperty] = arrayItem
+
+                    // Make sure this field is stored
+                    if (storeFields.indexOf(arrayItemProperty) === -1) {
+                        storeFields.push(arrayItemProperty)
+                    }
+
+                    // @todo: Make sure the original field isn't stored (`arrayProperty`)
+                    j++
+                }
+            }
+        }
+
+        return row
     }
 
 }

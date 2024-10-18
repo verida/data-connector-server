@@ -109,7 +109,6 @@ export default class GoogleProvider extends Base {
   ): Promise<any> {}
 
   public init() {
-    console.log(this.config);
     passport.use(
       new GoogleStrategy(
         {

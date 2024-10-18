@@ -10,6 +10,29 @@
     <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
+    <script
+        src="https://browser.sentry-cdn.com/8.33.1/bundle.feedback.min.js"
+        integrity="sha384-Mxv/vPNCoSSGpRryvvX4rPWZo4IL1ZQOG2VxGPI8yypzyhJse3GS4yD2Ct47oBMm"
+        crossorigin="anonymous"
+    ></script>
+    <script>
+        if (typeof Sentry !== 'undefined') {
+            Sentry.onLoad(function() {
+                Sentry.init({
+                    dsn: "https://cd923d4434a725db36ea55d994624686@o4503997119725568.ingest.us.sentry.io/4508061430644736",
+                    integrations: [
+                        Sentry.feedbackIntegration({
+                            colorScheme: "light",
+                            triggerLabel: "Share feedback",
+                            formTitle: "Share Feedback",
+                            submitButtonLabel: "Send Feedback",
+                            messagePlaceholder: "Please describe your feedback...",
+                        }),
+                    ],
+                });
+            });
+        }
+    </script>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="/developer/welcome">Dev Sandbox [alpha]</a>
@@ -19,19 +42,22 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="/developer/welcome">Welcome</a>
+                    <a class="nav-link" href="/user/welcome">Welcome</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="/user/connections">Connections</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/user/ai">Private AI</a>
+                </li>
+                <li class="nav-item"></li>
                     <a class="nav-link active" href="/developer/data">Browse Data</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/developer/api">API Playground</a>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="/developer/api">Explore APIs</a>
                 </li>
-            </ul>
-            <!-- Extra nav item aligned to the right -->
-            <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="/user">Verida Bridge [alpha] &rarr;</a>
+                    <a class="nav-link" href="/user/security">Security</a>
                 </li>
             </ul>
         </div>
@@ -39,10 +65,6 @@
     <div class="container mt-5">
         <h1>Database Results</h1>
         <form id="queryForm">
-            <div class="form-group">
-                <label for="veridaKey">Verida Key:</label>
-                <input type="password" class="form-control" id="veridaKey" required>
-            </div>
             <div class="form-group">
                 <label for="schema">Schema:</label>
                 <input type="text" class="form-control" id="schema" required>
@@ -162,5 +184,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="data.js"></script>
+    <script src="../../account.js"></script>
 </body>
 </html>

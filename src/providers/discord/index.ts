@@ -11,8 +11,7 @@ import axios from 'axios'
 
 //import SBTs from './sbts'
 import Following from './following'
-import TokenExpiredError from '../TokenExpiredError'
-import DiscordChatMessageHandler from './chat-message';
+import InvalidTokenError from '../InvalidTokenError';
 
 export interface DiscordProviderConfig extends BaseProviderConfig {
     clientID: string
@@ -151,7 +150,7 @@ export default class DiscordProvider extends Base {
                 } catch (err) {
                     console.log(err.response)
                     // Unrecoverable auth error
-                    throw new TokenExpiredError(err.message)
+                    throw new InvalidTokenError(err.message)
                 }
             } else {
                 throw err

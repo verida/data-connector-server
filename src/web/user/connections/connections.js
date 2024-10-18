@@ -1,58 +1,29 @@
-const SYNC_LOG_SCHEMA = `https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json`
+const SYNC_LOG_SCHEMA = `https://vault.schemas.verida.io/data-connections/activity-log/v0.2.0/schema.json`
 
 $(document).ready(function() {
     // Load the private key from local storage
-    let savedVeridaKey = localStorage.getItem('veridaKey');
-    $('#veridaKey').val(savedVeridaKey);
-    handleButtonStates();
+    const veridaKey = localStorage.getItem('veridaKey');
 
     // Load providers on page load for the dropdown and fetch connections if a key is saved
     loadProviders(() => {
-        if (savedVeridaKey) {
-            loadProvidersAndConnections(savedVeridaKey);
+        if (veridaKey) {
+            loadProvidersAndConnections();
         }
     });
 
-    $('#veridaKey').on('input', handleButtonStates);
-
-    function handleButtonStates() {
-        const veridaKey = $('#veridaKey').val().trim();
-        $('#loadBtn').prop('disabled', !veridaKey);
-        $('#generateIdentityBtn').toggle(!veridaKey);
-        $('#clearBtn').toggle(!!veridaKey);
-        savedVeridaKey = veridaKey
-    }
+    $('#eventLogModal').on('hidden.bs.modal', function (e) {
+        loadProvidersAndConnections()
+      });
 
     $('#loadBtn').click(function() {
-        const veridaKey = $('#veridaKey').val().trim();
-        if (!veridaKey) {
-            alert('Please enter a Verida Private Key.');
-            return;
-        }
+        // Fetch and display connections
+        loadProvidersAndConnections();
+    });
 
-        // Save the private key in local storage
-        localStorage.setItem('veridaKey', veridaKey);
-
+    function loadProvidersAndConnections() {
         // Clear existing table rows
         $('#providerTable').empty();
 
-        // Fetch and display connections
-        loadProvidersAndConnections(veridaKey);
-    });
-
-    $('#clearBtn').click(function() {
-        $('#veridaKey').val('');
-        localStorage.removeItem('veridaKey');
-        $('#providerTable').empty();
-        handleButtonStates();
-    });
-
-    $('#generateIdentityBtn').click(function() {
-        alert("Generating a new identity...");
-        // Implement identity generation logic here
-    });
-
-    function loadProvidersAndConnections(veridaKey) {
         // Show the loading indicator
         $('#loadingIndicator').show();
         $('#loadBtn').prop('disabled', true);
@@ -93,7 +64,7 @@ $(document).ready(function() {
                                         <a class="dropdown-item sync-btn" href="#" data-sync-type="force"  data-connection="${connection._id}">Force</a>
                                     </div>
                                 </div>
-                                <button class="btn btn-secondary logs-btn" data-provider="${connection.provider}" data-provider-id="${connection.providerId}">Full Logs</button>
+                                <button class="btn btn-secondary logs-btn" data-provider="${connection.providerId}" data-provider-id="${connection.accountId}">Full Logs</button>
                                 <button class="btn btn-danger disconnect-btn" data-connection="${connection._id}">Disconnect</button>
                             </td>
                         </tr>
@@ -104,7 +75,7 @@ $(document).ready(function() {
                 $('.logs-btn').click(function() {
                     const provider = $(this).data('provider');
                     const providerId = $(this).data('provider-id');
-                    window.open(`/developer/data?limit=50&filter=providerName:${provider},providerId:${providerId}&schema=${SYNC_LOG_SCHEMA}&sort=insertedAt:desc`, '_blank');
+                    window.open(`/developer/data?limit=50&filter=providerId:${provider},accountId:${providerId}&schema=${SYNC_LOG_SCHEMA}&sort=insertedAt:desc`, '_blank');
                 });
     
                 $('.disconnect-btn').click(function() {
@@ -113,7 +84,6 @@ $(document).ready(function() {
                         url: `/api/rest/v1/connections/${connectionId}?key=${veridaKey}`,
                         type: 'DELETE',
                         success: function(response) {
-                            console.log(response.data)
                         }
                     })
                 });
@@ -163,7 +133,7 @@ $(document).ready(function() {
                         url: `/api/rest/v1/connections/${connectionId}/sync?key=${veridaKey}`,
                         type: 'POST',
                         data: JSON.stringify({
-                            force: (syncType == 'force')
+                            forceSync: (syncType == 'force')
                         }),
                         contentType: 'application/json',
                         success: function(response) {
@@ -179,6 +149,15 @@ $(document).ready(function() {
     
                 $('#loadingIndicator').hide(); // Hide the loading indicator
                 $('#loadBtn').prop('disabled', false);
+            },
+            error: function(response) {
+                const errorMessage = response.responseJSON.error
+                $('#loadingIndicator').hide()
+                $('#errorIndicator').html(`<strong>Error:</strong> ${errorMessage}`)
+                $('#errorIndicator').show()
+                setTimeout(() => {
+                    $('#errorIndicator').hide()
+                }, 5000)
             }
         })
     }
@@ -199,7 +178,7 @@ $(document).ready(function() {
         $dropdown.empty();
         $.each(providersData, function(key, provider) {
             if (provider.id === 'mock') return; // Skip 'mock' provider
-            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/${provider.id}/connect?key=${$('#veridaKey').val()}', '_blank');">
+            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/${provider.id}/connect?key=${veridaKey}', '_blank');">
                 <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
                 ${provider.label}
             </a>`);

@@ -18,7 +18,7 @@ $(document).ready(function() {
     };
 
     // Load Verida Key and Schema from local storage
-    $('#veridaKey').val(localStorage.getItem('veridaKey') || '');
+    const veridaKey = localStorage.getItem('veridaKey')
 
     // Function to get query parameters
     function getQueryParams() {
@@ -56,7 +56,6 @@ $(document).ready(function() {
     }
 
     function fetchData() {
-        const veridaKey = $('#veridaKey').val();
         const schema = $('#schema').val();
         const limit = parseInt($('#limit').val());
         const offset = parseInt($('#offset').val());
@@ -155,11 +154,6 @@ $(document).ready(function() {
         });
     }
 
-    // Save Verida Key and Schema to local storage
-    $('#veridaKey').on('input', function() {
-        localStorage.setItem('veridaKey', $(this).val());
-    });
-
     $('#schema').on('input', function() {
         localStorage.setItem('schema', $(this).val());
     });
@@ -229,19 +223,6 @@ $(document).ready(function() {
 
     // Example of listing schemas
     $('#schemaModal').on('show.bs.modal', function() {
-        const schemas = {
-            "Sync Position": "https://vault.schemas.verida.io/data-connections/sync-position/v0.1.0/schema.json",
-            "Sync Activity Log": "https://vault.schemas.verida.io/data-connections/activity-log/v0.1.0/schema.json",
-            "Connections": "https://vault.schemas.verida.io/data-connections/connection/v0.2.0/schema.json",
-            "Social Following": "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
-            "Social Post": "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
-            "Favourites": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
-            "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
-            "File": "https://common.schemas.verida.io/file/v0.1.0/schema.json",
-            "Chat Group": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
-            "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
-        };
-
         // Clear previous list
         $('#schemaList').empty();
 
@@ -271,7 +252,6 @@ $(document).ready(function() {
     $('#tableBody').on('click', '.delete-row', function() {
         const id = $(this).data('id');
         const schemaUrl = $('#schema').val();
-        const veridaKey = $('#veridaKey').val();
 
         if (confirm('Are you sure you want to delete this row?')) {
             $.ajax({
@@ -300,7 +280,6 @@ $(document).ready(function() {
     // Handle Destroy confirmation
     $('#confirmDestroy').click(function() {
         const schemaUrl = $('#schema').val();
-        const veridaKey = $('#veridaKey').val();
 
         $.ajax({
             url: `${apiUrl}/ds/${btoa(schemaUrl)}?destroy=true`,

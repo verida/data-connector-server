@@ -9,9 +9,34 @@ const session = require('express-session')
 import { v4 as uuidv4 } from 'uuid';
 
 const log4js = require("log4js")
-const logger = log4js.getLogger()
 import CONFIG from "./config"
-logger.level = CONFIG.logLevel
+
+// Configure log4js
+const LOG_CONFIG: any = {
+  appenders: {
+    console: { type: 'console' } // Log to the console
+  },
+  categories: {
+    default: { appenders: ['console'], level: CONFIG.verida.logging.level } // Logs both file and console
+  }
+}
+
+if (CONFIG.verida.logging.logToFile) {
+  // Enable file logging
+  LOG_CONFIG.appenders.file = { type: 'file', filename: CONFIG.verida.logging.logToFile }
+  LOG_CONFIG.categories.default.appenders.push('file')
+}
+
+log4js.configure(LOG_CONFIG)
+
+// Get the logger instance
+const logger = log4js.getLogger();
+
+// Replace the console.log, console.error, etc. with log4js loggers
+console.log = (...args) => logger.info(...args);
+console.error = (...args) => logger.error(...args);
+console.warn = (...args) => logger.warn(...args);
+console.debug = (...args) => logger.debug(...args);
 
 const path = require('path')
 

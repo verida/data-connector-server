@@ -1,3 +1,4 @@
+let veridaKey
 
 function saveState() {
     const state = {
@@ -49,14 +50,7 @@ function loadState() {
 
 $(document).ready(function() {
     // Load the private key from local storage
-    const savedVeridaKey = localStorage.getItem('veridaKey');
-    $('#privateKey').val(savedVeridaKey);
-    
-    $('#privateKey').on('change', function() {
-        const veridaKey = $('#privateKey').val().trim();
-        // Save the private key in local storage
-        localStorage.setItem('veridaKey', veridaKey);
-    })
+    veridaKey = localStorage.getItem('veridaKey');
 
     // Populate endpoint dropdown
     for (let endpoint in apiEndpoints) {
@@ -223,7 +217,7 @@ function updateCodeExample(language) {
 
 function updateCodeExamples() {
     const endpoint = $('#endpointSelect').val();
-    const privateKey = $('#showPrivateKey').is(':checked') ? $('#privateKey').val() : '<privateKey>';
+    const privateKey = $('#showPrivateKey').is(':checked') ? veridaKey : '<privateKey>';
     const baseUrl = $('#baseUrl').val();
     const endpointConfig = apiEndpoints[endpoint];
     let url = `${baseUrl}${endpointConfig.path}`;
@@ -404,7 +398,7 @@ function runEndpoint() {
     });
 
     const headers = {
-        key: privateKey
+        key: veridaKey
     }
 
     $('#result').text('Request sent... waiting...')

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
 import { BaseProviderConfig, ConnectionCallbackResponse, SyncProviderLogLevel } from '../../interfaces'
-import TokenExpiredError from '../TokenExpiredError'
+import TokenExpiredError from '../InvalidTokenError'
 import RequestLimitReachedError from '../RequestLimitReachedError'
 
 const passport = require("passport")
