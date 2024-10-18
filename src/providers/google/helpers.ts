@@ -5,8 +5,7 @@ import { stripHtml } from "string-strip-html";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 import * as officeParser from "officeparser";
-
-
+import moment from "moment-timezone";
 
 export const mimeExtensions: {[key: string]: string} = {
   // Google Drive MIME types
@@ -565,5 +564,13 @@ export class GoogleDriveHelpers {
         throw error;
     }
   }
+}
 
+export class CalendarHelpers {
+  static getUTCOffsetTimezone(timezone: string) {
+    const now = moment.tz(timezone);
+    const utcOffset = now.format("Z");
+
+    return utcOffset;
+  }
 }

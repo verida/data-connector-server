@@ -383,6 +383,6 @@ export default class BaseSyncHandler extends EventEmitter {
     }
 
     protected buildItemId(itemId: string) {
-        return `${this.provider.getProviderName()}-${this.connection.profile.id}-${itemId}`
+        return `${this.provider.getProviderId()}-${this.connection.profile.id}-${itemId}`
     }
 }
