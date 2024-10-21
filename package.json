@@ -78,7 +78,7 @@
     "passport-google-oauth20": "^2.0.0",
     "pdf-parse": "^1.1.1",
     "string-strip-html": "8.5.0",
-    "tdlib-native": "^3.0.0",
+    "tdlib-native": "2.7",
     "ts-mocha": "^9.0.2",
     "twitter-api-v2": "^1.14.0",
     "uuid": "^10.0.0",
