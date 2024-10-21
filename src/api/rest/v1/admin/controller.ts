@@ -35,44 +35,6 @@ function formatBytes(bytes: number): string {
  */
 export class AdminController {
 
-    public async memory(req: Request, res: Response) {
-        try {
-            await Utils.getNetworkConnectionFromRequest(req, { checkAdmin: true })
-        } catch (error: unknown) {
-            if (error instanceof Error && error.message.includes('Access denied')) {
-                return res.status(403).send('Access denied')
-            }
-            return res.status(500).send(error instanceof Error ? error.message : 'Something went wrong')
-        }
-
-        const memoryUsage = process.memoryUsage()
-        const humanReadable = convertMemoryUsage(memoryUsage);
-        return res.json({
-            memoryUsage,
-            humanReadable
-        })
-    }
-
-    public async status(req: Request, res: Response) {
-        try {
-            await Utils.getNetworkConnectionFromRequest(req, { checkAdmin: true })
-        } catch (error: unknown) {
-            if (error instanceof Error && error.message.includes('Access denied')) {
-                return res.status(403).send('Access denied')
-            }
-            return res.status(500).send(error instanceof Error ? error.message : 'Something went wrong')
-        }
-
-        return res.json({
-            logsExposed: CONFIG.verida.logging.exposeLogs,
-            environment: CONFIG.verida.environment,
-            apiVersion: CONFIG.verida.apiVersion,
-            build: CONFIG.verida.build,
-            schemas: CONFIG.verida.schemas,
-            activeDIDs: Utils.didCount()
-        })
-    }
-
     public async logs(req: Request, res: Response) {
         try {
             await Utils.getNetworkConnectionFromRequest(req, { checkAdmin: true })

@@ -92,6 +92,9 @@ export class Utils {
     }
 
     /**
+     * Get a network, context and account instance
+     *
+     * @returns
      * Get a network connection from a private key
      *
      * @param privateKey
