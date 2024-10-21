@@ -122,5 +122,9 @@
     },
     "providerDefaults": {
         "limitResults": false
+    },
+    "notion": {
+        "apiKey": "",
+        "restrictedAccessDatabaseId": ""
     }
 }
