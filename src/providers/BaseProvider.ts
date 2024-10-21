@@ -293,7 +293,7 @@ export default class BaseProvider extends EventEmitter {
                     }
                 } else if (handlerResult.value.syncPosition.status == SyncHandlerStatus.ERROR) {
                     this.connection.syncStatus = SyncStatus.ERROR
-                    this.connection.syncMessage = `One or more data sources had an error`
+                    this.connection.syncMessage = `${handlerResult.value.syncPosition.handlerId} had an error (${handlerResult.value.syncPosition.syncMessage})`
                     await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
                 }
 
@@ -391,6 +391,7 @@ export default class BaseProvider extends EventEmitter {
         const syncPosition = await this.getSyncPosition(handler.getId(), syncPositionsDs)
 
         if (syncPosition.status == SyncHandlerStatus.INVALID_AUTH) {
+            syncPosition.syncMessage = `Invalid authentication tokens. Try reconnecting.`
             // If access is denied, don't even try to sync
             return {
                 syncPosition,
@@ -408,6 +409,8 @@ export default class BaseProvider extends EventEmitter {
         } else if (syncPosition.status == SyncHandlerStatus.ERROR) {
             if (syncPosition.errorRetries >= MAX_ERROR_RETRIES) {
                 // Have hit maximum erorr retries, don't even try to sync
+                syncPosition.syncMessage = `Maximum error retries hit (${MAX_ERROR_RETRIES}). Try reconnecting.`
+
                 return {
                     syncPosition,
                     syncResults: []

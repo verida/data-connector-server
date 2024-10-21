@@ -22,11 +22,23 @@ export class ItemsRangeTracker {
     }
 
     public import(rangeString: string) {
-        for (const entry of JSON.parse(rangeString)) {
-            this.completedRanges.push({
-                startId: entry[0] ? entry[0] : undefined,
-                endId: entry[1] ? entry[1] : undefined,
-            })
+        try {
+            for (const entry of JSON.parse(rangeString)) {
+                this.completedRanges.push({
+                    startId: entry[0] ? entry[0] : undefined,
+                    endId: entry[1] ? entry[1] : undefined,
+                })
+            }
+        } catch (err: any) {
+            // Backwards compatible loading of ranges using old format
+            const ranges = rangeString.split(',')
+            for (const range of ranges) {
+                const [ startId, endId ] = range.split(':')
+                this.completedRanges.push({
+                    startId,
+                    endId
+                })
+            }   
         }
     }
 
