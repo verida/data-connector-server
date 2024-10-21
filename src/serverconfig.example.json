@@ -10,7 +10,7 @@
             "exposeLogs": false,
             "logsPassword": "a890s7dfna9df7"
         },
-        "devMode": true,
+        "mode": "development",
         "environment": "banksia",
         "testVeridaKey": "0x...",
         "testVeridaNetwork": "banksia",
