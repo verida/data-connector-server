@@ -130,7 +130,7 @@ export class ItemsRangeTracker {
         switch (this.status) {
             case ItemsRangeStatus.NEW:
                 return {
-                    startId: this.completedRanges[0].endId,
+                    startId: undefined,
                     endId: this.completedRanges[0].startId
                 }
             case ItemsRangeStatus.BACKFILL:
