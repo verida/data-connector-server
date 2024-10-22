@@ -99,7 +99,6 @@
                 },
                 "calendar-event": {
                     "backdate": "12-months",
-                    "calendarBatchSize": 5,
                     "eventBatchSize": 10
                 }
             }

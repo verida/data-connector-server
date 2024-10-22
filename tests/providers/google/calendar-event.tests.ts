@@ -79,9 +79,6 @@ describe(`${providerId} calendar event tests`, function () {
   describe(`Fetch ${providerId} data`, () => {
 
     it(`Can handle date only events`, async () => {
-      // console.log((new Date(TEST_EVENT.start.date)).toISOString())
-      // return
-
       // Build the necessary test objects
       const { api, handler, provider } = await CommonTests.buildTestObjects(
         providerId,
@@ -135,9 +132,6 @@ describe(`${providerId} calendar event tests`, function () {
         const calendars = <SchemaCalendar[]>results.filter(result => result.schema === CONFIG.verida.schemas.CALENDAR);
         const events = <SchemaEvent[]>results.filter(result => result.schema === CONFIG.verida.schemas.EVENT);
 
-        console.log(events[0])
-        return
-
         // Ensure results are returned
         assert.ok(results && results.length, "Have results returned");
 
@@ -149,19 +143,6 @@ describe(`${providerId} calendar event tests`, function () {
           SyncHandlerStatus.SYNCING,
           response.position.status,
           "Sync is active"
-        );
-
-        assert.ok(response.position.thisRef, "Have a calendar sync pos");
-
-        // Ensure the sync rotates the calendar list correctly
-        const originalCalendarIndex = CalendarHelpers.getCalendarPositionIndex(calendars, (await provider.getSyncPosition(handlerName)).thisRef);
-        const currentCalendarIndex = CalendarHelpers.getCalendarPositionIndex(calendars, response.position.thisRef);
-
-        // Verify correct number of calendars were synced
-        assert.equal(
-          currentCalendarIndex,
-          (originalCalendarIndex + Math.min(handlerConfig.calendarBatchSize, calendars.length)) % calendars.length,
-          "Synced correct number of calendars."
         );
 
         // Ensure the event batch per calendar works
@@ -190,19 +171,6 @@ describe(`${providerId} calendar event tests`, function () {
           SyncHandlerStatus.SYNCING,
           secondBatchResponse.position.status,
           "Sync is still active after second batch"
-        );
-
-        assert.ok(secondBatchResponse.position.thisRef, "Have a calendar sync pos for second batch");
-
-        // Ensure the sync rotates the calendar list correctly in the second batch
-        const secondOriginalCalendarIndex = CalendarHelpers.getCalendarPositionIndex(secondBatchCalendars, (await provider.getSyncPosition(handlerName)).thisRef);
-        const secondCurrentCalendarIndex = CalendarHelpers.getCalendarPositionIndex(secondBatchCalendars, secondBatchResponse.position.thisRef);
-
-        // Verify correct number of calendars were synced in the second batch
-        assert.equal(
-          secondCurrentCalendarIndex,
-          (secondOriginalCalendarIndex + Math.min(handlerConfig.calendarBatchSize, secondBatchCalendars.length)) % secondBatchCalendars.length,
-          "Synced correct number of calendars in the second batch."
         );
 
         // Check if synced every calendar correctly

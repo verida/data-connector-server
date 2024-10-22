@@ -83,7 +83,6 @@ export default class CalendarEventHandler extends GoogleHandler {
 
     let nextPageToken: string | undefined;
     let query: calendar_v3.Params$Resource$Calendarlist$List = {
-      maxResults: Math.min(MAX_BATCH_SIZE, this.config.calendarBatchSize),  // Fetch in batches up to the max limit
       pageToken: nextPageToken,
     };
 
@@ -175,20 +174,13 @@ export default class CalendarEventHandler extends GoogleHandler {
       let totalEvents = 0;
       let eventHistory: SchemaEvent[] = [];
 
-      // Determine the current calendar position
-      const calendarPosition = CalendarHelpers.getCalendarPositionIndex(calendarList, syncPosition.thisRef);
-
-      const calendarCount = calendarList.length;
-
       // Iterate over each calendar
-      for (let i = 1; i <= Math.min(calendarCount, this.config.calendarBatchSize); i++) {
-        const calendarIndex = (calendarPosition + i) % calendarCount; // Rotate through calendars
-
+      for (const calendar of calendarList) {
         // Use a separate ItemsRangeTracker for each calendar
-        let rangeTracker = new ItemsRangeTracker(calendarList[calendarIndex].syncData);
+        let rangeTracker = new ItemsRangeTracker(calendar.syncData);
 
         const fetchedEvents = await this.fetchAndTrackEvents(
-          calendarList[calendarIndex],
+          calendar,
           rangeTracker,
           apiClient
         );
@@ -198,17 +190,15 @@ export default class CalendarEventHandler extends GoogleHandler {
         totalEvents += fetchedEvents.length;
 
         // Update the calendar's sync data with the latest rangeTracker state
-        calendarList[calendarIndex].syncData = rangeTracker.export();
+        calendar.syncData = rangeTracker.export();
 
       }
-
-      syncPosition.thisRef = calendarList[(Math.min(calendarCount, this.config.calendarBatchSize) + calendarPosition) % calendarCount].sourceId; // Continue from the next calendar in the next sync
 
       // Finalize sync position and status based on event count
       this.updateSyncPosition(
         syncPosition,
         totalEvents,
-        Math.min(calendarCount, this.config.calendarBatchSize)
+        calendarList.length
       );
 
       return {
