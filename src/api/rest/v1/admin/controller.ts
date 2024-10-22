@@ -3,33 +3,6 @@ const fs = require('fs')
 import CONFIG from "../../../../config"
 import { Utils } from "../../../../utils";
 
-function formatBytes(bytes: number): string {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let i = 0;
-    while (bytes >= 1024 && i < units.length - 1) {
-      bytes /= 1024;
-      i++;
-    }
-    return `${bytes.toFixed(2)} ${units[i]}`;
-  }
-
-  interface MemoryUsage {
-    rss: number;
-    heapTotal: number;
-    heapUsed: number;
-    external: number;
-    arrayBuffers: number;
-  }
-
-  function convertMemoryUsage(memoryUsage: MemoryUsage): { [key: string]: string } {
-    const readableMemoryUsage: { [key: string]: string } = {};
-    for (const key in memoryUsage) {
-      readableMemoryUsage[key] = formatBytes(memoryUsage[key as keyof MemoryUsage]);
-    }
-    return readableMemoryUsage;
-  }
-
-
 /**
  *
  */
