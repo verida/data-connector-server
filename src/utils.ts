@@ -50,16 +50,15 @@ export class Utils {
         // Extract session
         let session: ContextSession | undefined;
 
-        const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.split(' ')[1];
-            session = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
-        } else if (req.query.token) {
-            session = JSON.parse(Buffer.from(req.query.token.toString(), 'base64').toString('utf-8'));
+        const apiKey = req.header('X-API-Key');
+        if (apiKey) {
+            session = JSON.parse(Buffer.from(apiKey, 'base64').toString('utf-8'));
+        } else if (req.query["api_key"]) {
+            session = JSON.parse(Buffer.from(req.query["api_key"].toString(), 'base64').toString('utf-8'));
         }
 
         // Extract private key
-        const key = req.headers["key"] ? req.headers["key"].toString() : req.query.key?.toString()
+        const key = req.header("key") || req.query["key"]?.toString()
 
         let networkConnection: NetworkConnection
         if (session) {
@@ -133,7 +132,7 @@ export class Utils {
      *
      * @returns
      */
-    private static async getNetworkConnection(account: SessionAccount | AutoAccount, requestId: string = 'none'): Promise<NetworkConnection> {
+    private static async getNetworkConnection(account: IAccount, requestId: string = 'none'): Promise<NetworkConnection> {
         const did = await account.did()
 
         // If we have a promise for changing state, wait for it to complete
@@ -168,7 +167,7 @@ export class Utils {
                 await network.connect(account)
                 const context = await network.openContext(VAULT_CONTEXT_NAME)
 
-                const networkConnection = {
+                const networkConnection: NetworkConnection = {
                     network,
                     context,
                     account,
