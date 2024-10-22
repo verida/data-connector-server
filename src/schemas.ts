@@ -145,6 +145,7 @@ export interface SchemaEvent extends SchemaRecord {
     status?: string
     description?: string
     calendarId: string
+    uri?: string
     location?: string
     creator?: Person
     organizer?: Person

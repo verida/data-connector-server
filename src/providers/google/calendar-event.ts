@@ -221,43 +221,16 @@ export default class CalendarEventHandler extends GoogleHandler {
     }
   }
 
-  private async buildResults(
-    calendarId: string,
-    response: calendar_v3.Schema$Events,
-    breakId: string
-  ): Promise<SyncEventItemsResult> {
-    const results: SchemaEvent[] = [];
-    let breakHit: SyncItemsBreak;
-
-    for (const event of response.items || []) {
-      const eventId = event.id || "";
-
-      // Break if the event ID matches breakId
-      if (eventId === breakId) {
-        const logEvent: SyncProviderLogEvent = {
-          level: SyncProviderLogLevel.DEBUG,
-          message: `Break ID hit (${breakId}) in calendar (${calendarId})`
-        };
-        this.emit("log", logEvent);
-        breakHit = SyncItemsBreak.ID;
-        break;
-      }
+  public buildResult(calendarId: string, event: calendar_v3.Schema$Event): SchemaEvent {
+    const eventId = event.id || "";
 
       const start: DateTimeInfo = {
-        dateTime: event.start?.dateTime
+        dateTime: event.start?.dateTime || `${event.start?.date}T00:00:00.000Z`
       };
       const end: DateTimeInfo = {
-        dateTime: event.end?.dateTime
+        dateTime: event.end?.dateTime || `${event.end?.date}T00:00:00.000Z`
       };
 
-      if (!start.dateTime) {
-        const logEvent: SyncProviderLogEvent = {
-          level: SyncProviderLogLevel.DEBUG,
-          message: `Invalid start date for event ${eventId}. Skipping this event.`,
-        };
-        this.emit("log", logEvent);
-        continue;
-      }
       // Check for a break based on timestamp
       const updatedTime = event.updated ? new Date(event.updated).toISOString() : new Date().toISOString();
 
@@ -281,7 +254,7 @@ export default class CalendarEventHandler extends GoogleHandler {
 
       const attachments: CalendarAttachment[] = event.attachments as CalendarAttachment[];
 
-      results.push({
+      const eventRecord: SchemaEvent = {
         _id: this.buildItemId(eventId),
         name: event.summary ?? "Unknown",
         sourceAccountId: this.provider.getAccountId(),
@@ -289,6 +262,7 @@ export default class CalendarEventHandler extends GoogleHandler {
         sourceApplication: this.getProviderApplicationUrl(),
         sourceId: eventId,
         schema: CONFIG.verida.schemas.EVENT,
+        uri: event.htmlLink,
         calendarId: calendarId,
         start,
         end,
@@ -301,7 +275,35 @@ export default class CalendarEventHandler extends GoogleHandler {
         attendees,
         attachments,
         insertedAt: updatedTime
-      });
+      }
+
+      return eventRecord
+  }
+
+  private async buildResults(
+    calendarId: string,
+    response: calendar_v3.Schema$Events,
+    breakId: string
+  ): Promise<SyncEventItemsResult> {
+    const results: SchemaEvent[] = [];
+    let breakHit: SyncItemsBreak;
+
+    for (const event of response.items || []) {
+      const eventId = event.id || "";
+
+      // Break if the event ID matches breakId
+      if (eventId === breakId) {
+        const logEvent: SyncProviderLogEvent = {
+          level: SyncProviderLogLevel.DEBUG,
+          message: `Break ID hit (${breakId}) in calendar (${calendarId})`
+        };
+        this.emit("log", logEvent);
+        breakHit = SyncItemsBreak.ID;
+        break;
+      }
+
+      const eventRecord = this.buildResult(calendarId, event)
+      results.push(eventRecord);
     }
 
     return {

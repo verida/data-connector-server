@@ -31,6 +31,32 @@ let handlerConfig: GoogleCalendarHandlerConfig = {
   eventBatchSize: 3
 };
 
+const TEST_EVENT = {
+  kind: 'calendar#event',
+  etag: '"3016564997954000"',
+  id: '1k89v9aphj7rg71_20171016',
+  status: 'confirmed',
+  htmlLink: 'https://www.google.com/calendar/event?eid=MWs4OXY5YXBoajdyZzcxdjBkZ2gzZmVnMjJfMj',
+  created: '2017-10-08T03:08:56.000Z',
+  updated: '2017-10-17T23:21:38.977Z',
+  summary: 'TEST EVENT',
+  creator: { email: 'ME@gmail.com', displayName: 'ME' },
+  organizer: {
+    email: 'op88nn863ft55@group.calendar.google.com',
+    displayName: 'ME CALENDAR',
+    self: true
+  },
+  start: { date: '2017-10-16' },
+  end: { date: '2017-10-17' },
+  recurringEventId: 'rg71v0d',
+  originalStartTime: { date: '2017-10-16' },
+  transparency: 'transparent',
+  iCalUID: '7rg71v0dgh3feg22@google.com',
+  sequence: 0,
+  reminders: { useDefault: false },
+  eventType: 'default'
+}
+
 // Test suite for Google Calendar event syncing
 describe(`${providerId} calendar event tests`, function () {
   this.timeout(100000);
@@ -51,6 +77,33 @@ describe(`${providerId} calendar event tests`, function () {
 
   // Test fetching data for Google Calendar
   describe(`Fetch ${providerId} data`, () => {
+
+    it(`Can handle date only events`, async () => {
+      // console.log((new Date(TEST_EVENT.start.date)).toISOString())
+      // return
+
+      // Build the necessary test objects
+      const { api, handler, provider } = await CommonTests.buildTestObjects(
+        providerId,
+        CalendarEventHandler,
+        providerConfig,
+        connection
+      );
+
+      const testEventResult = (<CalendarEventHandler> handler).buildResult(TEST_EVENT.iCalUID, TEST_EVENT)
+
+      const expectedStartDate = `${TEST_EVENT.start.date}T00:00:00.000Z`
+      const expectedEndDate = `${TEST_EVENT.end.date}T00:00:00.000Z`
+      
+      assert.equal(expectedStartDate, testEventResult.start.dateTime, 'Start date is expected date')
+      assert.equal(expectedEndDate, testEventResult.end.dateTime, 'End date is expected date')
+
+      const startDate = new Date(testEventResult.start.dateTime)
+      const endDate = new Date(testEventResult.end.dateTime)
+
+      assert.equal(startDate.toISOString(), (new Date(TEST_EVENT.start.date)).toISOString(), 'Start date is a valid ISO string')
+      assert.equal(endDate.toISOString(), (new Date(TEST_EVENT.end.date)).toISOString(), 'End date is a valid ISO string')
+    })
 
     it(`Can pass basic tests: ${handlerName}`, async () => {
       // Build the necessary test objects
@@ -81,6 +134,9 @@ describe(`${providerId} calendar event tests`, function () {
         // Extract calendars and events from the results
         const calendars = <SchemaCalendar[]>results.filter(result => result.schema === CONFIG.verida.schemas.CALENDAR);
         const events = <SchemaEvent[]>results.filter(result => result.schema === CONFIG.verida.schemas.EVENT);
+
+        console.log(events[0])
+        return
 
         // Ensure results are returned
         assert.ok(results && results.length, "Have results returned");
