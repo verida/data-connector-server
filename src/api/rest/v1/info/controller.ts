@@ -50,6 +50,7 @@ export class AdminController {
             apiVersion: CONFIG.verida.apiVersion,
             build: CONFIG.verida.build,
             schemas: CONFIG.verida.schemas,
+            mode: CONFIG.verida.mode,
             activeDIDs: Utils.didCount()
         })
     }
