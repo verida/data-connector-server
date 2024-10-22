@@ -53,11 +53,11 @@ export const Data: Command<DataOptions> = {
       console.log(`Filter: ${JSON.stringify(options.filter)}`)
     }
 
-    const networkInstance = await Utils.getNetwork(options.key);
-    const did = (await networkInstance.account.did()).toLowerCase();
+    const networkConnection = await Utils.getNetworkConnectionFromPrivateKey(options.key);
+    const did = (await networkConnection.account.did()).toLowerCase();
     console.log(`-- Verida Account has DID: ${did}`);
 
-    const vault = networkInstance.context;
+    const vault = networkConnection.context;
     const dataDs = await vault.openDatastore(options.schemaUri);
     console.time("Database load");
     const dataDb = await dataDs.getDb();
