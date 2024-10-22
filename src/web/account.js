@@ -1,10 +1,28 @@
-document.addEventListener("DOMContentLoaded", function () {
+const apiEndpoint = `/api/rest/v1`
+
+$(document).ready(function() {
     // Function to load the private key from local storage
     const privateKey = localStorage.getItem('veridaKey');
 
     if (privateKey) {
+        // Make GET request to load server mode
+        fetch(`${apiEndpoint}/info/status`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json()
+            }
+        })
+        .then(data => {
+            $('.navbar').addClass(`mode-${data.mode}`)
+        })
+
         // Make GET request to load account details
-        fetch(`/api/rest/v1/account/fromKey?key=${privateKey}`, {
+        fetch(`${apiEndpoint}/account/fromKey?key=${privateKey}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
