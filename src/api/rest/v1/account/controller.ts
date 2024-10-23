@@ -2,13 +2,12 @@ import { Request, Response } from "express";
 import { Utils } from "../../../../utils";
 
 /**
- * 
+ *
  */
 export class AccountController {
-    
     public async fromKey(req: Request, res: Response) {
         try {
-            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
             const profile = await networkInstance.context.openProfile()
 
             const result: any = {

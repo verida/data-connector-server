@@ -21,10 +21,14 @@
 <body>
     <div class="container">
         <h1 class="text-center my-4">Login with Telegram</h1>
-        <p class="text-center">Scan the QR code to connect your Telegram account:</p>
-        <div class="qr-container" id="qr-container">
+        <!-- <p class="text-center">Scan the QR code to connect your Telegram account:</p> -->
+        <!-- <div class="qr-container" id="qr-container">
             <div id="qr-code" class="qr-code"></div>
-        </div>
+        </div> -->
+        <div id="errorContainer" class="alert alert-danger fade show" role="alert">
+            <span id="errorMessage"></span>
+          </div>
+          
         <div class="input-container" id="input-container"></div>
     </div>
 </body>
