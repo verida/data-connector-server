@@ -198,7 +198,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
           startId: items[0].sourceId,
           endId: response.response_metadata?.next_cursor,
         },
-        latestResult.breakHit === SyncItemsBreak.ID
+        latestResult.breakHit == SyncItemsBreak.ID
       );
     } else {
       rangeTracker.completedRange(
@@ -233,7 +233,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
       if (backfillResult.items.length) {
         rangeTracker.completedRange({
           startId: backfillResult.items[0].sourceId,
-          endId: response.response_metadata?.next_cursor
+          endId: backfillResponse.response_metadata?.next_cursor
         }, backfillResult.breakHit == SyncItemsBreak.ID)
       } else {
         rangeTracker.completedRange({
