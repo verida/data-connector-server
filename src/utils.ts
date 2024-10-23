@@ -1,12 +1,16 @@
-import { Network as VeridaNetwork, IContext } from '@verida/types'
+import { Network as VeridaNetwork, IContext, ContextSession, IAccount } from '@verida/types'
 import { Client } from "@verida/client-ts"
 import { Credentials } from '@verida/verifiable-credentials'
 import Providers from "./providers"
 import fs from 'fs'
 import path from 'path'
 import serverconfig from './config'
-import { AutoAccount } from '@verida/account-node'
+import { AutoAccount, SessionAccount } from '@verida/account-node'
 import { Request } from 'express'
+import { Service as AccessService } from './api/rest/v1/access/service'
+
+export const VERIDA_DID_REGEXP =
+  /did:vda:(devnet|mainnet|testnet):0x[0-9a-fA-F]{40}/;
 
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
@@ -28,19 +32,58 @@ export interface NetworkConnectionCache {
 export interface NetworkConnection {
     network: Client,
     context: IContext,
-    account: AutoAccount,
+    account: IAccount,
     did: string
 }
 
 export class Utils {
-
     protected static networkCache: Record<string, NetworkConnectionCache> = {}
 
-    public static async getNetworkFromRequest(req: Request): Promise<NetworkConnection> {
-        const headers = req.headers
-        const key = headers["key"] ? headers["key"].toString() : req.query.key.toString()
+    /**
+     * Get a network connection from a request
+     *
+     * @param req
+     * @param options
+     * @returns
+     */
+    public static async getNetworkConnectionFromRequest(req: Request, options?: { ignoreAccessCheck?: boolean, checkAdmin?: boolean }): Promise<NetworkConnection> {
+        // Extract session
+        let session: ContextSession | undefined;
 
-        return Utils.getNetwork(key)
+        const apiKey = req.header('X-API-Key');
+        if (apiKey) {
+            session = JSON.parse(Buffer.from(apiKey, 'base64').toString('utf-8'));
+        } else if (req.query["api_key"]) {
+            session = JSON.parse(Buffer.from(req.query["api_key"].toString(), 'base64').toString('utf-8'));
+        }
+
+        // Extract private key
+        const key = req.header("key") || req.query["key"]?.toString()
+
+        let networkConnection: NetworkConnection
+        if (session) {
+            networkConnection = await Utils.getNetworkConnectionFromContextSession(session, 'none')
+        } else if (key) {
+            networkConnection = await Utils.getNetworkConnectionFromPrivateKey(key || '', 'none')
+        } else {
+            throw new Error("No credentials provided")
+        }
+
+        if (!options?.ignoreAccessCheck) {
+            const accessService = new AccessService()
+
+            const accessRecord = await accessService.getAccessRecord(networkConnection.did)
+
+            if (!accessRecord?.access) {
+                throw new Error("Access denied")
+            }
+
+            if (options?.checkAdmin && !accessRecord?.admin) {
+                throw new Error("Access denied")
+            }
+        }
+
+        return networkConnection
     }
 
     public static didCount() {
@@ -49,25 +92,47 @@ export class Utils {
 
     /**
      * Get a network, context and account instance
-     * 
-     * @returns 
+     *
+     * @returns
+     * Get a network connection from a private key
+     *
+     * @param privateKey
+     * @param requestId
+     * @returns
      */
-    public static async getNetwork(contextSignature: string, requestId: string = 'none'): Promise<NetworkConnection> {
-        const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
-        const network = new Client({
-            network: VERIDA_ENVIRONMENT
-        })
-
-        // @todo: Switch to context account once context storage node issue fixed and deployed
-        //const account = new ContextAccount({
+    public static async getNetworkConnectionFromPrivateKey(privateKey: string, requestId: string = 'none'): Promise<NetworkConnection> {
         const account = new AutoAccount({
-            privateKey: contextSignature,
-            network: VERIDA_ENVIRONMENT,
+            privateKey,
+            network: serverconfig.verida.environment as VeridaNetwork,
             // @ts-ignore
             didClientConfig: DID_CLIENT_CONFIG
         })
-        //}, did, VAULT_CONTEXT_NAME)
 
+        return await Utils.getNetworkConnection(account, requestId)
+    }
+
+    /**
+     * Get a network connection from a context session.
+     *
+     * @param contextSession
+     * @param requestId
+     * @returns
+     */
+    public static async getNetworkConnectionFromContextSession(contextSession: ContextSession, requestId: string = 'none'): Promise<NetworkConnection> {
+        const account = new SessionAccount({
+            network: serverconfig.verida.environment as VeridaNetwork,
+            contextSession
+        })
+
+        return await Utils.getNetworkConnection(account, requestId)
+    }
+
+    /**
+     * Get a network, context and account instance
+     *
+     * @returns
+     */
+    private static async getNetworkConnection(account: IAccount, requestId: string = 'none'): Promise<NetworkConnection> {
         const did = await account.did()
 
         // If we have a promise for changing state, wait for it to complete
@@ -93,18 +158,22 @@ export class Utils {
             lastTouch: new Date()
         }
 
+        const network = new Client({
+            network: serverconfig.verida.environment as VeridaNetwork
+        })
+
         Utils.networkCache[did].currentPromise = new Promise(async (resolve, reject) => {
             try {
                 await network.connect(account)
                 const context = await network.openContext(VAULT_CONTEXT_NAME)
-        
-                const networkConnection = {
+
+                const networkConnection: NetworkConnection = {
                     network,
                     context,
                     account,
                     did
                 }
-        
+
                 Utils.networkCache[did] = {
                     requestIds: [requestId],
                     lastTouch: new Date(),
@@ -303,3 +372,13 @@ export class Utils {
 const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
 
 export { VERIDA_ENVIRONMENT }
+
+/**
+ * Check if a string value is a valid Verida DID.
+ *
+ * @param did The DID or value to test.
+ * @returns `true` if a valid Verida DID, `false` otherwise.
+ */
+export function isValidVeridaDid(did?: string): boolean {
+  return did ? VERIDA_DID_REGEXP.test(did) : false;
+}

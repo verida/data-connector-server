@@ -334,6 +334,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         position: syncPosition
       }
     } catch (err: any) {
+      console.log(err.message)
       if (err instanceof TDError) {
         if (err.code == 401) {
           throw new InvalidTokenError(err.message)

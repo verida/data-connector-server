@@ -10,7 +10,7 @@
             "exposeLogs": false,
             "logsPassword": "a890s7dfna9df7"
         },
-        "devMode": true,
+        "mode": "development",
         "environment": "banksia",
         "testVeridaKey": "0x...",
         "testVeridaNetwork": "banksia",
@@ -18,8 +18,7 @@
         "didClientConfig": {
             "callType": "web3",
             "network": "banksia",
-            "web3Config": {   
-            }
+            "web3Config": {}
         },
         "schemas": {
             "DATA_CONNECTIONS": "https://vault.schemas.verida.io/data-connections/connection/v0.3.0/schema.json",
@@ -31,7 +30,9 @@
             "FAVOURITE": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
             "FILE": "https://common.schemas.verida.io/file/v0.1.0/schema.json",
             "CHAT_GROUP": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
-            "CHAT_MESSAGE": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
+            "CHAT_MESSAGE": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
+            "CALENDAR": "https://common.schemas.verida.io/social/calendar/v0.1.0/schema.json",
+            "EVENT": "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
         },
         "llms": {
             "bedrockEndpoint": "",
@@ -89,13 +90,16 @@
             "batchSize": 50,
             "sizeLimit": 10,
             "maxSyncLoops": 1,
-            "breakTimestamp": "2000-07-21T12:07:11.000Z",
             "handlers": {
                 "gmail": {
                     "batchSize": 200
                 },
                 "google-drive-document": {
                     "batchSize": 50
+                },
+                "calendar-event": {
+                    "backdate": "12-months",
+                    "eventBatchSize": 10
                 }
             }
         },
@@ -114,8 +118,9 @@
     },
     "providerDefaults": {
         "limitResults": false
+    },
+    "notion": {
+        "apiKey": "",
+        "restrictedAccessDatabaseId": ""
     }
 }
-
-
-

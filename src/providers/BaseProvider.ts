@@ -204,118 +204,121 @@ export default class BaseProvider extends EventEmitter {
      * @returns 
      */
     public async sync(accessToken?: string, refreshToken?: string, force: boolean = false): Promise<Connection> {
-        // @todo: handle handler is in error state
+        try {
+            // @todo: handle handler is in error state
 
-        // Touch network, to ensure cache remains active
-        const account = await this.vault.getAccount()
-        await Utils.touchNetworkCache(await account.did())
+            // Touch network, to ensure cache remains active
+            const account = await this.vault.getAccount()
+            await Utils.touchNetworkCache(await account.did())
 
-        if (!accessToken) {
-            const connection = this.getConnection()
-            accessToken = connection.accessToken
-            refreshToken = refreshToken ? refreshToken : connection.refreshToken
-        }
+            if (!accessToken) {
+                const connection = this.getConnection()
+                accessToken = connection.accessToken
+                refreshToken = refreshToken ? refreshToken : connection.refreshToken
+            }
 
-        if (this.connection.syncStatus == SyncStatus.INVALID_AUTH) {
-            return this.connection
-        } else if (this.connection.syncStatus == SyncStatus.PAUSED) {
-            await this.logMessage(SyncProviderLogLevel.WARNING, `Sync is paused, so not syncing`)
-            this.connection.syncMessage = `Sync is paused, so not syncing`
-            return this.connection
-        }
-
-        let forceHandlerSync = false
-        if (force) {
-            await this.logMessage(SyncProviderLogLevel.INFO, `Sync is being forced as requested`)
-            this.connection.syncMessage = `Sync is being forced as requested`
-            this.connection.syncStatus = SyncStatus.CONNECTED
-            forceHandlerSync = true
-        } else {
-            // Check nextSync timestamp is in the past
-            const now = (new Date()).toISOString()
-            if (this.connection.syncNext > now) {
-                // Sync isn't scheduled yet
-                console.log('sync isnt scheduled yet ', this.connection.syncNext)
-                await this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't scheduled to run until ${this.connection.syncNext}`)
+            if (this.connection.syncStatus == SyncStatus.INVALID_AUTH) {
+                return this.connection
+            } else if (this.connection.syncStatus == SyncStatus.PAUSED) {
+                await this.logMessage(SyncProviderLogLevel.WARNING, `Sync is paused, so not syncing`)
+                this.connection.syncMessage = `Sync is paused, so not syncing`
                 return this.connection
             }
 
-            if (this.connection.syncStatus == SyncStatus.ERROR) {
-                await this.logMessage(SyncProviderLogLevel.DEBUG, `Sync has errors, so retrying`)
-                this.connection.syncMessage = `Sync has errors, so retrying`
-                // One or more handlers have an error, so retry
+            let forceHandlerSync = false
+            if (force) {
+                await this.logMessage(SyncProviderLogLevel.INFO, `Sync is being forced as requested`)
+                this.connection.syncMessage = `Sync is being forced as requested`
                 this.connection.syncStatus = SyncStatus.CONNECTED
-            } else if (this.connection.syncStatus == SyncStatus.ACTIVE) {
-                // Sync is still active, check it hasn't timed out
-                if (await this.isTimedOut()) {
-                    await this.logMessage(SyncProviderLogLevel.ERROR, `Sync timeout has been detected, so reseting and initiating sync`)
-                    this.connection.syncMessage = `Sync timeout has been detected, so resetting`
-                    this.connection.syncStatus = SyncStatus.CONNECTED
-                    forceHandlerSync = true
-                } else {
-                    await this.logMessage(SyncProviderLogLevel.INFO, `Sync is currently running, so not starting again`)
+                forceHandlerSync = true
+            } else {
+                // Check nextSync timestamp is in the past
+                const now = (new Date()).toISOString()
+                if (this.connection.syncNext > now) {
+                    // Sync isn't scheduled yet
+                    await this.logMessage(SyncProviderLogLevel.INFO, `Sync isn't scheduled to run until ${this.connection.syncNext}`)
                     return this.connection
                 }
+
+                if (this.connection.syncStatus == SyncStatus.ERROR) {
+                    await this.logMessage(SyncProviderLogLevel.DEBUG, `Sync has errors, so retrying`)
+                    this.connection.syncMessage = `Sync has errors, so retrying`
+                    // One or more handlers have an error, so retry
+                    this.connection.syncStatus = SyncStatus.CONNECTED
+                } else if (this.connection.syncStatus == SyncStatus.ACTIVE) {
+                    // Sync is still active, check it hasn't timed out
+                    if (await this.isTimedOut()) {
+                        await this.logMessage(SyncProviderLogLevel.ERROR, `Sync timeout has been detected, so reseting and initiating sync`)
+                        this.connection.syncMessage = `Sync timeout has been detected, so resetting`
+                        this.connection.syncStatus = SyncStatus.CONNECTED
+                        forceHandlerSync = true
+                    } else {
+                        await this.logMessage(SyncProviderLogLevel.INFO, `Sync is currently running, so not starting again`)
+                        return this.connection
+                    }
+                }
             }
-        }
 
-        await this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
+            await this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
 
-        this.connection.syncStatus = SyncStatus.ACTIVE
-        this.connection.syncStart = Utils.nowTimestamp()
-        await this.saveConnection()
+            this.connection.syncStatus = SyncStatus.ACTIVE
+            this.connection.syncStart = Utils.nowTimestamp()
+            await this.saveConnection()
 
-        const syncHandlers = await this.getSyncHandlers()
-        const api = await this.getApi(accessToken, refreshToken)
-        const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
-        const syncPromises = []
-        const syncHandlerNames = []
-        for (let h in syncHandlers) {
-            const handler = syncHandlers[h]
-            syncHandlerNames.push(handler.getId())
-            syncPromises.push(this._syncHandler(handler, api, syncPositionsDs, forceHandlerSync))
-        }
+            const syncHandlers = await this.getSyncHandlers()
+            const api = await this.getApi(accessToken, refreshToken)
+            const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
+            const syncPromises = []
+            const syncHandlerNames = []
+            for (let h in syncHandlers) {
+                const handler = syncHandlers[h]
+                syncHandlerNames.push(handler.getId())
+                syncPromises.push(this._syncHandler(handler, api, syncPositionsDs, forceHandlerSync))
+            }
 
-        const syncHandlerResults = await Promise.allSettled(syncPromises)
-        this.connection.syncStatus = SyncStatus.CONNECTED
-        for (const handlerResult of syncHandlerResults) {
-            if (handlerResult.status == "rejected") {
-                const err = handlerResult.reason
-                if (err instanceof InvalidTokenError) {
-                    this.connection.syncStatus = SyncStatus.INVALID_AUTH
-                    this.connection.syncMessage = `Permission denied due to token expiry. Reconnect required.`
-                    await this.logMessage(SyncProviderLogLevel.WARNING, this.connection.syncMessage)
-                    break
-                } else {
+            const syncHandlerResults = await Promise.allSettled(syncPromises)
+            this.connection.syncStatus = SyncStatus.CONNECTED
+            for (const handlerResult of syncHandlerResults) {
+                if (handlerResult.status == "rejected") {
+                    const err = handlerResult.reason
+                    if (err instanceof InvalidTokenError) {
+                        this.connection.syncStatus = SyncStatus.INVALID_AUTH
+                        this.connection.syncMessage = `Permission denied due to token expiry. Reconnect required.`
+                        await this.logMessage(SyncProviderLogLevel.WARNING, this.connection.syncMessage)
+                        break
+                    } else {
+                        this.connection.syncStatus = SyncStatus.ERROR
+                        this.connection.syncMessage = `Unknown error: ${err.message}`
+                        await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
+                    }
+                } else if (handlerResult.value.syncPosition.status == SyncHandlerStatus.ERROR) {
                     this.connection.syncStatus = SyncStatus.ERROR
-                    this.connection.syncMessage = `Unknown error: ${err.message}`
+                    this.connection.syncMessage = `${handlerResult.value.syncPosition.handlerId} had an error (${handlerResult.value.syncPosition.syncMessage})`
                     await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
                 }
-            } else if (handlerResult.value.syncPosition.status == SyncHandlerStatus.ERROR) {
-                this.connection.syncStatus = SyncStatus.ERROR
-                this.connection.syncMessage = `One or more data sources had an error`
-                await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
+
+                // @todo if handlerResult.value.syncPosition.status == SyncHandlerStatus.SYNCING -- do we sync the handler again or let it stop?
+                // @todo if we do stop, change sync status to enabled
             }
 
-            // @todo if handlerResult.value.syncPosition.status == SyncHandlerStatus.SYNCING -- do we sync the handler again or let it stop?
-            // @todo if we do stop, change sync status to enabled
+            // Add latest profile info
+            this.connection.profile = await this.getProfile()
+
+            // Close any connections
+            await this.close()
+
+            this.setNextSync()
+
+            this.connection.syncEnd = Utils.nowTimestamp()
+            await this.saveConnection()
+            await this.logMessage(SyncProviderLogLevel.INFO, `Sync complete for ${this.getProviderId()} (${syncHandlerNames.join(', ')})`)
+
+            // @todo: do we sync again if needed?
+
+            return this.connection
+        } catch (err: any) {
+            await this.logMessage(SyncProviderLogLevel.ERROR, `Sync error for ${this.getProviderId()} (${err.message})`)
         }
-
-        // Add latest profile info
-        this.connection.profile = await this.getProfile()
-
-        // Close any connections
-        await this.close()
-
-        this.setNextSync()
-
-        this.connection.syncEnd = Utils.nowTimestamp()
-        await this.saveConnection()
-        await this.logMessage(SyncProviderLogLevel.INFO, `Sync complete for ${this.getProviderId()} (${syncHandlerNames.join(', ')})`)
-
-        // @todo: do we sync again if needed?
-
-        return this.connection
     }
 
     /**
@@ -388,6 +391,7 @@ export default class BaseProvider extends EventEmitter {
         const syncPosition = await this.getSyncPosition(handler.getId(), syncPositionsDs)
 
         if (syncPosition.status == SyncHandlerStatus.INVALID_AUTH) {
+            syncPosition.syncMessage = `Invalid authentication tokens. Try reconnecting.`
             // If access is denied, don't even try to sync
             return {
                 syncPosition,
@@ -405,6 +409,8 @@ export default class BaseProvider extends EventEmitter {
         } else if (syncPosition.status == SyncHandlerStatus.ERROR) {
             if (syncPosition.errorRetries >= MAX_ERROR_RETRIES) {
                 // Have hit maximum erorr retries, don't even try to sync
+                syncPosition.syncMessage = `Maximum error retries hit (${MAX_ERROR_RETRIES}). Try reconnecting.`
+
                 return {
                     syncPosition,
                     syncResults: []
