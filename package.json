@@ -67,6 +67,7 @@
     "memory-cache": "^0.2.0",
     "minisearch": "^7.1.0",
     "mocha": "^9.2.1",
+    "moment-timezone": "^0.5.45",
     "nano": "^9.0.5",
     "node-imap": "^0.9.6",
     "officeparser": "^4.1.1",

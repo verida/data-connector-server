@@ -41,3 +41,25 @@ export enum YoutubeActivityType {
   PLAYLIST_ITEM = "playlistItem", //ignored
   RECOMMENDATION = "recommendation", // favourite
 }
+
+export interface Person {
+  email: string
+  displayName?: string
+}
+
+export interface DateTimeInfo {
+  dateTime: string;  // ISO format: YYYY-MM-DDTHH:mm:ss.sssZ
+  timeZone?: string;  // UTC offset format: ±HH:MM
+}
+
+export interface CalendarAttachment {
+  fileUrl?: string;   // URL of the file
+  title?: string;     // Title of the attachment
+  mimeType?: string;  // MIME type of the file
+  iconLink?: string;  // URL of the icon representing the file
+  fileId?: string;    // Unique identifier for the file
+}
+
+export interface GoogleCalendarHandlerConfig extends BaseHandlerConfig {
+  eventBatchSize: number; // Max number of event to process in a calendar
+}
