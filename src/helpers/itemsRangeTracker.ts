@@ -71,8 +71,10 @@ export class ItemsRangeTracker {
             if (range.startId == range.endId) {
                 // All interim items have been deleted, so
                 // we need to merge the two most recent ranges
-                this.completedRanges[1].startId = this.completedRanges[0].startId
-                this.completedRanges.splice(0,1)
+                if (this.completedRanges.length > 1) {
+                    this.completedRanges[1].startId = this.completedRanges[0].startId
+                    this.completedRanges.splice(0,1)
+                }
             } else {
                 this.completedRanges[0].endId = range.startId
 
