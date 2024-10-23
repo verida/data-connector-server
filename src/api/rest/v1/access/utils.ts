@@ -73,7 +73,6 @@ export async function getAccessRecord(notionClient: NotionClient, did: string): 
   }
 
   try {
-
     const response = await notionClient.databases.query({
       database_id: serverconfig.notion.restrictedAccessDatabaseId,
       filter: {
@@ -88,7 +87,7 @@ export async function getAccessRecord(notionClient: NotionClient, did: string): 
       return undefined;
     }
 
-    const record = response.results[0] as DatabaseObjectResponse;
+    const record = response.results[response.results.length-1] as DatabaseObjectResponse;
 
     const accessRecord = transformNotionRecordToAccessRecord(record);
 
