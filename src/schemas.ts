@@ -137,14 +137,16 @@ export interface SchemaFile extends SchemaRecord {
 
 export interface SchemaCalendar extends SchemaRecord {
     description?: string
-    timezone: string
+    timezone?: string
     location?: string
+    syncData?: string
 }
 
 export interface SchemaEvent extends SchemaRecord {
     status?: string
     description?: string
     calendarId: string
+    uri?: string
     location?: string
     creator?: Person
     organizer?: Person

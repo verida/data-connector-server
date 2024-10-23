@@ -10,7 +10,7 @@
             "exposeLogs": false,
             "logsPassword": "a890s7dfna9df7"
         },
-        "devMode": true,
+        "mode": "development",
         "environment": "banksia",
         "testVeridaKey": "0x...",
         "testVeridaNetwork": "banksia",
@@ -18,8 +18,7 @@
         "didClientConfig": {
             "callType": "web3",
             "network": "banksia",
-            "web3Config": {   
-            }
+            "web3Config": {}
         },
         "schemas": {
             "DATA_CONNECTIONS": "https://vault.schemas.verida.io/data-connections/connection/v0.3.0/schema.json",
@@ -38,9 +37,6 @@
         "llms": {
             "bedrockEndpoint": "",
             "bedrockKey": ""
-        },
-        "libs": {
-            "telegram": "libtdjson.so"
         },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15
@@ -94,13 +90,16 @@
             "batchSize": 50,
             "sizeLimit": 10,
             "maxSyncLoops": 1,
-            "breakTimestamp": "2000-07-21T12:07:11.000Z",
             "handlers": {
                 "gmail": {
                     "batchSize": 200
                 },
                 "google-drive-document": {
                     "batchSize": 50
+                },
+                "calendar-event": {
+                    "backdate": "12-months",
+                    "eventBatchSize": 10
                 }
             }
         },
@@ -128,8 +127,9 @@
     },
     "providerDefaults": {
         "limitResults": false
+    },
+    "notion": {
+        "apiKey": "",
+        "restrictedAccessDatabaseId": ""
     }
 }
-
-
-

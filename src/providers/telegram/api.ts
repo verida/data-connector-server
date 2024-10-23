@@ -4,7 +4,6 @@ import { Client } from "tdlib-native";
 import { TDLibAddon } from "tdlib-native/addon";
 
 import CONFIG from '../../config'
-const TELEGRAM_LIB = CONFIG.verida.libs.telegram ? CONFIG.verida.libs.telegram : undefined
 
 const tdPathPrefix = `_td`
 
@@ -30,7 +29,7 @@ export class TelegramApi {
 
         // Loading addon
         try {
-            const adapter = await TDLibAddon.create(TELEGRAM_LIB);
+            const adapter = await TDLibAddon.create();
         
             // Make TDLib shut up. Immediately
             Client.disableLogs(adapter);

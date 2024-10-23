@@ -7,6 +7,10 @@ import path from 'path'
 import serverconfig from './config'
 import { AutoAccount } from '@verida/account-node'
 import { Request } from 'express'
+import { Service as AccessService } from './api/rest/v1/access/service'
+
+export const VERIDA_DID_REGEXP =
+  /did:vda:(devnet|mainnet|testnet):0x[0-9a-fA-F]{40}/;
 
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
 const DID_CLIENT_CONFIG = serverconfig.verida.didClientConfig
@@ -36,11 +40,27 @@ export class Utils {
 
     protected static networkCache: Record<string, NetworkConnectionCache> = {}
 
-    public static async getNetworkFromRequest(req: Request): Promise<NetworkConnection> {
+    public static async getNetworkFromRequest(req: Request, options?: {ignoreAccessCheck?: boolean, checkAdmin?: boolean}): Promise<NetworkConnection> {
         const headers = req.headers
         const key = headers["key"] ? headers["key"].toString() : req.query.key.toString()
 
-        return Utils.getNetwork(key)
+        const networkConnection = await Utils.getNetwork(key)
+
+        if (!options?.ignoreAccessCheck) {
+            const accessService = new AccessService()
+
+            const accessRecord = await accessService.getAccessRecord(networkConnection.did)
+
+            if (!accessRecord?.access) {
+                throw new Error("Access denied")
+            }
+
+            if (options?.checkAdmin && !accessRecord?.admin) {
+                throw new Error("Access denied")
+            }
+        }
+
+        return networkConnection
     }
 
     public static didCount() {
@@ -49,8 +69,8 @@ export class Utils {
 
     /**
      * Get a network, context and account instance
-     * 
-     * @returns 
+     *
+     * @returns
      */
     public static async getNetwork(contextSignature: string, requestId: string = 'none'): Promise<NetworkConnection> {
         const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
@@ -97,14 +117,14 @@ export class Utils {
             try {
                 await network.connect(account)
                 const context = await network.openContext(VAULT_CONTEXT_NAME)
-        
+
                 const networkConnection = {
                     network,
                     context,
                     account,
                     did
                 }
-        
+
                 Utils.networkCache[did] = {
                     requestIds: [requestId],
                     lastTouch: new Date(),
@@ -303,3 +323,13 @@ export class Utils {
 const VERIDA_ENVIRONMENT = <VeridaNetwork> serverconfig.verida.environment
 
 export { VERIDA_ENVIRONMENT }
+
+/**
+ * Check if a string value is a valid Verida DID.
+ *
+ * @param did The DID or value to test.
+ * @returns `true` if a valid Verida DID, `false` otherwise.
+ */
+export function isValidVeridaDid(did?: string): boolean {
+  return did ? VERIDA_DID_REGEXP.test(did) : false;
+}

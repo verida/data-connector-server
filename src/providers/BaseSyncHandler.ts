@@ -243,6 +243,7 @@ export default class BaseSyncHandler extends EventEmitter {
                 // Re-throw so the provider can handle
                 throw err
             } else {
+                console.error(err)
                 message = `Unknown error handling sync results: ${err.message}`
                 this.emit('log', {
                     level: SyncProviderLogLevel.ERROR,
@@ -250,6 +251,7 @@ export default class BaseSyncHandler extends EventEmitter {
                 })
 
                 syncPosition.status = SyncHandlerStatus.ERROR
+                syncPosition.syncMessage = `${err.message}`
                 if (syncPosition.errorRetries) {
                     syncPosition.errorRetries++
                 }
