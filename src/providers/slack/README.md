@@ -13,6 +13,10 @@
 Slack workspaces might have many public channels and spam messages that are less relevant to users' privacy, so **DM/Private** groups have priority.
 
 Slack `ItemsRangeTracker` is based on timestamps, which are used as the IDs of chat message records due to the nature of its API.
+
+Slack supports two types of pagination: timeline-based and cursor-based
+
+### Timeline Based
 ```
 const response = await apiClient.conversations.history({
      channel,
@@ -21,3 +25,14 @@ const response = await apiClient.conversations.history({
      latest            // end timestamp
 });
 ```
+
+### Cursor Based
+```
+const response = await apiClient.conversations.history({
+     channel,
+     limit,
+     cursor,           // next_cursor from response_metadata
+});
+```
+
+We use Cusor-based pagination here which is equal to 'pageToken` from Google to provide consistency.
