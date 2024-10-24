@@ -77,11 +77,14 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     const client = this.getSlackClient();
     let channelList: SchemaSocialChatGroup[] = [];
     const types = ["im", "private_channel", "public_channel"];
-
+    
     // Loop through each type of channel (DM, private, public)
     for (const type of types) {
       const conversations = await client.conversations.list({ types: type });
       for (const channel of conversations.channels || []) {
+        // Skip archived channels
+        if(channel?.is_archived) continue;
+        
         const group: SchemaSocialChatGroup = this.buildChatGroup(channel);
         channelList.push(group);
       }
@@ -254,6 +257,9 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     let breakHit: SyncItemsBreak;
 
     for (const message of response.messages || []) {
+      // skip if bot message
+      if (message.subtype === 'bot_message') continue;
+
       const messageId = message.ts || "";
 
       // Break if the message ID matches breakId
@@ -281,6 +287,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     groupId: string,
     message: MessageElement
   ): Promise<SchemaSocialChatMessage> {
+
     const user = await SlackHelpers.getUserInfo(
       this.connection.accessToken,
       message.user
@@ -289,7 +296,6 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     return {
       _id: this.buildItemId(message.ts),
       groupId: groupId,
-      groupName: groupId,
       messageText: message.text,
       fromHandle: user.profile.email ?? "Unknown",
       sourceAccountId: this.provider.getAccountId(),
