@@ -132,6 +132,59 @@ describe(`${providerId} chat message tests`, function () {
         throw err;
       }
     });
+
+    it(`Should match email from User Info with message's fromHandle`, async () => {
+      try {
+        // Build the necessary test objects
+        const { api, handler, provider } = await CommonTests.buildTestObjects(
+          providerId,
+          SlackChatMessageHandler,
+          providerConfig,
+          connection
+        );
+
+        // Set the handler configuration
+        handler.setConfig(handlerConfig);
+
+        // Set up initial sync position
+        const syncPosition: SyncHandlerPosition = {
+          _id: `${providerId}-${handlerName}`,
+          providerId,
+          handlerId: handler.getId(),
+          accountId: provider.getAccountId(),
+          status: SyncHandlerStatus.ENABLED,
+        };
+
+        // Start the sync process
+        const response = await handler._sync(api, syncPosition);
+        const secondBatchResults = <SchemaRecord[]>response.results;
+
+        // Extract chat messages from the second batch results
+        const chatMessages = <SchemaSocialChatMessage[]>(
+          secondBatchResults.filter(
+            (result) => result.schema === CONFIG.verida.schemas.CHAT_MESSAGE
+          )
+        );
+
+        // Check email comparison for the first message
+        const firstMessage = chatMessages[0];
+        const userInfo = await SlackHelpers.getUserInfo(
+          connection.accessToken,
+          firstMessage.fromId
+        );
+
+        // Compare email from fromHandle and userInfo
+        assert.equal(
+          firstMessage.fromHandle,
+          userInfo.profile.email,
+          "fromHandle email matches userInfo email"
+        );
+
+      } catch (err) {
+        await provider.close();
+        throw err;
+      }
+    });
   });
 
   // After all tests, close the network context
