@@ -112,7 +112,7 @@ export function transformNotionRecordToAccessRecord(record: DatabaseObjectRespon
 
   return {
     id: record.id,
-    did: getValueFromNotionTitleProperty(properties["DID"]),
+    didAddress: getValueFromNotionTitleProperty(properties["DID"]),
     admin: getValueFromNotionCheckboxProperty(properties["Admin"]),
     access: getValueFromNotionCheckboxProperty(properties["Access"]),
   }
