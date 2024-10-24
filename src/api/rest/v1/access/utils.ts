@@ -1,6 +1,7 @@
 import { Request } from "express";
 import { Client as NotionClient } from "@notionhq/client";
 import { DatabaseObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { interpretIdentifier } from "@verida/vda-common";
 
 import { AccessRecord } from "./types";
 import { NotionDatabaseProperty } from "./notion-types";
@@ -72,13 +73,15 @@ export async function getAccessRecord(notionClient: NotionClient, did: string): 
     throw new Error("Notion restricted access database ID is not set")
   }
 
+  const didAddress = interpretIdentifier(did).address
+
   try {
     const response = await notionClient.databases.query({
       database_id: serverconfig.notion.restrictedAccessDatabaseId,
       filter: {
         property: "DID",
         rich_text: {
-          equals: did,
+          contains: didAddress
         },
       },
     })
@@ -107,7 +110,7 @@ export function transformNotionRecordToAccessRecord(record: DatabaseObjectRespon
 
   return {
     id: record.id,
-    did: getValueFromNotionTitleProperty(properties["DID"]),
+    didAddress: getValueFromNotionTitleProperty(properties["DID"]),
     admin: getValueFromNotionCheckboxProperty(properties["Admin"]),
     access: getValueFromNotionCheckboxProperty(properties["Access"]),
   }
