@@ -20,7 +20,7 @@ export type GetAccessV1ErrorResponse = ErrorResponse & {
 
 export type AccessRecord = {
   id: string;
-  did: string;
+  didAddress: string;
   admin: boolean;
   access: boolean;
 }
