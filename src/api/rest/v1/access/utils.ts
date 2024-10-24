@@ -36,8 +36,6 @@ export async function createAccessRecord(notionClient: NotionClient, did: string
     return
   }
 
-  const didAddress = interpretIdentifier(did).address
-
   try {
     await notionClient.pages.create({
       parent: {
@@ -49,7 +47,7 @@ export async function createAccessRecord(notionClient: NotionClient, did: string
           type: "title",
           title: [{
             type: "text",
-            text: { content: didAddress }
+            text: { content: did }
           }],
         },
         Admin: {
@@ -83,7 +81,7 @@ export async function getAccessRecord(notionClient: NotionClient, did: string): 
       filter: {
         property: "DID",
         rich_text: {
-          equals: didAddress
+          contains: didAddress
         },
       },
     })
