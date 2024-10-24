@@ -24,6 +24,22 @@ export class SlackHelpers {
     }
   }
 
+  // Helper function to fetch user info for all unique user IDs in parallel
+  static async fetchUserInfoBulk(accessToken: string, userIds: string[]): Promise<{ [key: string]: any }> {
+    const promises = userIds.map((userId) =>
+      this.getUserInfo(accessToken, userId)
+    );
+    const results = await Promise.all(promises);
+
+    // Map user info by userId
+    const userInfoMap: { [key: string]: any } = {};
+    results.forEach((userInfo, index) => {
+      userInfoMap[userIds[index]] = userInfo;
+    });
+
+    return userInfoMap;
+  }
+
   static getGroupPositionIndex(
     groupList: SchemaSocialChatGroup[],
     groupId: string|undefined

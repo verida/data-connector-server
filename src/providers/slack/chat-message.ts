@@ -1,4 +1,8 @@
-import { ConversationsHistoryArguments, ConversationsHistoryResponse, WebClient } from "@slack/web-api";
+import {
+  ConversationsHistoryArguments,
+  ConversationsHistoryResponse,
+  WebClient,
+} from "@slack/web-api";
 import CONFIG from "../../config";
 import {
   SyncResponse,
@@ -77,14 +81,11 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     const client = this.getSlackClient();
     let channelList: SchemaSocialChatGroup[] = [];
     const types = ["im", "private_channel", "public_channel"];
-    
-    // Loop through each type of channel (DM, private, public)
+
     for (const type of types) {
       const conversations = await client.conversations.list({ types: type });
       for (const channel of conversations.channels || []) {
-        // Skip archived channels
-        if(channel?.is_archived) continue;
-        
+        if (channel?.is_archived) continue;
         const group: SchemaSocialChatGroup = this.buildChatGroup(channel);
         channelList.push(group);
       }
@@ -112,8 +113,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
   ): Promise<SyncResponse> {
     try {
       const apiClient = this.getSlackClient();
-      const groupList = await this.buildChatGroupList(); // Fetch chat groups
-
+      const groupList = await this.buildChatGroupList();
       const groupDs = await this.provider.getDatastore(
         CONFIG.verida.schemas.CHAT_GROUP
       );
@@ -121,15 +121,13 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
         sourceAccountId: this.provider.getAccountId(),
       });
 
-      const mergedGroupList = this.mergeGroupLists(groupList, groupDbItems); // Merge new and existing groups
-
+      const mergedGroupList = this.mergeGroupLists(groupList, groupDbItems);
       let totalMessages = 0;
       let chatHistory: SchemaSocialChatMessage[] = [];
 
-      // Iterate over each group
       for (let i = 0; i < mergedGroupList.length; i++) {
         const group = mergedGroupList[i];
-        let rangeTracker = new ItemsRangeTracker(group.syncData); // Track items for each group
+        let rangeTracker = new ItemsRangeTracker(group.syncData);
 
         const fetchedMessages = await this.fetchAndTrackMessages(
           group,
@@ -137,22 +135,14 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
           apiClient
         );
 
-        // Concatenate fetched messages
         chatHistory = chatHistory.concat(fetchedMessages);
         totalMessages += fetchedMessages.length;
 
-        // Update the group sync data in the mergedGroupList at the current index
         mergedGroupList[i].syncData = rangeTracker.export();
       }
 
-      // Update sync position and status
-      this.updateSyncPosition(
-        syncPosition,
-        totalMessages,
-        mergedGroupList.length
-      );
+      this.updateSyncPosition(syncPosition, totalMessages, mergedGroupList.length);
 
-      // Return the sync response
       return {
         results: mergedGroupList.concat(chatHistory),
         position: syncPosition,
@@ -184,9 +174,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
       query.cursor = currentRange.startId;
     }
 
-    // Fetch messages from Slack API
     const response = await apiClient.conversations.history(query);
-
     const latestResult = await this.buildResults(
       group.sourceId!,
       response,
@@ -210,14 +198,9 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
       );
     }
 
-    // Back fill
-
     currentRange = rangeTracker.nextRange();
 
-    if (
-      items.length != this.config.messagesPerGroupLimit &&
-      currentRange.startId
-    ) {
+    if (items.length != this.config.messagesPerGroupLimit && currentRange.startId) {
       const query: ConversationsHistoryArguments = {
         channel: group.sourceId!,
         limit: this.config.messagesPerGroupLimit - items.length,
@@ -225,7 +208,6 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
       };
 
       const backfillResponse = await apiClient.conversations.history(query);
-
       const backfillResult = await this.buildResults(
         group.sourceId!,
         backfillResponse,
@@ -236,13 +218,13 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
       if (backfillResult.items.length) {
         rangeTracker.completedRange({
           startId: backfillResult.items[0].sourceId,
-          endId: backfillResponse.response_metadata?.next_cursor
-        }, backfillResult.breakHit == SyncItemsBreak.ID)
+          endId: backfillResponse.response_metadata?.next_cursor,
+        }, backfillResult.breakHit == SyncItemsBreak.ID);
       } else {
         rangeTracker.completedRange({
           startId: undefined,
-          endId: undefined
-        }, backfillResult.breakHit == SyncItemsBreak.ID)
+          endId: undefined,
+        }, backfillResult.breakHit == SyncItemsBreak.ID);
       }
     }
     return items;
@@ -254,26 +236,33 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     breakId: string
   ): Promise<SyncChatItemsResult> {
     const results: SchemaSocialChatMessage[] = [];
+    const userIds = new Set<string>();
     let breakHit: SyncItemsBreak;
 
+    // Collect unique user IDs from messages
     for (const message of response.messages || []) {
-      // skip if bot message
+      if (message.subtype === 'bot_message') continue;
+      userIds.add(message.user);
+    }
+
+    // Fetch user info for all unique user IDs in parallel
+    const userInfoMap = await SlackHelpers.fetchUserInfoBulk(this.connection.accessToken, Array.from(userIds));
+
+    for (const message of response.messages || []) {
       if (message.subtype === 'bot_message') continue;
 
       const messageId = message.ts || "";
-
-      // Break if the message ID matches breakId
       if (messageId === breakId) {
-        const logEvent: SyncProviderLogEvent = {
+        this.emit("log", {
           level: SyncProviderLogLevel.DEBUG,
           message: `Break ID hit (${breakId}) in group (${groupId})`,
-        };
-        this.emit("log", logEvent);
+        });
         breakHit = SyncItemsBreak.ID;
         break;
       }
 
-      const messageRecord = await this.buildResult(groupId, message);
+      const user = userInfoMap[message.user];
+      const messageRecord = await this.buildResult(groupId, message, user);
       results.push(messageRecord);
     }
 
@@ -285,19 +274,14 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
 
   private async buildResult(
     groupId: string,
-    message: MessageElement
+    message: MessageElement,
+    user: any
   ): Promise<SchemaSocialChatMessage> {
-
-    const user = await SlackHelpers.getUserInfo(
-      this.connection.accessToken,
-      message.user
-    );
-
     return {
       _id: this.buildItemId(message.ts),
       groupId: groupId,
       messageText: message.text,
-      fromHandle: user.profile.email ?? "Unknown",
+      fromHandle: user.profile.email,
       sourceAccountId: this.provider.getAccountId(),
       sourceApplication: this.getProviderApplicationUrl(),
       sourceId: message.ts,
@@ -309,7 +293,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
         message.user === this.connection.profile.id
           ? SchemaChatMessageType.SEND
           : SchemaChatMessageType.RECEIVE,
-      fromId: message.user ?? "Unknown",
+      fromId: message.user,
       name: message.text.substring(0, 30),
     };
   }
