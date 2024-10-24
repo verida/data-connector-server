@@ -1,8 +1,6 @@
 import { BaseHandlerConfig, BaseProviderConfig } from "../../interfaces";
 
 export interface SlackHandlerConfig extends BaseHandlerConfig {
-  // Maximum number of messages to process in a given batch
-  messageBatchSize: number
   // Maximum number of messages to process in a group
   messagesPerGroupLimit: number
 }
