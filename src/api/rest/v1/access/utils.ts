@@ -1,6 +1,7 @@
 import { Request } from "express";
 import { Client as NotionClient } from "@notionhq/client";
 import { DatabaseObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { interpretIdentifier } from "@verida/vda-common";
 
 import { AccessRecord } from "./types";
 import { NotionDatabaseProperty } from "./notion-types";
@@ -35,6 +36,8 @@ export async function createAccessRecord(notionClient: NotionClient, did: string
     return
   }
 
+  const didAddress = interpretIdentifier(did).address
+
   try {
     await notionClient.pages.create({
       parent: {
@@ -46,7 +49,7 @@ export async function createAccessRecord(notionClient: NotionClient, did: string
           type: "title",
           title: [{
             type: "text",
-            text: { content: did }
+            text: { content: didAddress }
           }],
         },
         Admin: {
@@ -72,13 +75,15 @@ export async function getAccessRecord(notionClient: NotionClient, did: string): 
     throw new Error("Notion restricted access database ID is not set")
   }
 
+  const didAddress = interpretIdentifier(did).address
+
   try {
     const response = await notionClient.databases.query({
       database_id: serverconfig.notion.restrictedAccessDatabaseId,
       filter: {
         property: "DID",
         rich_text: {
-          equals: did,
+          equals: didAddress
         },
       },
     })
