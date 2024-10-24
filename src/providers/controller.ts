@@ -37,7 +37,7 @@ export default class Controller {
         try {
             const providerName = req.params.providerId
 
-            const contextSession: ContextSession | undefined = req.query.token ? JSON.parse(Buffer.from(req.query.token.toString(), 'base64').toString('utf-8')) : undefined;
+            const contextSession: ContextSession | undefined = req.query['api_key'] ? JSON.parse(Buffer.from(req.query['api_key'].toString(), 'base64').toString('utf-8')) : undefined;
 
             const key = req.query.key ? req.query.key.toString() : undefined
 

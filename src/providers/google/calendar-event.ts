@@ -175,23 +175,23 @@ export default class CalendarEventHandler extends GoogleHandler {
       let eventHistory: SchemaEvent[] = [];
 
       // Iterate over each calendar
-      for (const calendar of calendarList) {
+      for (let i = 0; i < calendarList.length; i++) {
         // Use a separate ItemsRangeTracker for each calendar
-        let rangeTracker = new ItemsRangeTracker(calendar.syncData);
+        let rangeTracker = new ItemsRangeTracker(calendarList[i].syncData);
 
         const fetchedEvents = await this.fetchAndTrackEvents(
-          calendar,
+          calendarList[i],
           rangeTracker,
           apiClient
         );
 
         // Concatenate the fetched events to the total event history
         eventHistory = eventHistory.concat(fetchedEvents);
+       
         totalEvents += fetchedEvents.length;
 
         // Update the calendar's sync data with the latest rangeTracker state
-        calendar.syncData = rangeTracker.export();
-
+        calendarList[i].syncData = rangeTracker.export();
       }
 
       // Finalize sync position and status based on event count
@@ -214,60 +214,60 @@ export default class CalendarEventHandler extends GoogleHandler {
   public buildResult(calendarId: string, event: calendar_v3.Schema$Event): SchemaEvent {
     const eventId = event.id || "";
 
-      const start: DateTimeInfo = {
-        dateTime: event.start?.dateTime || `${event.start?.date}T00:00:00.000Z`
-      };
-      const end: DateTimeInfo = {
-        dateTime: event.end?.dateTime || `${event.end?.date}T00:00:00.000Z`
-      };
+    const start: DateTimeInfo = {
+      dateTime: event.start?.dateTime || `${event.start?.date}T00:00:00.000Z`
+    };
+    const end: DateTimeInfo = {
+      dateTime: event.end?.dateTime || `${event.end?.date}T00:00:00.000Z`
+    };
 
-      // Check for a break based on timestamp
-      const updatedTime = event.updated ? new Date(event.updated).toISOString() : new Date().toISOString();
+    // Check for a break based on timestamp
+    const updatedTime = event.updated ? new Date(event.updated).toISOString() : new Date().toISOString();
 
-      start.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.start?.timeZone);
-      end.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.end?.timeZone);
+    start.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.start?.timeZone);
+    end.timeZone = CalendarHelpers.getUTCOffsetTimezone(event.end?.timeZone);
 
-      const creator: Person = {
-        email: event.creator?.email,
-        displayName: event.creator?.displayName
-      };
+    const creator: Person = {
+      email: event.creator?.email,
+      displayName: event.creator?.displayName
+    };
 
-      const organizer: Person = {
-        email: event.organizer?.email,
-        displayName: event.organizer?.displayName
-      };
+    const organizer: Person = {
+      email: event.organizer?.email,
+      displayName: event.organizer?.displayName
+    };
 
-      let attendees: Person[] = [];
-      if (event.attendees) {
-        attendees = event.attendees.filter(attendee => attendee.email) as Person[];
-      }
+    let attendees: Person[] = [];
+    if (event.attendees) {
+      attendees = event.attendees.filter(attendee => attendee.email) as Person[];
+    }
 
-      const attachments: CalendarAttachment[] = event.attachments as CalendarAttachment[];
+    const attachments: CalendarAttachment[] = event.attachments as CalendarAttachment[];
 
-      const eventRecord: SchemaEvent = {
-        _id: this.buildItemId(eventId),
-        name: event.summary ?? "Unknown",
-        sourceAccountId: this.provider.getAccountId(),
-        sourceData: event,
-        sourceApplication: this.getProviderApplicationUrl(),
-        sourceId: eventId,
-        schema: CONFIG.verida.schemas.EVENT,
-        uri: event.htmlLink,
-        calendarId: calendarId,
-        start,
-        end,
-        creator,
-        organizer,
-        location: event.location,
-        description: event.description,
-        status: event.status,
-        conferenceData: event.conferenceData,
-        attendees,
-        attachments,
-        insertedAt: updatedTime
-      }
+    const eventRecord: SchemaEvent = {
+      _id: this.buildItemId(eventId),
+      name: event.summary ?? "Unknown",
+      sourceAccountId: this.provider.getAccountId(),
+      sourceData: event,
+      sourceApplication: this.getProviderApplicationUrl(),
+      sourceId: eventId,
+      schema: CONFIG.verida.schemas.EVENT,
+      uri: event.htmlLink,
+      calendarId: calendarId,
+      start,
+      end,
+      creator,
+      organizer,
+      location: event.location,
+      description: event.description,
+      status: event.status,
+      conferenceData: event.conferenceData,
+      attendees,
+      attachments,
+      insertedAt: updatedTime
+    }
 
-      return eventRecord
+    return eventRecord
   }
 
   private async buildResults(
@@ -316,8 +316,7 @@ export default class CalendarEventHandler extends GoogleHandler {
     let query: calendar_v3.Params$Resource$Events$List = {
       calendarId: calendar.sourceId,
       maxResults: this.config.eventBatchSize,
-      singleEvents: true,
-      orderBy: "updated"
+      singleEvents: true
     };
 
     if (currentRange.startId) {
@@ -342,7 +341,7 @@ export default class CalendarEventHandler extends GoogleHandler {
           startId: items[0].sourceId,
           endId: response.data?.nextPageToken
         },
-        latestResult.breakHit === SyncItemsBreak.ID
+        latestResult.breakHit == SyncItemsBreak.ID
       );
     } else {
       rangeTracker.completedRange({ startId: undefined, endId: undefined }, false);
@@ -356,7 +355,6 @@ export default class CalendarEventHandler extends GoogleHandler {
         maxResults: this.config.eventBatchSize - items.length,
         pageToken: currentRange.startId,
         singleEvents: true,
-        orderBy: "updated"
       };
 
       const backfillResponse = await apiClient.events.list(query);
@@ -372,7 +370,7 @@ export default class CalendarEventHandler extends GoogleHandler {
       if (backfillResult.items.length) {
         rangeTracker.completedRange({
           startId: backfillResult.items[0].sourceId,
-          endId: response.data?.nextPageToken
+          endId: backfillResponse.data?.nextPageToken
         }, backfillResult.breakHit == SyncItemsBreak.ID)
       } else {
         rangeTracker.completedRange({

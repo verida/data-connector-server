@@ -703,25 +703,55 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
-"@tdlib-native/tdjson-darwin-arm64@1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5":
-  version "1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5"
-  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-darwin-arm64/-/tdjson-darwin-arm64-1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5.tgz#3e32fdbc6354a67458cc1b7ae25372dd569dcc02"
-  integrity sha512-dQzpk7DuDNiWKw7wdbVXrQqsZI48cLFXO6SDfzS45e9IgKpEja4lP2GpohbxkjlvfzdQEMviR4+jYthjFY1Juw==
+"@tdlib-native/tdjson-android-arm64-glibc@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-android-arm64-glibc/-/tdjson-android-arm64-glibc-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#84c58553ba28a0719938f02760a9b6d7e2217f44"
+  integrity sha512-r3rs54ZMk73Pzp3rdfW9e9GwLK/BYnRLFCu57Sh60COCl1jEPphnWXZNfRjoX3whcqdpZXA5XvAMnOKiwWc/gQ==
 
-"@tdlib-native/tdjson-darwin-x64@1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5":
-  version "1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5"
-  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-darwin-x64/-/tdjson-darwin-x64-1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5.tgz#a992488ae68c71b5beed0587cc77c0e192684eb0"
-  integrity sha512-eqHyhaneMKw16P/Qk6K9X8xV9X0ZLJ9QMNHYz9SpbrV4nij+pdhLx1S3FpUzTlylMdC3aEB0HDDFNLxlxRgMDA==
+"@tdlib-native/tdjson-android-arm64-musl@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-android-arm64-musl/-/tdjson-android-arm64-musl-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#f9312fd1bcb8a44fa4e51cdc71133eb1cbd666a6"
+  integrity sha512-DlLlgMuss0UCQQ/818lq0plHGBPycaKkaMeZJw6a/7/cenlx70/d8RMy3iZnxf4zw6DhVUXSnqe3NIGNfjgLbg==
 
-"@tdlib-native/tdjson-linux-x64-glibc@1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5":
-  version "1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5"
-  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-linux-x64-glibc/-/tdjson-linux-x64-glibc-1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5.tgz#c5618080bcee469c20c730a06a780913baea2c90"
-  integrity sha512-b6KyGSeNXleh55MTEAlAHb9oqoz78Rm9Bzh0ccV+S/eYjxvyW+Je4yAR3XS9PelXEm5mIc4RjSfF7x7q2FKgZw==
+"@tdlib-native/tdjson-darwin-arm64@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-darwin-arm64/-/tdjson-darwin-arm64-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#17a6281a950b0650f728b12167d2781bda41000a"
+  integrity sha512-ahai5bxdqBQrQoTh0diE1Ih5s8n/PUCdjttNP4Oq9gZvuFlOgDUsrWFmDX5Jb/kF+1QZMJMzDkfU9zoOmxWZaQ==
 
-"@tdlib-native/tdjson-win32-x64@1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5":
-  version "1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5"
-  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-win32-x64/-/tdjson-win32-x64-1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5.tgz#1613ab78716633ec65c53b401f65f93d1696980f"
-  integrity sha512-WyrZLIuiBpv2yTe6o5HHMnBKBxD1VB7rwdJuZgvdYYt+iMsUuAanDBvj/KuG+YDcLgXiQmy1NSuHXY9hialP2Q==
+"@tdlib-native/tdjson-darwin-x64@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-darwin-x64/-/tdjson-darwin-x64-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#1e2ddf496c5e7652a184fac17badd39938f945e7"
+  integrity sha512-cx/P0ub972orBfCtI22EvsQlQOMPZrDqmydOKnzpBzalJTL2VUrvqfneMD9JBGvOv8SyJKxi9RC+jSHkBq5nTQ==
+
+"@tdlib-native/tdjson-linux-arm64-glibc@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-linux-arm64-glibc/-/tdjson-linux-arm64-glibc-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#39c5219b284a2706e9d4ce9bcc0524d3831cf321"
+  integrity sha512-PvbNTeibxxQkNQooHj42JAISdBaW+ZwHvJc+fG1XvVMVUvKMUh+vxpX6wozCoZd2pwQPYVvNPCNyvoC1uj4NMA==
+
+"@tdlib-native/tdjson-linux-arm64-musl@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-linux-arm64-musl/-/tdjson-linux-arm64-musl-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#c726cb6bd60a9353b9c49b1a4c592863a8385fc0"
+  integrity sha512-sr6X/qcdsZ4NLpTrRT5vCIhw248q1H/tuUsCbLAgckl3GFB2sgxkqVNGuw42GVxvKgz/tEpGzBB4M/PKyv8DnQ==
+
+"@tdlib-native/tdjson-linux-x64-glibc@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-linux-x64-glibc/-/tdjson-linux-x64-glibc-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#46741f9ff7f3623b6810ae5cfa03b2bc4bb0d156"
+  integrity sha512-hZ6MAPcCbXf8UdL/ZOfrBCgrBegP6Or+9IATsG7ZkCUv7BjJjf04wIyBfjPPxAZsy1mztWOCTvP618b6+ievcA==
+
+"@tdlib-native/tdjson-linux-x64-musl@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-linux-x64-musl/-/tdjson-linux-x64-musl-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#8bc5602b557df5fc048f225d367cf01519865fa7"
+  integrity sha512-vs4MIAMw9mj7JvqGxKMfjK6S0nP5vnfm5aRdCqs6mGCFDsFR+wB4nFEYVc1rxnWDVq9+ZfHmsP3pj9JZjrQlTA==
+
+"@tdlib-native/tdjson-win32-ia32@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-win32-ia32/-/tdjson-win32-ia32-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#e19fdf7cd4e6f3ed1a0026021241ca7e41556f93"
+  integrity sha512-ETK8NE86dCl/2/M5eOKNRliA2vKR5winRzMxCsb2v+nag4SOrYK2qgWvlmZ8d92pX5I4dFd7Cs1ZShg2abSHpA==
+
+"@tdlib-native/tdjson-win32-x64@1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b":
+  version "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+  resolved "https://registry.yarnpkg.com/@tdlib-native/tdjson-win32-x64/-/tdjson-win32-x64-1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b.tgz#a6a4f594cebd01089ea49944103262b6c5c03bfe"
+  integrity sha512-kkDGr5+3kG51ZKzQunpPkMsNBODtLtpN2t2UqC4mnRC/FzwgMFWEJiu4lpVHWgY8QNDDIBY8SC8MdxDtyo7bWg==
 
 "@tokenizer/token@^0.3.0":
   version "0.3.0"
@@ -2493,7 +2523,7 @@ debug@^3.1.0, debug@^3.2.7:
   dependencies:
     ms "^2.1.1"
 
-debug@^4.3.5:
+debug@^4.3.7:
   version "4.3.7"
   resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.7.tgz#87945b4151a011d76d95a198d7111c865c360a52"
   integrity sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ==
@@ -2628,6 +2658,11 @@ destroy@1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/destroy/-/destroy-1.2.0.tgz#4803735509ad8be552934c67df614f94e66fa015"
   integrity sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==
+
+detect-libc@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/detect-libc/-/detect-libc-2.0.3.tgz#f0cd503b40f9939b894697d19ad50895e30cf700"
+  integrity sha512-bwy0MGW55bG41VqxxypOsdSdGqLwXPI/focwgTYCFMbdUiBAxLg9CFzG08sz2aqzknwiX7Hkl0bQENjg8iLByw==
 
 did-jwt-vc@3.1.0:
   version "3.1.0"
@@ -4639,7 +4674,7 @@ negotiator@0.6.3:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.3.tgz#58e323a72fedc0d6f9cd4d31fe49f51479590ccd"
   integrity sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==
 
-node-addon-api@^8.1.0:
+node-addon-api@^8.2.1:
   version "8.2.1"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-8.2.1.tgz#43a993f110b88e22ba48bcd65e16b92165a6b002"
   integrity sha512-vmEOvxwiH8tlOcv4SyE8RH34rI5/nWVaigUeAUPawC6f0+HoDthwI0vkMu4tbtsZrXq6QXFfrkhjofzKEs5tpA==
@@ -5881,18 +5916,25 @@ tar-stream@^2.1.0, tar-stream@^2.1.4:
     inherits "^2.0.3"
     readable-stream "^3.1.1"
 
-tdlib-native@2.7:
-  version "2.7.0"
-  resolved "https://registry.yarnpkg.com/tdlib-native/-/tdlib-native-2.7.0.tgz#da34de18dfb67c9afdec5cd10ef55dd56583f472"
-  integrity sha512-soFcqllnfju6JwDL2Ut8HbCQr2uvYnNYpKRx9Oc/GSEFjgjZ3vo6tpp3qwaJ9dHlSkHgoxAMCaidkRebPr+ryQ==
+tdlib-native@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/tdlib-native/-/tdlib-native-3.1.0.tgz#c34f18ee55bf34713ffe324f19ade125ae1d0d51"
+  integrity sha512-ym2ZCaauLbYfnE9CKGzyHHwLu0UB142Di5aLOEmgAAZbZb3KE1ly5S46bephMjipp/iaECQA0Q8TrP8A5ltydg==
   dependencies:
-    debug "^4.3.5"
-    node-addon-api "^8.1.0"
+    debug "^4.3.7"
+    detect-libc "^2.0.3"
+    node-addon-api "^8.2.1"
   optionalDependencies:
-    "@tdlib-native/tdjson-darwin-arm64" "1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5"
-    "@tdlib-native/tdjson-darwin-x64" "1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5"
-    "@tdlib-native/tdjson-linux-x64-glibc" "1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5"
-    "@tdlib-native/tdjson-win32-x64" "1.8.35-commit.8d08b34e22a08e58db8341839c4e18ee06c516c5"
+    "@tdlib-native/tdjson-android-arm64-glibc" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+    "@tdlib-native/tdjson-android-arm64-musl" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+    "@tdlib-native/tdjson-darwin-arm64" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+    "@tdlib-native/tdjson-darwin-x64" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+    "@tdlib-native/tdjson-linux-arm64-glibc" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+    "@tdlib-native/tdjson-linux-arm64-musl" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+    "@tdlib-native/tdjson-linux-x64-glibc" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+    "@tdlib-native/tdjson-linux-x64-musl" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+    "@tdlib-native/tdjson-win32-ia32" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
+    "@tdlib-native/tdjson-win32-x64" "1.8.37-commit.c1fea0f26355d94842f25651edc154842563e97b"
 
 through2@3.0.2:
   version "3.0.2"
