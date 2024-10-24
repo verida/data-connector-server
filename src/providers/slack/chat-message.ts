@@ -301,6 +301,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
       sourceAccountId: this.provider.getAccountId(),
       sourceApplication: this.getProviderApplicationUrl(),
       sourceId: message.ts,
+      schema: CONFIG.verida.schemas.CHAT_MESSAGE,
       sourceData: message,
       insertedAt: new Date(parseFloat(message.ts) * 1000).toISOString(),
       sentAt: new Date(parseFloat(message.ts) * 1000).toISOString(),
