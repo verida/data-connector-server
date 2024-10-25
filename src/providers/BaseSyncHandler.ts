@@ -222,14 +222,12 @@ export default class BaseSyncHandler extends EventEmitter {
         }
         
         let syncResults: SchemaRecord[] = []
-        let savePosition = false
         try {
             const syncResult = await this._sync(api, syncPosition)
             syncResults = <SchemaRecord[]> syncResult.results
             await this.handleResults(syncResult.position, syncResults, syncSchemaPositionDs)
         } catch (err: any) {
             let message: string
-            savePosition = true
             if (err instanceof AccessDeniedError) {
                 message = `Access denied. Re-connect and ensure you enable ${this.getLabel()}.`
                 syncPosition.status = SyncHandlerStatus.INVALID_AUTH
@@ -258,12 +256,24 @@ export default class BaseSyncHandler extends EventEmitter {
             }
         }
 
-        if (savePosition) {
-            await syncSchemaPositionDs.save(syncPosition, {
-                // The position record may already exist, if so, force update
-                forceUpdate: true
-            })
-        }
+        // Update newest and oldest
+        let oldest: string, newest: string
+        syncResults.forEach((record: SchemaRecord) => {
+            oldest = (!oldest ? record.insertedAt : (record.insertedAt < oldest ? record.insertedAt : oldest))
+            newest = (!newest ? record.insertedAt : (record.insertedAt > newest ? record.insertedAt : newest))
+        })
+
+        syncPosition.newestTimestamp = newest && newest > syncPosition.newestTimestamp ? newest : syncPosition.newestTimestamp
+        syncPosition.oldestTimestamp = oldest && oldest < syncPosition.oldestTimestamp ? oldest : syncPosition.oldestTimestamp
+
+        // Update when sync ended
+        syncPosition.syncEnd = Utils.nowTimestamp()
+
+        delete syncPosition['_rev']
+        const result = await syncSchemaPositionDs.save(syncPosition, {
+            // The position record may already exist, if so, force update
+            forceUpdate: true
+        })
 
         return {
             syncPosition,
@@ -291,6 +301,7 @@ export default class BaseSyncHandler extends EventEmitter {
                 })
             }
         } catch (err: any) {
+            console.log(err.message)
             const message = `Unable to update sync position: ${err.message} (${JSON.stringify(position, null, 2)})`
             this.emit('log', {
                 level: SyncProviderLogLevel.ERROR,
@@ -336,6 +347,7 @@ export default class BaseSyncHandler extends EventEmitter {
                     })
                 }
             } catch (err: any) {
+                console.log(err.message)
                 const message = `Unable to save item: ${err.message} (${item._id} / ${item._rev})`
                 this.emit('log', {
                     level: SyncProviderLogLevel.ERROR,
