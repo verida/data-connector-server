@@ -263,8 +263,8 @@ export default class BaseSyncHandler extends EventEmitter {
             newest = (!newest ? record.insertedAt : (record.insertedAt > newest ? record.insertedAt : newest))
         })
 
-        syncPosition.newestTimestamp = newest && newest > syncPosition.newestTimestamp ? newest : syncPosition.newestTimestamp
-        syncPosition.oldestTimestamp = oldest && oldest < syncPosition.oldestTimestamp ? oldest : syncPosition.oldestTimestamp
+        syncPosition.newestTimestamp = (newest && newest >= syncPosition.newestTimestamp) || syncPosition.newestTimestamp === undefined ? newest : syncPosition.newestTimestamp
+        syncPosition.oldestTimestamp = (oldest && oldest <= syncPosition.oldestTimestamp) || syncPosition.oldestTimestamp === undefined ? oldest : syncPosition.oldestTimestamp
 
         // Update when sync ended
         syncPosition.syncEnd = Utils.nowTimestamp()
