@@ -12,7 +12,6 @@ import {
   SyncHandlerPosition,
   SyncItemsResult,
   SyncItemsBreak,
-  SyncProviderLogEvent,
   SyncProviderLogLevel,
 } from "../../interfaces";
 import {
