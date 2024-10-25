@@ -13,7 +13,7 @@ import BaseProvider from "../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../common.tests";
 import { SchemaFavourite } from "../../../src/schemas";
 
-const providerName = "google";
+const providerId = "google";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
@@ -21,25 +21,25 @@ let handlerName = "youtube-favourite";
 let testConfig: GenericTestConfig;
 let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
 
-describe(`${providerName} Youtube Favourite Tests`, function () {
+describe(`${providerId} Youtube Favourite Tests`, function () {
   this.timeout(100000);
 
   this.beforeAll(async function () {
     network = await CommonUtils.getNetwork();
-    connection = await CommonUtils.getConnection(providerName);
-    provider = Providers(providerName, network.context, connection);
+    connection = await CommonUtils.getConnection(providerId);
+    provider = Providers(providerId, network.context, connection);
   
     testConfig = {
-      idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
+      idPrefix: `${provider.getProviderId()}-${connection.profile.id}`,
       batchSizeLimitAttribute: "batchSize",
     };
   });
 
-  describe(`Fetch ${providerName} data`, () => {
+  describe(`Fetch ${providerId} data`, () => {
     
     it(`Can pass basic tests: ${handlerName}`, async () => {
       await CommonTests.runGenericTests(
-        providerName,
+        providerId,
         YouTubeFavourite,
         testConfig,
         providerConfig,
