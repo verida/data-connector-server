@@ -1335,20 +1335,7 @@
     axios "1.2.0-alpha.1"
     lodash "^4.17.21"
 
-"@verida/vda-did@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@verida/vda-did/-/vda-did-4.1.0.tgz#3b0db0eea6e34f502a67f255773c12ce01ec7b6c"
-  integrity sha512-+h6AkL6NQuujqn/8AnrMyAKMh+ULIPztfmTSgYZ69G4WrnSIRrcU2h+xHDxnbTqf8yQJRETXfBodvEDKu+Oxag==
-  dependencies:
-    "@verida/did-document" "^4.1.0"
-    "@verida/types" "^4.1.0"
-    "@verida/vda-common" "^4.1.0"
-    "@verida/web3" "^4.1.0"
-    axios "1.2.0-alpha.1"
-    ethers "^5.7.2"
-    lodash "^4.17.21"
-
-"@verida/vda-did@^4.3.0":
+"@verida/vda-did@^4.1.0", "@verida/vda-did@^4.3.0":
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/@verida/vda-did/-/vda-did-4.3.0.tgz#705bf4c732115ddad5e4bc417c7e96183b45e39c"
   integrity sha512-zndg/z8wWG3xDlj04qvhUeUDt1JLHiikAVKCVqFjEa6V5Z9g4NOoGiFXaQzviyihO1VvcTTPeWYgqEX+K2IKVw==
