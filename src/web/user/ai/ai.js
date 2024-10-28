@@ -113,9 +113,10 @@ $(document).ready(function() {
         }
     });
 
-    $('#user-input').keypress(function(e) {
+    $('#user-input').keyup(function(e) {
         if (e.which === 13) { // Enter key pressed
             $('#send-btn').click();
+            $('#user-input').val('');
         }
     });
 

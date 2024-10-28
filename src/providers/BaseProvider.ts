@@ -389,9 +389,13 @@ export default class BaseProvider extends EventEmitter {
         const schemaUri = handler.getSchemaUri()
 
         const syncPosition = await this.getSyncPosition(handler.getId(), syncPositionsDs)
+        syncPosition.latestSyncStart = Utils.nowTimestamp()
+        syncPosition.syncMessage = `Sync starting`
 
         if (syncPosition.status == SyncHandlerStatus.INVALID_AUTH) {
             syncPosition.syncMessage = `Invalid authentication tokens. Try reconnecting.`
+
+            syncPosition.latestSyncEnd = Utils.nowTimestamp()
             // If access is denied, don't even try to sync
             return {
                 syncPosition,
@@ -402,6 +406,8 @@ export default class BaseProvider extends EventEmitter {
         if (syncPosition.status == SyncHandlerStatus.SYNCING && !force) {
             await this.logMessage(SyncProviderLogLevel.INFO, `Sync is active for ${handler.getLabel()}, skipping`)
             console.log(`Sync is active for ${handler.getLabel()}, skipping`)
+
+            syncPosition.latestSyncEnd = Utils.nowTimestamp()
             return {
                 syncPosition,
                 syncResults: []
@@ -411,6 +417,7 @@ export default class BaseProvider extends EventEmitter {
                 // Have hit maximum erorr retries, don't even try to sync
                 syncPosition.syncMessage = `Maximum error retries hit (${MAX_ERROR_RETRIES}). Try reconnecting.`
 
+                syncPosition.latestSyncEnd = Utils.nowTimestamp()
                 return {
                     syncPosition,
                     syncResults: []
