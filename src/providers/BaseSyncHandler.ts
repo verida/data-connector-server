@@ -263,11 +263,11 @@ export default class BaseSyncHandler extends EventEmitter {
             newest = (!newest ? record.insertedAt : (record.insertedAt > newest ? record.insertedAt : newest))
         })
 
-        syncPosition.newestTimestamp = (newest && newest >= syncPosition.newestTimestamp) || syncPosition.newestTimestamp === undefined ? newest : syncPosition.newestTimestamp
-        syncPosition.oldestTimestamp = (oldest && oldest <= syncPosition.oldestTimestamp) || syncPosition.oldestTimestamp === undefined ? oldest : syncPosition.oldestTimestamp
+        syncPosition.newestDataTimestamp = (newest && newest >= syncPosition.newestDataTimestamp) || syncPosition.newestDataTimestamp === undefined ? newest : syncPosition.newestDataTimestamp
+        syncPosition.oldestDataTimestamp = (oldest && oldest <= syncPosition.oldestDataTimestamp) || syncPosition.oldestDataTimestamp === undefined ? oldest : syncPosition.oldestDataTimestamp
 
         // Update when sync ended
-        syncPosition.syncEnd = Utils.nowTimestamp()
+        syncPosition.latestSyncEnd = Utils.nowTimestamp()
 
         delete syncPosition['_rev']
         const result = await syncSchemaPositionDs.save(syncPosition, {

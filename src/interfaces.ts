@@ -172,16 +172,16 @@ export interface SyncHandlerPosition {
     errorRetries?: number
 
     // Timestamp when latest sync started
-    syncStart?: string
+    latestSyncStart?: string
 
     // Timestamp when latest sync ended
-    syncEnd?: string
+    latestSyncEnd?: string
 
     // Timestamp of the oldest saved record
-    oldestTimestamp?: string
+    oldestDataTimestamp?: string
 
     // Timestamp of the newest saved record
-    newestTimestamp?: string
+    newestDataTimestamp?: string
 }
 
 export interface SyncResponse {
