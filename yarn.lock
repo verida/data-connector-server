@@ -1169,17 +1169,6 @@
     tweetnacl "^1.0.3"
     tweetnacl-util "^0.15.1"
 
-"@verida/helpers@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@verida/helpers/-/helpers-4.1.0.tgz#dd3e493c52125e456014f96beaaef07f82a79748"
-  integrity sha512-P9hZgvWp08/6RPiNSnsZraBrTyD0W1Ew/PWbnRmK9u/iYRCNzsqgSUoEavyPkqrINWXqX18S6yeI3qjP3r05Sw==
-  dependencies:
-    "@verida/encryption-utils" "^4.0.0"
-    "@verida/types" "^4.1.0"
-    axios "^1.6.2"
-    bs58 "^5.0.0"
-    url "^0.11.0"
-
 "@verida/helpers@^4.3.0":
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/@verida/helpers/-/helpers-4.3.0.tgz#c9c189e3b25f21af078a97a73c4b28cd136d9f73"
@@ -1262,18 +1251,6 @@
     "@types/pouchdb-core" "^7.0.11"
     did-resolver "^4.0.1"
     tweetnacl "^1.0.3"
-
-"@verida/vda-client-base@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@verida/vda-client-base/-/vda-client-base-4.1.0.tgz#cf0375c899f2f0fc851be3318e35520646c8f5c4"
-  integrity sha512-6Owvknh0fhJmBAoMrDpxRb9+kk9ip0KvbaUP5devnq51+Suu2h91I5xC7WxcefAwfwi2e1uBYfJsFxk0003qZg==
-  dependencies:
-    "@ethersproject/providers" "^5.7.2"
-    "@verida/helpers" "^4.1.0"
-    "@verida/types" "^4.1.0"
-    "@verida/web3" "^4.1.0"
-    axios "^0.27.2"
-    ethers "^5.7.0"
 
 "@verida/vda-client-base@^4.3.0":
   version "4.3.0"
@@ -1361,20 +1338,7 @@
     ethers "^5.7.2"
     lodash "^4.17.21"
 
-"@verida/vda-name-client@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@verida/vda-name-client/-/vda-name-client-4.1.0.tgz#254d59f253ed3194e8b8af10efd7b7703c1e2f0b"
-  integrity sha512-9vWMltmpadfa2kKhe4lIII9nyBDc1T0MLYkXr6Rjc68MyYNWcY+J9+hlfxtiMN1+7JrvSsRhQVuwUdZwPVQNAA==
-  dependencies:
-    "@ethersproject/providers" "^5.7.2"
-    "@verida/helpers" "^4.1.0"
-    "@verida/types" "^4.1.0"
-    "@verida/vda-client-base" "^4.1.0"
-    "@verida/web3" "^4.1.0"
-    axios "^0.27.2"
-    ethers "^5.7.0"
-
-"@verida/vda-name-client@^4.3.0":
+"@verida/vda-name-client@^4.1.0", "@verida/vda-name-client@^4.3.0":
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/@verida/vda-name-client/-/vda-name-client-4.3.0.tgz#6ca7d3479c2b00ba6af7450ce6e21e9739c20eec"
   integrity sha512-/65aHV/z1oA/86aGxgYP4bxx/qUrjdufembOh/2WvCgV+1PNTHqE2nRIQ6WkgkR8ipRPLFJTgRUIQLRSKqeZfQ==
