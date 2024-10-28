@@ -13,8 +13,8 @@ export interface SlackProviderConfig extends BaseProviderConfig {
 }
 
 export enum SlackChatGroupType {
-  CHANNEL = "channel", // Public channel
-  GROUP = "group", // Private channel
+  PUBLIC_CHANNEL = "public_channel", // Public channel
+  PRIVATE_CHANNEL = "private_channel", // Private channel
   IM = "im", // DM
   MPIM = "mpim" // Multi-person DM
 }
