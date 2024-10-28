@@ -28,6 +28,9 @@ import { MessageElement } from "@slack/web-api/dist/types/response/Conversations
 
 const _ = require("lodash");
 
+// Slack recommends no more than 200, although max value 1000
+// See slack documentation: https://api.slack.com/methods/conversations.list
+const MAX_BATCH_SIZE = 200;
 export interface SyncChatItemsResult extends SyncItemsResult {
   items: SchemaSocialChatMessage[];
 }
@@ -58,14 +61,14 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
         label: "Channel types",
         type: ConnectionOptionType.ENUM_MULTI,
         enumOptions: [
-          { label: "Public Channel", value: SlackChatGroupType.CHANNEL },
-          { label: "Private Channel", value: SlackChatGroupType.GROUP },
+          { label: "Public Channel", value: SlackChatGroupType.PUBLIC_CHANNEL },
+          { label: "Private Channel", value: SlackChatGroupType.PRIVATE_CHANNEL },
           { label: "Direct Messages", value: SlackChatGroupType.IM },
         ],
         defaultValue: [
-          SlackChatGroupType.CHANNEL,
-          SlackChatGroupType.GROUP,
-          SlackChatGroupType.IM,
+          SlackChatGroupType.IM, // DM first
+          SlackChatGroupType.PRIVATE_CHANNEL,
+          SlackChatGroupType.PUBLIC_CHANNEL,
         ].join(","),
       },
     ];
@@ -79,21 +82,20 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
   protected async buildChatGroupList(): Promise<SchemaSocialChatGroup[]> {
     const client = this.getSlackClient();
     let channelList: SchemaSocialChatGroup[] = [];
-    const types = ["im", "private_channel", "public_channel"];
 
-    for (const type of types) {
-      const conversations = await client.conversations.list({ types: type });
-      for (const channel of conversations.channels || []) {
-        if (channel?.is_archived) continue;
-        const group: SchemaSocialChatGroup = this.buildChatGroup(channel);
-        channelList.push(group);
-      }
+    const conversations = await client.conversations.list({ types: this.config["channelTypes"].toString(), limit: MAX_BATCH_SIZE });
+
+    for (const channel of conversations.channels || []) {
+      if (channel?.is_archived) continue;
+      const group: SchemaSocialChatGroup = this.buildChatGroup(channel);
+      channelList.push(group);
     }
 
     return channelList;
   }
 
   private buildChatGroup(channel: any): SchemaSocialChatGroup {
+
     return {
       _id: this.buildItemId(channel.id),
       name: channel.name || channel.user,
@@ -102,7 +104,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
       sourceId: channel.id,
       schema: CONFIG.verida.schemas.CHAT_GROUP,
       sourceData: channel,
-      insertedAt: new Date().toISOString(),
+      insertedAt: new Date(channel.updated).toISOString(),
     };
   }
 
@@ -118,6 +120,8 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
       );
       const groupDbItems = <SchemaSocialChatGroup[]>await groupDs.getMany({
         sourceAccountId: this.provider.getAccountId(),
+      }, {
+        limit: MAX_BATCH_SIZE
       });
 
       const mergedGroupList = this.mergeGroupLists(groupList, groupDbItems);
@@ -302,8 +306,13 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     totalMessages: number,
     groupCount: number
   ) {
-    syncPosition.status = SyncHandlerStatus.SYNCING;
-    syncPosition.syncMessage = `Batch complete (${totalMessages}) across (${groupCount} groups)`;
+    if (totalMessages) {
+      syncPosition.status = SyncHandlerStatus.SYNCING;
+      syncPosition.syncMessage = `Batch complete (${totalMessages}) across (${groupCount} groups)`;
+    } else {
+      syncPosition.status = SyncHandlerStatus.ENABLED
+      syncPosition.syncMessage = `Stopping. No results found.`
+    }
   }
 
   private mergeGroupLists(
