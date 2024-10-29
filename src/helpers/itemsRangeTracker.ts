@@ -22,11 +22,23 @@ export class ItemsRangeTracker {
     }
 
     public import(rangeString: string) {
-        for (const entry of JSON.parse(rangeString)) {
-            this.completedRanges.push({
-                startId: entry[0] ? entry[0] : undefined,
-                endId: entry[1] ? entry[1] : undefined,
-            })
+        try {
+            for (const entry of JSON.parse(rangeString)) {
+                this.completedRanges.push({
+                    startId: entry[0] ? entry[0] : undefined,
+                    endId: entry[1] ? entry[1] : undefined,
+                })
+            }
+        } catch (err: any) {
+            // Backwards compatible loading of ranges using old format
+            const ranges = rangeString.split(',')
+            for (const range of ranges) {
+                const [ startId, endId ] = range.split(':')
+                this.completedRanges.push({
+                    startId,
+                    endId
+                })
+            }   
         }
     }
 
@@ -59,8 +71,10 @@ export class ItemsRangeTracker {
             if (range.startId == range.endId) {
                 // All interim items have been deleted, so
                 // we need to merge the two most recent ranges
-                this.completedRanges[1].startId = this.completedRanges[0].startId
-                this.completedRanges.splice(0,1)
+                if (this.completedRanges.length > 1) {
+                    this.completedRanges[1].startId = this.completedRanges[0].startId
+                    this.completedRanges.splice(0,1)
+                }
             } else {
                 this.completedRanges[0].endId = range.startId
 

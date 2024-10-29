@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { bedrock, LLMProviders, ProviderModels, prompt as LLMPrompt, OpenAIConfig, getLLM } from '../../../../services/llm'
+import { LLMProviders, ProviderModels, prompt as LLMPrompt, OpenAIConfig, getLLM } from '../../../../services/llm'
 import { PromptSearchService } from '../../../../services/assistants/search'
 import { Utils } from "../../../../utils";
 import { HotLoadProgress } from "../../../../services/data";
@@ -48,7 +48,7 @@ function buildLLMConfig(req: Request) {
 }
 
 /**
- * 
+ *
  */
 export class LLMController {
 
@@ -76,7 +76,7 @@ export class LLMController {
 
     public async personalPrompt(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
             const prompt = req.body.prompt
 
@@ -100,13 +100,13 @@ export class LLMController {
 
     /**
      * Hotload the data necessary to power the AI search capabilities
-     * 
-     * @param req 
-     * @param res 
+     *
+     * @param req
+     * @param res
      */
     public async hotLoad(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
             const data = new DataService(did, context)
 

@@ -19,7 +19,7 @@ export interface UpdateConnectionParams {
 
 /**
  * Sign in process:
- * 
+ *
  * - Vault opens `connect` via safari
  * - User signs in
  * - Safari redirects to `callback`
@@ -27,19 +27,19 @@ export interface UpdateConnectionParams {
  * - User is shown a deeplink which includes connection credentials (access, refresh token)
  * - User clicks deeplink to open Vault
  * - Vault fetches connection and profile information from the DATA_PROFILE_SCHEMA datastore
- * 
+ *
  * Data sync process:
- * 
+ *
  * - ..
  */
 export default class Controller {
 
     /**
      * Initialize a syncronization for a `Verida: Vault` context
-     * 
-     * @param req 
-     * @param res 
-     * @param next 
+     *
+     * @param req
+     * @param res
+     * @param next
      */
     public static async sync(req: UniqueRequest, res: Response, next: any) {
         try {
@@ -48,7 +48,7 @@ export default class Controller {
                 instantComplete
             } = req.body
 
-            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
 
             if (instantComplete) {
@@ -82,7 +82,7 @@ export default class Controller {
                 forceSync
             } = req.body
 
-            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
             const connection = await syncManager.getConnection(connectionId)
 
@@ -115,7 +115,7 @@ export default class Controller {
             const providerId = query.providerId ? query.providerId.toString() : undefined
             const accountId = query.accountId ? query.accountId.toString() : undefined
 
-            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
             const connections = await syncManager.getProviders(providerId, accountId)
 
@@ -164,7 +164,7 @@ export default class Controller {
     public static async update(req: UniqueRequest, res: Response) {
         try {
             const connectionId = req.params.connectionId
-            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
 
             const connection = await syncManager.getConnection(connectionId)
@@ -255,7 +255,7 @@ export default class Controller {
     public static async disconnect(req: UniqueRequest, res: Response, next: any) {
         try {
             const connectionId = req.params.connectionId
-            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
 
             const connection = await syncManager.getProvider(connectionId)
@@ -287,7 +287,7 @@ export default class Controller {
             res.write('retry: 10000\n\n')
 
             const query = req.query
-            const networkInstance = await Utils.getNetworkFromRequest(req)
+            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
 
             const logsDs = await networkInstance.context.openDatastore(SCHEMA_SYNC_LOG)
             const logsDb = await logsDs.getDb()

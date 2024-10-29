@@ -67,9 +67,9 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(router)
 
-if (CONFIG.verida.devMode) {
-  console.log("Server is in development mode")
-} else {
+console.log(`Server mode: ${CONFIG.verida.mode}`)
+
+if (CONFIG.verida.environment == "production") {
   Utils.deleteCachedData()
 }
 

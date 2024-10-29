@@ -311,6 +311,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         }
 
         const chatGroupResponse = await this.processChatGroup(chatGroup, api, userCache, messageCount)
+        messageCount += chatGroupResponse.chatHistory.length
 
         // Include this chat group in the list of processed groups to save
         chatGroups.push(chatGroupResponse.chatGroup)
@@ -324,9 +325,17 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       const nextBatchGroupIds = chatGroupIds.splice(0, groupCount)
       syncPosition.thisRef = nextBatchGroupIds.join(',')
 
-      if (!groupLimitHit && messageCount != this.config.messageBatchSize) {
-        // No limits hit for this batch, so we simply ran out of messages and we can stop the sync
+      if (messageCount == 0) {
+        syncPosition.syncMessage = `Stopping. No results found.`
         syncPosition.status = SyncHandlerStatus.ENABLED
+      } else {
+        if (!groupLimitHit && messageCount >= this.config.messageBatchSize) {
+          // No limits hit for this batch, so we simply ran out of messages and we can stop the sync
+          syncPosition.status = SyncHandlerStatus.ENABLED
+          syncPosition.syncMessage = `Processed ${messageCount} items. Stopping. No more results.`
+        } else {
+          syncPosition.syncMessage = `Batch complete (${this.config.messageBatchSize}). More results pending.`
+        }
       }
 
       return {
@@ -334,6 +343,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
         position: syncPosition
       }
     } catch (err: any) {
+      console.log(err.message)
       if (err instanceof TDError) {
         if (err.code == 401) {
           throw new InvalidTokenError(err.message)
@@ -355,14 +365,24 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
     }
 
     if (content == "") {
-      // console.log('empty content')
-      // console.log(rawMessage.content)
+      // No message content, skip
       return
     }
 
-    const user = await userCache.getUser(rawMessage.sender_id.user_id)
-    const fromName = user.fullName
-    const fromHandle = user.username
+    let fromName, fromHandle, fromId
+
+    if (!rawMessage.sender_id?.user_id) {
+      // No user, so must be an annoucement from a chat group in an announcements channel
+      fromName = "system"
+      fromHandle = "system"
+      fromId = "system"
+    } else {
+      const user = await userCache.getUser(rawMessage.sender_id.user_id)
+      fromName = user.fullName
+      fromHandle = user.username
+      fromId = rawMessage.sender_id.user_id.toString()
+    }
+
 
     const message: SchemaSocialChatMessage = {
       _id: this.buildItemId(rawMessage.id),
@@ -370,7 +390,7 @@ export default class TelegramChatMessageHandler extends BaseSyncHandler {
       groupId,
       groupName: chatGroup.name,
       type: rawMessage.is_outgoing ? SchemaChatMessageType.SEND : SchemaChatMessageType.RECEIVE,
-      fromId: rawMessage.sender_id.user_id.toString(),
+      fromId,
       fromHandle,
       fromName,
       messageText: content,
