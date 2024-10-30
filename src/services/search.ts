@@ -33,7 +33,8 @@ export enum SearchType {
     EMAILS = "emails",
     FAVORITES = "favorites",
     FOLLOWING = "followed_pages",
-    POSTS = "posts"
+    POSTS = "posts",
+    CALENDAR_EVENT = "calendar"
 }
 
 export const SearchTypeSchemas: Record<SearchType, string> = {
@@ -44,6 +45,7 @@ export const SearchTypeSchemas: Record<SearchType, string> = {
     [SearchType.FAVORITES]: "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
     [SearchType.POSTS]: "https://common.schemas.verida.io/social/post/v0.1.0/schema.json",
     [SearchType.FOLLOWING]: "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
+    [SearchType.CALENDAR_EVENT]: "https://common.schemas.verida.io/social/event/v0.1.0/schema.json",
 }
 
 export const SearchTypeTimeProperty: Record<SearchType, string> = {
@@ -54,6 +56,7 @@ export const SearchTypeTimeProperty: Record<SearchType, string> = {
     [SearchType.FAVORITES]: "insertedAt",
     [SearchType.POSTS]: "insertedAt",
     [SearchType.FOLLOWING]: "followedTimestamp",
+    [SearchType.CALENDAR_EVENT]: "start.dateTime",
 }
 
 export interface ChatThreadResult {
@@ -137,9 +140,14 @@ export class SearchService extends VeridaService {
         const schemaUri = SearchTypeSchemas[searchType]
         const dataService = new DataService(this.did, this.context)
         const datastore = await dataService.getDatastore(schemaUri)
+
+        const maxDate = new Date((new Date()).getTime() + (60*60*24*7) * 1000);
+
         const filter = {
             [SearchTypeTimeProperty[searchType]]: {
-                "$gte": maxDatetime.toISOString()
+                "$gte": maxDatetime.toISOString(),
+                // Don't load data more than a week into the future (to ignore calendar events well into the future)
+                "$lte": maxDate.toISOString()
             }
         }
         const options = {
