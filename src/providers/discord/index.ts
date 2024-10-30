@@ -9,9 +9,8 @@ import { DiscordSnowflake } from '@sapphire/snowflake'
 import dayjs from 'dayjs'
 import axios from 'axios'
 
-//import SBTs from './sbts'
-import Following from './following'
 import InvalidTokenError from '../InvalidTokenError';
+import DiscordChatMessageHandler from './chat-message';
 
 export interface DiscordProviderConfig extends BaseProviderConfig {
     clientID: string
@@ -41,8 +40,6 @@ export default class DiscordProvider extends Base {
 
     public syncHandlers(): any[] {
         return [
-            //SBTs
-            //Following,
             DiscordChatMessageHandler
         ]
         return []
