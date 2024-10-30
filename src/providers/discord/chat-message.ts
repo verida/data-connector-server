@@ -1,8 +1,8 @@
-import { Client, GatewayIntentBits, TextChannel, DMChannel } from 'discord.js';
+import { Client, GatewayIntentBits, DMChannel } from 'discord.js';
+import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
 import CONFIG from '../../config';
 import {
-    SyncItemsResult,
     SyncResponse,
     SyncHandlerStatus,
     ProviderHandlerOption,
@@ -14,7 +14,7 @@ import {
     SchemaSocialChatGroup,
     SchemaSocialChatMessage,
 } from '../../schemas';
-import { DiscordChatGroupType, DiscordHandlerConfig } from './interfaces';
+import { DiscordHandlerConfig } from './interfaces';
 import BaseSyncHandler from '../BaseSyncHandler';
 import { ItemsRangeTracker } from '../../helpers/itemsRangeTracker';
 import { ItemsRange } from '../../helpers/interfaces';
@@ -45,87 +45,72 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
                 label: 'Channel types',
                 type: ConnectionOptionType.ENUM_MULTI,
                 enumOptions: [
-                    { label: 'Text Channels', value: DiscordChatGroupType.GUILD_TEXT },
-                    { label: 'Direct Messages', value: DiscordChatGroupType.DM },
+                    { label: 'Direct Messages', value: 'DM' },
                 ],
-                defaultValue: [
-                    DiscordChatGroupType.GUILD_TEXT,
-                    DiscordChatGroupType.DM,
-                ].join(','),
+                defaultValue: 'DM',
             },
         ];
     }
 
     public getDiscordClient(): Client {
-        
         const token = this.connection.accessToken;
-        
+
         const client = new Client({
             intents: [
-                GatewayIntentBits.Guilds,
-                GatewayIntentBits.GuildMessages,
                 GatewayIntentBits.DirectMessages,
-                GatewayIntentBits.MessageContent
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.MessageContent,
             ],
         });
-    
+
         client.login(token);
         return client;
-    }  
+    }
 
     protected async buildChatGroupList(api: any): Promise<SchemaSocialChatGroup[]> {
         let channelList: SchemaSocialChatGroup[] = [];
-        let channels = []
-        
+//let dmChannels: any[] = [];
+
         try {
-            const guilds: any = await api.get(Routes.userGuilds());
-        
-            for (const guild of guilds) {
-                channels = await api.get(Routes.guildChannels(guild.id))
-                
-                console.log(`Channels in guild ${guild.name}:`, channels);
-            }
-    
+            // const client = new REST({ version: '10', authPrefix: 'Bearer' }).setToken(this.connection.accessToken);
+            // const channels = await client.get('/users/@me/guilds');
+            // Fetch DM channels only
+            // dmChannels = await api.post(Routes.userChannels());
+            const client = this.getDiscordClient();
+
+            // Wait until the client is ready to ensure all channels are accessible
+            await new Promise(resolve => client.once('ready', resolve));
+
+            const dmChannels = client.channels.cache.filter(
+                channel => channel.isDMBased()
+            ) as Map<string, DMChannel>;
+            console.log('DM Channels===========:');
+            console.log(dmChannels)
+
         } catch (error) {
-            console.error('Error fetching user guilds & channels:', error);
+            console.error('Error fetching DM channels:', error);
             return [];
         }
-        
-    
-        for (const [id, channel] of channels) {
-            if (channel.isTextBased()) {
-                if (channel instanceof TextChannel) {
-                    const textChannel = channel as TextChannel;
-                    const group: SchemaSocialChatGroup = {
-                        _id: this.buildItemId(textChannel.id),
-                        name: textChannel.name,
-                        sourceAccountId: this.provider.getAccountId(),
-                        sourceApplication: this.getProviderApplicationUrl(),
-                        sourceId: textChannel.id,
-                        schema: CONFIG.verida.schemas.CHAT_GROUP,
-                        sourceData: textChannel,
-                        insertedAt: new Date().toISOString(),
-                    };
-                    channelList.push(group);
-                } else if (channel.isDMBased()) {
-                    const dmChannel = channel as DMChannel;
-                    const group: SchemaSocialChatGroup = {
-                        _id: this.buildItemId(dmChannel.id),
-                        name: `DM with ${dmChannel.recipient?.username}`,
-                        sourceAccountId: this.provider.getAccountId(),
-                        sourceApplication: this.getProviderApplicationUrl(),
-                        sourceId: dmChannel.id,
-                        schema: CONFIG.verida.schemas.CHAT_GROUP,
-                        sourceData: dmChannel,
-                        insertedAt: new Date().toISOString(),
-                    };
-                    channelList.push(group);
-                }
+/*
+        for (const channel of dmChannels) {
+            if (channel.isDMBased()) {
+                const dmChannel = channel as DMChannel;
+                const group: SchemaSocialChatGroup = {
+                    _id: this.buildItemId(dmChannel.id),
+                    name: `DM with ${dmChannel.recipient?.username}`,
+                    sourceAccountId: this.provider.getAccountId(),
+                    sourceApplication: this.getProviderApplicationUrl(),
+                    sourceId: dmChannel.id,
+                    schema: CONFIG.verida.schemas.CHAT_GROUP,
+                    sourceData: dmChannel,
+                    insertedAt: new Date().toISOString(),
+                };
+                channelList.push(group);
             }
-        }
+        }*/
+
         return channelList;
     }
-    
 
     protected async fetchMessageRange(
         chatGroup: SchemaSocialChatGroup,
@@ -133,7 +118,7 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
         apiClient: Client
     ): Promise<SchemaSocialChatMessage[]> {
         const messages: SchemaSocialChatMessage[] = [];
-        const channel = apiClient.channels.cache.get(chatGroup.sourceId!) as TextChannel | DMChannel;
+        const channel = apiClient.channels.cache.get(chatGroup.sourceId!) as DMChannel;
 
         if (!channel) return messages;
 
@@ -172,25 +157,16 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
         api: any,
         syncPosition: SyncHandlerPosition
     ): Promise<SyncResponse> {
-        
         try {
-            //const apiClient = await this.getDiscordClient();
-            const groupList = await this.buildChatGroupList(api); // Fetch all Text Channels and DM groups
+            const groupList = await this.buildChatGroupList(api);
 
             let totalMessages = 0;
             let chatHistory: SchemaSocialChatMessage[] = [];
 
-            // Determine the current group position
-            let groupPosition = this.getGroupPositionIndex(groupList, syncPosition);
-
             const groupCount = groupList.length;
 
-            // Iterate over each group
-            for (let i = 0; i < Math.min(groupCount, this.config.channelLimit); i++) {
-                const groupIndex = (groupPosition + i) % groupCount; // Rotate through groups
-                const group = groupList[groupIndex];
+            for (const group of groupList) {
 
-                // Use a separate ItemsRangeTracker for each group
                 let rangeTracker = new ItemsRangeTracker(group.syncData);
 
                 const fetchedMessages = await this.fetchAndTrackMessages(
@@ -199,51 +175,25 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
                     api
                 );
 
-                // Concatenate the fetched messages to the total chat history
                 chatHistory = chatHistory.concat(fetchedMessages);
                 totalMessages += fetchedMessages.length;
 
-                // Update the group's sync data with the latest rangeTracker state
                 group.syncData = rangeTracker.export();
-
-                // Stop if the total messages fetched reach the batch size
-                if (totalMessages >= this.config.messageBatchSize) {
-                    syncPosition.thisRef = groupList[(groupIndex + 1) % groupCount].sourceId; // Continue from the next group in the next sync
-                    break;
-                }
             }
 
-            // Finalize sync position and status based on message count
             this.updateSyncPosition(
                 syncPosition,
-                totalMessages,
-                groupCount,
-                chatHistory
+                totalMessages
             );
 
-            // Concatenate only items after syncPosition.thisRef and chatHistory
-            const remainingGroups = groupList.slice(groupPosition + 1);
-
             return {
-                results: remainingGroups.concat(chatHistory),
+                results: groupList.concat(chatHistory),
                 position: syncPosition,
             };
         } catch (err: any) {
             console.error(err);
             throw err;
         }
-    }
-
-    private getGroupPositionIndex(
-        groupList: SchemaSocialChatGroup[],
-        syncPosition: SyncHandlerPosition
-    ): number {
-        const groupPosition = groupList.findIndex(
-            (group) => group.sourceId === syncPosition.thisRef
-        );
-
-        // If not found, return 0 to start from the beginning
-        return groupPosition === -1 ? 0 : groupPosition;
     }
 
     private async fetchAndTrackMessages(
@@ -294,18 +244,14 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
 
     private updateSyncPosition(
         syncPosition: SyncHandlerPosition,
-        totalMessages: number,
-        groupCount: number,
-        chatHistory: SchemaSocialChatMessage[]
+        totalMessages: number
     ) {
         if (totalMessages === 0) {
             syncPosition.status = SyncHandlerStatus.ENABLED;
             syncPosition.syncMessage = 'No new messages found.';
-        } else if (totalMessages < this.config.messageBatchSize) {
-            syncPosition.syncMessage = `Processed ${totalMessages} messages across ${groupCount} groups. Sync complete.`;
-            syncPosition.status = SyncHandlerStatus.ENABLED;
         } else {
-            syncPosition.syncMessage = `Batch complete (${this.config.messageBatchSize}). More results pending.`;
+            syncPosition.syncMessage = `Batch complete (${totalMessages}). More results pending.`;
         }
     }
+
 }
