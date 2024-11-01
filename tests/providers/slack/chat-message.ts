@@ -13,7 +13,7 @@ import SlackChatMessageHandler from "../../../src/providers/slack/chat-message";
 import BaseProvider from "../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../common.tests";
 import { SchemaSocialChatGroup, SchemaSocialChatMessage, SchemaRecord } from "../../../src/schemas";
-import { SlackHandlerConfig } from "../../../src/providers/slack/interfaces";
+import { SlackHandlerConfig, SlackChatGroupType } from "../../../src/providers/slack/interfaces";
 import { SlackHelpers } from "../../../src/providers/slack/helpers";
 
 // Define the provider ID
@@ -27,7 +27,12 @@ let testConfig: GenericTestConfig;
 // Configure provider and handler without certain attributes
 let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
 let handlerConfig: SlackHandlerConfig = {
-  messagesPerGroupLimit: 3
+  messagesPerGroupLimit: 3,
+  channelTypes: [
+    SlackChatGroupType.IM.toString(), // DM first
+    SlackChatGroupType.PRIVATE_CHANNEL.toString(),
+    SlackChatGroupType.PUBLIC_CHANNEL.toString(),
+  ].join(',')
 };
 
 // Test suite for Slack Chat Message syncing
