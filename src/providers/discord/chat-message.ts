@@ -69,29 +69,19 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
 
     protected async buildChatGroupList(api: any): Promise<SchemaSocialChatGroup[]> {
         let channelList: SchemaSocialChatGroup[] = [];
-//let dmChannels: any[] = [];
+        let dmChannels: any[] = [];
 
         try {
-            // const client = new REST({ version: '10', authPrefix: 'Bearer' }).setToken(this.connection.accessToken);
-            // const channels = await client.get('/users/@me/guilds');
+            const client = new REST({ version: '10', authPrefix: 'Bearer' }).setToken(this.connection.accessToken);
+            const channels = await client.get('/users/@me/guilds');
             // Fetch DM channels only
-            // dmChannels = await api.post(Routes.userChannels());
-            const client = this.getDiscordClient();
-
-            // Wait until the client is ready to ensure all channels are accessible
-            await new Promise(resolve => client.once('ready', resolve));
-
-            const dmChannels = client.channels.cache.filter(
-                channel => channel.isDMBased()
-            ) as Map<string, DMChannel>;
-            console.log('DM Channels===========:');
-            console.log(dmChannels)
+            dmChannels = await api.post(Routes.userChannels());
 
         } catch (error) {
             console.error('Error fetching DM channels:', error);
             return [];
         }
-/*
+
         for (const channel of dmChannels) {
             if (channel.isDMBased()) {
                 const dmChannel = channel as DMChannel;
@@ -107,7 +97,7 @@ export default class DiscordChatMessageHandler extends BaseSyncHandler {
                 };
                 channelList.push(group);
             }
-        }*/
+        }
 
         return channelList;
     }
