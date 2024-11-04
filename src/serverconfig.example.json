@@ -121,6 +121,7 @@
             "clientSecret": "",
             "stateSecret": "",
             "maxSyncLoops": 1,
+            "maxBatchSize": 200,
             "messagesPerGroupLimit": 50            
         }
     },

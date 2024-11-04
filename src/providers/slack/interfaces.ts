@@ -1,6 +1,10 @@
 import { BaseHandlerConfig, BaseProviderConfig } from "../../interfaces";
 
 export interface SlackHandlerConfig extends BaseHandlerConfig {
+  // Max batch size to cover all chat groups
+  // Slack recommends no more than 200, although max value 1000
+  // See slack documentation: https://api.slack.com/methods/conversations.list
+  maxBatchSize: number  
   // Maximum number of messages to process in a group
   messagesPerGroupLimit: number
 }
