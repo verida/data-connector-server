@@ -28,9 +28,6 @@ import { MessageElement } from "@slack/web-api/dist/types/response/Conversations
 
 const _ = require("lodash");
 
-// Slack recommends no more than 200, although max value 1000
-// See slack documentation: https://api.slack.com/methods/conversations.list
-const MAX_BATCH_SIZE = 200;
 export interface SyncChatItemsResult extends SyncItemsResult {
   items: SchemaSocialChatMessage[];
 }
@@ -83,7 +80,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     const client = this.getSlackClient();
     let channelList: SchemaSocialChatGroup[] = [];
 
-    const conversations = await client.conversations.list({ types: this.config["channelTypes"].toString(), limit: MAX_BATCH_SIZE });
+    const conversations = await client.conversations.list({ types: this.config["channelTypes"].toString(), limit: this.config.maxBatchSize });
 
     for (const channel of conversations.channels || []) {
       if (channel?.is_archived) continue;
@@ -121,15 +118,15 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
       const groupDbItems = <SchemaSocialChatGroup[]>await groupDs.getMany({
         sourceAccountId: this.provider.getAccountId(),
       }, {
-        limit: MAX_BATCH_SIZE
+        limit: this.config.maxBatchSize
       });
 
       const mergedGroupList = this.mergeGroupLists(groupList, groupDbItems);
       let totalMessages = 0;
       let chatHistory: SchemaSocialChatMessage[] = [];
 
-      for (let i = 0; i < mergedGroupList.length; i++) {
-        const group = mergedGroupList[i];
+      for (const group of mergedGroupList) {
+        
         let rangeTracker = new ItemsRangeTracker(group.syncData);
 
         const fetchedMessages = await this.fetchAndTrackMessages(
@@ -141,7 +138,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
         chatHistory = chatHistory.concat(fetchedMessages);
         totalMessages += fetchedMessages.length;
 
-        mergedGroupList[i].syncData = rangeTracker.export();
+        group.syncData = rangeTracker.export();
       }
 
       this.updateSyncPosition(syncPosition, totalMessages, mergedGroupList.length);
@@ -168,6 +165,7 @@ export default class SlackChatMessageHandler extends BaseSyncHandler {
     let items: SchemaSocialChatMessage[] = [];
     let currentRange = rangeTracker.nextRange();
 
+    // Slack has limit of 1000, and if this.config.messagesPerGroupLimit is higher than 1000, will return maximum 1000 items
     let query: ConversationsHistoryArguments = {
       channel: group.sourceId!,
       limit: this.config.messagesPerGroupLimit,
