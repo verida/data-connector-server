@@ -153,8 +153,8 @@ describe(`${providerId} calendar event tests`, function () {
         //Verify only user-owned calendars are fetched         
         calendars.forEach((calendar: SchemaCalendar) => {
           assert.ok(
-            (calendar.sourceData as { organizer?: { self: boolean } }).organizer?.self,
-            "Calendar is owned by the user (self: true)"
+            (calendar.sourceData as { accessRole?: string }).accessRole == "owner",
+            "Calendar is owned by the user."
           );
         });
 

@@ -179,12 +179,12 @@ export default class CalendarEventHandler extends GoogleHandler {
       let eventHistory: SchemaEvent[] = [];
 
       // Iterate over each calendar
-      for (let i = 0; i < calendarList.length; i++) {
+      for (const calendar of calendarList) {
         // Use a separate ItemsRangeTracker for each calendar
-        let rangeTracker = new ItemsRangeTracker(calendarList[i].syncData);
+        let rangeTracker = new ItemsRangeTracker(calendar.syncData);
 
         const fetchedEvents = await this.fetchAndTrackEvents(
-          calendarList[i],
+          calendar,
           rangeTracker,
           apiClient
         );
@@ -195,7 +195,7 @@ export default class CalendarEventHandler extends GoogleHandler {
         totalEvents += fetchedEvents.length;
 
         // Update the calendar's sync data with the latest rangeTracker state
-        calendarList[i].syncData = rangeTracker.export();
+        calendar.syncData = rangeTracker.export();
       }
 
       // Finalize sync position and status based on event count
