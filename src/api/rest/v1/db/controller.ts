@@ -40,6 +40,84 @@ export class DbController {
         }
     }
 
+    public async create(req: Request, res: Response) {
+        try {
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const dbName = req.params[0]
+
+            const permissions = Utils.buildPermissions(req)
+            const db = await context.openDatabase(dbName, {
+                // @ts-ignore
+                permissions
+            })
+
+            const record = req.body.record
+            const options = req.body.options || {}
+            const result = await db.save(record, options)
+
+            if (result) {
+                record._id = (<any> result).id
+                record._rev = (<any> result).rev
+                res.json({
+                    success: true,
+                    record,
+                    result
+                })
+            } else {
+                res.json({
+                    success: false,
+                    // @ts-ignore
+                    errors: db.errors
+                })
+            }
+        } catch (error) {
+            const message = error.message
+
+            res.status(500).send({
+                error: message
+            });
+        }
+    }
+
+    public async update(req: Request, res: Response) {
+        try {
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const dbName = req.params[0]
+
+            const permissions = Utils.buildPermissions(req)
+            const db = await context.openDatabase(dbName, {
+                // @ts-ignore
+                permissions
+            })
+            const rowId = req.params[1]
+
+            const record = req.body.record
+            record._id = rowId
+            const options = req.body.options || {}
+            const result = await db.save(record, options)
+
+            if (result) {
+                res.json({
+                    success: true,
+                    record,
+                    result
+                })
+            } else {
+                res.json({
+                    success: false,
+                    // @ts-ignore
+                    errors: db.errors
+                })
+            }
+        } catch (error) {
+            const message = error.message
+
+            res.status(500).send({
+                error: message
+            });
+        }
+    }
+
     public async query(req: Request, res: Response) {
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req)

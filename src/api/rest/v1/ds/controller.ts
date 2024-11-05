@@ -39,6 +39,84 @@ export class DsController {
         }
     }
 
+    public async create(req: Request, res: Response) {
+        try {
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const permissions = Utils.buildPermissions(req)
+            const schemaName = Utils.getSchemaFromParams(req.params[0])
+
+            const ds = await context.openDatastore(schemaName, {
+                // @ts-ignore
+                permissions
+            })
+
+            const record = req.body.record
+            const options = req.body.options || {}
+            record.schema = schemaName
+            const result = await ds.save(record, options)
+
+            if (result) {
+                record._id = (<any> result).id
+                record._rev = (<any> result).rev
+                res.json({
+                    success: true,
+                    record,
+                    result
+                })
+            } else {
+                res.json({
+                    success: false,
+                    errors: ds.errors
+                })
+            }
+        } catch (error) {
+            const message = error.message
+
+            res.status(500).send({
+                error: message
+            });
+        }
+    }
+
+    public async update(req: Request, res: Response) {
+        try {
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const permissions = Utils.buildPermissions(req)
+            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const rowId = req.params[1]
+
+            const ds = await context.openDatastore(schemaName, {
+                // @ts-ignore
+                permissions
+            })
+
+            const record = req.body.record
+            record._id = rowId
+            record.schema = schemaName
+            const options = req.body.options || {}
+            const result = await ds.save(record, options)
+
+            if (result) {
+                res.json({
+                    success: true,
+                    record,
+                    result
+                })
+            } else {
+                res.json({
+                    success: false,
+                    errors: ds.errors
+                })
+            }
+        } catch (error) {
+            const message = error.message
+
+            res.status(500).send({
+                error: message
+            });
+        }
+    }
+
     public async query(req: Request, res: Response) {
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req)
