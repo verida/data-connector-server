@@ -3,7 +3,7 @@ import { defaultModel, LLM } from "../llm"
 import { PromptSearch, PromptSearchLLMResponse, PromptSearchSort, PromptSearchType } from "../tools/promptSearch"
 import { ChatThreadResult, SearchService, SearchSortType, SearchType } from "../search"
 import { VeridaService } from '../veridaService'
-import { SchemaEmail, SchemaFavourite, SchemaFile, SchemaFollowing, SchemaSocialChatMessage } from '../../schemas'
+import { SchemaEmail, SchemaEvent, SchemaFavourite, SchemaFile, SchemaFollowing, SchemaSocialChatMessage } from '../../schemas'
 import { Helpers } from "../helpers"
 import { EmailShortlist } from "../tools/emailShortlist"
 
@@ -17,6 +17,7 @@ const MAX_DATERANGE_CHAT_MESSAGES = 100
 const MAX_DATERANGE_FAVORITES = 30
 const MAX_DATERANGE_FOLLOWING = 30
 const MAX_DATERANGE_FILES = 20
+const MAX_DATERANGE_CALENDAR_EVENT = 20
 
 // "You are a personal assistant with the ability to search the following categories; emails, chat_history and documents. You receive a prompt and generate a JSON response (with no other text) that provides search queries that will source useful information to help answer the prompt. Search queries for each category should contain three properties; \"terms\" (an array of 10 individual words), \"beforeDate\" (results must be before this date), \"afterDate\" (results must be after this date), \"resultType\" (either \"count\" to count results or \"results\" to return the search results), \"filter\" (an array of key, value pairs of fields to filter the results). Categories can be empty if not relevant to the prompt. The current date is 2024-08-12.\n\nHere is an example JSON response:\n{\"email\": {\"terms\": [\"golf\", \"tennis\", \"soccer\"], \"beforeDate\": \"2024-06-01\", \"afterDate\": \"2024-01-10\" \"filter\": {\"from\": \"dave\"}, \"resultType\": \"results}}\n\nHere is the prompt:\nWhat subscriptions do I currently pay for?"
 
@@ -39,6 +40,7 @@ export class PromptSearchService extends VeridaService {
         let following: SchemaFollowing[] = []
         let files: SchemaFile[] = []
         let chatMessages: SchemaSocialChatMessage[] = []
+        let calendarEvents: SchemaEvent[] = []
 
         const searchService = new SearchService(this.did, this.context)
 
@@ -58,6 +60,9 @@ export class PromptSearchService extends VeridaService {
             }
             if (promptSearchResult.databases.indexOf(SearchType.CHAT_MESSAGES) !== -1) {
                 chatThreads = await searchService.chatThreadsByKeywords(promptSearchResult.keywords!, promptSearchResult.timeframe, 10, 20)
+            }
+            if (promptSearchResult.databases.indexOf(SearchType.CALENDAR_EVENT) !== -1) {
+                calendarEvents = await searchService.schemaByKeywords<SchemaEvent>(SearchType.CALENDAR_EVENT, promptSearchResult.keywords!, promptSearchResult.timeframe, 40)
             }
         } else {
             const maxDatetime = Helpers.keywordTimeframeToDate(promptSearchResult.timeframe)
@@ -80,10 +85,13 @@ export class PromptSearchService extends VeridaService {
             if (promptSearchResult.databases.indexOf(SearchType.CHAT_MESSAGES) !== -1) {
                 chatMessages = <SchemaSocialChatMessage[]> await searchService.schemaByDateRange(SearchType.CHAT_MESSAGES, maxDatetime, sort, MAX_DATERANGE_CHAT_MESSAGES)
             }
+            if (promptSearchResult.databases.indexOf(SearchType.CALENDAR_EVENT) !== -1) {
+                calendarEvents = await searchService.schemaByDateRange<SchemaEvent>(SearchType.CALENDAR_EVENT, maxDatetime, sort, MAX_DATERANGE_CALENDAR_EVENT)
+            }
         }
 
-        console.log('files / emails / favourites / following / chatThreads')
-        console.log(files.length, emails.length, favourites.length, following.length, chatThreads.length)
+        console.log('files / emails / favourites / following / chatThreads / calendarEvents')
+        console.log(files.length, emails.length, favourites.length, following.length, chatThreads.length, calendarEvents.length)
 
         let finalPrompt = `Answer this prompt:\n${prompt}\nHere are some recent messages that may help you provide a relevant answer.\n`
         let contextString = ''
@@ -115,6 +123,12 @@ export class PromptSearchService extends VeridaService {
             contextString += `Following: ${follow.name} ${follow.description?.substring(0,100)} (via ${follow.sourceApplication})\n\n`
         }
 
+        for (const event of calendarEvents) {
+            const attendees = event.attendees ? event.attendees.map((attendee) => { `${attendee.displayName || ''} <${attendee.email}>` }).join(', ') : ''
+            const description = event.description ? `Description: ${event.description?.substring(0,100)} ${attendees}\n` : ''
+            contextString += `Calendar Event: ${event.name} from ${event.start.dateTime} to ${event.end.dateTime} (via ${event.sourceApplication}).\n${attendees ? attendees + "\n" : ""}${description}Creator: ${event.creator.displayName || ''} <${event.creator.email}>\nLink: ${event.uri}\n\n`
+        }
+
         let emailCount = 0
         for (const email of emails) {
             let extraContext = ""
@@ -141,6 +155,8 @@ export class PromptSearchService extends VeridaService {
 
         const finalResponse = await llm.prompt(finalPrompt, undefined, false)
         const duration = Date.now() - start
+
+        console.log(contextString)
 
         return {
             result: finalResponse.choices[0].message.content!,

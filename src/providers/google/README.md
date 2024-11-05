@@ -35,3 +35,8 @@ Before running the unit tests, ensure that you have the following set up:
 
 ```bash
 yarn run test tests/providers/google/youtube-[xxx].tests.ts
+```
+
+# Google Calendar Notes
+1. Calendar list involves subscribed calendars which are the other users created and default calendars such as Holidays, Birthdays. But only process calendars created by the user.
+2. Limit recurring events to 1 month in the future.
