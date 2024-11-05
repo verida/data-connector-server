@@ -2,7 +2,7 @@ import { Client as NotionClient } from "@notionhq/client";
 import { AccessRecord } from "./types";
 
 import serverconfig from '../../../../config'
-import { createAccessRecord, getAccessRecord } from "./utils";
+import { getAccessRecord } from "./utils";
 
 export class Service {
   constructor() {
@@ -24,10 +24,6 @@ export class Service {
       });
 
       const record = await getAccessRecord(notionClient, did)
-
-      if (!record) {
-        await createAccessRecord(notionClient, did)
-      }
 
       return record
     } catch (error) {
