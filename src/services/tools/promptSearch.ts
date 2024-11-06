@@ -1,4 +1,6 @@
+const _ = require('lodash')
 import { KeywordSearchTimeframe } from "../../helpers/interfaces";
+import { PromptSearchLLMResponseOptional } from "../assistants/interfaces";
 import { LLM } from "../llm"
 import { SearchType } from "../search";
 
@@ -12,7 +14,7 @@ You must generate a JSON response containing the following information:
 - output_type: The amount of detail in the output of each search result to provide meaningful context. full_content, summary, headline
 - profile_information; Array of these options only; name, contactInfo, demographics, lifestyle, preferences, habits, financial, health, personality, employment, education, skills, language, interests
 
-JSON only, no explanation or formatting.`
+Output JSON only with no explanation or formatting.`
 
 export enum PromptSearchType {
   KEYWORDS = "keywords",
@@ -43,7 +45,8 @@ export interface PromptSearchLLMResponse {
       "financial" | "health" | "personality" | "employment" | "education" | "skills" |
       "language" | "interests"
     >;
-  }
+    search_summary?: string
+}
 
 export class PromptSearch {
 
@@ -53,9 +56,19 @@ export class PromptSearch {
         this.llm = llm
     }
 
-    public async search(userPrompt: string): Promise<PromptSearchLLMResponse> {
+    public async search(userPrompt: string, retries = 3, defaultResponse?: PromptSearchLLMResponseOptional): Promise<PromptSearchLLMResponse> {
         const response = await this.llm.prompt(userPrompt, systemPrompt)
-        return <PromptSearchLLMResponse> JSON.parse(response.choices[0].message.content!)
+
+        try {
+          const searchResponse = <PromptSearchLLMResponse> JSON.parse(response.choices[0].message.content!)
+          return _.merge({}, searchResponse, defaultResponse ? defaultResponse : {})
+        } catch (err: any) {
+          if (retries === 0) {
+            throw new Error(`No user data query available`)
+          } else {
+            this.search(userPrompt, retries--)
+          }
+        }
         
     }
 
