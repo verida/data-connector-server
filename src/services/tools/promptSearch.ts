@@ -1,6 +1,5 @@
 const _ = require('lodash')
 import { KeywordSearchTimeframe } from "../../helpers/interfaces";
-import { PromptSearchLLMResponseOptional } from "../assistants/interfaces";
 import { LLM } from "../llm"
 import { SearchType } from "../search";
 
@@ -56,12 +55,11 @@ export class PromptSearch {
         this.llm = llm
     }
 
-    public async search(userPrompt: string, retries = 3, defaultResponse?: PromptSearchLLMResponseOptional): Promise<PromptSearchLLMResponse> {
+    public async search(userPrompt: string, retries = 3): Promise<PromptSearchLLMResponse> {
         const response = await this.llm.prompt(userPrompt, systemPrompt)
 
         try {
-          const searchResponse = <PromptSearchLLMResponse> JSON.parse(response.choices[0].message.content!)
-          return _.merge({}, searchResponse, defaultResponse ? defaultResponse : {})
+          return <PromptSearchLLMResponse> JSON.parse(response.choices[0].message.content!)
         } catch (err: any) {
           if (retries === 0) {
             throw new Error(`No user data query available`)

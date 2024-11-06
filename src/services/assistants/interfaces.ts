@@ -20,10 +20,7 @@ export interface PromptSearchServiceDataTypes {
 }
 
 export interface PromptSearchServiceConfig {
-    searchType?: PromptSearchType
     maxContextLength?: number
     dataTypes?: PromptSearchServiceDataTypes
-    promptSearchConfig?: PromptSearchLLMResponseOptional
+    promptSearchConfig?: PromptSearchLLMResponse
 }
-
-export interface PromptSearchLLMResponseOptional extends Partial<PromptSearchLLMResponse> {}

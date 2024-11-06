@@ -37,16 +37,22 @@ const DEFAULT_PROMPT_SEARCH_SERVICE_CONFIG: PromptSearchServiceConfig = {
 
 export class PromptSearchService extends VeridaService {
 
-    public async prompt(prompt: string, llm: LLM, config: PromptSearchServiceConfig = {}): Promise<{
+    public async prompt(prompt: string, llm: LLM, config?: PromptSearchServiceConfig): Promise<{
         result: string,
         duration: number,
         process: PromptSearchLLMResponse
     }> {
+        const start = Date.now()
+
         config = _.merge({}, DEFAULT_PROMPT_SEARCH_SERVICE_CONFIG, config)
 
-        const start = Date.now()
-        const promptSearch = new PromptSearch(llm)
-        const promptSearchResult = await promptSearch.search(prompt, undefined, config.promptSearchConfig)
+        let promptSearchResult
+        if (config?.promptSearchConfig) {
+            promptSearchResult = config.promptSearchConfig
+        } else {
+            const promptSearch = new PromptSearch(llm)
+            promptSearchResult = await promptSearch.search(prompt)
+        }
 
         console.log(promptSearchResult)
 
@@ -86,8 +92,10 @@ export class PromptSearchService extends VeridaService {
             console.log(`Searching by timeframe: ${maxDatetime} ${sort}`)
             if (promptSearchResult.databases.indexOf(SearchType.EMAILS) !== -1) {
                 emails = await searchService.schemaByDateRange<SchemaEmail>(SearchType.EMAILS, maxDatetime, sort, config.dataTypes.emails.limit*3)
-                const emailShortlist = new EmailShortlist(llm)
-                emails = await emailShortlist.shortlist(prompt, emails, config.dataTypes.emails.limit)
+                if (emails.length > config.dataTypes.emails.limit) {
+                    const emailShortlist = new EmailShortlist(llm)
+                    emails = await emailShortlist.shortlist(prompt, emails, config.dataTypes.emails.limit)
+                }
             }
             if (promptSearchResult.databases.indexOf(SearchType.FILES) !== -1) {
                 files = await searchService.schemaByDateRange<SchemaFile>(SearchType.FILES, maxDatetime, sort, config.dataTypes.files.limit)
@@ -170,9 +178,9 @@ export class PromptSearchService extends VeridaService {
         // console.log(finalPrompt)
 
         const finalResponse = await llm.prompt(finalPrompt, undefined, false)
-        const duration = Date.now() - start
+        const duration = ((Date.now() - start) / 1000.0)
 
-        console.log(contextString)
+        // console.log(contextString)
 
         return {
             result: finalResponse.choices[0].message.content!,
