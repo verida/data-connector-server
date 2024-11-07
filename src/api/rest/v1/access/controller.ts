@@ -17,6 +17,10 @@ export class ControllerV1 {
 
       const accessRecord = await this.service.getAccessRecord(did)
 
+      if (accessRecord) {
+        this.service.updateLatestAccess(accessRecord).catch(console.error)
+      }
+
       return res.status(200).send({
         status: "success",
         access: accessRecord?.access ? "allowed" : "denied",
