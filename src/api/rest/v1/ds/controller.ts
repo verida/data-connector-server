@@ -94,14 +94,24 @@ export class DsController {
             record.schema = schemaName
             const options = req.body.options || {}
 
-            const result = await ds.save(record, _.merge({}, options, {
-                forceInsert: true   // throws an error if the record already exists
-            }))
+            // Ensure the record exists
+            try {
+                const existingRecord = await (ds.get(rowId, {}))
+            } catch (err: any) {
+                // Record doesn't exist
+                return res.status(404).json({
+                    success: false,
+                    message: "Not found"
+                })
+            }
+
+            const result = await ds.save(record, options)
 
             if (result) {
+                const savedRecord = await ds.get(record._id, {})
                 res.json({
                     success: true,
-                    record,
+                    record: savedRecord,
                     result
                 })
             } else {
@@ -237,7 +247,7 @@ export class DsController {
                 permissions
             })
 
-            const deleteId = req.query.id ? req.query.id.toString() : undefined
+            const deleteId = req.query.id ? req.query.id.toString() : (req.params.recordId ? req.params.recordId : undefined)
             const destroy = req.query.destroy && req.query.destroy.toString() == "true"
 
             let action

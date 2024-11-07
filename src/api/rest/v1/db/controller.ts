@@ -94,14 +94,24 @@ export class DbController {
             const record = req.body.record
             record._id = rowId
             const options = req.body.options || {}
-            const result = await db.save(record, _.merge({}, options, {
-                forceInsert: true   // throws an error if the record already exists
-            }))
+            const result = await db.save(record, options)
+
+            // Ensure the record exists
+            try {
+                const existingRecord = await (db.get(rowId, {}))
+            } catch (err: any) {
+                // Record doesn't exist
+                return res.status(404).json({
+                    success: false,
+                    message: "Not found"
+                })
+            }
 
             if (result) {
+                const savedRecord = await ds.get(record._id, {})
                 res.json({
                     success: true,
-                    record,
+                    record: savedRecord,
                     result
                 })
             } else {
