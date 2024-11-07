@@ -57,9 +57,9 @@ const schemas: Record<string, SchemaConfig> = {
     },
     "https://common.schemas.verida.io/social/event/v0.1.0/schema.json": {
         label: "Calendar Event",
-        storeFields: ['_id', 'insertedAt'],
+        storeFields: ['_id', 'insertedAt', "start.dateTime"],
         // @todo: Support indexing attachments, creator, organizer and attendees
-        indexFields: ['name', 'description', 'location', 'status', "modifiedAt", "insertedAt"]
+        indexFields: ['name', 'description', 'location', 'status', "modifiedAt", "insertedAt", "start.dateTime"]
     }
 }
 
