@@ -249,10 +249,6 @@ export class DataService extends EventEmitter {
             if (row[arrayProperty] && row[arrayProperty].length) {
                 let j = 0
                 for (const arrayItem of row[arrayProperty]) {
-                    if (!arrayItem.filename.match('pdf')) {
-                        continue
-                    }
-
                     const arrayItemProperty = `${arrayProperty}_${j}`
                     row[arrayItemProperty] = arrayItem
 
