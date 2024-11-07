@@ -100,6 +100,34 @@ export async function getAccessRecord(notionClient: NotionClient, did: string): 
   }
 }
 
+export async function updateLatestAccessForDid(notionClient: NotionClient, did: string, latestAccessDate: Date): Promise<void> {
+  const record = await getAccessRecord(notionClient, did)
+
+  if (!record) {
+    return
+  }
+
+  await updateLatestAccess(notionClient, record, latestAccessDate)
+}
+
+export async function updateLatestAccess(notionClient: NotionClient, accessRecord: AccessRecord, latestAccessDate: Date): Promise<void> {
+  try {
+    await notionClient.pages.update({
+      page_id: accessRecord.id,
+      properties: {
+        "Latest Access": {
+          type: "date",
+          date: {
+            start: latestAccessDate.toISOString(),
+          }
+        },
+      },
+    })
+  } catch (error: unknown) {
+    throw new NotionError("Error while updating the latest access")
+  }
+}
+
 export function transformNotionRecordToAccessRecord(record: DatabaseObjectResponse): AccessRecord {
   // HACK: Surprisingly the Notion library types don't correspond to the
   // actual data structure returned by the API, so we need to cast it

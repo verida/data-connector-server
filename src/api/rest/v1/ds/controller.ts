@@ -1,3 +1,4 @@
+const _ = require('lodash')
 import { Request, Response } from "express";
 import { Utils } from "../../../../utils";
 
@@ -36,6 +37,98 @@ export class DsController {
                     "error": message
                 });
             }
+        }
+    }
+
+    public async create(req: Request, res: Response) {
+        try {
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const permissions = Utils.buildPermissions(req)
+            const schemaName = Utils.getSchemaFromParams(req.params.schema)
+
+            const ds = await context.openDatastore(schemaName, {
+                // @ts-ignore
+                permissions
+            })
+
+            const record = req.body.record
+            const options = req.body.options || {}
+            record.schema = schemaName
+            const result = await ds.save(record, options)
+
+            if (result) {
+                const savedRecord = await ds.get((<any> result).id, {})
+                res.json({
+                    success: true,
+                    record: savedRecord
+                })
+            } else {
+                res.json({
+                    success: false,
+                    errors: ds.errors
+                })
+            }
+        } catch (error) {
+            const message = error.message
+
+            res.status(500).send({
+                error: message
+            });
+        }
+    }
+
+    public async update(req: Request, res: Response) {
+        try {
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const permissions = Utils.buildPermissions(req)
+            const schemaName = Utils.getSchemaFromParams(req.params.schema)
+            const rowId = req.params.recordId
+
+            const ds = await context.openDatastore(schemaName, {
+                // @ts-ignore
+                permissions
+            })
+
+            const record = req.body.record
+            record._id = rowId
+            record.schema = schemaName
+            const options = req.body.options || {}
+
+            // Ensure the record exists
+            try {
+                const existingRecord = await (ds.get(rowId, {}))
+            } catch (err: any) {
+                // Record doesn't exist
+                return res.status(404).json({
+                    success: false,
+                    message: "Not found"
+                })
+            }
+
+            const result = await ds.save(record, options)
+
+            if (result) {
+                const savedRecord = await ds.get(record._id, {})
+                res.json({
+                    success: true,
+                    record: savedRecord,
+                    result
+                })
+            } else {
+                res.json({
+                    success: false,
+                    errors: ds.errors
+                })
+            }
+        } catch (error: any) {
+            let message = error.message
+            if (error.status == 409 && error.message == 'Document update conflict') {
+                message = `Unable to update record that doesn't exist`
+            }
+
+            res.status(500).send({
+                error: message
+            });
         }
     }
 
@@ -147,14 +240,14 @@ export class DsController {
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const permissions = Utils.buildPermissions(req)
-            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const schemaName = Utils.getSchemaFromParams(req.params.schema)
 
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore
                 permissions
             })
 
-            const deleteId = req.query.id ? req.query.id.toString() : undefined
+            const deleteId = req.query.id ? req.query.id.toString() : (req.params.recordId ? req.params.recordId : undefined)
             const destroy = req.query.destroy && req.query.destroy.toString() == "true"
 
             let action

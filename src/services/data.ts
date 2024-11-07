@@ -54,6 +54,12 @@ const schemas: Record<string, SchemaConfig> = {
         label: "File",
         storeFields: ['_id', 'insertedAt'],
         indexFields: ['name', 'contentText', 'indexableText', 'sourceApplication', "modifiedAt", "insertedAt"]
+    },
+    "https://common.schemas.verida.io/social/event/v0.1.0/schema.json": {
+        label: "Calendar Event",
+        storeFields: ['_id', 'insertedAt', "start.dateTime"],
+        // @todo: Support indexing attachments, creator, organizer and attendees
+        indexFields: ['name', 'description', 'location', 'status', "modifiedAt", "insertedAt", "start.dateTime"]
     }
 }
 
@@ -243,10 +249,6 @@ export class DataService extends EventEmitter {
             if (row[arrayProperty] && row[arrayProperty].length) {
                 let j = 0
                 for (const arrayItem of row[arrayProperty]) {
-                    if (!arrayItem.filename.match('pdf')) {
-                        continue
-                    }
-
                     const arrayItemProperty = `${arrayProperty}_${j}`
                     row[arrayItemProperty] = arrayItem
 
