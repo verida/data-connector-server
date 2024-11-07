@@ -108,7 +108,7 @@ export class DbController {
             }
 
             if (result) {
-                const savedRecord = await ds.get(record._id, {})
+                const savedRecord = await db.get(record._id, {})
                 res.json({
                     success: true,
                     record: savedRecord,
