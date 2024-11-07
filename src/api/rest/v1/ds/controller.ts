@@ -1,3 +1,4 @@
+const _ = require('lodash')
 import { Request, Response } from "express";
 import { Utils } from "../../../../utils";
 
@@ -43,7 +44,7 @@ export class DsController {
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const permissions = Utils.buildPermissions(req)
-            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const schemaName = Utils.getSchemaFromParams(req.params.schema)
 
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore
@@ -56,12 +57,10 @@ export class DsController {
             const result = await ds.save(record, options)
 
             if (result) {
-                record._id = (<any> result).id
-                record._rev = (<any> result).rev
+                const savedRecord = await ds.get((<any> result).id, {})
                 res.json({
                     success: true,
-                    record,
-                    result
+                    record: savedRecord
                 })
             } else {
                 res.json({
@@ -82,8 +81,8 @@ export class DsController {
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const permissions = Utils.buildPermissions(req)
-            const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const rowId = req.params[1]
+            const schemaName = Utils.getSchemaFromParams(req.params.schema)
+            const rowId = req.params.recordId
 
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore
@@ -94,7 +93,10 @@ export class DsController {
             record._id = rowId
             record.schema = schemaName
             const options = req.body.options || {}
-            const result = await ds.save(record, options)
+
+            const result = await ds.save(record, _.merge({}, options, {
+                forceInsert: true   // throws an error if the record already exists
+            }))
 
             if (result) {
                 res.json({
@@ -108,8 +110,11 @@ export class DsController {
                     errors: ds.errors
                 })
             }
-        } catch (error) {
-            const message = error.message
+        } catch (error: any) {
+            let message = error.message
+            if (error.status == 409 && error.message == 'Document update conflict') {
+                message = `Unable to update record that doesn't exist`
+            }
 
             res.status(500).send({
                 error: message
@@ -225,7 +230,7 @@ export class DsController {
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const permissions = Utils.buildPermissions(req)
-            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const schemaName = Utils.getSchemaFromParams(req.params.schema)
 
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore

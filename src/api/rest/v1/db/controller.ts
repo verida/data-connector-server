@@ -1,3 +1,4 @@
+const _ = require('lodash')
 import { Request, Response } from "express";
 import { Utils } from "../../../../utils";
 
@@ -43,7 +44,7 @@ export class DbController {
     public async create(req: Request, res: Response) {
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req)
-            const dbName = req.params[0]
+            const dbName = req.params.database
 
             const permissions = Utils.buildPermissions(req)
             const db = await context.openDatabase(dbName, {
@@ -56,12 +57,11 @@ export class DbController {
             const result = await db.save(record, options)
 
             if (result) {
-                record._id = (<any> result).id
+                const savedRecord = await db.get((<any> result).id, {})
                 record._rev = (<any> result).rev
                 res.json({
                     success: true,
-                    record,
-                    result
+                    record: savedRecord
                 })
             } else {
                 res.json({
@@ -82,19 +82,21 @@ export class DbController {
     public async update(req: Request, res: Response) {
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req)
-            const dbName = req.params[0]
+            const dbName = req.params.database
 
             const permissions = Utils.buildPermissions(req)
             const db = await context.openDatabase(dbName, {
                 // @ts-ignore
                 permissions
             })
-            const rowId = req.params[1]
+            const rowId = req.params.recordId
 
             const record = req.body.record
             record._id = rowId
             const options = req.body.options || {}
-            const result = await db.save(record, options)
+            const result = await db.save(record, _.merge({}, options, {
+                forceInsert: true   // throws an error if the record already exists
+            }))
 
             if (result) {
                 res.json({
@@ -110,7 +112,10 @@ export class DbController {
                 })
             }
         } catch (error) {
-            const message = error.message
+            let message = error.message
+            if (error.status == 409 && error.message == 'Document update conflict') {
+                message = `Unable to update record: Not found`
+            }
 
             res.status(500).send({
                 error: message
