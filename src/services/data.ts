@@ -54,6 +54,12 @@ const schemas: Record<string, SchemaConfig> = {
         label: "File",
         storeFields: ['_id', 'insertedAt'],
         indexFields: ['name', 'contentText', 'indexableText', 'sourceApplication', "modifiedAt", "insertedAt"]
+    },
+    "https://common.schemas.verida.io/social/event/v0.1.0/schema.json": {
+        label: "Calendar Event",
+        storeFields: ['_id', 'insertedAt'],
+        // @todo: Support indexing attachments, creator, organizer and attendees
+        indexFields: ['name', 'description', 'location', 'status', "modifiedAt", "insertedAt"]
     }
 }
 
