@@ -71,7 +71,10 @@ export class LLMController {
             })
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
         }
     }
 
@@ -96,7 +99,10 @@ export class LLMController {
             return res.json(promptResult)
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
         }
     }
 

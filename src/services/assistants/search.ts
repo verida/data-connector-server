@@ -54,7 +54,7 @@ export class PromptSearchService extends VeridaService {
             promptSearchResult = await promptSearch.search(prompt)
         }
 
-        console.log(promptSearchResult)
+        this.verifyPromptSearchResult(promptSearchResult)
 
         let chatThreads: ChatThreadResult[] = []
         let emails: SchemaEmail[] = []
@@ -186,6 +186,13 @@ export class PromptSearchService extends VeridaService {
             result: finalResponse.choices[0].message.content!,
             duration,
             process: promptSearchResult
+        }
+    }
+
+    protected verifyPromptSearchResult(promptSearchResult: PromptSearchLLMResponse) {
+        // Perform some basic checks, but should use something like zod to verify properly
+        if (!promptSearchResult.databases || !promptSearchResult.timeframe || !promptSearchResult.sort || !promptSearchResult.output_type) {
+            throw new Error(`Invalid prompt search config`)
         }
     }
 
