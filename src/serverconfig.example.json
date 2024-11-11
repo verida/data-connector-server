@@ -114,6 +114,10 @@
             "messagesPerGroupLimit": 100,
             "maxGroupSize": 50,
             "useDbPos": true
+        },
+        "fireflies": {
+            "maxSyncLoops": 1,
+            "batchSize": 500            
         }
     },
     "providerDefaults": {
