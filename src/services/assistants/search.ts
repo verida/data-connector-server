@@ -35,14 +35,26 @@ const DEFAULT_PROMPT_SEARCH_SERVICE_CONFIG: PromptSearchServiceConfig = {
     }
 }
 
+
+function secondsSince(date: Date) {
+    const now = new Date();
+    const differenceInMilliseconds = now.getTime() - date.getTime();
+    const differenceInSeconds = Math.floor(differenceInMilliseconds / 1000);
+    return differenceInSeconds;
+  }
+
+
 export class PromptSearchService extends VeridaService {
 
     public async prompt(prompt: string, llm: LLM, config?: PromptSearchServiceConfig): Promise<{
         result: string,
+        timers: Record<string, number>,
         duration: number,
         process: PromptSearchLLMResponse
     }> {
-        const start = Date.now()
+        const timers: Record<string, number> = {}
+        let start = new Date()
+        const startDate = new Date()
 
         config = _.merge({}, DEFAULT_PROMPT_SEARCH_SERVICE_CONFIG, config)
 
@@ -53,6 +65,9 @@ export class PromptSearchService extends VeridaService {
             const promptSearch = new PromptSearch(llm)
             promptSearchResult = await promptSearch.search(prompt)
         }
+
+        timers['search-prompt'] = secondsSince(start)
+        start = new Date()
 
         this.verifyPromptSearchResult(promptSearchResult)
 
@@ -113,6 +128,9 @@ export class PromptSearchService extends VeridaService {
                 calendarEvents = await searchService.schemaByDateRange<SchemaEvent>(SearchType.CALENDAR_EVENT, maxDatetime, sort, config.dataTypes.calendarEvents.limit)
             }
         }
+
+        timers['search-complete'] = secondsSince(start)
+        start = new Date()
 
         promptSearchResult.search_summary = `Files: ${files.length}, Emails: ${emails.length}, Favorites: ${favourites.length}, Following: ${following.length}, ChatThreads: ${chatThreads.length}, CalandarEvents: ${calendarEvents.length}`
         console.log(promptSearchResult.search_summary)
@@ -178,12 +196,15 @@ export class PromptSearchService extends VeridaService {
         // console.log(finalPrompt)
 
         const finalResponse = await llm.prompt(finalPrompt, undefined, false)
-        const duration = ((Date.now() - start) / 1000.0)
+        timers['prompt-complete'] = secondsSince(start)
+        start = new Date()
+        const duration = ((Date.now() - startDate.getTime()) / 1000.0)
 
         // console.log(contextString)
 
         return {
             result: finalResponse.choices[0].message.content!,
+            timers,
             duration,
             process: promptSearchResult
         }
@@ -191,7 +212,7 @@ export class PromptSearchService extends VeridaService {
 
     protected verifyPromptSearchResult(promptSearchResult: PromptSearchLLMResponse) {
         // Perform some basic checks, but should use something like zod to verify properly
-        if (!promptSearchResult.databases || !promptSearchResult.timeframe || !promptSearchResult.sort || !promptSearchResult.output_type) {
+        if (!promptSearchResult || !promptSearchResult.databases || !promptSearchResult.timeframe || !promptSearchResult.sort || !promptSearchResult.output_type) {
             throw new Error(`Invalid prompt search config`)
         }
     }
