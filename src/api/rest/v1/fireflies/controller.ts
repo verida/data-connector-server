@@ -9,6 +9,9 @@ export default class Controller {
            
             // Redirect to the callback endpoint with the apiKey
             res.redirect(`/callback/fireflies?apiKey=${encodeURIComponent(apiKey)}`);
+            res.send({
+                success: true
+            })
         } catch (error) {
             next(error); 
         }
