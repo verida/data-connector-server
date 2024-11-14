@@ -7,13 +7,15 @@ export default class Controller {
 
             // @todo Validate API key if any (pending from FireFlies)
            
-            // Redirect to the callback endpoint with the apiKey
-            res.redirect(`/callback/fireflies?apiKey=${encodeURIComponent(apiKey)}`);
-            res.send({
-                success: true
-            })
+            // Redirect to the callback endpoint with the apiKey            
+            res.status(200).send({
+                redirect: `/callback/fireflies?apiKey=${encodeURIComponent(apiKey)}`
+            });
+            
         } catch (error) {
-            next(error); 
+            res.status(400).send({
+                error: error.message
+            });
         }
     }
 }

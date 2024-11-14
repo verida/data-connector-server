@@ -25,13 +25,8 @@ function submitApiKey() {
     }
 
     $.post('/api/rest/v1/fireflies/apiKeySubmit', { apiKey: apiKey }, null, 'json')
-        .done((response) => {
-            if (response.status === 'success') {
-                window.location.href = response.redirect;
-            } else {
-                setError("Invalid API Key. Please try again.");
-                enableButton();
-            }
+        .done((response) => {             
+            window.location.href = response.redirect;           
         })
         .fail(() => {
             setError("Failed to connect to Fireflies API. Please try again later.");
