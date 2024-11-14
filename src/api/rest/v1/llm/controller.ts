@@ -78,6 +78,38 @@ export class LLMController {
         }
     }
 
+    public async profilePrompt(req: Request, res: Response) {
+        try {
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const did = await account.did()
+
+            const schema = req.body.schema
+            const prompt = `Analyse my data to populate a JSON object that matches this schema. Output JSON only with no formatting or extra text.\n\n${schema}`
+            const promptConfig: PromptSearchServiceConfig = req.body.promptConfig
+
+            const {
+                customEndpoint,
+                llmModel,
+                llmProvider
+            } = buildLLMConfig(req)
+
+            const llm = getLLM(llmProvider, llmModel, customEndpoint)
+
+            const promptService = new PromptSearchService(did, context)
+            const promptResult = await promptService.prompt(prompt, llm, promptConfig)
+
+            promptResult.result = JSON.parse(promptResult.result)
+
+            return res.json(promptResult)
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
     public async personalPrompt(req: Request, res: Response) {
         try {
             const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
