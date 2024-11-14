@@ -6,9 +6,13 @@ export interface FireFliesConfig {
 }
 
 export interface User {
+    user_id: string;
     name: string;
-    integrations: string[];
-    // Add more properties as necessary
+    email: string;
+    is_admin?: string;
+    num_transcripts?: string;
+    integrations?: string[]; 
+    
 }
 
 export interface GraphQLResponse<T> {
@@ -32,7 +36,7 @@ export class FireFliesClient {
         };
     }
 
-    private async executeQuery<T>(query: string, variables: Record<string, any>): Promise<GraphQLResponse<T>> {
+    private async executeQuery<T>(query: string, variables?: Record<string, any>): Promise<GraphQLResponse<T>> {
         const payload = { query, variables };
 
         try {
@@ -49,24 +53,38 @@ export class FireFliesClient {
 
     /**
      *  
-     * @param userId Optional
-     * 
+     * @param userId Optional     
+     *  
      * @returns Owner by default
      */
     public async getUser(userId?: string): Promise<User> {
-        const query = `
-            query User($userId: String!) {
-                user(id: $userId) {
-                    name
-                    integrations
+        const query = userId 
+            ? `
+                query User($userId: String!) {
+                    user(id: $userId) {
+                        user_id    
+                        name
+                        email
+                    }
                 }
-            }
-        `;
-        const variables = { userId };
-
-        const response = await this.executeQuery<{ user: User }>(query, variables);
+            `
+            : `
+                query {
+                    user {
+                        user_id
+                        name
+                        email
+                    }
+                }
+            `;
+    
+        // Pass variables only if userId is defined
+        const response = userId
+            ? await this.executeQuery<{ user: User }>(query, { userId })
+            : await this.executeQuery<{ user: User }>(query);
+    
         return response.data.user;
     }
-
+    
     // You can add more methods to handle other queries or mutations here
 }
