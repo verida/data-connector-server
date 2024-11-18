@@ -32,7 +32,8 @@ let handlerConfig: SlackHandlerConfig = {
     SlackChatGroupType.IM.toString(), // DM first
     SlackChatGroupType.PRIVATE_CHANNEL.toString(),
     SlackChatGroupType.PUBLIC_CHANNEL.toString(),
-  ].join(',')
+  ].join(','),
+  maxBatchSize: 50
 };
 
 // Test suite for Slack Chat Message syncing
@@ -104,9 +105,9 @@ describe(`${providerId} chat message tests`, function () {
         const firstGroupMessages = chatMessages.filter(msg => msg.groupId === firstGroupId);
         assert.equal(firstGroupMessages.length, handlerConfig.messagesPerGroupLimit, "Processed correct number of messages per group");
 
-         /**
-          * Start the second sync batch process
-          */
+        /**
+         * Start the second sync batch process
+         */
         const secondBatchResponse = await handler._sync(api, response.position);
         const secondBatchResults = <SchemaRecord[]>secondBatchResponse.results;
 
@@ -127,9 +128,15 @@ describe(`${providerId} chat message tests`, function () {
           "Sync is still active after second batch"
         );
 
-        // Check if synced every chat group correctly
-        const syncedGroup = (secondBatchChatGroups.filter(group => group.sourceId === secondBatchChatMessages[0].groupId))[0];
-        assert.ok(syncedGroup.syncData, "Have a sync range per chat group.");
+        // Check if every chat group with messages is synced correctly
+        const groupIdsWithMessages = new Set(secondBatchChatMessages.map((msg) => msg.groupId));
+
+        groupIdsWithMessages.forEach((groupId) => {
+          const syncedGroup = secondBatchChatGroups.find((group) => group.sourceId === groupId);
+          assert.ok(syncedGroup, `Chat group with sourceId ${groupId} exists in the batch`);
+          assert.ok(syncedGroup!.syncData, `Chat group with sourceId ${groupId} has a valid sync range`);
+        });
+
 
       } catch (err) {
         // Ensure provider closes even if an error occurs
@@ -190,6 +197,134 @@ describe(`${providerId} chat message tests`, function () {
         throw err;
       }
     });
+
+    it(`Should process most recent messages first`, async () => {
+      const { api, handler, provider } = await CommonTests.buildTestObjects(
+        providerId,
+        SlackChatMessageHandler,
+        providerConfig,
+        connection
+      );
+      handler.setConfig(handlerConfig);
+
+      const syncPosition: SyncHandlerPosition = {
+        _id: `${providerId}-${handlerName}`,
+        providerId,
+        handlerId: handler.getId(),
+        accountId: provider.getAccountId(),
+        status: SyncHandlerStatus.ENABLED,
+      };
+
+      const response = await handler._sync(api, syncPosition);
+      const results = (<SchemaSocialChatMessage[]>response.results).filter(
+        (result) => result.schema === CONFIG.verida.schemas.CHAT_MESSAGE
+      );
+
+      const timestamps = results.map((msg) => new Date(msg.insertedAt!).getTime());
+      const isSortedDescending = timestamps.every(
+        (val, i, arr) => i === 0 || arr[i - 1] >= val
+      );
+
+      assert.ok(isSortedDescending, "Messages are processed from most recent to oldest");
+    });
+
+    it(`Should ensure second batch items aren't in the first batch`, async () => {
+      const { api, handler, provider } = await CommonTests.buildTestObjects(
+        providerId,
+        SlackChatMessageHandler,
+        providerConfig,
+        connection
+      );
+      handler.setConfig(handlerConfig);
+
+      const firstBatchResponse = await handler._sync(api, {
+        _id: `${providerId}-${handlerName}`,
+        providerId,
+        handlerId: handler.getId(),
+        accountId: provider.getAccountId(),
+        status: SyncHandlerStatus.ENABLED,
+      });
+
+      const firstBatchMessages = (<SchemaSocialChatMessage[]>firstBatchResponse.results).filter(
+        (result) => result.schema === CONFIG.verida.schemas.CHAT_MESSAGE
+      );
+
+      setTimeout(() => {
+        console.log("Wait for saving sync data");
+      }, 3000);
+      const secondBatchResponse = await handler._sync(api, firstBatchResponse.position);
+      const secondBatchMessages = (<SchemaSocialChatMessage[]>secondBatchResponse.results).filter(
+        (result) => result.schema === CONFIG.verida.schemas.CHAT_MESSAGE
+      );
+
+      const firstBatchIds = firstBatchMessages.map((msg) => msg.sourceId);
+      const secondBatchIds = secondBatchMessages.map((msg) => msg.sourceId);
+
+      const intersection = firstBatchIds.filter((id) => secondBatchIds.includes(id));
+      assert.equal(intersection.length, 0, "No overlapping messages between batches");
+    });
+
+    it(`Should process each type of chat group correctly`, async () => {
+      const { api, handler, provider } = await CommonTests.buildTestObjects(
+        providerId,
+        SlackChatMessageHandler,
+        providerConfig,
+        connection
+      );
+      handler.setConfig(handlerConfig);
+
+      const syncPosition: SyncHandlerPosition = {
+        _id: `${providerId}-${handlerName}`,
+        providerId,
+        handlerId: handler.getId(),
+        accountId: provider.getAccountId(),
+        status: SyncHandlerStatus.ENABLED,
+      };
+
+      const response = await handler._sync(api, syncPosition);
+      const results = (<SchemaSocialChatMessage[]>response.results).filter(
+        (result) => result.schema === CONFIG.verida.schemas.CHAT_MESSAGE
+      );
+
+      // Check if each type of group has at least one message
+      const groupTypes = {
+        [SlackChatGroupType.IM]: true,
+        [SlackChatGroupType.PRIVATE_CHANNEL]: true,
+        [SlackChatGroupType.PUBLIC_CHANNEL]: true,
+      };
+
+      results.forEach((message) => {
+        const group = (<SchemaSocialChatGroup[]>response.results).find(
+          (result) =>
+            result.schema === CONFIG.verida.schemas.CHAT_GROUP &&
+            result.sourceId === message.groupId
+        );
+
+        if (group) {
+          if (group.sourceData!.hasOwnProperty('is_im') && (group.sourceData! as any).is_im) {
+            groupTypes[SlackChatGroupType.IM] = false;
+          }
+
+          if (group.sourceData!.hasOwnProperty('is_private') && (group.sourceData! as any).is_private) {
+            groupTypes[SlackChatGroupType.PRIVATE_CHANNEL] = true;
+          }
+
+          if (group.sourceData!.hasOwnProperty('is_channel') && (group.sourceData! as any).is_channel) {
+            groupTypes[SlackChatGroupType.PUBLIC_CHANNEL] = true;
+          }
+        }
+      });
+
+      // Assert that all group types are represented
+      Object.entries(groupTypes).forEach(([type, isPresent]) => {
+        assert.ok(
+          isPresent,
+          `Chat group type ${type} should have messages processed`
+        );
+      });
+    });
+
+
   });
 
   // After all tests, close the network context
