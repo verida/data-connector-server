@@ -91,6 +91,10 @@ export default class CalendarEventHandler extends GoogleHandler {
       const response = await calendarClient.calendarList.list(query);
 
       for (const calendar of response.data.items || []) {
+        if (calendar.accessRole !== "owner") {
+          continue; // Skip non-owner calendars
+        }
+
         // Extract essential details for the calendar entry
         const calendarId = calendar.id;
 
@@ -175,23 +179,23 @@ export default class CalendarEventHandler extends GoogleHandler {
       let eventHistory: SchemaEvent[] = [];
 
       // Iterate over each calendar
-      for (let i = 0; i < calendarList.length; i++) {
+      for (const calendar of calendarList) {
         // Use a separate ItemsRangeTracker for each calendar
-        let rangeTracker = new ItemsRangeTracker(calendarList[i].syncData);
+        let rangeTracker = new ItemsRangeTracker(calendar.syncData);
 
         const fetchedEvents = await this.fetchAndTrackEvents(
-          calendarList[i],
+          calendar,
           rangeTracker,
           apiClient
         );
 
         // Concatenate the fetched events to the total event history
         eventHistory = eventHistory.concat(fetchedEvents);
-       
+
         totalEvents += fetchedEvents.length;
 
         // Update the calendar's sync data with the latest rangeTracker state
-        calendarList[i].syncData = rangeTracker.export();
+        calendar.syncData = rangeTracker.export();
       }
 
       // Finalize sync position and status based on event count
@@ -281,6 +285,18 @@ export default class CalendarEventHandler extends GoogleHandler {
     for (const event of response.items || []) {
       const eventId = event.id || "";
 
+      const isRecurring = !!event.recurrence; // Check if the event is recurring
+
+      // If the event is recurring and starts more than one month later, skip it
+      if (isRecurring) {
+        const eventStart = new Date(event.start?.dateTime || `${event.start?.date}T00:00:00.000Z`);
+        const oneMonthLater = new Date(new Date().setMonth(new Date().getMonth() + 1));
+
+        if (eventStart > oneMonthLater) { 
+          continue; // Skip this event
+        }
+      }
+
       // Break if the event ID matches breakId
       if (eventId === breakId) {
         const logEvent: SyncProviderLogEvent = {
@@ -291,6 +307,7 @@ export default class CalendarEventHandler extends GoogleHandler {
         breakHit = SyncItemsBreak.ID;
         break;
       }
+
 
       const eventRecord = this.buildResult(calendarId, event)
       results.push(eventRecord);
