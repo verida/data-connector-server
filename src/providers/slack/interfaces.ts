@@ -7,6 +7,7 @@ export interface SlackHandlerConfig extends BaseHandlerConfig {
   maxBatchSize: number  
   // Maximum number of messages to process in a group
   messagesPerGroupLimit: number
+  channelTypes?: string
 }
 
 export interface SlackProviderConfig extends BaseProviderConfig {
