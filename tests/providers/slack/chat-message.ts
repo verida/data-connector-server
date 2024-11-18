@@ -288,7 +288,7 @@ describe(`${providerId} chat message tests`, function () {
 
       // Check if each type of group has at least one message
       const groupTypes = {
-        [SlackChatGroupType.IM]: true,
+        [SlackChatGroupType.IM]: false,
         [SlackChatGroupType.PRIVATE_CHANNEL]: true,
         [SlackChatGroupType.PUBLIC_CHANNEL]: true,
       };
@@ -302,7 +302,7 @@ describe(`${providerId} chat message tests`, function () {
 
         if (group) {
           if (group.sourceData!.hasOwnProperty('is_im') && (group.sourceData! as any).is_im) {
-            groupTypes[SlackChatGroupType.IM] = false;
+            groupTypes[SlackChatGroupType.IM] = true;
           }
 
           if (group.sourceData!.hasOwnProperty('is_private') && (group.sourceData! as any).is_private) {
