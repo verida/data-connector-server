@@ -1,3 +1,9 @@
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.innerText = str; // Escapes special characters automatically
+    return div.innerHTML;
+}
+
 $(document).ready(function() {
     let offset = 0;
     const apiUrl = '/api/rest/v1';
@@ -108,7 +114,7 @@ $(document).ready(function() {
                 results.forEach(row => {
                     let rowHtml = '<tr>';
                     headers.forEach(header => {
-                        rowHtml += `<td>${row[header] || ''}</td>`;
+                        rowHtml += `<td>${escapeHtml(row[header] || '')}</td>`;
                     });
                     rowHtml += `<td><button class="btn btn-danger btn-sm delete-row" data-id="${row._id}">Delete</button></td>`; // Add Delete button
                     rowHtml += '</tr>';
