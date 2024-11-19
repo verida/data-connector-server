@@ -124,7 +124,7 @@ export class SearchService extends VeridaService {
 
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
 
-        console.log(query, maxDatetime)
+        console.log(searchType, query, maxDatetime)
         
         const searchResults = await dataService.searchIndex(schemaUri, query, limit, undefined, {
             filter: (result: any) => maxDatetime ? result[SearchTypeTimeProperty[searchType]] > maxDatetime.toISOString() : true

@@ -56,12 +56,14 @@ export class PromptSearch {
     }
 
     public async search(userPrompt: string, retries = 3): Promise<PromptSearchLLMResponse> {
-        const response = await this.llm.prompt(userPrompt, systemPrompt)
+        const response = await this.llm.prompt(userPrompt, systemPrompt, true)
 
         try {
           return <PromptSearchLLMResponse> JSON.parse(response.choices[0].message.content!)
         } catch (err: any) {
-          if (retries === 0) {
+          console.log(err, retries)
+          console.log(response.choices[0].message.content)
+          if (retries <= 0) {
             throw new Error(`No user data query available`)
           } else {
             this.search(userPrompt, retries--)

@@ -5,9 +5,10 @@ export interface PromptSearchServiceDataTypeEmails extends PromptSearchServiceDa
 }
 
 export interface PromptSearchServiceDataType {
-    limit?: number,
-    maxLength?: number,
+    limit?: number
+    maxLength?: number
     outputType?: string
+    // filter?: object -- @todo support filters
 }
 
 export interface PromptSearchServiceDataTypes {
@@ -23,4 +24,5 @@ export interface PromptSearchServiceConfig {
     maxContextLength?: number
     dataTypes?: PromptSearchServiceDataTypes
     promptSearchConfig?: PromptSearchLLMResponse
+    jsonFormat?: boolean
 }

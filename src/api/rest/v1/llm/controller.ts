@@ -84,8 +84,9 @@ export class LLMController {
             const did = await account.did()
 
             const schema = req.body.schema
-            const prompt = `Analyse my data to populate a JSON object that matches this schema. Output JSON only with no formatting or extra text.\n\n${schema}`
-            const promptConfig: PromptSearchServiceConfig = req.body.promptConfig
+            const prompt = `Analyse my data to populate a JSON object that matches this schema.\n\n${schema}`
+            const promptConfig: PromptSearchServiceConfig = req.body.promptConfig ? req.body.promptConfig : {}
+            promptConfig.jsonFormat = true
 
             const {
                 customEndpoint,

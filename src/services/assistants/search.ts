@@ -132,10 +132,10 @@ export class PromptSearchService extends VeridaService {
         timers['search-complete'] = secondsSince(start)
         start = new Date()
 
-        promptSearchResult.search_summary = `Files: ${files.length}, Emails: ${emails.length}, Favorites: ${favourites.length}, Following: ${following.length}, ChatThreads: ${chatThreads.length}, CalandarEvents: ${calendarEvents.length}`
+        promptSearchResult.search_summary = `Files: ${files.length}, Emails: ${emails.length}, Favorites: ${favourites.length}, Following: ${following.length}, ChatThreads: ${chatThreads.length}, CalendarEvents: ${calendarEvents.length}`
         console.log(promptSearchResult.search_summary)
 
-        let finalPrompt = `Answer this prompt:\n${prompt}\nHere is some of my personal data that may help you provide a relevant answer.\n`
+        let finalPrompt = `${prompt}\n\nHere is some of my personal data that may help you provide a relevant answer.\n`
         let contextString = ''
 
         let maxChatMessages = config.dataTypes.chatMessages.limit
@@ -193,9 +193,7 @@ export class PromptSearchService extends VeridaService {
         const now = (new Date()).toISOString()
         finalPrompt += `${contextString}\nThe current time is: ${now}`
 
-        // console.log(finalPrompt)
-
-        const finalResponse = await llm.prompt(finalPrompt, undefined, false)
+        const finalResponse = await llm.prompt(finalPrompt, undefined, config.jsonFormat)
         timers['prompt-complete'] = secondsSince(start)
         start = new Date()
         const duration = ((Date.now() - startDate.getTime()) / 1000.0)
