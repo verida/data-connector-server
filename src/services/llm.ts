@@ -48,7 +48,18 @@ export interface LLMResponse {
 }
 
 export interface LLM {
-  prompt(userPrompt: string, systemPrompt?: string, format?: boolean, model?: string): Promise<OpenAIChatResponse>
+  prompt(userPrompt: string, systemPrompt?: string, jsonFormat?: boolean, model?: string): Promise<OpenAIChatResponse>
+}
+
+function stripNonJson(inputString: string) {
+  const startIndex = inputString.indexOf('{')
+  const endIndex = inputString.lastIndexOf('}')
+
+  if (startIndex === -1 || endIndex === -1 || startIndex > endIndex) {
+      return '' // Return an empty string if braces are not found or invalid
+  }
+
+  return inputString.substring(startIndex, endIndex + 1)
 }
 
 // export interface OpenAIChatResponse {
@@ -87,6 +98,10 @@ export class GroqLLM implements LLM {
   }
 
   public async prompt(userPrompt: string, systemPrompt?: string, jsonFormat: boolean = true, model: string = this.defaultModel): Promise<OpenAIChatResponse> {
+    if (jsonFormat) {
+      userPrompt += `\nOnly output a JSON object. Don't add any explanation or formatting.\n`
+    }
+
     const messages = [
       {
         role: "user",
@@ -110,6 +125,10 @@ export class GroqLLM implements LLM {
       top_p: 1
     });
 
+    if (jsonFormat) {
+      response.choices[0].message.content = stripNonJson(response.choices[0].message.content!)
+    }
+
     return response
 }
 }
@@ -125,12 +144,17 @@ export class OpenAILLM implements LLM {
   }
 
   public async prompt(userPrompt: string, systemPrompt?: string, jsonFormat: boolean = true, model: string = this.defaultModel): Promise<OpenAIChatResponse> {
+    console.log('openai prompt start:')
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     }
 
     if (this.config.key) {
       headers['Authorization'] = `Bearer ${this.config.key}` 
+    }
+
+    if (jsonFormat) {
+      userPrompt += `\nOnly output a JSON object. Don't add any explanation or formatting.\n`
     }
 
     const messages = [
@@ -157,6 +181,10 @@ export class OpenAILLM implements LLM {
       }, {
         headers
       });
+
+      if (jsonFormat) {
+        response.data.choices[0].message.content = stripNonJson(response.data.choices[0].message.content!)
+      }
 
       return response.data
     } catch (err: any) {

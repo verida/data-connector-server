@@ -4,6 +4,7 @@ import { PromptSearchService } from '../../../../services/assistants/search'
 import { Utils } from "../../../../utils";
 import { HotLoadProgress } from "../../../../services/data";
 import { DataService } from "../../../../services/data";
+import { PromptSearchServiceConfig } from "../../../../services/assistants/interfaces";
 const _ = require('lodash')
 
 export interface LLMConfig {
@@ -70,15 +71,22 @@ export class LLMController {
             })
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
         }
     }
 
-    public async personalPrompt(req: Request, res: Response) {
+    public async profilePrompt(req: Request, res: Response) {
         try {
             const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
-            const prompt = req.body.prompt
+
+            const schema = req.body.schema
+            const prompt = `Analyse my data to populate a JSON object that matches this schema.\n\n${schema}`
+            const promptConfig: PromptSearchServiceConfig = req.body.promptConfig ? req.body.promptConfig : {}
+            promptConfig.jsonFormat = true
 
             const {
                 customEndpoint,
@@ -89,12 +97,45 @@ export class LLMController {
             const llm = getLLM(llmProvider, llmModel, customEndpoint)
 
             const promptService = new PromptSearchService(did, context)
-            const promptResult = await promptService.prompt(prompt, llm)
+            const promptResult = await promptService.prompt(prompt, llm, promptConfig)
+
+            promptResult.result = JSON.parse(promptResult.result)
 
             return res.json(promptResult)
         } catch (error) {
             console.log(error)
-            res.status(500).send(error.message);
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    public async personalPrompt(req: Request, res: Response) {
+        try {
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const did = await account.did()
+            const prompt = req.body.prompt
+            const promptConfig: PromptSearchServiceConfig = req.body.promptConfig
+
+            const {
+                customEndpoint,
+                llmModel,
+                llmProvider
+            } = buildLLMConfig(req)
+
+            const llm = getLLM(llmProvider, llmModel, customEndpoint)
+
+            const promptService = new PromptSearchService(did, context)
+            const promptResult = await promptService.prompt(prompt, llm, promptConfig)
+
+            return res.json(promptResult)
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
         }
     }
 

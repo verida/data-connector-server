@@ -1,6 +1,6 @@
 import { DataService } from "./data"
 import { VeridaService } from "./veridaService"
-import { SchemaEmail, SchemaRecord, SchemaSocialChatGroup, SchemaSocialChatMessage } from "../schemas"
+import { SchemaRecord, SchemaSocialChatGroup, SchemaSocialChatMessage } from "../schemas"
 import { IDatastore } from "@verida/types"
 import { KeywordSearchTimeframe } from "../helpers/interfaces"
 import { Helpers } from "./helpers"
@@ -124,7 +124,7 @@ export class SearchService extends VeridaService {
 
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
 
-        console.log(query, maxDatetime)
+        console.log(searchType, query, maxDatetime)
         
         const searchResults = await dataService.searchIndex(schemaUri, query, limit, undefined, {
             filter: (result: any) => maxDatetime ? result[SearchTypeTimeProperty[searchType]] > maxDatetime.toISOString() : true
@@ -311,6 +311,8 @@ export class SearchService extends VeridaService {
         const query = keywordsList.join(' ')
         const dataService = new DataService(this.did, this.context)
 
+        const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
+
         const searchResults = []
         for (const searchType of searchTypes) {
             const schemaUri = SearchTypeSchemas[searchType]
@@ -319,7 +321,11 @@ export class SearchService extends VeridaService {
                 continue
             }
             const miniSearchIndex = await dataService.getIndex(schemaUri)
-            const queryResult = <MinisearchResult[]> await miniSearchIndex.search(query)
+            const queryResult = <MinisearchResult[]> await miniSearchIndex.search(query, {
+                filter: (result: any) => {
+                    return maxDatetime ? result[SearchTypeTimeProperty[searchType]] > maxDatetime.toISOString() : true
+                }
+            })
 
             searchResults.push({
                 searchType,

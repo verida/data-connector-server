@@ -247,7 +247,8 @@ export default class BaseProvider extends EventEmitter {
                     this.connection.syncStatus = SyncStatus.CONNECTED
                 } else if (this.connection.syncStatus == SyncStatus.ACTIVE) {
                     // Sync is still active, check it hasn't timed out
-                    if (await this.isTimedOut()) {
+                    const timedOut = await this.isTimedOut()
+                    if (timedOut) {
                         await this.logMessage(SyncProviderLogLevel.ERROR, `Sync timeout has been detected, so reseting and initiating sync`)
                         this.connection.syncMessage = `Sync timeout has been detected, so resetting`
                         this.connection.syncStatus = SyncStatus.CONNECTED
@@ -324,20 +325,27 @@ export default class BaseProvider extends EventEmitter {
     /**
      * Check if this provider has time out
      */
-    protected async isTimedOut(): Promise<boolean> {
+    protected async isTimedOut(handler?: BaseSyncHandler): Promise<boolean> {
         // Check the sync log for this provider for an update in the past 15 minutes
         const syncLog = await this.vault.openDatastore(SCHEMA_SYNC_LOG)
         const cutoffTimestamp = new Date((new Date()).getTime() - PROVIDER_TIMEOUT * 1000 * 60).toISOString()
-        
-        const lastLog = await syncLog.getOne({
+
+        const logFilter: Partial<SyncProviderLogEntry> = {
             providerId: this.getProviderId(),
+            accountId: this.getAccountId(),
             insertedAt: {
-                "gte": cutoffTimestamp
+                "$gte": cutoffTimestamp
             }
-        }, {})
+        }
+
+        if (handler) {
+            logFilter.handlerId = handler.getId()
+        }
+        
+        const lastLog = await syncLog.getOne(logFilter, {})
 
         if (lastLog) {
-            console.log(`Log entry found in the past ${PROVIDER_TIMEOUT} minutes, so sync hasnt timedout`)
+            console.log(`Log entry found in the past ${PROVIDER_TIMEOUT} minutes, so sync hasn't timed out`)
             return false
         }
 
@@ -389,8 +397,6 @@ export default class BaseProvider extends EventEmitter {
         const schemaUri = handler.getSchemaUri()
 
         const syncPosition = await this.getSyncPosition(handler.getId(), syncPositionsDs)
-        syncPosition.latestSyncStart = Utils.nowTimestamp()
-        syncPosition.syncMessage = `Sync starting`
 
         if (syncPosition.status == SyncHandlerStatus.INVALID_AUTH) {
             syncPosition.syncMessage = `Invalid authentication tokens. Try reconnecting.`
@@ -404,13 +410,20 @@ export default class BaseProvider extends EventEmitter {
         }
 
         if (syncPosition.status == SyncHandlerStatus.SYNCING && !force) {
-            await this.logMessage(SyncProviderLogLevel.INFO, `Sync is active for ${handler.getLabel()}, skipping`)
-            console.log(`Sync is active for ${handler.getLabel()}, skipping`)
+            // Check for sync timeout
+            const timedOut = await this.isTimedOut()
+            if (timedOut) {
+                await this.logMessage(SyncProviderLogLevel.ERROR, `Sync timeout has been detected, so reseting and initiating sync`, handler.getId())
+                syncPosition.syncMessage = `Sync timeout has been detected, so resetting`
+            } else {
+                await this.logMessage(SyncProviderLogLevel.INFO, `Sync is active for ${handler.getLabel()}, skipping`)
+                console.log(`Sync is active for ${handler.getLabel()}, skipping`)
 
-            syncPosition.latestSyncEnd = Utils.nowTimestamp()
-            return {
-                syncPosition,
-                syncResults: []
+                syncPosition.latestSyncEnd = Utils.nowTimestamp()
+                return {
+                    syncPosition,
+                    syncResults: []
+                }
             }
         } else if (syncPosition.status == SyncHandlerStatus.ERROR) {
             if (syncPosition.errorRetries >= MAX_ERROR_RETRIES) {
@@ -429,7 +442,14 @@ export default class BaseProvider extends EventEmitter {
             syncPosition.errorRetries = 0
         }
 
+        syncPosition.latestSyncStart = Utils.nowTimestamp()
+        syncPosition.syncMessage = `Sync starting`
         syncPosition.status = SyncHandlerStatus.SYNCING
+
+        delete syncPosition['_rev']
+        await syncPositionsDs.save(syncPosition, {
+            forceUpdate: true
+        })
         
         handler.on('log', async (syncLog: SyncProviderLogEvent) => {
             await providerInstance.logMessage(syncLog.level, syncLog.message, handler.getId(), schemaUri)

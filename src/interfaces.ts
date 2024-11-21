@@ -191,7 +191,7 @@ export interface SyncResponse {
 
 export interface SyncProviderLogEntry {
     _id?: string
-    insertedAt?: string
+    insertedAt?: string | object
     providerId: string
     accountId?: string
     handlerId?: string
