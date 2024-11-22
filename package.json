@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/verida/server-template#readme",
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.693.0",
     "@notionhq/client": "^2.2.15",
     "@oauth-everything/passport-discord": "^1.0.2",
     "@sapphire/snowflake": "^3.4.2",

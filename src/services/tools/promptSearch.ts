@@ -59,10 +59,10 @@ export class PromptSearch {
         const response = await this.llm.prompt(userPrompt, systemPrompt, true)
 
         try {
-          return <PromptSearchLLMResponse> JSON.parse(response.choices[0].message.content!)
+          return <PromptSearchLLMResponse> JSON.parse(response.textResponse)
         } catch (err: any) {
           console.log(err, retries)
-          console.log(response.choices[0].message.content)
+          console.log(response.textResponse)
           if (retries <= 0) {
             throw new Error(`No user data query available`)
           } else {

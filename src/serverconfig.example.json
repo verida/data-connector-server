@@ -36,7 +36,11 @@
         },
         "llms": {
             "bedrockEndpoint": "",
-            "bedrockKey": ""
+            "bedrockKey": "",
+            "bedrockAWSAccountId": "",
+            "bedrockAWSAccessKeyId": "",
+            "bedrockAWSSecretAccessKey": "",
+            "groqKey": ""
         },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15
