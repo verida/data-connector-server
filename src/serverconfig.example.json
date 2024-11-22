@@ -118,7 +118,7 @@
         },
         "fireflies": {
             "maxSyncLoops": 1,
-            "batchSize": 500            
+            "batchSize": 50            
         }
     },
     "providerDefaults": {
