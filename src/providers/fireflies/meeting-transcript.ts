@@ -13,6 +13,7 @@ import { SchemaMeetingTranscript } from "../../schemas";
 import AccessDeniedError from "../AccessDeniedError";
 import InvalidTokenError from "../InvalidTokenError";
 import BaseSyncHandler from '../BaseSyncHandler';
+import { FireFliesClient } from './api';
 
 const MAX_BATCH_SIZE = 50; // Maximum limit for Fireflies API queries
 
@@ -59,62 +60,67 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
     }];
   }
 
-  private async getFirefliesClient() {
-    return axios.create({
-      baseURL: 'https://api.fireflies.ai/graphql',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.connection.accessToken}`,
-      },
-    });
-  }
-
   public async _sync(
     api: any,
     syncPosition: SyncHandlerPosition
   ): Promise<SyncResponse> {
+    
     try {
       if (this.config.batchSize > MAX_BATCH_SIZE) {
         throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`);
       }
 
-      const client = await this.getFirefliesClient();
+      const client = new FireFliesClient({
+        apiKey: this.connection.accessToken
+      });
+
       const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
       let items: SchemaMeetingTranscript[] = [];
 
       let currentRange = rangeTracker.nextRange();
+
       const query = `
-        query Transcripts($limit: Int, $skip: Int, $userId: String, $fromDate: DateTime, $toDate: DateTime) {
-          transcripts(limit: $limit, skip: $skip, user_id: $userId, fromDate: $fromDate, toDate: $toDate) {
+        query Transcripts($limit: Int, $skip: Int) {
+          transcripts(limit: $limit, skip: $skip) {
             id
             title
-            date
+            organizer_email
+            user {
+              email
+              name
+            }
+            date            
             speakers {
               id
               name
             }
-            participants
-            transcript_url
+            sentences {
+              speaker_name
+              raw_text
+            }
+            meeting_attendees {
+              displayName
+              email
+              phoneNumber
+              name
+            }           
             duration
-            summary {
-              keywords
-              action_items
+            summary {              
               short_summary
             }
+            cal_id
           }
         }
       `;
 
       const variables = {
         limit: this.config.batchSize,
-        skip: currentRange.startId || 0,
-        userId: this.config.userId,
-        fromDate: this.config.fromDate,
-        toDate: this.config.toDate,
+        skip: currentRange.startId || 0      
       };
 
-      const response = await client.post('', { query, variables });
-      const resultData = await this.buildResults(response.data.data.transcripts, currentRange.endId);
+      const response = await client.executeQuery<any>(query, variables)
+
+      const resultData = await this.buildResults(response.data.transcripts, currentRange.endId);
 
       items = resultData.items;
 
@@ -146,32 +152,63 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
     breakId: string
   ): Promise<SyncTranscriptItemsResult> {
     const results: SchemaMeetingTranscript[] = [];
-    let breakHit: SyncItemsBreak;
-
+    let breakHit: SyncItemsBreak | undefined;
+  
     for (const transcript of transcripts) {
       const transcriptId = transcript.id;
-
+  
+      // Check for the break ID to stop processing
       if (transcriptId === breakId) {
         this.emit('log', {
           level: SyncProviderLogLevel.DEBUG,
-          message: `Break ID hit (${breakId})`
+          message: `Break ID hit (${breakId})`,
         });
         breakHit = SyncItemsBreak.ID;
         break;
       }
-
+  
+      // Map transcript fields to SchemaMeetingTranscript
       results.push({
-          _id: this.buildItemId(transcriptId),
-          name: transcript.title || 'Untitled meeting',
-          organizerEmail: transcript.organizerEmail,
-          insertedAt: new Date().toISOString(),
-          duration: transcript.duration,
+        _id: this.buildItemId(transcriptId), // Unique ID for each transcript
+        name: transcript.title || 'Untitled meeting',
+        organizerEmail: transcript.organizer_email,
+        user: transcript.user
+          ? {
+              email: transcript.user.email,
+              displayName: transcript.user.name || 'Unknown',
+              name: transcript.user.name || undefined,
+            }
+          : undefined,
+        speakers: transcript.speakers
+          ? transcript.speakers.map((speaker: any) => ({
+              displayName: speaker.name,
+              email: speaker?.email,
+            }))
+          : [],
+        meetingAttendees: transcript.meeting_attendees
+          ? transcript.meeting_attendees.map((attendee: any) => ({
+              displayName: attendee.displayName,
+              email: attendee.email,
+              phoneNumber: attendee.phoneNumber,
+              name: attendee.name,
+            }))
+          : [],
+        duration: transcript.duration,
+        dateTime: transcript.date || undefined,
+        sentence: transcript.sentences
+          ? transcript.sentences.map((sentence: any) => ({
+              rawText: sentence.raw_text,
+              speakerName: sentence.speaker_name,
+            }))
+          : [],
+        calendarEventId: transcript.cal_id || undefined,
+        insertedAt: new Date().toISOString(), // Add the current timestamp
       });
     }
-
+  
     return {
       items: results,
-      breakHit,
+      breakHit, // Indicates if a break ID was encountered
     };
-  }
+  }  
 }

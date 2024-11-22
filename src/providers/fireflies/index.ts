@@ -3,6 +3,7 @@ import Base from "../BaseProvider"
 
 import { BaseProviderConfig, ConnectionCallbackResponse, PassportProfile } from '../../interfaces'
 import { FireFliesClient, FireFliesConfig } from './api'
+import MeetingTranscriptHandler from './meeting-transcript'
 
 export default class FireFliesProvider extends Base {
 
@@ -26,7 +27,9 @@ export default class FireFliesProvider extends Base {
     }
 
     public syncHandlers(): any[] {
-        return []
+        return [
+            MeetingTranscriptHandler
+        ]
     }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
@@ -35,20 +38,20 @@ export default class FireFliesProvider extends Base {
 
     public async callback(req: Request, res: Response, next: any): Promise<ConnectionCallbackResponse> {
         const apiKey = req.query.apiKey!.toString();
-    
+
         // Initialize Fireflies client configuration
         const config: FireFliesConfig = {
             apiKey: apiKey
         };
-    
+
         const client = new FireFliesClient(config);
-    
+
         // Fetch user profile from Fireflies
         const ffProfile = await client.getUser();
-    
+
         // Set up display name
         const displayName = ffProfile.name.trim();
-    
+
         // Construct the profile structure similar to the Telegram format
         const profile: PassportProfile = {
             id: ffProfile.user_id.toString(),
@@ -65,7 +68,7 @@ export default class FireFliesProvider extends Base {
                 verified: true // Assuming profile is verified
             }
         };
-        
+
         return {
             id: profile.id,
             accessToken: apiKey,
@@ -73,6 +76,10 @@ export default class FireFliesProvider extends Base {
             profile
         };
     }
-    
+
+    public async getApi(
+        accessToken?: string,
+        refreshToken?: string
+    ): Promise<any> { }
 }
 

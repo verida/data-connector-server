@@ -36,7 +36,7 @@ export class FireFliesClient {
         };
     }
 
-    private async executeQuery<T>(query: string, variables?: Record<string, any>): Promise<GraphQLResponse<T>> {
+    public async executeQuery<T>(query: string, variables?: Record<string, any>): Promise<GraphQLResponse<T>> {
         const payload = { query, variables };
 
         try {
