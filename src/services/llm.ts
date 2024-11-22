@@ -144,7 +144,6 @@ export class OpenAILLM implements LLM {
   }
 
   public async prompt(userPrompt: string, systemPrompt?: string, jsonFormat: boolean = true, model: string = this.defaultModel): Promise<OpenAIChatResponse> {
-    console.log('openai prompt start:')
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     }
