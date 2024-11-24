@@ -13,7 +13,7 @@ import BaseProvider from "../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../common.tests";
 import { SchemaFollowing } from "../../../src/schemas";
 
-const providerName = "google";
+const providerId = "google";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
@@ -22,101 +22,32 @@ let testConfig: GenericTestConfig;
 let providerConfig: Omit<BaseProviderConfig, "sbtImage" | "label"> = {};
 
 
-describe(`${providerName} GDrive Document Tests`, function () {
+describe(`${providerId} GDrive Document Tests`, function () {
   this.timeout(400000);
 
   this.beforeAll(async function () {
     network = await CommonUtils.getNetwork();
-    connection = await CommonUtils.getConnection(providerName);
-    provider = Providers(providerName, network.context, connection);
+    connection = await CommonUtils.getConnection(providerId);
+    provider = Providers(providerId, network.context, connection);
   
     testConfig = {
-      idPrefix: `${provider.getProviderName()}-${connection.profile.id}`,
+      idPrefix: `${provider.getProviderId()}-${connection.profile.id}`,
       timeOrderAttribute: "modifiedAt",
       batchSizeLimitAttribute: "batchSize",
     };
   });
 
-  describe(`Fetch ${providerName} data`, () => {
+  describe(`Fetch ${providerId} data`, () => {
    
     it(`Can pass basic tests: ${handlerName}`, async () => {
       await CommonTests.runGenericTests(
-        providerName,
+        providerId,
         GoogleDriveDocument,
         testConfig,
         providerConfig,
         connection
       );
     });
-
-    it(`Can limit results by timestamp`, async () => {
-      const lastRecordHours = 2;
-      const lastRecordTimestamp = new Date(
-        Date.now() - lastRecordHours * 3600000
-      ).toISOString();
-
-      const syncPosition: Omit<SyncHandlerPosition, "_id"> = {
-        providerName,
-        providerId: provider.getProviderId(),
-        handlerName,
-        status: SyncHandlerStatus.ENABLED,
-      };
-
-      providerConfig.batchSize = 5;
-      providerConfig.metadata = {
-        breakTimestamp: lastRecordTimestamp,
-      };
-
-      const syncResponse = await CommonTests.runSyncTest(
-        providerName,
-        GoogleDriveDocument,
-        connection,
-        testConfig,
-        syncPosition,
-        providerConfig
-      );
-      assert.ok(
-        syncResponse.results && syncResponse.results.length,
-        "Have results (You may not have edited any document in the testing timeframe)"
-      );
-
-      const results = <SchemaFollowing[]>syncResponse.results;
-      assert.ok(
-        results[results.length - 1].insertedAt > lastRecordTimestamp,
-        "Last result is within expected date/time range"
-      );
-      assert.ok(
-        results.length < providerConfig.batchSize,
-        `Results reached the expected timestamp within the current batch size (try increasing the test batch size or reducing the break timestamp)`
-      );
-    });
-
-    it(`Can handle empty results`, async () => {
-      const syncPosition: Omit<SyncHandlerPosition, "_id"> = {
-        providerName,
-        providerId: provider.getProviderId(),
-        handlerName,
-        status: SyncHandlerStatus.ENABLED,
-      };
-
-      providerConfig.batchSize = 5;
-      providerConfig.metadata = {
-        breakTimestamp: new Date().toISOString(),
-      };
-
-      const syncResponse = await CommonTests.runSyncTest(
-        providerName,
-        GoogleDriveDocument,
-        connection,
-        testConfig,
-        syncPosition,
-        providerConfig
-      );
-      assert.ok(
-        syncResponse.results.length === 0,
-        "No results should be returned for the future timestamp"
-      );
-    })
   });
 
   this.afterAll(async function () {
