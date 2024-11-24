@@ -134,7 +134,10 @@ export class LLMController {
             const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
             const prompt = req.body.prompt
-            const promptConfig: PromptSearchServiceConfig = req.body.promptConfig
+            let promptConfig: PromptSearchServiceConfig = req.body.promptConfig
+            promptConfig = _.merge({
+                jsonFormat: false
+            }, promptConfig ? promptConfig : {})
 
             const {
                 customEndpoint,
