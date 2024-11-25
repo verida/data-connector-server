@@ -40,7 +40,9 @@
             "bedrockAWSAccountId": "",
             "bedrockAWSAccessKeyId": "",
             "bedrockAWSSecretAccessKey": "",
-            "groqKey": ""
+            "groqKey": "",
+            "defaultProvider": "bedrock",
+            "defaultModel": "LLAMA3.1_70B"
         },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15
