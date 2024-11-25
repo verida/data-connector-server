@@ -21,7 +21,6 @@ export interface PromptSearchServiceDataTypes {
 }
 
 export interface PromptSearchServiceConfig {
-    maxContextLength?: number
     dataTypes?: PromptSearchServiceDataTypes
     promptSearchConfig?: PromptSearchLLMResponse
     jsonFormat?: boolean

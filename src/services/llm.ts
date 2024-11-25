@@ -1,39 +1,28 @@
 import Groq from "groq-sdk"
+import { BedrockRuntimeClient, ConverseCommand, ConverseCommandInput } from "@aws-sdk/client-bedrock-runtime"
 import Axios from 'axios'
 import CONFIG from "../config"
-
-export enum LLMProviders {
-  BEDROCK = "bedrock",
-  GROQ = "groq",
-  CUSTOM = "custom"
-}
-
-export const ProviderModels = {
-  [LLMProviders.BEDROCK]: {
-    "LLAMA3_70B": "meta.llama3-70b-instruct-v1:0",
-    "LLAMA3_8B": "meta.llama3-8b-instruct-v1:0",
-    "MIXTRAL_8_7B": "mistral.mixtral-8x7b-instruct-v0:1"
-  },
-  [LLMProviders.GROQ]: {
-    "LLAMA3_70B": "llama3-70b-8192",
-    "LLAMA3_8B": "llama3-8b-8192",
-    "LLAMA31_70B": "llama-3.1-70b-versatile",
-    "MIXTRAL8_7B": "mixtral-8x7b-32768"
-  },
-  [LLMProviders.CUSTOM]: {}
-}
+import { LLMProvider, ProviderModels } from "./llmmodels"
 
 export class LLMError extends Error {}
 
 const BEDROCK_KEY = CONFIG.verida.llms.bedrockKey
 const BEDROCK_ENDPOINT = CONFIG.verida.llms.bedrockEndpoint
+const BEDROCK_ACCESS_KEY_ID = CONFIG.verida.llms.bedrockAWSAccessKeyId
+const BEDROCK_SECRET_KEY = CONFIG.verida.llms.bedrockAWSSecretKey
 
-// const GROQ_MODEL = 'llama3-70b-8192' // 'llama3-8b-8192' // 'llama3-70b-8192' // 'llama3-8b-8192' //'llama-3.1-8b-instant' //'llama3-70b-8192' // 'llama3-8b-8192'
+const DEFAULT_LLM_MODEL = CONFIG.verida.llms.defaultModel
+const DEFAULT_LLM_PROVIDER = <LLMProvider> CONFIG.verida.llms.defaultProvider
+
 const GROQ_KEY = CONFIG.verida.llms.groqKey
 
 export interface OpenAIConfig {
+  // HTTP(s) endpoint for the Open AI server
   endpoint: string
+  // Bearer token key (optional)
   key?: string
+  // Indicate if the model doesn't support system prompts
+  noSystemPrompt?: boolean
 }
 
 export const LLMS: Record<string, OpenAIConfig> = {
@@ -48,10 +37,11 @@ export interface LLMResponse {
 }
 
 export interface LLM {
-  prompt(userPrompt: string, systemPrompt?: string, jsonFormat?: boolean, model?: string): Promise<OpenAIChatResponse>
+  prompt(userPrompt: string, systemPrompt: string, jsonFormat?: boolean, model?: string): Promise<PromptResponse>
+  getContextTokens(model?: string): number
 }
 
-function stripNonJson(inputString: string) {
+export function stripNonJson(inputString: string) {
   const startIndex = inputString.indexOf('{')
   const endIndex = inputString.lastIndexOf('}')
 
@@ -59,36 +49,30 @@ function stripNonJson(inputString: string) {
       return '' // Return an empty string if braces are not found or invalid
   }
 
-  return inputString.substring(startIndex, endIndex + 1)
+  // Sometimes the LLM creates incorrect JSON by escaping "_"
+  return inputString.substring(startIndex, endIndex + 1).replace(/\\_/g,`_`)
 }
 
-// export interface OpenAIChatResponse {
-//   id: string;
-//   object: string;
-//   created: number;
-//   model: string;
-//   choices: {
-//     index: number;
-//     message: {
-//       role: string;
-//       content: string;
-//     };
-//     finish_reason: string;
-//   }[];
-//   usage?: {
-//     prompt_tokens: number;
-//     completion_tokens: number;
-//     total_tokens: number;
-//   };
-// };
-export interface OpenAIChatResponse extends Groq.Chat.ChatCompletion {}
+export interface PromptUsage {
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
+}
+
+export interface PromptResponse {
+  textResponse: string
+  usage?: PromptUsage
+  timeMs?: number
+}
 
 export class GroqLLM implements LLM {
   private groq: Groq
   private defaultModel: string
+  private llmTokenLimit?: number
 
-  constructor(defaultModel: string) {
+  constructor(defaultModel: string, llmTokenLimit?: number) {
     this.defaultModel = defaultModel
+    this.llmTokenLimit = llmTokenLimit
 
     if (GROQ_KEY) {
       this.groq = new Groq({ apiKey: GROQ_KEY });
@@ -97,7 +81,16 @@ export class GroqLLM implements LLM {
     }
   }
 
-  public async prompt(userPrompt: string, systemPrompt?: string, jsonFormat: boolean = true, model: string = this.defaultModel): Promise<OpenAIChatResponse> {
+  public getContextTokens(modelId?: string): number {
+    if (this.llmTokenLimit) {
+      return this.llmTokenLimit
+    }
+
+    const model = ProviderModels[LLMProvider.GROQ][modelId || this.defaultModel]
+    return model.contextTokens
+  }
+
+  public async prompt(userPrompt: string, systemPrompt: string, jsonFormat: boolean = true, modelId: string = this.defaultModel): Promise<PromptResponse> {
     if (jsonFormat) {
       userPrompt += `\nOnly output a JSON object. Don't add any explanation or formatting.\n`
     }
@@ -116,11 +109,12 @@ export class GroqLLM implements LLM {
       })
     }
 
+    const model = ProviderModels[LLMProvider.GROQ][modelId]
     const response = await this.groq.chat.completions.create({
       response_format: jsonFormat ? {type: "json_object"} : undefined,
       // @ts-ignore
       messages,
-      model,
+      model: model.modelId,
       temperature: 1,
       top_p: 1
     });
@@ -129,21 +123,105 @@ export class GroqLLM implements LLM {
       response.choices[0].message.content = stripNonJson(response.choices[0].message.content!)
     }
 
-    return response
+    return {
+      textResponse: response.choices[0].message.content
+    }
+  }
 }
+
+export class BedrockLLM implements LLM {
+
+  private bedrock: BedrockRuntimeClient
+  private defaultModel: string
+  private llmTokenLimit?: number
+
+  constructor(defaultModel: string, llmTokenLimit?: number) {
+    this.defaultModel = defaultModel
+    this.llmTokenLimit = llmTokenLimit
+
+    this.bedrock = new BedrockRuntimeClient({ region: "us-east-1", credentials: {
+      accessKeyId: BEDROCK_ACCESS_KEY_ID,
+      secretAccessKey: BEDROCK_SECRET_KEY
+    }, });
+  }
+
+  public getContextTokens(modelId?: string): number {
+    if (this.llmTokenLimit) {
+      return this.llmTokenLimit
+    }
+
+    const model = ProviderModels[LLMProvider.BEDROCK][modelId || this.defaultModel]
+    return model.contextTokens
+  }
+  
+  public async prompt(userPrompt: string, systemPrompt: string, jsonFormat: boolean = true, modelId: string = this.defaultModel): Promise<PromptResponse> {
+    try {
+      const model = ProviderModels[LLMProvider.BEDROCK][modelId]
+
+      if (!model.systemPrompt) {
+        userPrompt = `${systemPrompt}\n\n${userPrompt}`
+      }
+
+      const input: ConverseCommandInput = {
+        modelId: model.modelId,
+        messages: [{
+          role: "user",
+          content: [{
+            text: userPrompt
+          }]
+        }]
+      }
+
+      if (systemPrompt && model.systemPrompt) {
+        input.system = [{
+          text: systemPrompt
+        }]
+      }
+
+      const command = new ConverseCommand(input)
+      const response = await this.bedrock.send(command)
+
+      if (response['$metadata'].httpStatusCode !== 200) {
+        console.error(response['$metadata'])
+        throw new Error(`Bedrock error`)
+      }
+
+      if (jsonFormat) {
+        response.output.message.content[0].text = stripNonJson(response.output.message.content[0].text)
+      }
+
+      // @ts-ignore
+      return {
+        textResponse: response.output.message.content[0].text
+      }
+
+    } catch (error: any) {
+      console.error(error)
+    }
+  }
 }
 
 export class OpenAILLM implements LLM {
 
   private config: OpenAIConfig
   private defaultModel: string
+  private llmTokenLimit?: number
 
-  constructor(config: OpenAIConfig, defaultModel: string) {
+  constructor(config: OpenAIConfig, defaultModel: string, llmTokenLimit?: number) {
     this.config = config
     this.defaultModel = defaultModel
+    this.llmTokenLimit = llmTokenLimit
   }
 
-  public async prompt(userPrompt: string, systemPrompt?: string, jsonFormat: boolean = true, model: string = this.defaultModel): Promise<OpenAIChatResponse> {
+  public getContextTokens(modelId?: string): number {
+    if (this.llmTokenLimit) {
+      return this.llmTokenLimit
+    }
+
+    throw new Error(`Unknown context token size for this model, please specify`)
+  }
+
+  public async prompt(userPrompt: string, systemPrompt: string, jsonFormat: boolean = true, modelId: string = this.defaultModel): Promise<PromptResponse> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     }
@@ -156,6 +234,10 @@ export class OpenAILLM implements LLM {
       userPrompt += `\nOnly output a JSON object. Don't add any explanation or formatting.\n`
     }
 
+    if (this.config.noSystemPrompt) {
+      userPrompt = `${systemPrompt}\n\n${userPrompt}`
+    }
+
     const messages = [
       {
         role: "user",
@@ -163,7 +245,7 @@ export class OpenAILLM implements LLM {
       }
     ];
 
-    if (systemPrompt) {
+    if (systemPrompt && !this.config.noSystemPrompt) {
       messages.push({
         role: "system",
         content: systemPrompt,
@@ -174,7 +256,7 @@ export class OpenAILLM implements LLM {
       const response = await Axios.post(this.config.endpoint, {
         format: jsonFormat ? "json" : undefined,
         messages,
-        model,
+        model: modelId,
         temperature: 1,
         top_p: 1
       }, {
@@ -185,8 +267,11 @@ export class OpenAILLM implements LLM {
         response.data.choices[0].message.content = stripNonJson(response.data.choices[0].message.content!)
       }
 
-      return response.data
+      return {
+        textResponse: response.data.choices[0].message.content
+      }
     } catch (err: any) {
+      console.error(err)
       if (err.response?.data?.detail) {
         throw new LLMError(err.response.data.detail)
       }
@@ -196,27 +281,24 @@ export class OpenAILLM implements LLM {
   }
 }
 
-export function getLLM(provider: LLMProviders = LLMProviders.BEDROCK, model: string = "LLAMA3_70B", customEndpoint?: OpenAIConfig): LLM {
+export function getLLM(provider: LLMProvider = DEFAULT_LLM_PROVIDER, model: string = DEFAULT_LLM_MODEL, llmTokenLimit?: number, customEndpoint?: OpenAIConfig): LLM {
   let llm: LLM
   switch (provider) {
-    case LLMProviders.BEDROCK:
-      llm = new OpenAILLM(LLMS.BEDROCK, model)
+    case LLMProvider.BEDROCK:
+      // llm = new OpenAILLM(LLMS.BEDROCK, model)
+      llm = new BedrockLLM(model, llmTokenLimit)
       break
-    case LLMProviders.GROQ:
-      llm = new GroqLLM(model)
+    case LLMProvider.GROQ:
+      llm = new GroqLLM(model, llmTokenLimit)
       break
-    case LLMProviders.CUSTOM:
-      llm = new OpenAILLM(customEndpoint, model)
+    case LLMProvider.CUSTOM:
+      llm = new OpenAILLM(customEndpoint, model, llmTokenLimit)
   }
 
   return llm
 }
 
-export async function prompt(userPrompt: string, systemPrompt?: string, jsonFormat: boolean = true, provider: LLMProviders = LLMProviders.BEDROCK, model: string = "LLAMA3_70B", customEndpoint?: OpenAIConfig): Promise<OpenAIChatResponse> {
-  const llm = getLLM(provider, model, customEndpoint)
+export async function prompt(userPrompt: string, systemPrompt: string, jsonFormat: boolean = true, provider: LLMProvider = DEFAULT_LLM_PROVIDER, model: string = DEFAULT_LLM_MODEL, llmTokenLimit?: number, customEndpoint?: OpenAIConfig): Promise<PromptResponse> {
+  const llm = getLLM(provider, model, llmTokenLimit, customEndpoint)
   return llm.prompt(userPrompt, systemPrompt, jsonFormat, model)
 }
-
-export const bedrock = new OpenAILLM(LLMS.BEDROCK, "LLAMA3_70B")
-export const groq = new GroqLLM("LLAMA3_70B")
-export const defaultModel = bedrock
