@@ -1,14 +1,17 @@
 import { Request, Response } from "express";
-import { LLMProvider, ProviderModels, prompt as LLMPrompt, OpenAIConfig, getLLM } from '../../../../services/llm'
+import { prompt as LLMPrompt, OpenAIConfig, getLLM } from '../../../../services/llm'
 import { PromptSearchService } from '../../../../services/assistants/search'
 import { Utils } from "../../../../utils";
 import { HotLoadProgress } from "../../../../services/data";
 import { DataService } from "../../../../services/data";
 import { PromptSearchServiceConfig } from "../../../../services/assistants/interfaces";
 import { PromptSearch } from "../../../../services/tools/promptSearch";
+import { LLMProvider, ProviderModels } from "../../../../services/llmmodels";
+import CONFIG from "../../../../config"
 const _ = require('lodash')
 
-const DEFAULT_MODEL = "LLAMA3.1_70B"
+const DEFAULT_LLM_MODEL = CONFIG.verida.llms.defaultModel
+const DEFAULT_LLM_PROVIDER = CONFIG.verida.llms.defaultProvider
 
 export interface LLMConfig {
     llmProvider: LLMProvider,
@@ -20,8 +23,9 @@ function buildLLMConfig(req: Request): {
     customEndpoint: OpenAIConfig
     llmModelId: string
     llmProvider: LLMProvider
+    llmTokenLimit?: number
 } {
-    const provider = req.body.provider ? req.body.provider.toString() : LLMProvider.BEDROCK.toString()
+    const provider = req.body.provider ? req.body.provider.toString() : DEFAULT_LLM_PROVIDER
     if (!Object.values(LLMProvider).includes(provider)) {
         throw new Error(`${provider} is not a valid LLM provider`)
     }
@@ -32,24 +36,29 @@ function buildLLMConfig(req: Request): {
     if (llmProvider == LLMProvider.CUSTOM) {
         const endpoint = req.body.customEndpoint.toString()
         const key = req.body.customKey ? req.body.customKey.toString() : undefined
+        const noSystemPrompt = req.body.customNoSystemPrompt ? req.body.customNoSystemPrompt.toString() == "true" : false
         customEndpoint = {
             endpoint,
+            noSystemPrompt,
             key
         }
 
         llmModelId = req.body.model.toString()
     } else {
-        llmModelId = req.body.model ? req.body.model.toString() : DEFAULT_MODEL
+        llmModelId = req.body.model ? req.body.model.toString() : DEFAULT_LLM_MODEL
 
         if (!Object.keys(ProviderModels[llmProvider]).includes(llmModelId)) {
             throw new Error(`${llmModelId} is not a valid model for ${provider}`)
         }
     }
 
+    const llmTokenLimit = req.body.tokenLimit ? parseInt(req.body.tokenLimit.toString()) : undefined
+
     return {
         customEndpoint,
         llmModelId,
-        llmProvider
+        llmProvider,
+        llmTokenLimit
     }
 }
 
@@ -63,19 +72,20 @@ export class LLMController {
             const {
                 customEndpoint,
                 llmModelId,
-                llmProvider
+                llmProvider,
+                llmTokenLimit
             } = buildLLMConfig(req)
 
             const prompt = req.body.prompt.toString()
             const systemPrompt = req.body.systemPrompt ? req.body.systemPrompt.toString() : undefined
             const jsonFormat = req.body.jsonFormat ? req.body.jsonFormat.toString() === "true" : false
-            const serverResponse = await LLMPrompt(prompt, systemPrompt, jsonFormat, llmProvider, llmModelId, customEndpoint ? customEndpoint : undefined)
+            const serverResponse = await LLMPrompt(prompt, systemPrompt, jsonFormat, llmProvider, llmModelId, llmTokenLimit, customEndpoint ? customEndpoint : undefined)
 
             return res.json({
                 result: serverResponse
             })
         } catch (error) {
-            console.log(error)
+            console.error(error)
             res.status(500).send({
                 success: false,
                 error: error.message
@@ -90,23 +100,22 @@ export class LLMController {
 
             const schema = req.body.schema
             const promptSearchTip = req.body.promptSearchTip
+            const outputSystemPrompt = req.body.systemPrompt || false
 
             const {
                 customEndpoint,
                 llmModelId,
-                llmProvider
+                llmProvider,
+                llmTokenLimit
             } = buildLLMConfig(req)
 
-            const llm = getLLM(llmProvider, llmModelId, customEndpoint)
+            const llm = getLLM(llmProvider, llmModelId, llmTokenLimit, customEndpoint)
 
             let promptSearchResult = undefined
             if (promptSearchTip) {
-                console.log(promptSearchTip)
                 const promptSearch = new PromptSearch(llm)
                 promptSearchResult = await promptSearch.search(promptSearchTip)
             }
-
-            console.log('promptSearchResult', promptSearchResult)
 
             const prompt = `Analyse my data to populate a JSON object that matches this schema.\n\n${schema}`
             const promptConfig: PromptSearchServiceConfig = req.body.promptConfig ? req.body.promptConfig : {}
@@ -116,12 +125,20 @@ export class LLMController {
             const promptService = new PromptSearchService(did, context)
             const promptResult = await promptService.prompt(prompt, llm, promptConfig)
 
-            console.log(promptResult.result)
+            if (!outputSystemPrompt) {
+                promptResult.systemPrompt = undefined
+            }
+
             promptResult.result = JSON.parse(promptResult.result)
+
+            promptResult.llm = {
+                provider: llmProvider,
+                model: llmModelId
+            }
 
             return res.json(promptResult)
         } catch (error) {
-            console.log(error)
+            console.error(error)
             res.status(500).send({
                 success: false,
                 error: error.message
@@ -142,17 +159,23 @@ export class LLMController {
             const {
                 customEndpoint,
                 llmModelId,
-                llmProvider
+                llmProvider,
+                llmTokenLimit
             } = buildLLMConfig(req)
 
-            const llm = getLLM(llmProvider, llmModelId, customEndpoint)
+            const llm = getLLM(llmProvider, llmModelId, llmTokenLimit, customEndpoint)
 
             const promptService = new PromptSearchService(did, context)
             const promptResult = await promptService.prompt(prompt, llm, promptConfig)
 
+            promptResult.llm = {
+                provider: llmProvider,
+                model: llmModelId
+            }
+
             return res.json(promptResult)
         } catch (error) {
-            console.log(error)
+            console.error(error)
             res.status(500).send({
                 success: false,
                 error: error.message
@@ -187,7 +210,7 @@ export class LLMController {
             await data.hotLoad()
             res.end()
         } catch (error) {
-            console.log(error)
+            console.error(error)
             res.write(`data: ${JSON.stringify({
                 success: false,
                 error: error.message
