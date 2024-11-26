@@ -5,7 +5,6 @@ let localconfig = {};
 try {
   localconfig = require("../src/serverconfig.local.json");
 } catch (err) {
-  console.log(err)
   if (err.code !== "MODULE_NOT_FOUND") {
     throw err;
   }
