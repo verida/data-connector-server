@@ -118,6 +118,11 @@ export default class SyncManager {
         const allProviders = providerId ? [providerId] : Object.keys(CONFIG.providers)
         const userConnections = []
         for (let currentProviderId of allProviders) {
+            if (CONFIG.providers[currentProviderId].status == "inactive") {
+                // skip inactive providers
+                continue
+            }
+
             try {
                 const filter: Record<string, string> = {
                     providerId: currentProviderId
@@ -134,7 +139,6 @@ export default class SyncManager {
                 }
                 
             } catch (err) {
-                console.log(err)
                 // skip non-existent connections or broken providers
             }
         }

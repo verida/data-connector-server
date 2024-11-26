@@ -124,6 +124,8 @@ export interface Connection {
 
 export interface BaseProviderConfig {
     label: string
+    // TODO: Make it required
+    status?: 'active' | 'upcoming' | 'inactive'
     sbtImage: string
     batchSize?: number
     maxSyncLoops?: number
