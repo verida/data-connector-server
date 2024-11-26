@@ -31,7 +31,7 @@ export default class Controller {
             try {
                 const provider = Providers(providerName)
 
-                const providerConfig =provider.getConfig()
+                const providerConfig = provider.getConfig()
 
                 const syncHandlers = await provider.getSyncHandlers()
                 const handlers: ProviderHandler[] = []
