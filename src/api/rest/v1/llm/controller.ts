@@ -8,6 +8,7 @@ import { PromptSearchServiceConfig } from "../../../../services/assistants/inter
 import { PromptSearch } from "../../../../services/tools/promptSearch";
 import { LLMProvider, ProviderModels } from "../../../../services/llmmodels";
 import CONFIG from "../../../../config"
+import { TimmyTool } from "../../../../services/assistants/timmy-tool";
 const _ = require('lodash')
 
 const DEFAULT_LLM_MODEL = CONFIG.verida.llms.defaultModel
@@ -217,6 +218,14 @@ export class LLMController {
             })}\n\n`)
             res.end()
         }
+    }
+
+    public async langchain(req: Request, res: Response) {
+        const { context } = await Utils.getNetworkConnectionFromRequest(req)
+
+        const rag = new TimmyTool()
+        const retrievedDocuments = await rag.run(req.body.prompt, context)
+        return res.json(retrievedDocuments)
     }
 }
 
