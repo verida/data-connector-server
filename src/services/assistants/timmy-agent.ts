@@ -2,8 +2,7 @@ import { IContext } from "@verida/types";
 import { EmailQueryTool } from "../tools/query/email";
 import CONFIG from "../../config";
 import { ChatBedrockConverse } from "@langchain/aws";
-import { HumanMessage, ToolMessage } from "@langchain/core/messages";
-import { CalendarEventQueryTool } from "../tools/query/calendar";
+import { CalendarEventQueryTool } from "../tools/query/calendarEvent";
 import { ChatPromptTemplate } from "@langchain/core/prompts"
 import { createToolCallingAgent } from "langchain/agents"
 import { AgentExecutor } from "langchain/agents"

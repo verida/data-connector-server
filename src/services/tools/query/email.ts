@@ -12,8 +12,14 @@ export class EmailQueryTool extends BaseQueryTool {
                 sort: [{ "sentAt": "desc" }]
             },
             schemaUrl: CONFIG.verida.schemas.EMAIL,
+            extraDetail: "emails",
             schemaDefinition: `
 {
+            "_id": {
+                    "title": "ID",
+                    "description": "Unique ID of this record",
+                    "type": "string",
+                },
   "name": {
       "title": "Name",
       "description": "Email subject",
