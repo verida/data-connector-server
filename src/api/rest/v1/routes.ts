@@ -9,6 +9,7 @@ import AdminRoutes from './admin/routes'
 import InfoRoutes from './info/routes'
 import LLMRoutes from './llm/routes'
 import TelegramRoutes from './telegram/routes'
+import FireFliesRoutes from './fireflies/routes'
 import SearchRoutes from "./search/routes"
 import AccountRoutes from './account/routes'
 
@@ -26,5 +27,6 @@ router.use('/search', SearchRoutes)
 router.use('/account', AccountRoutes)
 
 router.use('/telegram', TelegramRoutes)
+router.use('/fireflies', FireFliesRoutes)
 
 export default router
