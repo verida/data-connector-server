@@ -224,5 +224,6 @@ export interface SyncItemsResult {
 
 export enum SyncItemsBreak {
     ID = "id",
-    TIMESTAMP = "timestamp"
+    TIMESTAMP = "timestamp",
+    NONE = "NONE"
 }

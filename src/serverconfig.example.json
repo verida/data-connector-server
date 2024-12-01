@@ -114,6 +114,13 @@
             "messagesPerGroupLimit": 100,
             "maxGroupSize": 50,
             "useDbPos": true
+        },
+        "spotify": {
+            "label": "Spotify",
+            "clientId": "",
+            "clientSecret": "",
+            "batchSize": 50,           
+            "maxSyncLoops": 1
         }
     },
     "providerDefaults": {
