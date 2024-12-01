@@ -7,7 +7,7 @@ export class VectoreStoreTool extends Tool {
   private context: IContext
 
   name = "VectoreStore"
-  description = `Input to this tool is a search string that will be sent to a vector database to find related emails, chat messages, files, documents, calendar events and social media posts.`
+  description = `Input to this tool is a search string that will be sent to a vector database to find related emails, attachments, chat messages, files, documents, calendar events and social media posts.`
 
   constructor(context: IContext) {
     super()
@@ -22,7 +22,7 @@ export class VectoreStoreTool extends Tool {
     const dataService = new DataService(did, this.context)
 
     const vectorStore = await dataService.getVectorStore()
-    const docs = await vectorStore.similaritySearch(searchString, 100)
+    const docs = await vectorStore.similaritySearch(searchString, 20)
     return JSON.stringify(docs)
   }
 

@@ -1,3 +1,5 @@
+import { CloseVectorNode } from "@langchain/community/vectorstores/closevector/node";
+import * as fs from 'fs'
 import "@tensorflow/tfjs-node";
 import { TensorFlowEmbeddings } from '@langchain/community/embeddings/tensorflow';
 import { Document } from '@langchain/core/documents';
@@ -8,9 +10,12 @@ import { MemoryVectorStore } from 'langchain/vectorstores/memory';
 import MiniSearch, { SearchOptions, SearchResult } from 'minisearch';
 import { getDataSchemas } from './schemas';
 import { BaseDataSchema } from './schemas/base';
+import { VectorStore } from "@langchain/core/vectorstores";
 
 export const indexCache: Record<string, MiniSearch<any>> = {}
-export const vectorCache: Record<string, MemoryVectorStore> = {}
+export const vectorCache: Record<string, VectorStore> = {}
+
+const vectorStoreDataDir = "./vectorstores"
 
 export interface SchemaConfig {
     label: string
@@ -252,16 +257,24 @@ export class DataService extends EventEmitter {
         return indexCache[cacheKey]
     }
 
-    public async getVectorStore(): Promise<MemoryVectorStore> {
+    public async getVectorStore(): Promise<VectorStore> {
         const cacheKey = CryptoJS.MD5(`${this.did}`).toString()
 
         try {
             if (!vectorCache[cacheKey]) {
+                const embeddings = new TensorFlowEmbeddings();
+
+                if (fs.existsSync(`${vectorStoreDataDir}/${cacheKey}`)) {
+                    // console.log('loading from disk!')
+                    vectorCache[cacheKey] = await CloseVectorNode.load(`${vectorStoreDataDir}/${cacheKey}`, embeddings)
+                    return vectorCache[cacheKey]
+                }
+
                 const dataSchemas = getDataSchemas()
+                const documents: Document[] = []
                 for (const dataSchema of dataSchemas) {
                     const { docs, arrayProperties, pouchDb } = await this.getNormalizedDocs(dataSchema, dataSchema.getIndexFields(), dataSchema.getStoreFields())
 
-                    const documents: Document[] = []
                     for (const row of docs) {
                         documents.push({
                             id: row._id,
@@ -269,12 +282,6 @@ export class DataService extends EventEmitter {
                             pageContent: dataSchema.getRagContent(row)
                         })
                     }
-
-                    const embeddings = new TensorFlowEmbeddings();
-                    const vectorStore = await MemoryVectorStore.fromDocuments(
-                        documents,
-                        embeddings
-                    );
 
                     // this.emitProgress(`${schemaConfig.label} VectorDb`, HotLoadStatus.Complete, 10)
 
@@ -310,10 +317,19 @@ export class DataService extends EventEmitter {
                             console.log('error!')
                             console.error(error)
                         })
-
-                    vectorCache[cacheKey] = vectorStore
-                    console.log('Added to vector store', dataSchema.getLabel())
+                    console.log('Loaded docs for vector store', dataSchema.getLabel())
+                    // break
                 }
+
+                console.log('creating vector store with all docs')
+                const vectorStore = await CloseVectorNode.fromDocuments(
+                    documents,
+                    embeddings
+                );
+                // console.log('saving vector store to disk')
+                await vectorStore.save(`${vectorStoreDataDir}/${cacheKey}`) 
+                // console.log('saved')
+                vectorCache[cacheKey] = vectorStore
             } else {
                 // this.stepCount += 2
                 // this.emitProgress(`${schemaConfig.label} VectorDb`, HotLoadStatus.Complete, 10)

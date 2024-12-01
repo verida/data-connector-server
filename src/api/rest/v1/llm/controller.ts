@@ -9,7 +9,7 @@ import { PromptSearch } from "../../../../services/tools/promptSearch";
 import { LLMProvider, ProviderModels } from "../../../../services/llmmodels";
 import CONFIG from "../../../../config"
 // import { TimmyTool } from "../../../../services/assistants/timmy-tool";
-import { TimmyAgent } from "../../../../services/assistants/timmy-agent";
+import { Agent } from "../../../../services/assistants/agent";
 const _ = require('lodash')
 
 const DEFAULT_LLM_MODEL = CONFIG.verida.llms.defaultModel
@@ -221,12 +221,21 @@ export class LLMController {
         }
     }
 
-    public async langchain(req: Request, res: Response) {
-        const { context } = await Utils.getNetworkConnectionFromRequest(req)
+    public async agent(req: Request, res: Response) {
+        try {
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
 
-        const rag = new TimmyAgent()
-        const retrievedDocuments = await rag.run(req.body.prompt, context)
-        return res.json(retrievedDocuments)
+            const rag = new Agent()
+            const result = await rag.run(req.body.prompt, context)
+            return res.json(result)
+        } catch (error: any) {
+            console.error(error)
+            res.write(`data: ${JSON.stringify({
+                success: false,
+                error: error.message
+            })}\n\n`)
+            res.end()
+        }
     }
 }
 
