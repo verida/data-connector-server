@@ -26,6 +26,7 @@ export class BaseQueryTool extends Tool {
 
   /** @ignore */
   public async _call(args: string) {
+    console.log(`Calling ${this.name} ${args}`)
     const config = this.getConfig()
 
     try {

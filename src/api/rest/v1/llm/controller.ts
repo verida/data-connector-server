@@ -8,7 +8,7 @@ import { PromptSearchServiceConfig } from "../../../../services/assistants/inter
 import { PromptSearch } from "../../../../services/tools/promptSearch";
 import { LLMProvider, ProviderModels } from "../../../../services/llmmodels";
 import CONFIG from "../../../../config"
-import { TimmyTool } from "../../../../services/assistants/timmy-tool";
+// import { TimmyTool } from "../../../../services/assistants/timmy-tool";
 import { TimmyAgent } from "../../../../services/assistants/timmy-agent";
 const _ = require('lodash')
 

@@ -1,9 +1,16 @@
+import "@tensorflow/tfjs-node";
+import { TensorFlowEmbeddings } from '@langchain/community/embeddings/tensorflow';
+import { Document } from '@langchain/core/documents';
 import { IContext, IDatastore } from '@verida/types';
 import * as CryptoJS from 'crypto-js';
 import { EventEmitter } from 'events'
+import { MemoryVectorStore } from 'langchain/vectorstores/memory';
 import MiniSearch, { SearchOptions, SearchResult } from 'minisearch';
+import { getDataSchemas } from './schemas';
+import { BaseDataSchema } from './schemas/base';
 
 export const indexCache: Record<string, MiniSearch<any>> = {}
+export const vectorCache: Record<string, MemoryVectorStore> = {}
 
 export interface SchemaConfig {
     label: string
@@ -120,15 +127,16 @@ export class DataService extends EventEmitter {
         return results
     }
 
-    public async getIndex(schemaUri: string, indexFields?: string[], storeFields?: string[]): Promise<MiniSearch<any>> {
-        const schemaConfig = schemas[schemaUri]
-        indexFields = [...(indexFields || schemaConfig.indexFields)]
-        storeFields = [...(storeFields || schemaConfig.storeFields)]
-
-        const cacheKey = CryptoJS.MD5(`${this.did}:${schemaUri}:${indexFields.join(',')}:${storeFields.join(',')}`).toString()
-
-        if (!indexCache[cacheKey]) {
-            this.emitProgress(schemaConfig.label, HotLoadStatus.StartData, 10)
+    public async getNormalizedDocs(dataSchema: BaseDataSchema, indexFields?: string[], storeFields?: string[]): Promise<{
+        docs: any[],
+        arrayProperties: string[],
+        pouchDb: any
+    }> {
+        try {
+            const schemaUri = dataSchema.getUrl()
+            indexFields = [...(indexFields || dataSchema.getIndexFields())]
+            storeFields = [...(storeFields || dataSchema.getStoreFields())]
+            this.emitProgress(dataSchema.getLabel(), HotLoadStatus.StartData, 10)
             const datastore = await this.context.openDatastore(schemaUri)
 
             const database = await datastore.getDb()
@@ -138,7 +146,7 @@ export class DataService extends EventEmitter {
                 attachments: false
             });
 
-            this.emitProgress(schemaConfig.label, HotLoadStatus.StartIndex, 10)
+            this.emitProgress(dataSchema.getLabel(), HotLoadStatus.StartIndex, 10)
             
             // Build a list of array properties to index separately
             const schema = datastore.getSchema();
@@ -167,6 +175,26 @@ export class DataService extends EventEmitter {
                 docs.push(row)
             }
 
+            return {
+                docs,
+                arrayProperties,
+                pouchDb
+            }
+        } catch (err) {
+            console.log(err)
+            return err
+        }
+    }
+
+    public async getIndex(schemaUrl: string, indexFields?: string[], storeFields?: string[]): Promise<MiniSearch<any>> {
+        const dataSchemas = getDataSchemas()
+        const dataSchema: BaseDataSchema = dataSchemas.find(dataSchema => dataSchema.getUrl() == schemaUri)
+        const schemaUri = dataSchema.getUrl()
+        const cacheKey = CryptoJS.MD5(`${this.did}:${schemaUri}:${indexFields.join(',')}:${storeFields.join(',')}`).toString()
+
+        if (!indexCache[cacheKey]) {
+            const { docs, arrayProperties, pouchDb } = await this.getNormalizedDocs(dataSchema, indexFields, storeFields)
+
             // console.log(`Creating index for ${schemaUri}`, cacheKey)
             const miniSearch = new MiniSearch({
                 fields: indexFields, // fields to index for full-text search
@@ -180,7 +208,7 @@ export class DataService extends EventEmitter {
             // Index all documents
             await miniSearch.addAllAsync(docs)
 
-            this.emitProgress(schemaConfig.label, HotLoadStatus.Complete, 10)
+            this.emitProgress(`${dataSchema.getLabel()} Keyword Index`, HotLoadStatus.Complete, 10)
 
             // Setup a change listener to add any new items
             const changeOptions = {
@@ -218,18 +246,93 @@ export class DataService extends EventEmitter {
             // console.log(`Index created for ${schemaUri}`, cacheKey)
         } else {
             this.stepCount += 2
-            this.emitProgress(schemaConfig.label, HotLoadStatus.Complete, 10)
+            this.emitProgress(`${dataSchema.getLabel()} Keyword Index`, HotLoadStatus.Complete, 10)
         }
 
         return indexCache[cacheKey]
     }
 
+    public async getVectorStore(): Promise<MemoryVectorStore> {
+        const cacheKey = CryptoJS.MD5(`${this.did}`).toString()
+
+        try {
+            if (!vectorCache[cacheKey]) {
+                const dataSchemas = getDataSchemas()
+                for (const dataSchema of dataSchemas) {
+                    const { docs, arrayProperties, pouchDb } = await this.getNormalizedDocs(dataSchema, dataSchema.getIndexFields(), dataSchema.getStoreFields())
+
+                    const documents: Document[] = []
+                    for (const row of docs) {
+                        documents.push({
+                            id: row._id,
+                            metadata: {},
+                            pageContent: dataSchema.getRagContent(row)
+                        })
+                    }
+
+                    const embeddings = new TensorFlowEmbeddings();
+                    const vectorStore = await MemoryVectorStore.fromDocuments(
+                        documents,
+                        embeddings
+                    );
+
+                    // this.emitProgress(`${schemaConfig.label} VectorDb`, HotLoadStatus.Complete, 10)
+
+                    // Setup a change listener to add any new items
+                    const changeOptions = {
+                        // Don't include docs as there's a bug that sends `undefined` doc values which crashes the encryption library
+                        include_docs: false,
+                        // Live stream changes
+                        live: true,
+                        // Only include new changes from now
+                        since: 'now'
+                    }
+
+                    // Listen and handle changes
+                    const changeHandler = pouchDb.changes(changeOptions)
+                        .on('change', async (change: any) => {
+                            const record = await pouchDb.get(change.id)
+                            const row = this.buildRow(record, arrayProperties, dataSchema.getStoreFields())
+                            if (!row) {
+                                return
+                            }
+                            // console.log('adding record to index', record.id, record.schema, record.name)
+
+                            try {
+                                vectorStore.addDocuments([row])
+                            } catch (err: any) {
+                                console.error(err.message)
+                                // console.log(record.id, record.name, 'already in search index')
+                                // Document may already be in the index
+                            }
+                        })
+                        .on('error', (error: any) => {
+                            console.log('error!')
+                            console.error(error)
+                        })
+
+                    vectorCache[cacheKey] = vectorStore
+                    console.log('Added to vector store', dataSchema.getLabel())
+                }
+            } else {
+                // this.stepCount += 2
+                // this.emitProgress(`${schemaConfig.label} VectorDb`, HotLoadStatus.Complete, 10)
+            }
+
+            return vectorCache[cacheKey]
+        } catch (err) {
+            console.log(err)
+            throw err
+        }
+    }
+
     public async hotLoad(): Promise<void> {
         this.startProgress(Object.keys(schemas).length * 3)
+        const dataSchemas = getDataSchemas()
 
         const promises: Promise<MiniSearch<any>>[] = []
-        for (const schemaUri of Object.keys(schemas)) {
-            promises.push(this.getIndex(schemaUri))
+        for (const dataSchema of dataSchemas) {
+            promises.push(this.getIndex(dataSchema.getUrl()))
         }
 
         await Promise.all(promises)

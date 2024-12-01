@@ -5,7 +5,7 @@ import { CouchDBQuerySchemaType } from "../interfaces";
 class CalendarEventDataSchema implements BaseDataSchema {
 
     public getUrl(): string {
-        return CONFIG.verida.schemas.CALENDAR_EVENT
+        return CONFIG.verida.schemas.EVENT
     }
 
     public getRagContent(row: any): string {
