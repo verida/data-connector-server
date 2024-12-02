@@ -13,8 +13,6 @@ const BEDROCK_AWS_SECRET_ACCESS_KEY = CONFIG.verida.llms.bedrockAWSSecretKey;
 const BEDROCK_AWS_ACCESS_KEY_ID = CONFIG.verida.llms.bedrockAWSAccessKeyId;
 const MODEL = `us.anthropic.claude-3-5-haiku-20241022-v1:0`;
 
-const TOGETHER_API_KEY = `e9873a48dc487b3629c8a0296f6a577367d41f57aa4445efa5516a0090d1af4c`
-
 export class Agent {
   public async run(promptString: string, context: IContext) {
     const toolsByName = getTools(context)
