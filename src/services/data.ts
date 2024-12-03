@@ -11,11 +11,23 @@ import MiniSearch, { SearchOptions, SearchResult } from 'minisearch';
 import { getDataSchemas } from './schemas';
 import { BaseDataSchema } from './schemas/base';
 import { VectorStore } from "@langchain/core/vectorstores";
+import { BedrockEmbeddings } from "@langchain/aws";
+import CONFIG from "../config"
 
 export const indexCache: Record<string, MiniSearch<any>> = {}
 export const vectorCache: Record<string, VectorStore> = {}
 
 const vectorStoreDataDir = "./vectorstores"
+
+function logMemory() {
+    const memoryUsage = process.memoryUsage();
+  console.log({
+    rss: `${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`,
+    heapTotal: `${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
+    heapUsed: `${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`,
+    external: `${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB`,
+  });
+}
 
 export interface SchemaConfig {
     label: string
@@ -34,45 +46,6 @@ export interface HotLoadProgress {
     status: HotLoadStatus
     recordCount: number
     totalProgress: number
-}
-
-const schemas: Record<string, SchemaConfig> = {
-    "https://common.schemas.verida.io/social/following/v0.1.0/schema.json": {
-        label: "Social Following",
-        storeFields: ['_id', 'name','uri','description','insertedAt','followedTimestamp'],
-        indexFields: ['name','description','sourceApplication']
-    },
-    "https://common.schemas.verida.io/social/post/v0.1.0/schema.json": {
-        label: "Social Posts",
-        storeFields: ['_id', 'name','content','type','uri','insertedAt'],
-        indexFields: ['name', 'content', 'indexableText','sourceApplication']
-    },
-    "https://common.schemas.verida.io/social/email/v0.1.0/schema.json": {
-        label: "Email",
-        storeFields: ['_id', 'sentAt'],
-        indexFields: ['name','fromName','fromEmail','messageText','attachments_0.textContent','attachments_1.textContent','attachments_2.textContent', 'indexableText', 'sentAt','sourceApplication']
-    },
-    "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json": {
-        label: "Chat Message",
-        storeFields: ['_id', 'groupId', 'sentAt'],
-        indexFields: ['messageText', 'fromHandle', 'fromName', 'groupName', 'indexableText', 'sentAt','sourceApplication']
-    },
-    "https://common.schemas.verida.io/favourite/v0.1.0/schema.json": {
-        label: "Favorite",
-        storeFields: ['_id', 'insertedAt'],
-        indexFields: ['name', 'favouriteType', 'contentType', 'summary','sourceApplication']
-    },
-    "https://common.schemas.verida.io/file/v0.1.0/schema.json": {
-        label: "File",
-        storeFields: ['_id', 'insertedAt'],
-        indexFields: ['name', 'contentText', 'indexableText', 'sourceApplication', "modifiedAt", "insertedAt"]
-    },
-    "https://common.schemas.verida.io/social/event/v0.1.0/schema.json": {
-        label: "Calendar Event",
-        storeFields: ['_id', 'insertedAt', "start.dateTime"],
-        // @todo: Support indexing attachments, creator, organizer and attendees
-        indexFields: ['name', 'description', 'location', 'status', "modifiedAt", "insertedAt", "start.dateTime"]
-    }
 }
 
 export class DataService extends EventEmitter {
@@ -193,8 +166,11 @@ export class DataService extends EventEmitter {
 
     public async getIndex(schemaUrl: string, indexFields?: string[], storeFields?: string[]): Promise<MiniSearch<any>> {
         const dataSchemas = getDataSchemas()
-        const dataSchema: BaseDataSchema = dataSchemas.find(dataSchema => dataSchema.getUrl() == schemaUri)
+        const dataSchema: BaseDataSchema = dataSchemas.find(dataSchema => dataSchema.getUrl() == schemaUrl)
         const schemaUri = dataSchema.getUrl()
+        indexFields = indexFields ? indexFields : dataSchema.getIndexFields()
+        storeFields = storeFields ? storeFields : dataSchema.getStoreFields()
+
         const cacheKey = CryptoJS.MD5(`${this.did}:${schemaUri}:${indexFields.join(',')}:${storeFields.join(',')}`).toString()
 
         if (!indexCache[cacheKey]) {
@@ -213,7 +189,7 @@ export class DataService extends EventEmitter {
             // Index all documents
             await miniSearch.addAllAsync(docs)
 
-            this.emitProgress(`${dataSchema.getLabel()} Keyword Index`, HotLoadStatus.Complete, 10)
+            this.emitProgress(`${dataSchema.getLabel()} Keyword Index`, HotLoadStatus.Complete, docs.length)
 
             // Setup a change listener to add any new items
             const changeOptions = {
@@ -251,7 +227,7 @@ export class DataService extends EventEmitter {
             // console.log(`Index created for ${schemaUri}`, cacheKey)
         } else {
             this.stepCount += 2
-            this.emitProgress(`${dataSchema.getLabel()} Keyword Index`, HotLoadStatus.Complete, 10)
+            this.emitProgress(`${dataSchema.getLabel()} Keyword Index`, HotLoadStatus.Complete, indexCache[cacheKey].documentCount)
         }
 
         return indexCache[cacheKey]
@@ -261,29 +237,38 @@ export class DataService extends EventEmitter {
         const cacheKey = CryptoJS.MD5(`${this.did}`).toString()
 
         try {
+            const dataSchemas = getDataSchemas()
             if (!vectorCache[cacheKey]) {
                 const embeddings = new TensorFlowEmbeddings();
 
-                if (fs.existsSync(`${vectorStoreDataDir}/${cacheKey}`)) {
-                    // console.log('loading from disk!')
-                    vectorCache[cacheKey] = await CloseVectorNode.load(`${vectorStoreDataDir}/${cacheKey}`, embeddings)
-                    return vectorCache[cacheKey]
-                }
+                // if (fs.existsSync(`${vectorStoreDataDir}/${cacheKey}`)) {
+                //     console.log('loading from disk!')
+                //     vectorCache[cacheKey] = await CloseVectorNode.load(`${vectorStoreDataDir}/${cacheKey}`, embeddings)
+                //     return vectorCache[cacheKey]
+                // }
 
-                const dataSchemas = getDataSchemas()
                 const documents: Document[] = []
                 for (const dataSchema of dataSchemas) {
                     const { docs, arrayProperties, pouchDb } = await this.getNormalizedDocs(dataSchema, dataSchema.getIndexFields(), dataSchema.getStoreFields())
 
                     for (const row of docs) {
+                        const metadata = {
+                            id: row._id,
+                            type: dataSchema.getLabel(),
+                            groupId: dataSchema.getGroupId(row),
+                            timestamp: dataSchema.getTimestamp(row)
+                        }
+
+                        const pageContent = `[${dataSchema.getLabel()}]\n${dataSchema.getRagContent(row)}`
+
                         documents.push({
                             id: row._id,
-                            metadata: {},
-                            pageContent: dataSchema.getRagContent(row)
+                            metadata,
+                            pageContent
                         })
                     }
 
-                    // this.emitProgress(`${schemaConfig.label} VectorDb`, HotLoadStatus.Complete, 10)
+                    this.emitProgress(`${dataSchema.getLabel()} VectorDb`, HotLoadStatus.Complete, docs.length)
 
                     // Setup a change listener to add any new items
                     const changeOptions = {
@@ -317,22 +302,44 @@ export class DataService extends EventEmitter {
                             console.log('error!')
                             console.error(error)
                         })
-                    console.log('Loaded docs for vector store', dataSchema.getLabel())
+                    // console.log('Loaded docs for vector store', dataSchema.getLabel())
                     // break
                 }
 
-                console.log('creating vector store with all docs')
-                const vectorStore = await CloseVectorNode.fromDocuments(
-                    documents,
+                // console.log('creating vector store with all docs')
+
+                // const vectorStore = await CloseVectorNode.fromDocuments(
+                //     [],
+                //     embeddings
+                // );
+
+                const vectorStore = await MemoryVectorStore.fromDocuments(
+                    [],
                     embeddings
                 );
+
+                // Add documents in batches of 500 at a time to prevent
+                // out of memory issues (when using local embedding)
+                // or too many requests (when using remote embedding)
+                while (documents.length) {
+                    const docBatch = documents.splice(0,500)
+                    if (docBatch.length === 0) {
+                        break
+                    }
+
+                    await vectorStore.addDocuments(docBatch)
+                }
+
+                // console.log('vector store created')
+
                 // console.log('saving vector store to disk')
-                await vectorStore.save(`${vectorStoreDataDir}/${cacheKey}`) 
+                // await vectorStore.save(`${vectorStoreDataDir}/${cacheKey}`) 
                 // console.log('saved')
+
                 vectorCache[cacheKey] = vectorStore
             } else {
-                // this.stepCount += 2
-                // this.emitProgress(`${schemaConfig.label} VectorDb`, HotLoadStatus.Complete, 10)
+                this.stepCount += dataSchemas.length * 2
+                this.emitProgress(`VectorDb Loaded from Cache`, HotLoadStatus.Complete, 0)
             }
 
             return vectorCache[cacheKey]
@@ -342,16 +349,23 @@ export class DataService extends EventEmitter {
         }
     }
 
-    public async hotLoad(): Promise<void> {
-        this.startProgress(Object.keys(schemas).length * 3)
+    public async hotLoadIndexes(): Promise<void> {
         const dataSchemas = getDataSchemas()
+        this.startProgress(Object.keys(dataSchemas).length * 3)
 
         const promises: Promise<MiniSearch<any>>[] = []
         for (const dataSchema of dataSchemas) {
+            // console.log('calling the index', dataSchema.getLabel(), dataSchema.getUrl())
             promises.push(this.getIndex(dataSchema.getUrl()))
         }
 
         await Promise.all(promises)
+    }
+
+    public async hotLoadVectorStore(): Promise<void> {
+        const dataSchemas = getDataSchemas()
+        this.startProgress(Object.keys(dataSchemas).length * 3)
+        await this.getVectorStore()
     }
 
     protected buildRow(row: any, arrayProperties: string[], storeFields: string[]): any | undefined {

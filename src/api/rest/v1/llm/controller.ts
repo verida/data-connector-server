@@ -197,6 +197,14 @@ export class LLMController {
             const did = await account.did()
             const data = new DataService(did, context)
 
+            const hotLoadItems = {
+                keywordIndex: req.params.keywordIndex ? true : false,
+                vectorDb: req.params.vectorDb ? true : false
+            }
+
+            // @todo remove
+            hotLoadItems.keywordIndex = true
+
             data.on('progress', (progress: HotLoadProgress) => {
                 res.write(`data: ${JSON.stringify(progress)}\n\n`)
             })
@@ -209,7 +217,14 @@ export class LLMController {
             // Tell the client to retry every 10 seconds if connectivity is lost
             res.write('retry: 10000\n\n')
 
-            await data.hotLoad()
+            if (hotLoadItems.keywordIndex) {
+                await data.hotLoadIndexes()
+            }
+
+            if (hotLoadItems.vectorDb) {
+                await data.hotLoadVectorStore()
+            }
+
             res.end()
         } catch (error) {
             console.error(error)
