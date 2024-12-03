@@ -8,6 +8,14 @@ class CalendarEventDataSchema implements BaseDataSchema {
         return CONFIG.verida.schemas.EVENT
     }
 
+    public getTimestamp(row: any): string {
+        return row.start.dateTime
+    }
+
+    public getGroupId(row: any): string | undefined {
+        return row.calendarId
+    }
+
     public getRagContent(row: any): string {
         return `Type: Calendar Event\nName: ${row.name}\nDescription: ${row.description}\nStatus: ${row.status}\nCreator: ${JSON.stringify(row.creator)}\nAttendees: ${JSON.stringify(row.attendees)}\nLocation: ${row.location}\nStart: ${row.start.dateTime}\nSource: ${row.sourceApplication}})\n\n`
     }

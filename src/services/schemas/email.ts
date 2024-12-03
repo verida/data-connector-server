@@ -11,6 +11,14 @@ class EmailDataSchema implements BaseDataSchema {
         return CONFIG.verida.schemas.EMAIL
     }
 
+    public getTimestamp(row: any): string {
+        return row.sentAt
+    }
+
+    public getGroupId(row: any): string | undefined {
+        return undefined
+    }
+
     public getRagContent(row: any): string {
         let body = row.messageText.substring(0, MAX_EMAIL_LENGTH)
         if (row.attachments) {

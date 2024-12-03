@@ -11,5 +11,7 @@ export interface BaseDataSchema {
     getIndexFields(): string[]
     getDefaultQueryParams(): Partial<CouchDBQuerySchemaType>
     getQuerySchemaString(): string
+    getTimestamp(row: any): string
+    getGroupId(row: any): string | undefined
 
 }

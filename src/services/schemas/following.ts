@@ -10,6 +10,14 @@ class FollowingDataSchema implements BaseDataSchema {
         return CONFIG.verida.schemas.FOLLOWING
     }
 
+    public getTimestamp(row: any): string {
+        return row.followedTimestamp
+    }
+
+    public getGroupId(row: any): string | undefined {
+        return undefined
+    }
+
     public getRagContent(row: any): string {
         return `Following name: ${row.name}Description:\n${row.description?.substring(0, MAX_DESCRIPTION)}\nSource: ${row.sourceApplication})\n\n`
     }

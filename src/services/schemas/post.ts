@@ -8,6 +8,14 @@ class PostDataSchema implements BaseDataSchema {
         return CONFIG.verida.schemas.POST
     }
 
+    public getTimestamp(row: any): string {
+        return row.insertedAt
+    }
+
+    public getGroupId(row: any): string | undefined {
+        return undefined
+    }
+
     public getRagContent(row: any): string {
         return `Name: ${row.name}\nType: ${row.type}\nContent: ${row.content}\nURL: ${row.uri}\nSource: ${row.fromName} (${row.fromHandle}) via ${row.sourceApplication}})\n\n`
     }

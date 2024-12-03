@@ -8,6 +8,14 @@ class ChatGroupDataSchema implements BaseDataSchema {
         return CONFIG.verida.schemas.CHAT_GROUP
     }
 
+    public getTimestamp(row: any): string {
+        return row.insertedAt
+    }
+
+    public getGroupId(row: any): string | undefined {
+        return undefined
+    }
+
     public getRagContent(row: any): string {
         return `Group Name: ${row.name}\nDescription: ${row.description}\nURL: ${row.uri}\nSource: ${row.sourceApplication}})\n\n`
     }

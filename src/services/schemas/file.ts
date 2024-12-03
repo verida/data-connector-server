@@ -10,6 +10,14 @@ class FileDataSchema implements BaseDataSchema {
         return CONFIG.verida.schemas.FILE
     }
 
+    public getTimestamp(row: any): string {
+        return row.insertedAt
+    }
+
+    public getGroupId(row: any): string | undefined {
+        return undefined
+    }
+
     public getRagContent(row: any): string {
         return `File name: ${row.name}\nFile content:${row.contentText.substring(0, MAX_FILE_LENGTH)}\nSource:${row.sourceApplication})\n\n`
     }
