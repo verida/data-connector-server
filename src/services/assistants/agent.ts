@@ -20,7 +20,7 @@ export class Agent {
     const tools = Object.values(toolsByName)
 
     const prompt = ChatPromptTemplate.fromMessages([
-        ["system", "You are a helpful assistant"],
+        ["system", "You are a helpful assistant with access to all my personal data"],
         ["placeholder", "{chat_history}"],
         ["human", "{input}"],
         ["placeholder", "{agent_scratchpad}"],
