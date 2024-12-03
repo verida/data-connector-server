@@ -5,7 +5,9 @@ import email from "./email"
 import file from "./file"
 import following from "./following"
 import post from "./post"
+import favourite from "./favourite"
+import chatMessage from "./chatMessage"
 
 export function getDataSchemas(): BaseDataSchema[] {
-    return [calendarEvent, chatGroup, email, file, following, post]
+    return [calendarEvent, chatGroup, chatMessage, email, file, following, post, favourite]
 }
