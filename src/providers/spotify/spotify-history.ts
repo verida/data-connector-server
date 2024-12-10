@@ -186,7 +186,7 @@ export default class SpotifyPlayHistory extends BaseSyncHandler {
             });
         }
 
-        return { items: results, breakHit: breakHit ?? SyncItemsBreak.NONE };
+        return { items: results, breakHit};
     }
 }
 
