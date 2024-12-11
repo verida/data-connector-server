@@ -1,8 +1,10 @@
-import { encoding_for_model } from 'tiktoken';
+import { countTokens } from '@anthropic-ai/tokenizer'
 import { getDataSchemasDict } from "../schemas"
 
 export function convertRecordsToRAGContext(docs: any, maxTokens: number = 100000): string {
     const dataSchemaDict = getDataSchemasDict()
+
+    maxTokens = 300000
 
     // Check token count
     let text = ""
@@ -13,6 +15,7 @@ export function convertRecordsToRAGContext(docs: any, maxTokens: number = 100000
         const newText = `${text}\n\n${ragText}`
 
         if (getTokenCount(newText) > maxTokens) {
+            // console.log(`STOPPING: RAG context is ${text.length} characters long with ${getTokenCount(text)} tokens with ${i} docs`)
             return text
         }
 
@@ -25,6 +28,5 @@ export function convertRecordsToRAGContext(docs: any, maxTokens: number = 100000
 }
 
 export function getTokenCount(text: string) {
-    const enc = encoding_for_model("gpt-4")
-    return enc.encode(text).length;
+    return countTokens(text)
 }

@@ -5,7 +5,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts"
 import { createToolCallingAgent } from "langchain/agents"
 import { AgentExecutor } from "langchain/agents"
 import { getTools } from "../tools";
-import { RunCollectorCallbackHandler } from "langchain/callbacks";
+import { Run, RunCollectorCallbackHandler } from "langchain/callbacks";
 
 const BEDROCK_AWS_REGION = CONFIG.verida.llms.bedrockAWSRegion;
 const BEDROCK_AWS_SECRET_ACCESS_KEY = CONFIG.verida.llms.bedrockAWSSecretKey;
@@ -20,12 +20,13 @@ export class Agent {
     const tools = Object.values(toolsByName)
 
     const prompt = ChatPromptTemplate.fromMessages([
-        ["system", "You are a helpful assistant with access to all my personal data"],
+        ["system", "You are a helpful assistant. I have consented to you to have access to all my personal data via tools. You will not ask follow up questions."],
         ["placeholder", "{chat_history}"],
         ["human", "{input}"],
         ["placeholder", "{agent_scratchpad}"],
       ])
 
+      let llmOutput: any
     const llm = new ChatBedrockConverse({
       model: MODEL,
       temperature,
@@ -37,6 +38,11 @@ export class Agent {
         secretAccessKey: BEDROCK_AWS_SECRET_ACCESS_KEY,
         accessKeyId: BEDROCK_AWS_ACCESS_KEY_ID!,
       },
+      callbacks: [{
+        handleLLMEnd(output) {
+          llmOutput = output.llmOutput.tokenUsage
+        },
+      }]
     });
 
     const handler = new RunCollectorCallbackHandler()
@@ -49,35 +55,43 @@ export class Agent {
 
      const response = await agentExecutor.invoke({ input: promptString })
 
-
      const run = handler.tracedRuns[0]
      const actions: any[] = []
      const tokens: any = {
-      input_tokens: 0,
-      output_tokens: 0,
-      total_tokens: 0
+      input_tokens: llmOutput.promptTokens,
+      output_tokens: llmOutput.completionTokens,
+      total_tokens: llmOutput.totalTokens
      }
 
      // @ts-ignore
-     for (const action: any of run.actions) {
-      const log = action.messageLog[0]
-      actions.push({
-        name: action.tool,
-        input: action.input,
-        duration: log.response_metadata.metadata.metrics.latencyMs,
-        tokens: log.usage_metadata
-      })
+     if (run.actions) {
+      // @ts-ignore
+      for (const action: any of run.actions) {
+        const log = action.messageLog[0]
 
-      tokens.input_tokens += log.usage_metadata.input_tokens
-      tokens.output_tokens += log.usage_metadata.output_tokens
-      tokens.total_tokens += log.usage_metadata.total_tokens
-     }
+        actions.push({
+          name: action.tool,
+          input: action.toolInput.input,
+          duration: log.response_metadata.metadata.metrics.latencyMs,
+          tokens: log.usage_metadata,
+          log: action.log
+        })
+
+        tokens.input_tokens += log.usage_metadata.input_tokens
+        tokens.output_tokens += log.usage_metadata.output_tokens
+        tokens.total_tokens += log.usage_metadata.total_tokens
+      }
+    }
 
      const result: any = {
-      input: promptString,
       actions,
-      output: response.output,
+      response,
       tokens,
+      finalPrompt: {
+        input_tokens: llmOutput.promptTokens,
+        output_tokens: llmOutput.completionTokens,
+        total_tokens: llmOutput.totalTokens
+      },
       duration: (run.end_time - run.start_time)
      }
 

@@ -73,7 +73,6 @@ export class BaseQueryTool extends Tool {
         skip
       })
 
-      // return JSON.stringify(result)
       return convertRecordsToRAGContext(result, this.tokenLimit)
 
     } catch (error) {

@@ -7,6 +7,14 @@
   resolved "https://registry.yarnpkg.com/@adraffy/ens-normalize/-/ens-normalize-1.10.1.tgz#63430d04bd8c5e74f8d7d049338f1cd9d4f02069"
   integrity sha512-96Z2IP3mYmF1Xg2cDm8f1gWGf/HUVedQ3FMifV4kG/PQ4yEP51xDtRAEfhVNt5f/uzpNkZHwWQuUcu6D6K+Ekw==
 
+"@anthropic-ai/tokenizer@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@anthropic-ai/tokenizer/-/tokenizer-0.0.4.tgz#d1f5dab07bbf9289414dad1f7c57b812b27bb857"
+  integrity sha512-EHRKbxlxlc8W4KCBEseByJ7YwyYCmgu9OyN59H9+IYIGPoKv8tXyQXinkeGDI+cI8Tiuz9wk2jZb/kK7AyvL7g==
+  dependencies:
+    "@types/node" "^18.11.18"
+    tiktoken "^1.0.10"
+
 "@apidevtools/json-schema-ref-parser@9.0.9":
   version "9.0.9"
   resolved "https://registry.yarnpkg.com/@apidevtools/json-schema-ref-parser/-/json-schema-ref-parser-9.0.9.tgz#d720f9256e3609621280584f2b47ae165359268b"
@@ -7750,7 +7758,7 @@ through@^2.3.8:
   resolved "https://registry.yarnpkg.com/through/-/through-2.3.8.tgz#0dd4c9ffaabc357960b1b724115d7e0e86a2e1f5"
   integrity sha512-w89qg7PI8wAdvX60bMDP+bFoD5Dvhm9oLheFp5O4a2QF0cSBGsBX4qZmadPMvVqlLJBBci+WqGGOAPvcDeNSVg==
 
-tiktoken@^1.0.17:
+tiktoken@^1.0.10, tiktoken@^1.0.17:
   version "1.0.17"
   resolved "https://registry.yarnpkg.com/tiktoken/-/tiktoken-1.0.17.tgz#53b9b38b8b1a9c6996cded21f6ef0ff473fae265"
   integrity sha512-UuFHqpy/DxOfNiC3otsqbx3oS6jr5uKdQhB/CvDEroZQbVHt+qAK+4JbIooabUWKU9g6PpsFylNu9Wcg4MxSGA==

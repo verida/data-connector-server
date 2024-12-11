@@ -32,6 +32,7 @@
   },
   "homepage": "https://github.com/verida/server-template#readme",
   "dependencies": {
+    "@anthropic-ai/tokenizer": "^0.0.4",
     "@aws-sdk/client-bedrock-runtime": "^3.693.0",
     "@langchain/aws": "^0.1.2",
     "@langchain/community": "^0.3.16",

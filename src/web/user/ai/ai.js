@@ -61,7 +61,7 @@ $(document).ready(function() {
             data: JSON.stringify(body),
             success: function(response) {
                 removeTypingIndicator();
-                addMessage(response.output, 'bot');
+                addMessage(response.response.output, 'bot');
             },
             error: function(xhr) {
                 console.log(xhr)
