@@ -4,6 +4,7 @@ import { SchemaRecord, SchemaSocialChatGroup, SchemaSocialChatMessage } from "..
 import { IDatastore } from "@verida/types"
 import { KeywordSearchTimeframe } from "../helpers/interfaces"
 import { Helpers } from "./helpers"
+import { getDataSchemasDict } from "./schemas"
 const _ = require('lodash')
 
 export interface MinisearchResult {
@@ -66,9 +67,11 @@ export interface ChatThreadResult {
 
 export class SearchService extends VeridaService {
 
-    protected async rankAndMergeResults(schemaResults: SearchServiceSchemaResult[], limit: number, minResultsPerType: number = 10): Promise<SchemaRecord[]> {
+    protected async rankAndMergeResults(schemaResults: SearchServiceSchemaResult[], resultLimit: number, outputRagString: boolean = false, minResultsPerType: number = 10): Promise<SchemaRecord[]> {
         const unsortedResults: Record<string, MinisearchResult> = {}
         const guaranteedResults: Record<string, MinisearchResult> = {}
+
+        const dataSchemaDict = getDataSchemasDict()
 
         const datastores: Record<string, IDatastore> = {}
         for (const schemaResult of schemaResults) {
@@ -97,23 +100,31 @@ export class SearchService extends VeridaService {
         const queuedResults = Object.values(guaranteedResults).concat(sortedResults)
 
         // Fetch actual results and limit them
-        const results = []
-        for (let i = 0; i < limit; i++) {
+        const results: SchemaRecord[] = []
+        for (let i = 0; i < resultLimit; i++) {
             const result = queuedResults[i]
             if (!result) {
                 continue
             }
 
+
             const datastore = datastores[result.schemaUrl]
             const row = await datastore.get(result.id, {})
-            delete result['schemaUrl']
-            results.push({
-                ...row,
-                _match: result
-            })
+            if (outputRagString) {
+                const dataSchema = dataSchemaDict[result.schemaUrl]
+                if (!dataSchema) {
+                    continue
+                }
+                results.push(row)
+            } else {
+                delete result['schemaUrl']
+                results.push({
+                    ...row,
+                    _match: result
+                })
+            }
         }
 
-        // console.log('returning ', results.length, 'items')
         return results
     }
 
@@ -307,7 +318,7 @@ export class SearchService extends VeridaService {
         return results
     }
 
-    public async multiByKeywords(searchTypes: SearchType[], keywordsList: string[], timeframe: KeywordSearchTimeframe, limit: number = 20, minResultsPerType: number = 10) {
+    public async multiByKeywords(searchTypes: SearchType[], keywordsList: string[], timeframe: KeywordSearchTimeframe, resultLimit: number = 20, outputRagString: boolean = false, minResultsPerType: number = 10) {
         const query = keywordsList.join(' ')
         const dataService = new DataService(this.did, this.context)
 
@@ -321,6 +332,7 @@ export class SearchService extends VeridaService {
                 continue
             }
             const miniSearchIndex = await dataService.getIndex(schemaUri)
+            // console.log('searching ', miniSearchIndex.documentCount, query)
             const queryResult = <MinisearchResult[]> await miniSearchIndex.search(query, {
                 filter: (result: any) => {
                     return maxDatetime ? result[SearchTypeTimeProperty[searchType]] > maxDatetime.toISOString() : true
@@ -333,7 +345,7 @@ export class SearchService extends VeridaService {
             })
         }
 
-        return this.rankAndMergeResults(searchResults, limit, minResultsPerType)
+        return this.rankAndMergeResults(searchResults, resultLimit, outputRagString, minResultsPerType)
     }
 
 }

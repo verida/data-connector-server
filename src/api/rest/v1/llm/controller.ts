@@ -198,12 +198,9 @@ export class LLMController {
             const data = new DataService(did, context)
 
             const hotLoadItems = {
-                keywordIndex: req.params.keywordIndex ? true : false,
-                vectorDb: req.params.vectorDb ? true : false
+                keywordIndex: (req.query.keywordIndex == "true" || typeof(req.query.keywordIndex) == 'undefined' ? true : false),
+                vectorDb: req.query.vectorDb ? true : false
             }
-
-            // @todo remove
-            hotLoadItems.keywordIndex = true
 
             data.on('progress', (progress: HotLoadProgress) => {
                 res.write(`data: ${JSON.stringify(progress)}\n\n`)
@@ -221,9 +218,9 @@ export class LLMController {
                 await data.hotLoadIndexes()
             }
 
-            if (hotLoadItems.vectorDb) {
-                await data.hotLoadVectorStore()
-            }
+            // if (hotLoadItems.vectorDb) {
+            //     await data.hotLoadVectorStore()
+            // }
 
             res.end()
         } catch (error) {
@@ -239,9 +236,10 @@ export class LLMController {
     public async agent(req: Request, res: Response) {
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const temperature = req.body.temperature ? parseInt(req.body.temperature.toString()) : 0
 
             const rag = new Agent()
-            const result = await rag.run(req.body.prompt, context)
+            const result = await rag.run(req.body.prompt, context, temperature)
             return res.json(result)
         } catch (error: any) {
             console.error(error)

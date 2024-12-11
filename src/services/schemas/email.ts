@@ -1,11 +1,16 @@
 import { BaseDataSchema } from "./base";
 import CONFIG from "../../config"
 import { CouchDBQuerySchemaType } from "../interfaces";
+import { SorensenDiceSimilarity, DefaultTextParser, Summarizer, AbsoluteSummarizerConfig, NullLogger } from "ts-textrank";
+const sanitizeHtml = require('sanitize-html');
 
-const MAX_EMAIL_LENGTH = 10000
-const MAX_ATTACHMENT_LENGTH = 10000
+const MAX_EMAIL_LENGTH = 5000
+const MAX_ATTACHMENT_LENGTH = 5000
+const SUMMARIZER_SENTENCE_COUNT = 10
 
 class EmailDataSchema implements BaseDataSchema {
+
+    protected summarizer?: Summarizer
 
     public getUrl(): string {
         return CONFIG.verida.schemas.EMAIL
@@ -19,15 +24,27 @@ class EmailDataSchema implements BaseDataSchema {
         return undefined
     }
 
-    public getRagContent(row: any): string {
-        let body = row.messageText.substring(0, MAX_EMAIL_LENGTH)
+    public getBodyText(row: any): string {
+        let body = sanitizeHtml(row.messageText, { allowedTags: []})
+
+        if (body.length > MAX_EMAIL_LENGTH) {
+            const lang = "en"
+            const summarizer = this.getSummarizer()
+            body = summarizer.summarize(body, lang).join(" ")
+            body = `[ This is a summary of a long email with ID ${row._id} ] ${body}`
+        }
+
         if (row.attachments) {
             for (const attachment of row.attachments) {
                 body += attachment.textContent!.substring(0, MAX_ATTACHMENT_LENGTH)
             }
         }
 
-        return `Subject: ${row.name}\nTo: ${row.toName} <${row.toEmail}>\nFrom: ${row.fromName} <${row.fromEmail}>\nSent Date/time: ${row.sentAt}\nSource: ${row.sourceApplication}\nBody: ${body}\n\n`
+        return body
+    }
+
+    public getRagContent(row: any): string {
+        return `Subject: ${row.name}\nTo: ${row.toName} <${row.toEmail}>\nFrom: ${row.fromName} <${row.fromEmail}>\nSent Date/time: ${row.sentAt}\nSource: ${row.sourceApplication}\nBody: ${this.getBodyText(row)}\n\n`
     }
 
     public getName(): string {
@@ -55,6 +72,49 @@ class EmailDataSchema implements BaseDataSchema {
             fields: ['name', 'type', 'fromName', 'fromEmail', 'messageText', 'sentAt'],
             sort: [{ "sentAt": "desc" }]
         }
+    }
+
+    protected getSummarizer() {
+        if (this.summarizer) {
+            return this.summarizer
+        }
+
+        //Only one similarity function implemented at this moment.
+        //More could come in future versions.
+        const sim = new SorensenDiceSimilarity()
+
+        //Only one text parser available a this moment
+        const parser = new DefaultTextParser()
+
+        //Do you want logging?
+        // const logger = new ConsoleLogger()
+        const logger = new NullLogger()
+
+        //You can implement LoggerInterface for different behavior,
+        //or if you don't want logging, use this:
+        //const logger = new NullLogger()
+
+        //Set the summary length as a percentage of full text length
+        const ratio = .25 
+
+        //Damping factor. See "How it works" for more info.
+        const d = .85
+
+        //How do you want summary sentences to be sorted?
+        //Get sentences in the order that they appear in text:
+        const sorting = Summarizer.SORT_OCCURENCE
+        //Or sort them by relevance:
+        //const sorting = Summarizer.SORT_SCORE
+        // const config = new RelativeSummarizerConfig(ratio, sim, parser, d, sorting)
+
+        //Or, if you want a fixed number of sentences:
+        //const number = 5
+        const config = new AbsoluteSummarizerConfig(SUMMARIZER_SENTENCE_COUNT, sim, parser, d, sorting)    
+
+        const summarizer = new Summarizer(config, logger)
+
+        this.summarizer = summarizer
+        return summarizer
     }
     
     public getQuerySchemaString(): string {

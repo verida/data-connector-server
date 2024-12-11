@@ -1,33 +1,26 @@
-import { CloseVectorNode } from "@langchain/community/vectorstores/closevector/node";
-import * as fs from 'fs'
-import "@tensorflow/tfjs-node";
-import { TensorFlowEmbeddings } from '@langchain/community/embeddings/tensorflow';
-import { Document } from '@langchain/core/documents';
+// import "@tensorflow/tfjs-node";
 import { IContext, IDatastore } from '@verida/types';
 import * as CryptoJS from 'crypto-js';
 import { EventEmitter } from 'events'
-import { MemoryVectorStore } from 'langchain/vectorstores/memory';
 import MiniSearch, { SearchOptions, SearchResult } from 'minisearch';
-import { getDataSchemas } from './schemas';
+import { getDataSchemas, getDataSchemasDict } from './schemas';
 import { BaseDataSchema } from './schemas/base';
 import { VectorStore } from "@langchain/core/vectorstores";
-import { BedrockEmbeddings } from "@langchain/aws";
-import CONFIG from "../config"
 
 export const indexCache: Record<string, MiniSearch<any>> = {}
 export const vectorCache: Record<string, VectorStore> = {}
 
-const vectorStoreDataDir = "./vectorstores"
+// const vectorStoreDataDir = "./vectorstores"
 
-function logMemory() {
-    const memoryUsage = process.memoryUsage();
-  console.log({
-    rss: `${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`,
-    heapTotal: `${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
-    heapUsed: `${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`,
-    external: `${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB`,
-  });
-}
+// function logMemory() {
+//     const memoryUsage = process.memoryUsage();
+//   console.log({
+//     rss: `${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`,
+//     heapTotal: `${(memoryUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
+//     heapUsed: `${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`,
+//     external: `${(memoryUsage.external / 1024 / 1024).toFixed(2)} MB`,
+//   });
+// }
 
 export interface SchemaConfig {
     label: string
@@ -147,9 +140,11 @@ export class DataService extends EventEmitter {
             const docs: any = []
             for (const i in result.rows) {
                 const row = this.buildRow(result.rows[i].doc, arrayProperties, storeFields)
+
                 if (!row) {
                     continue
                 }
+
                 docs.push(row)
             }
 
@@ -165,8 +160,8 @@ export class DataService extends EventEmitter {
     }
 
     public async getIndex(schemaUrl: string, indexFields?: string[], storeFields?: string[]): Promise<MiniSearch<any>> {
-        const dataSchemas = getDataSchemas()
-        const dataSchema: BaseDataSchema = dataSchemas.find(dataSchema => dataSchema.getUrl() == schemaUrl)
+        const dataSchemasDict = getDataSchemasDict()
+        const dataSchema = dataSchemasDict[schemaUrl]
         const schemaUri = dataSchema.getUrl()
         indexFields = indexFields ? indexFields : dataSchema.getIndexFields()
         storeFields = storeFields ? storeFields : dataSchema.getStoreFields()
@@ -233,121 +228,138 @@ export class DataService extends EventEmitter {
         return indexCache[cacheKey]
     }
 
-    public async getVectorStore(): Promise<VectorStore> {
-        const cacheKey = CryptoJS.MD5(`${this.did}`).toString()
+    /**
+     * Performance of loading vector store is too slow, keyword index works just as well
+     */
+    // public async getVectorStore(): Promise<VectorStore> {
+    //     const cacheKey = CryptoJS.MD5(`${this.did}`).toString()
 
-        try {
-            const dataSchemas = getDataSchemas()
-            if (!vectorCache[cacheKey]) {
-                const embeddings = new TensorFlowEmbeddings();
+    //     try {
+    //         const dataSchemas = getDataSchemas()
+    //         if (!vectorCache[cacheKey]) {
+    //             const embeddings = new TensorFlowEmbeddings();
 
-                // if (fs.existsSync(`${vectorStoreDataDir}/${cacheKey}`)) {
-                //     console.log('loading from disk!')
-                //     vectorCache[cacheKey] = await CloseVectorNode.load(`${vectorStoreDataDir}/${cacheKey}`, embeddings)
-                //     return vectorCache[cacheKey]
-                // }
+    //             // if (fs.existsSync(`${vectorStoreDataDir}/${cacheKey}`)) {
+    //             //     console.log('loading from disk!')
+    //             //     vectorCache[cacheKey] = await CloseVectorNode.load(`${vectorStoreDataDir}/${cacheKey}`, embeddings)
+    //             //     return vectorCache[cacheKey]
+    //             // }
 
-                const documents: Document[] = []
-                for (const dataSchema of dataSchemas) {
-                    const { docs, arrayProperties, pouchDb } = await this.getNormalizedDocs(dataSchema, dataSchema.getIndexFields(), dataSchema.getStoreFields())
+    //             const documents: Document[] = []
+    //             for (const dataSchema of dataSchemas) {
+    //                 const { docs, arrayProperties, pouchDb } = await this.getNormalizedDocs(dataSchema, dataSchema.getIndexFields(), dataSchema.getStoreFields())
 
-                    for (const row of docs) {
-                        const metadata = {
-                            id: row._id,
-                            type: dataSchema.getLabel(),
-                            groupId: dataSchema.getGroupId(row),
-                            timestamp: dataSchema.getTimestamp(row)
-                        }
+    //                 for (const row of docs) {
+    //                     const metadata = {
+    //                         id: row._id,
+    //                         type: dataSchema.getLabel(),
+    //                         groupId: dataSchema.getGroupId(row),
+    //                         timestamp: dataSchema.getTimestamp(row)
+    //                     }
 
-                        const pageContent = `[${dataSchema.getLabel()}]\n${dataSchema.getRagContent(row)}`
+    //                     const pageContent = `[${dataSchema.getLabel()}]\n${dataSchema.getRagContent(row)}`
 
-                        documents.push({
-                            id: row._id,
-                            metadata,
-                            pageContent
-                        })
-                    }
+    //                     documents.push({
+    //                         id: row._id,
+    //                         metadata,
+    //                         pageContent
+    //                     })
+    //                 }
 
-                    this.emitProgress(`${dataSchema.getLabel()} VectorDb`, HotLoadStatus.Complete, docs.length)
+    //                 this.emitProgress(`${dataSchema.getLabel()} VectorDb`, HotLoadStatus.Complete, docs.length)
 
-                    // Setup a change listener to add any new items
-                    const changeOptions = {
-                        // Don't include docs as there's a bug that sends `undefined` doc values which crashes the encryption library
-                        include_docs: false,
-                        // Live stream changes
-                        live: true,
-                        // Only include new changes from now
-                        since: 'now'
-                    }
+    //                 // Setup a change listener to add any new items
+    //                 const changeOptions = {
+    //                     // Don't include docs as there's a bug that sends `undefined` doc values which crashes the encryption library
+    //                     include_docs: false,
+    //                     // Live stream changes
+    //                     live: true,
+    //                     // Only include new changes from now
+    //                     since: 'now'
+    //                 }
 
-                    // Listen and handle changes
-                    const changeHandler = pouchDb.changes(changeOptions)
-                        .on('change', async (change: any) => {
-                            const record = await pouchDb.get(change.id)
-                            const row = this.buildRow(record, arrayProperties, dataSchema.getStoreFields())
-                            if (!row) {
-                                return
-                            }
-                            // console.log('adding record to index', record.id, record.schema, record.name)
+    //                 // Listen and handle changes
+    //                 const changeHandler = pouchDb.changes(changeOptions)
+    //                     .on('change', async (change: any) => {
+    //                         const record = await pouchDb.get(change.id)
+    //                         const row = this.buildRow(record, arrayProperties, dataSchema.getStoreFields())
+    //                         if (!row) {
+    //                             return
+    //                         }
+    //                         // console.log('adding record to index', record.id, record.schema, record.name)
 
-                            try {
-                                vectorStore.addDocuments([row])
-                            } catch (err: any) {
-                                console.error(err.message)
-                                // console.log(record.id, record.name, 'already in search index')
-                                // Document may already be in the index
-                            }
-                        })
-                        .on('error', (error: any) => {
-                            console.log('error!')
-                            console.error(error)
-                        })
-                    // console.log('Loaded docs for vector store', dataSchema.getLabel())
-                    // break
-                }
+    //                         try {
+    //                             vectorStore.addDocuments([row])
+    //                         } catch (err: any) {
+    //                             console.error(err.message)
+    //                             // console.log(record.id, record.name, 'already in search index')
+    //                             // Document may already be in the index
+    //                         }
+    //                     })
+    //                     .on('error', (error: any) => {
+    //                         console.log('error!')
+    //                         console.error(error)
+    //                     })
+    //                 console.log('Loaded docs for vector store', dataSchema.getLabel())
+    //                 // break
+    //             }
 
-                // console.log('creating vector store with all docs')
+    //             console.log('creating vector store with all docs', documents.length)
 
-                // const vectorStore = await CloseVectorNode.fromDocuments(
-                //     [],
-                //     embeddings
-                // );
+    //             // const vectorStore = await CloseVectorNode.fromDocuments(
+    //             //     [],
+    //             //     embeddings
+    //             // );
+    //             let vectorDbProgress = 0
+    //             this.emitProgress(`Creating VectorDb - ${vectorDbProgress}%`, HotLoadStatus.StartIndex, documents.length)
 
-                const vectorStore = await MemoryVectorStore.fromDocuments(
-                    [],
-                    embeddings
-                );
+    //             const vectorStore = await MemoryVectorStore.fromDocuments(
+    //                 [],
+    //                 embeddings
+    //             );
 
-                // Add documents in batches of 500 at a time to prevent
-                // out of memory issues (when using local embedding)
-                // or too many requests (when using remote embedding)
-                while (documents.length) {
-                    const docBatch = documents.splice(0,500)
-                    if (docBatch.length === 0) {
-                        break
-                    }
+    //             // Add documents in batches of 500 at a time to prevent
+    //             // out of memory issues (when using local embedding)
+    //             // or too many requests (when using remote embedding)
+    //             let processedDocs = 0
+    //             while (documents.length) {
+    //                 const docBatch = documents.splice(0,500)
+    //                 if (docBatch.length === 0) {
+    //                     break
+    //                 }
 
-                    await vectorStore.addDocuments(docBatch)
-                }
+    //                 console.log('a')
+    //                 await vectorStore.addDocuments(docBatch)
+    //                 console.log('b')
 
-                // console.log('vector store created')
+    //                 processedDocs += docBatch.length
+    //                 if ((processedDocs / documents.length) >= vectorDbProgress*10) {
+    //                     vectorDbProgress = Math.floor(processedDocs / documents.length * 1)
+    //                     console.log('incrementing vectordb progress', vectorDbProgress)
+    //                     this.emitProgress(`Creating VectorDb - ${vectorDbProgress*10}%`, HotLoadStatus.StartIndex, documents.length)
+    //                 }
+    //             }
 
-                // console.log('saving vector store to disk')
-                // await vectorStore.save(`${vectorStoreDataDir}/${cacheKey}`) 
-                // console.log('saved')
+    //             this.emitProgress(`Creating VectorDb - 100%`, HotLoadStatus.Complete, documents.length)
 
-                vectorCache[cacheKey] = vectorStore
-            } else {
-                this.stepCount += dataSchemas.length * 2
-                this.emitProgress(`VectorDb Loaded from Cache`, HotLoadStatus.Complete, 0)
-            }
+    //             // console.log('vector store created')
 
-            return vectorCache[cacheKey]
-        } catch (err) {
-            console.log(err)
-            throw err
-        }
-    }
+    //             // console.log('saving vector store to disk')
+    //             // await vectorStore.save(`${vectorStoreDataDir}/${cacheKey}`) 
+    //             // console.log('saved')
+
+    //             vectorCache[cacheKey] = vectorStore
+    //         } else {
+    //             this.stepCount += dataSchemas.length * 2
+    //             this.emitProgress(`VectorDb Loaded from Cache`, HotLoadStatus.Complete, 0)
+    //         }
+
+    //         return vectorCache[cacheKey]
+    //     } catch (err) {
+    //         console.log(err)
+    //         throw err
+    //     }
+    // }
 
     public async hotLoadIndexes(): Promise<void> {
         const dataSchemas = getDataSchemas()
@@ -362,11 +374,11 @@ export class DataService extends EventEmitter {
         await Promise.all(promises)
     }
 
-    public async hotLoadVectorStore(): Promise<void> {
-        const dataSchemas = getDataSchemas()
-        this.startProgress(Object.keys(dataSchemas).length * 3)
-        await this.getVectorStore()
-    }
+    // public async hotLoadVectorStore(): Promise<void> {
+    //     const dataSchemas = getDataSchemas()
+    //     this.startProgress((Object.keys(dataSchemas).length+10) * 3)
+    //     await this.getVectorStore()
+    // }
 
     protected buildRow(row: any, arrayProperties: string[], storeFields: string[]): any | undefined {
         // Ignore PouchDB design rows

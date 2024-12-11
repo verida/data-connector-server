@@ -1,19 +1,23 @@
 import { Tool } from "@langchain/core/tools";
 import { IContext } from "@verida/types";
 import { BaseQueryToolConfig, CouchDBQuerySchemaType } from "../../../services/interfaces";
+import { convertRecordsToRAGContext } from "../utils";
 
 export class BaseQueryTool extends Tool {
   private context: IContext
   private config: BaseQueryToolConfig
+  private tokenLimit: number
 
   name = ""
   description = ""
 
-  constructor(context: IContext, config: BaseQueryToolConfig) {
+  constructor(context: IContext, tokenLimit: number, config: BaseQueryToolConfig) {
     super()
     this.context = context
     this.config = config
+    this.tokenLimit = tokenLimit
     this.description = `Input to this tool is a detailed and correct CouchDB query of ${this.getConfig().extraDetail} with the following schema ${this.getConfig().schemaDefinition}.
+    Ensure you only use valid CouchDB operators in the selector.
     Set count=true to return the number of matching results, rather than the results themselves.
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
@@ -26,7 +30,6 @@ export class BaseQueryTool extends Tool {
 
   /** @ignore */
   public async _call(args: string) {
-    console.log(`Calling ${this.name} ${args}`)
     const config = this.getConfig()
 
     try {
@@ -39,6 +42,9 @@ export class BaseQueryTool extends Tool {
       let skip = params.skip || config.defaultParams.skip
 
       const db = await this.context.openDatastore(config.schemaUrl)
+
+      // Ensure we have the schema so we can convert to correct RAG context string
+      fields.push('schema')
 
       // If counting records, only fetch the _id field and fetch 1000 at a time
       if (params.count) {
@@ -55,7 +61,6 @@ export class BaseQueryTool extends Tool {
           })
 
           if (result.length < limit) {
-            console.log(result.length)
             return (loops*limit + result.length).toString()
           }
         }
@@ -68,9 +73,11 @@ export class BaseQueryTool extends Tool {
         skip
       })
 
-      return JSON.stringify(result)
+      // return JSON.stringify(result)
+      return convertRecordsToRAGContext(result, this.tokenLimit)
 
     } catch (error) {
+      console.error(error)
       return `${error}`;
     }
   }

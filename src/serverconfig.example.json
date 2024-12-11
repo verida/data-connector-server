@@ -42,6 +42,8 @@
             "bedrockAWSSecretAccessKey": "",
             "bedrockAWSRegion": "us-east-1",
             "groqKey": "",
+            "agentModel": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+            "agentTokenLimit": 100000,
             "defaultProvider": "bedrock",
             "defaultModel": "LLAMA3.1_70B"
         },
