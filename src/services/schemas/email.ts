@@ -20,6 +20,10 @@ class EmailDataSchema implements BaseDataSchema {
         return row.sentAt
     }
 
+    public getTimestampField(): string {
+        return "sentAt"
+    }
+
     public getGroupId(row: any): string | undefined {
         return undefined
     }
@@ -132,7 +136,7 @@ class EmailDataSchema implements BaseDataSchema {
   },
   "type": {
       "title": "Type",
-      "description": "Type of message (send, receive)",
+      "description": "Type of message (sent by me, received by me)",
       "type": "string",
       "enum": ["send", "receive"]
   },

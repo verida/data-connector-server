@@ -12,6 +12,10 @@ class FavouriteDataSchema implements BaseDataSchema {
         return row.insertedAt
     }
 
+    public getTimestampField(): string {
+        return "insertedAt"
+    }
+
     public getGroupId(row: any): string | undefined {
         return undefined
     }

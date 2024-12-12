@@ -12,12 +12,16 @@ class ChatGroupDataSchema implements BaseDataSchema {
         return row.insertedAt
     }
 
+    public getTimestampField(): string {
+        return "insertedAt"
+    }
+
     public getGroupId(row: any): string | undefined {
         return undefined
     }
 
     public getRagContent(row: any): string {
-        return `[ Chat Group ]\nID: ${row._id}\nGroup Name: ${row.name}\nDescription: ${row.description}\nURL: ${row.uri}\nSource: ${row.sourceApplication}})\n\n`
+        return `[ Chat Group ]\nID: ${row._id}\nGroup Name: ${row.name}\nDescription: ${row.description}\nURL: ${row.uri}\nSource: ${row.sourceApplication}\n\n`
     }
 
     public getName(): string {

@@ -14,6 +14,10 @@ class FollowingDataSchema implements BaseDataSchema {
         return row.followedTimestamp
     }
 
+    public getTimestampField(): string {
+        return "followedTimestamp"
+    }
+
     public getGroupId(row: any): string | undefined {
         return undefined
     }

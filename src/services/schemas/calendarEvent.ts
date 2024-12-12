@@ -12,6 +12,10 @@ class CalendarEventDataSchema implements BaseDataSchema {
         return row.start.dateTime
     }
 
+    public getTimestampField(): string {
+        return "start.dateTime"
+    }
+
     public getGroupId(row: any): string | undefined {
         return row.calendarId
     }
@@ -33,7 +37,7 @@ class CalendarEventDataSchema implements BaseDataSchema {
     }
     
     public getStoreFields(): string[] {
-        return ['_id', 'insertedAt', "start.dateTime"]
+        return ['_id', 'insertedAt', "start.dateTime", "schema"]
     }
     
     public getIndexFields(): string[] {

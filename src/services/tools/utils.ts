@@ -10,7 +10,7 @@ export function convertRecordsToRAGContext(docs: any, maxTokens: number = 100000
     let text = ""
     let i = 0
     for (const doc of docs) {
-        const dataSchema = dataSchemaDict[doc.schema]
+        const dataSchema = dataSchemaDict[doc.schema || doc.schemaUrl]
         const ragText = dataSchema.getRagContent(doc)
         const newText = `${text}\n\n${ragText}`
 

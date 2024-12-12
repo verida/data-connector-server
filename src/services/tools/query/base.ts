@@ -4,9 +4,9 @@ import { BaseQueryToolConfig, CouchDBQuerySchemaType } from "../../../services/i
 import { convertRecordsToRAGContext } from "../utils";
 
 export class BaseQueryTool extends Tool {
-  private context: IContext
+  protected context: IContext
   private config: BaseQueryToolConfig
-  private tokenLimit: number
+  protected tokenLimit: number
 
   name = ""
   description = ""
@@ -73,12 +73,15 @@ export class BaseQueryTool extends Tool {
         skip
       })
 
-      return convertRecordsToRAGContext(result, this.tokenLimit)
-
+      return await this.convertResult(result)
     } catch (error) {
       console.error(error)
       return `${error}`;
     }
+  }
+
+  protected async convertResult(result: any) {
+    return convertRecordsToRAGContext(result, this.tokenLimit)
   }
 
 }

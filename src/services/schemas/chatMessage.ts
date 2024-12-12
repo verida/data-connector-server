@@ -1,6 +1,7 @@
 import { BaseDataSchema } from "./base";
 import CONFIG from "../../config"
 import { CouchDBQuerySchemaType } from "../interfaces";
+import { getDataSchemas, getDataSchemasDict } from ".";
 
 class ChatMessageDataSchema implements BaseDataSchema {
 
@@ -9,7 +10,23 @@ class ChatMessageDataSchema implements BaseDataSchema {
     }
 
     public getRagContent(row: any): string {
-        return `[ Chat Message ]\nID: ${row._id}\nMessage Text: ${row.messageText}\nType (send/receive): ${row.type}\nFrom: ${row.fromName} (${row.fromHandle})\nGroup: ${row.groupName || "" }(${row.groupId})\nSource: ${row.sourceApplication}\nSent At: ${row.sentAt}\n\n`
+        if (row.group) {
+            const dataSchemasDict = getDataSchemasDict()
+            const chatGroupSchema = dataSchemasDict[CONFIG.verida.schemas.CHAT_GROUP]
+
+            let text = chatGroupSchema.getRagContent(row.group)
+            for (const message of row.messages) {
+                text += `${this.ragMessage(message)}`
+            }
+
+            return text
+        }
+
+        return this.ragMessage(row)
+    }
+
+    private ragMessage(row: any) {
+        return `[ Chat Message ]\nMessage Text: ${row.messageText}\nType (send/receive): ${row.type}\nFrom: ${row.fromName} (${row.fromHandle})\nGroup: ${row.groupName || "" }(${row.groupId})\nSource: ${row.sourceApplication}\nSent At: ${row.sentAt}\n\n`
     }
 
     public getName(): string {
@@ -22,6 +39,10 @@ class ChatMessageDataSchema implements BaseDataSchema {
 
     public getTimestamp(row: any): string {
         return row.sentAt
+    }
+
+    public getTimestampField(): string {
+        return "sentAt"
     }
     
     public getLabel(): string {
@@ -42,7 +63,7 @@ class ChatMessageDataSchema implements BaseDataSchema {
     
     public getDefaultQueryParams(): Partial<CouchDBQuerySchemaType> {
         return {
-            fields: ['_id', 'messageText', 'type', 'fromHandle', 'fromName', 'groupName', 'sentAt', 'sourceApplication'],
+            fields: ['_id', 'messageText', 'type', 'fromHandle', 'fromName', 'groupName', 'groupId', 'sentAt', 'sourceApplication'],
             sort: [{ "sentAt": "desc" }]
         }
     }

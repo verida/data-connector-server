@@ -13,8 +13,8 @@ export function getTools(context: IContext, tokenLimit: number = 100000): Record
     const tools: Record<string, Tool> = {}
 
     for (const dataSchema of dataSchemas) {
-        tools[`${dataSchema.getName()}Query`] = generateQueryToolFromDataSchema(dataSchema.getName(), dataSchema, context, tokenLimit)
         tools[`${dataSchema.getName()}Fetch`] = generateFetchToolFromDataSchema(dataSchema.getName(), dataSchema, context)
+        tools[`${dataSchema.getName()}Query`] = generateQueryToolFromDataSchema(dataSchema.getName(), dataSchema, context, tokenLimit)
     }
 
     // tools["VectoreStore"] = new VectoreStoreTool(context)
