@@ -9,7 +9,8 @@ export class ChatMessageQueryTool extends BaseQueryTool {
         const searchService = new SearchService(did, this.context)
         const chatMessages = await searchService.convertChatMessagesToThreads(result)
 
-        return await convertRecordsToRAGContext(chatMessages, this.tokenLimit)
+        const response = await convertRecordsToRAGContext(chatMessages, this.tokenLimit)
+        return response
       }
 
 }

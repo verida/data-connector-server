@@ -328,8 +328,9 @@ export class SearchService extends VeridaService {
         const searchResults = await dataService.searchIndex(messageSchemaUri, query, 50, 0.5, {
             filter: (result: any) => maxDatetime ? messageDataSchema.getTimestamp(result) > maxDatetime.toISOString() : true
         })
-        
-        return this.convertChatMessagesToThreads(searchResults)
+
+        const result = await this.convertChatMessagesToThreads(searchResults)
+        return result
     }
 
     public async multiByKeywords(searchTypes: SearchType[], keywordsList: string[], timeframe: KeywordSearchTimeframe, resultLimit: number = 20, outputRagString: boolean = false, minResultsPerType: number = 10) {
@@ -340,6 +341,7 @@ export class SearchService extends VeridaService {
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
 
         const searchResults = []
+        let chatThreadResults: any[] = []
         for (const searchType of searchTypes) {
             const schemaUri = SearchTypeToSchemaType[searchType]
 
@@ -352,10 +354,8 @@ export class SearchService extends VeridaService {
 
             if (dataSchema.getName() == "ChatMessage") {
                 const results = await this.chatThreadsByKeywords(keywordsList, timeframe, 10, resultLimit)
-                searchResults.push({
-                    searchType,
-                    rows: results
-                })
+                
+                chatThreadResults = results
             } else {
                 const miniSearchIndex = await dataService.getIndex(schemaUri)
                 // console.log('searching ', miniSearchIndex.documentCount, query)
@@ -372,7 +372,17 @@ export class SearchService extends VeridaService {
             }
         }
 
-        return this.rankAndMergeResults(searchResults, resultLimit, outputRagString, minResultsPerType)
+        const result = await this.rankAndMergeResults(searchResults, resultLimit, outputRagString, minResultsPerType)
+        if (chatThreadResults) {
+            let messages: any[] = []
+            for (const chatThread of chatThreadResults) {
+                messages = messages.concat(chatThread.messages)
+            }
+
+            return messages.concat(result)
+        }
+
+        return result
     }
 
 }

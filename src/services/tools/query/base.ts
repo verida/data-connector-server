@@ -17,7 +17,7 @@ export class BaseQueryTool extends Tool {
     this.config = config
     this.tokenLimit = tokenLimit
     this.description = `Input to this tool is a detailed and correct CouchDB query of ${this.getConfig().extraDetail} with the following schema ${this.getConfig().schemaDefinition}.
-    Ensure you only use valid CouchDB operators in the selector.
+    Ensure you only use valid CouchDB operators in the selector. Any regular expressions must use javascript syntax. Don't use case insensitive groups (?i) as they are not supported.
     Set count=true to return the number of matching results, rather than the results themselves.
     If the query is not correct, an error message will be returned.
     If an error is returned, rewrite the query, check the query, and try again.
@@ -73,7 +73,8 @@ export class BaseQueryTool extends Tool {
         skip
       })
 
-      return await this.convertResult(result)
+      const response = await this.convertResult(result)
+      return response
     } catch (error) {
       console.error(error)
       return `${error}`;
