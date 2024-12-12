@@ -8,6 +8,8 @@ import { PromptSearchServiceConfig } from "../../../../services/assistants/inter
 import { PromptSearch } from "../../../../services/tools/promptSearch";
 import { LLMProvider, ProviderModels } from "../../../../services/llmmodels";
 import CONFIG from "../../../../config"
+// import { TimmyTool } from "../../../../services/assistants/timmy-tool";
+import { Agent } from "../../../../services/assistants/agent";
 const _ = require('lodash')
 
 const DEFAULT_LLM_MODEL = CONFIG.verida.llms.defaultModel
@@ -195,6 +197,11 @@ export class LLMController {
             const did = await account.did()
             const data = new DataService(did, context)
 
+            const hotLoadItems = {
+                keywordIndex: (req.query.keywordIndex == "true" || typeof(req.query.keywordIndex) == 'undefined' ? true : false),
+                vectorDb: req.query.vectorDb ? true : false
+            }
+
             data.on('progress', (progress: HotLoadProgress) => {
                 res.write(`data: ${JSON.stringify(progress)}\n\n`)
             })
@@ -207,9 +214,34 @@ export class LLMController {
             // Tell the client to retry every 10 seconds if connectivity is lost
             res.write('retry: 10000\n\n')
 
-            await data.hotLoad()
+            if (hotLoadItems.keywordIndex) {
+                await data.hotLoadIndexes()
+            }
+
+            // if (hotLoadItems.vectorDb) {
+            //     await data.hotLoadVectorStore()
+            // }
+
             res.end()
         } catch (error) {
+            console.error(error)
+            res.write(`data: ${JSON.stringify({
+                success: false,
+                error: error.message
+            })}\n\n`)
+            res.end()
+        }
+    }
+
+    public async agent(req: Request, res: Response) {
+        try {
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const temperature = req.body.temperature ? parseInt(req.body.temperature.toString()) : 0
+
+            const rag = new Agent()
+            const result = await rag.run(req.body.prompt, context, temperature)
+            return res.json(result)
+        } catch (error: any) {
             console.error(error)
             res.write(`data: ${JSON.stringify({
                 success: false,

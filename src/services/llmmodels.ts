@@ -25,6 +25,11 @@ export enum LLMProvider {
         systemPrompt: true,
         contextTokens: 128000
       },
+      "LLAMA3.2_11B": {
+        modelId: `arn:aws:bedrock:us-east-1:${AWS_ACCOUNT_ID}:inference-profile/us.meta.llama3-2-11b-instruct-v1:0`,
+        systemPrompt: true,
+        contextTokens: 128000
+      },
       "LLAMA3.2_1B": {
         modelId: `arn:aws:bedrock:us-east-1:${AWS_ACCOUNT_ID}:inference-profile/us.meta.llama3-2-1b-instruct-v1:0`,
         systemPrompt: true,
