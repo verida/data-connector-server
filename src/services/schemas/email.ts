@@ -44,7 +44,7 @@ class EmailDataSchema implements BaseDataSchema {
     }
 
     public getRagContent(row: any): string {
-        return `Subject: ${row.name}\nTo: ${row.toName} <${row.toEmail}>\nFrom: ${row.fromName} <${row.fromEmail}>\nSent Date/time: ${row.sentAt}\nSource: ${row.sourceApplication}\nBody: ${this.getBodyText(row)}\n\n`
+        return `[ Email ]\nID: ${row._id}\nSubject: ${row.name}\nTo: ${row.toName} <${row.toEmail}>\nFrom: ${row.fromName} <${row.fromEmail}>\nSent Date/time: ${row.sentAt}\nSource: ${row.sourceApplication}\nBody: ${this.getBodyText(row)}\n\n`
     }
 
     public getName(): string {
@@ -69,7 +69,7 @@ class EmailDataSchema implements BaseDataSchema {
     
     public getDefaultQueryParams(): Partial<CouchDBQuerySchemaType> {
         return {
-            fields: ['name', 'type', 'fromName', 'fromEmail', 'messageText', 'sentAt'],
+            fields: ['_id', 'name', 'type', 'fromName', 'fromEmail', 'messageText', 'sentAt', 'sourceApplication'],
             sort: [{ "sentAt": "desc" }]
         }
     }
@@ -160,7 +160,12 @@ class EmailDataSchema implements BaseDataSchema {
       "title": "Source data",
       "type": "string",
       "format": "date-time"
-  }
+  },
+  "sourceApplication": {
+            "title": "Source application",
+            "description": "Name of the application this data was sourced from",
+            "type": "string"
+    }
 }
 `;
     }

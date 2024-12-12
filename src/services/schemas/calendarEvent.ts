@@ -17,7 +17,7 @@ class CalendarEventDataSchema implements BaseDataSchema {
     }
 
     public getRagContent(row: any): string {
-        return `Type: Calendar Event\nName: ${row.name}\nDescription: ${row.description}\nStatus: ${row.status}\nCreator: ${JSON.stringify(row.creator)}\nAttendees: ${JSON.stringify(row.attendees)}\nLocation: ${row.location}\nStart: ${row.start.dateTime}\nSource: ${row.sourceApplication}})\n\n`
+        return `[ Calendar Event ]\nID: ${row._id}\nEvent Name: ${row.name}\nDescription: ${row.description}\nStatus: ${row.status}\nCreator: ${JSON.stringify(row.creator)}\nAttendees: ${JSON.stringify(row.attendees)}\nLocation: ${row.location}\nStart: ${row.start.dateTime}\nSource: ${row.sourceApplication}})\n\n`
     }
 
     public getName(): string {
@@ -43,7 +43,7 @@ class CalendarEventDataSchema implements BaseDataSchema {
     
     public getDefaultQueryParams(): Partial<CouchDBQuerySchemaType> {
         return {
-            fields: ['name', 'status', 'description', 'calendarId', 'location', 'creator', 'start', 'end'],
+            fields: ['_id', 'name', 'status', 'description', 'calendarId', 'location', 'creator', 'start', 'end', 'sourceApplication'],
             sort: [{ "start.dateTime": "desc" }]
         }
     }
@@ -170,6 +170,11 @@ class CalendarEventDataSchema implements BaseDataSchema {
                 }
             }
         }
+    },
+  "sourceApplication": {
+            "title": "Source application",
+            "description": "Name of the application this data was sourced from",
+            "type": "string"
     },
     "$defs": {
         "person": {

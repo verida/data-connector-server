@@ -2,6 +2,7 @@ import { Tool } from "@langchain/core/tools";
 import { IContext } from "@verida/types";
 import { getDataSchemas } from "../schemas";
 import { generateQueryToolFromDataSchema } from "./query";
+import { generateFetchToolFromDataSchema } from "./fetch";
 import { KeywordIndexTool } from "./keywordIndex";
 import { TavilySearchResults } from "@langchain/community/tools/tavily_search"
 import CONFIG from "../../config"
@@ -13,6 +14,7 @@ export function getTools(context: IContext, tokenLimit: number = 100000): Record
 
     for (const dataSchema of dataSchemas) {
         tools[`${dataSchema.getName()}Query`] = generateQueryToolFromDataSchema(dataSchema.getName(), dataSchema, context, tokenLimit)
+        tools[`${dataSchema.getName()}Fetch`] = generateFetchToolFromDataSchema(dataSchema.getName(), dataSchema, context)
     }
 
     // tools["VectoreStore"] = new VectoreStoreTool(context)

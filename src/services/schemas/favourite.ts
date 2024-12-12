@@ -17,7 +17,7 @@ class FavouriteDataSchema implements BaseDataSchema {
     }
 
     public getRagContent(row: any): string {
-        return `Name: ${row.name}\nFavourite Type: ${row.favouriteType}\nContent Type: ${row.contentType}\nDescription: ${row.description || ""}\nURI: ${row.uri}\nSource: ${row.sourceApplication}\nInserted: ${row.insertedAt}\n\n`
+        return `[ Favourite ]\nID: ${row._id}\nName: ${row.name}\nFavourite Type: ${row.favouriteType}\nContent Type: ${row.contentType}\nDescription: ${row.description || ""}\nURI: ${row.uri}\nSource: ${row.sourceApplication}\nInserted: ${row.insertedAt}\n\n`
     }
 
     public getName(): string {
@@ -42,7 +42,7 @@ class FavouriteDataSchema implements BaseDataSchema {
     
     public getDefaultQueryParams(): Partial<CouchDBQuerySchemaType> {
         return {
-            fields: ['name', 'favouriteType', 'uri', 'contentType', 'description','sourceApplication', 'insertedAt'],
+            fields: ['_id', 'name', 'favouriteType', 'uri', 'contentType', 'description','sourceApplication', 'insertedAt'],
             sort: [{ "insertedAt": "desc" }]
         }
     }

@@ -19,8 +19,9 @@ export class Agent {
 
     const tools = Object.values(toolsByName)
 
+    const now = (new Date()).toISOString()
     const prompt = ChatPromptTemplate.fromMessages([
-        ["system", "You are a helpful assistant. I have consented to you to have access to all my personal data via tools. You will not ask follow up questions."],
+        ["system", `You are a helpful assistant. I have consented to you to have access to all my personal data via tools. You will not ask follow up questions. The current time is: ${now}`],
         ["placeholder", "{chat_history}"],
         ["human", "{input}"],
         ["placeholder", "{agent_scratchpad}"],

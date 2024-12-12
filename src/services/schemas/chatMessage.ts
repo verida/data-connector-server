@@ -9,7 +9,7 @@ class ChatMessageDataSchema implements BaseDataSchema {
     }
 
     public getRagContent(row: any): string {
-        return `Message Text: ${row.messageText}\nType (send/receive): ${row.type}\nFrom: ${row.fromName} (${row.fromHandle})\nGroup: ${row.groupName || "" }(${row.groupId})\nSource: ${row.sourceApplication}\nSent At: ${row.sentAt}\n\n`
+        return `[ Chat Message ]\nID: ${row._id}\nMessage Text: ${row.messageText}\nType (send/receive): ${row.type}\nFrom: ${row.fromName} (${row.fromHandle})\nGroup: ${row.groupName || "" }(${row.groupId})\nSource: ${row.sourceApplication}\nSent At: ${row.sentAt}\n\n`
     }
 
     public getName(): string {
@@ -42,7 +42,7 @@ class ChatMessageDataSchema implements BaseDataSchema {
     
     public getDefaultQueryParams(): Partial<CouchDBQuerySchemaType> {
         return {
-            fields: ['messageText', 'type', 'fromHandle', 'fromName', 'groupName', 'sentAt', 'sourceApplication'],
+            fields: ['_id', 'messageText', 'type', 'fromHandle', 'fromName', 'groupName', 'sentAt', 'sourceApplication'],
             sort: [{ "sentAt": "desc" }]
         }
     }
@@ -88,6 +88,11 @@ class ChatMessageDataSchema implements BaseDataSchema {
         "title": "Sent at",
         "type": "string",
         "format": "date-time"
+    },
+  "sourceApplication": {
+            "title": "Source application",
+            "description": "Name of the application this data was sourced from",
+            "type": "string"
     }
 }
 `;

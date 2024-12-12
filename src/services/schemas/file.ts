@@ -19,7 +19,7 @@ class FileDataSchema implements BaseDataSchema {
     }
 
     public getRagContent(row: any): string {
-        return `File name: ${row.name}\nFile content:${row.contentText.substring(0, MAX_FILE_LENGTH)}\nSource:${row.sourceApplication})\n\n`
+        return `[ File ]\nID: ${row._id}\nFile name: ${row.name}\nFile content:${row.contentText.substring(0, MAX_FILE_LENGTH)}\nSource:${row.sourceApplication})\n\n`
     }
     
     public getName(): string {
@@ -44,7 +44,7 @@ class FileDataSchema implements BaseDataSchema {
     
     public getDefaultQueryParams(): Partial<CouchDBQuerySchemaType> {
         return {
-            fields: ['name', 'size', 'contextText', 'uri', 'extension', 'mimeType', 'insertedAt'],
+            fields: ['_id', 'name', 'size', 'contentText', 'uri', 'extension', 'mimeType', 'insertedAt', 'sourceApplication'],
             sort: [{ "insertedAt": "desc" }]
         }
     }
@@ -92,6 +92,11 @@ class FileDataSchema implements BaseDataSchema {
         "description": "Date/time this record was inserted",
         "type": "string",
         "format": "date-time"
+    },
+  "sourceApplication": {
+            "title": "Source application",
+            "description": "Name of the application this data was sourced from",
+            "type": "string"
     }
 }
 `;

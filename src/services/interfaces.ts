@@ -21,3 +21,7 @@ export interface BaseQueryToolConfig {
     defaultParams: Partial<CouchDBQuerySchemaType>
     extraDetail: string
 }
+
+export interface BaseFetchToolConfig {
+  schemaUrl: string
+}

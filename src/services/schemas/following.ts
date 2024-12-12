@@ -19,7 +19,7 @@ class FollowingDataSchema implements BaseDataSchema {
     }
 
     public getRagContent(row: any): string {
-        return `Following name: ${row.name}Description:\n${row.description?.substring(0, MAX_DESCRIPTION)}\nSource: ${row.sourceApplication})\n\n`
+        return `[ Following ]\nID: ${row._id}\nFollowing name: ${row.name}Description:\n${row.description?.substring(0, MAX_DESCRIPTION)}\nSource: ${row.sourceApplication})\n\n`
     }
 
     public getName(): string {
@@ -44,7 +44,7 @@ class FollowingDataSchema implements BaseDataSchema {
     
     public getDefaultQueryParams(): Partial<CouchDBQuerySchemaType> {
         return {
-            fields: ['name', 'uri', 'followedTimestamp'],
+            fields: ['_id', 'name', 'uri', 'followedTimestamp', 'sourceApplication'],
             sort: [{ "followedTimestamp": "desc" }]
         }
     }
@@ -70,6 +70,11 @@ class FollowingDataSchema implements BaseDataSchema {
         "title": "Followed timestamp",
         "type": "string",
         "format": "date-time"
+    },
+  "sourceApplication": {
+            "title": "Source application",
+            "description": "Name of the application this data was sourced from",
+            "type": "string"
     }
 }
 `;

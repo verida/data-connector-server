@@ -17,7 +17,7 @@ class ChatGroupDataSchema implements BaseDataSchema {
     }
 
     public getRagContent(row: any): string {
-        return `Group Name: ${row.name}\nDescription: ${row.description}\nURL: ${row.uri}\nSource: ${row.sourceApplication}})\n\n`
+        return `[ Chat Group ]\nID: ${row._id}\nGroup Name: ${row.name}\nDescription: ${row.description}\nURL: ${row.uri}\nSource: ${row.sourceApplication}})\n\n`
     }
 
     public getName(): string {
@@ -42,7 +42,7 @@ class ChatGroupDataSchema implements BaseDataSchema {
     
     public getDefaultQueryParams(): Partial<CouchDBQuerySchemaType> {
         return {
-            fields: ['name', 'description', 'uri', 'insertedAt'],
+            fields: ['_id', 'name', 'description', 'uri', 'insertedAt', 'sourceApplication'],
             sort: [{ "insertedAt": "desc" }]
         }
     }
@@ -74,7 +74,12 @@ class ChatGroupDataSchema implements BaseDataSchema {
                     "description": "Date/time this record was inserted",
                     "type": "string",
                     "format": "date-time"
-                }
+                },
+  "sourceApplication": {
+            "title": "Source application",
+            "description": "Name of the application this data was sourced from",
+            "type": "string"
+    }
             }
 `;
     }

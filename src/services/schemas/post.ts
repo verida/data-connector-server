@@ -17,7 +17,7 @@ class PostDataSchema implements BaseDataSchema {
     }
 
     public getRagContent(row: any): string {
-        return `Name: ${row.name}\nType: ${row.type}\nContent: ${row.content}\nURL: ${row.uri}\nSource: ${row.fromName} (${row.fromHandle}) via ${row.sourceApplication}})\n\n`
+        return `[ Social Post ]\nID: ${row._id}\nName: ${row.name}\nType: ${row.type}\nContent: ${row.content}\nURL: ${row.uri}\nSource: ${row.fromName} (${row.fromHandle}) via ${row.sourceApplication}})\n\n`
     }
 
     public getName(): string {
@@ -42,7 +42,7 @@ class PostDataSchema implements BaseDataSchema {
     
     public getDefaultQueryParams(): Partial<CouchDBQuerySchemaType> {
         return {
-            fields: ['name', 'type', 'content', 'uri'],
+            fields: ['_id', 'name', 'type', 'content', 'uri', 'sourceApplication'],
             sort: [{ "insertedAt": "desc" }]
         }
     }
@@ -86,6 +86,11 @@ class PostDataSchema implements BaseDataSchema {
         "description": "Date/time this record was inserted",
         "type": "string",
         "format": "date-time"
+    },
+  "sourceApplication": {
+            "title": "Source application",
+            "description": "Name of the application this data was sourced from",
+            "type": "string"
     }
 }
 `;
