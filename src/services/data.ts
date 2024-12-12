@@ -5,10 +5,10 @@ import { EventEmitter } from 'events'
 import MiniSearch, { SearchOptions, SearchResult } from 'minisearch';
 import { getDataSchemas, getDataSchemasDict } from './schemas';
 import { BaseDataSchema } from './schemas/base';
-import { VectorStore } from "@langchain/core/vectorstores";
+// import { VectorStore } from "@langchain/core/vectorstores";
 
 export const indexCache: Record<string, MiniSearch<any>> = {}
-export const vectorCache: Record<string, VectorStore> = {}
+// export const vectorCache: Record<string, VectorStore> = {}
 
 // const vectorStoreDataDir = "./vectorstores"
 
