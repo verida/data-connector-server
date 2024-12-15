@@ -192,7 +192,8 @@ export class BedrockLLM implements LLM {
 
       // @ts-ignore
       return {
-        textResponse: response.output.message.content[0].text
+        textResponse: response.output.message.content[0].text,
+        usage: response.usage
       }
 
     } catch (error: any) {

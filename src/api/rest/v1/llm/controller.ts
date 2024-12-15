@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prompt as LLMPrompt, OpenAIConfig, getLLM } from '../../../../services/llm'
+import { prompt as LLMPrompt, OpenAIConfig, getLLM, stripNonJson } from '../../../../services/llm'
 import { PromptSearchService } from '../../../../services/assistants/search'
 import { Utils } from "../../../../utils";
 import { HotLoadProgress } from "../../../../services/data";
@@ -8,6 +8,8 @@ import { PromptSearchServiceConfig } from "../../../../services/assistants/inter
 import { PromptSearch } from "../../../../services/tools/promptSearch";
 import { LLMProvider, ProviderModels } from "../../../../services/llmmodels";
 import CONFIG from "../../../../config"
+// import { TimmyTool } from "../../../../services/assistants/timmy-tool";
+import { Agent } from "../../../../services/assistants/agent";
 const _ = require('lodash')
 
 const DEFAULT_LLM_MODEL = CONFIG.verida.llms.defaultModel
@@ -94,54 +96,26 @@ export class LLMController {
     }
 
     public async profilePrompt(req: Request, res: Response) {
+        let result: any = {}
         try {
             const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
-            const did = await account.did()
 
             const schema = req.body.schema
             const promptSearchTip = req.body.promptSearchTip
-            const outputSystemPrompt = req.body.systemPrompt || false
+            // const outputSystemPrompt = req.body.systemPrompt || false
+            const prompt = `Analyse my data to populate a JSON object that matches this schema.${promptSearchTip ? promptSearchTip + "\n\n": ""}{\n\n${schema}\n\nOutput JSON only.`
 
-            const {
-                customEndpoint,
-                llmModelId,
-                llmProvider,
-                llmTokenLimit
-            } = buildLLMConfig(req)
+            const rag = new Agent()
+            result = await rag.run(prompt, context)
+            result.response.output = JSON.parse(stripNonJson(result.response.output))
 
-            const llm = getLLM(llmProvider, llmModelId, llmTokenLimit, customEndpoint)
-
-            let promptSearchResult = undefined
-            if (promptSearchTip) {
-                const promptSearch = new PromptSearch(llm)
-                promptSearchResult = await promptSearch.search(promptSearchTip)
-            }
-
-            const prompt = `Analyse my data to populate a JSON object that matches this schema.\n\n${schema}`
-            const promptConfig: PromptSearchServiceConfig = req.body.promptConfig ? req.body.promptConfig : {}
-            promptConfig.jsonFormat = true
-            promptConfig.promptSearchConfig = promptSearchResult
-
-            const promptService = new PromptSearchService(did, context)
-            const promptResult = await promptService.prompt(prompt, llm, promptConfig)
-
-            if (!outputSystemPrompt) {
-                promptResult.systemPrompt = undefined
-            }
-
-            promptResult.result = JSON.parse(promptResult.result)
-
-            promptResult.llm = {
-                provider: llmProvider,
-                model: llmModelId
-            }
-
-            return res.json(promptResult)
+            return res.json(result)
         } catch (error) {
             console.error(error)
             res.status(500).send({
                 success: false,
-                error: error.message
+                error: error.message,
+                result
             });
         }
     }
@@ -195,6 +169,11 @@ export class LLMController {
             const did = await account.did()
             const data = new DataService(did, context)
 
+            const hotLoadItems = {
+                keywordIndex: (req.query.keywordIndex == "true" || typeof(req.query.keywordIndex) == 'undefined' ? true : false),
+                vectorDb: req.query.vectorDb ? true : false
+            }
+
             data.on('progress', (progress: HotLoadProgress) => {
                 res.write(`data: ${JSON.stringify(progress)}\n\n`)
             })
@@ -207,9 +186,34 @@ export class LLMController {
             // Tell the client to retry every 10 seconds if connectivity is lost
             res.write('retry: 10000\n\n')
 
-            await data.hotLoad()
+            if (hotLoadItems.keywordIndex) {
+                await data.hotLoadIndexes()
+            }
+
+            // if (hotLoadItems.vectorDb) {
+            //     await data.hotLoadVectorStore()
+            // }
+
             res.end()
         } catch (error) {
+            console.error(error)
+            res.write(`data: ${JSON.stringify({
+                success: false,
+                error: error.message
+            })}\n\n`)
+            res.end()
+        }
+    }
+
+    public async agent(req: Request, res: Response) {
+        try {
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const temperature = req.body.temperature ? parseInt(req.body.temperature.toString()) : 0
+
+            const rag = new Agent()
+            const result = await rag.run(req.body.prompt, context, temperature)
+            return res.json(result)
+        } catch (error: any) {
             console.error(error)
             res.write(`data: ${JSON.stringify({
                 success: false,
