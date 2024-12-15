@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prompt as LLMPrompt, OpenAIConfig, getLLM } from '../../../../services/llm'
+import { prompt as LLMPrompt, OpenAIConfig, getLLM, stripNonJson } from '../../../../services/llm'
 import { PromptSearchService } from '../../../../services/assistants/search'
 import { Utils } from "../../../../utils";
 import { HotLoadProgress } from "../../../../services/data";
@@ -96,54 +96,26 @@ export class LLMController {
     }
 
     public async profilePrompt(req: Request, res: Response) {
+        let result: any = {}
         try {
             const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
-            const did = await account.did()
 
             const schema = req.body.schema
             const promptSearchTip = req.body.promptSearchTip
-            const outputSystemPrompt = req.body.systemPrompt || false
+            // const outputSystemPrompt = req.body.systemPrompt || false
+            const prompt = `Analyse my data to populate a JSON object that matches this schema.${promptSearchTip ? promptSearchTip + "\n\n": ""}{\n\n${schema}\n\nOutput JSON only.`
 
-            const {
-                customEndpoint,
-                llmModelId,
-                llmProvider,
-                llmTokenLimit
-            } = buildLLMConfig(req)
+            const rag = new Agent()
+            result = await rag.run(prompt, context)
+            result.response.output = JSON.parse(stripNonJson(result.response.output))
 
-            const llm = getLLM(llmProvider, llmModelId, llmTokenLimit, customEndpoint)
-
-            let promptSearchResult = undefined
-            if (promptSearchTip) {
-                const promptSearch = new PromptSearch(llm)
-                promptSearchResult = await promptSearch.search(promptSearchTip)
-            }
-
-            const prompt = `Analyse my data to populate a JSON object that matches this schema.\n\n${schema}`
-            const promptConfig: PromptSearchServiceConfig = req.body.promptConfig ? req.body.promptConfig : {}
-            promptConfig.jsonFormat = true
-            promptConfig.promptSearchConfig = promptSearchResult
-
-            const promptService = new PromptSearchService(did, context)
-            const promptResult = await promptService.prompt(prompt, llm, promptConfig)
-
-            if (!outputSystemPrompt) {
-                promptResult.systemPrompt = undefined
-            }
-
-            promptResult.result = JSON.parse(promptResult.result)
-
-            promptResult.llm = {
-                provider: llmProvider,
-                model: llmModelId
-            }
-
-            return res.json(promptResult)
+            return res.json(result)
         } catch (error) {
             console.error(error)
             res.status(500).send({
                 success: false,
-                error: error.message
+                error: error.message,
+                result
             });
         }
     }
