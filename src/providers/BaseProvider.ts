@@ -260,11 +260,18 @@ export default class BaseProvider extends EventEmitter {
                 }
             }
 
-            await this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
-
             this.connection.syncStatus = SyncStatus.ACTIVE
             this.connection.syncStart = Utils.nowTimestamp()
-            await this.saveConnection()
+
+            try {
+                await this.saveConnection()
+            } catch (err) {
+                if (err.message.match('Document update conflict')) {
+                    throw new Error(`Sync has already been requested`)
+                }
+
+                throw err
+            }
 
             const syncHandlers = await this.getSyncHandlers()
             const api = await this.getApi(accessToken, refreshToken)
@@ -318,6 +325,7 @@ export default class BaseProvider extends EventEmitter {
 
             return this.connection
         } catch (err: any) {
+            console.error(err)
             await this.logMessage(SyncProviderLogLevel.ERROR, `Sync error for ${this.getProviderId()} (${err.message})`)
         }
     }
@@ -411,9 +419,9 @@ export default class BaseProvider extends EventEmitter {
 
         if (syncPosition.status == SyncHandlerStatus.SYNCING && !force) {
             // Check for sync timeout
-            const timedOut = await this.isTimedOut()
+            const timedOut = await this.isTimedOut(handler)
             if (timedOut) {
-                await this.logMessage(SyncProviderLogLevel.ERROR, `Sync timeout has been detected, so reseting and initiating sync`, handler.getId())
+                await this.logMessage(SyncProviderLogLevel.ERROR, `Sync timeout has been detected, so resetting and initiating sync`, handler.getId())
                 syncPosition.syncMessage = `Sync timeout has been detected, so resetting`
             } else {
                 await this.logMessage(SyncProviderLogLevel.INFO, `Sync is active for ${handler.getLabel()}, skipping`)
@@ -445,6 +453,8 @@ export default class BaseProvider extends EventEmitter {
         syncPosition.latestSyncStart = Utils.nowTimestamp()
         syncPosition.syncMessage = `Sync starting`
         syncPosition.status = SyncHandlerStatus.SYNCING
+
+        await this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`, handler.getId())
 
         delete syncPosition['_rev']
         await syncPositionsDs.save(syncPosition, {

@@ -198,7 +198,7 @@ export interface SyncProviderLogEntry {
     accountId?: string
     handlerId?: string
     schemaUri?: string
-    message: string
+    message: string | object
     level: SyncProviderLogLevel
 }
 
