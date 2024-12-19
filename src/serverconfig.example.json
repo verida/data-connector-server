@@ -129,6 +129,14 @@
             "messagesPerGroupLimit": 100,
             "maxGroupSize": 50,
             "useDbPos": true
+        },
+        "github": {
+            "status": "active",
+            "label": "Github",
+            "clientId": "",
+            "clientSecret": "",
+            "batchSize": 50,            
+            "maxSyncLoops": 1
         }
     },
     "providerDefaults": {
