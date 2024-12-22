@@ -1,4 +1,13 @@
 
+2024-12-23 (v0.3.0)
+------------------
+
+- Fix: Timeout detection was always incorrect due to handler start log message
+- Fix: Only log sync is starting if it passes all checks successfully
+- Fix: Correctly handle document update conflicts caused when a sync is requested a second time, when already active
+- Fix: Correctly populate handler sync start and end timestamps
+- Feature: Support separate handler vs connection timeout config
+
 2024-11-25 (v0.2.0)
 ------------------
 
