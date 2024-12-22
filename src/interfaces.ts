@@ -113,7 +113,7 @@ export interface Connection {
     profile: ConnectionProfile
     syncStatus: SyncStatus
     syncFrequency: SyncFrequency
-    syncStart?: string
+    syncStart?: string | object
     syncEnd?: string
     syncNext?: string
     syncMessage?: string

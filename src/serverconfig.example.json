@@ -49,7 +49,8 @@
             "defaultModel": "LLAMA3.1_70B"
         },
         "maxHandlerRetries": 5,
-        "providerTimeoutMins": 15
+        "providerTimeoutMins": 15,
+        "handlerTimeoutMins": 15
     },
     "providers": {
         "mock": {
