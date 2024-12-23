@@ -125,7 +125,7 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
       items = resultData.items;
 
       if (!items.length) {
-        syncPosition.syncMessage = `No transcripts found within specified range.`;
+        syncPosition.syncMessage = "No transcripts found within specified range.";
         syncPosition.status = SyncHandlerStatus.ENABLED;
       } else {
         syncPosition.syncMessage = `Fetched ${items.length} transcripts.`;
@@ -187,7 +187,9 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
           : [],
         meetingAttendees: transcript.meeting_attendees
           ? transcript.meeting_attendees.map((attendee: any) => ({
-              displayName: attendee.displayName,
+              displayName: typeof attendee.displayName === 'string' && attendee.displayName.trim() 
+                ? attendee.displayName.trim() 
+                : 'Unknown',
               email: attendee.email,
               phoneNumber: attendee.phoneNumber,
               name: attendee.name,
