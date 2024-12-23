@@ -22,7 +22,7 @@ export interface SyncTranscriptItemsResult extends SyncItemsResult {
 }
 
 export default class MeetingTranscriptHandler extends BaseSyncHandler {
-  
+
   protected config: BaseHandlerConfig;
 
   public getLabel(): string {
@@ -64,7 +64,7 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
     api: any,
     syncPosition: SyncHandlerPosition
   ): Promise<SyncResponse> {
-    
+
     try {
       if (this.config.batchSize > MAX_BATCH_SIZE) {
         throw new Error(`Batch size (${this.config.batchSize}) is larger than permitted (${MAX_BATCH_SIZE})`);
@@ -115,7 +115,7 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
 
       const variables = {
         limit: this.config.batchSize,
-        skip: currentRange.startId || 0      
+        skip: currentRange.startId || 0
       };
 
       const response = await client.executeQuery<any>(query, variables)
@@ -153,10 +153,10 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
   ): Promise<SyncTranscriptItemsResult> {
     const results: SchemaMeetingTranscript[] = [];
     let breakHit: SyncItemsBreak | undefined;
-  
+
     for (const transcript of transcripts) {
       const transcriptId = transcript.id;
-  
+
       // Check for the break ID to stop processing
       if (transcriptId === breakId) {
         this.emit('log', {
@@ -166,7 +166,7 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
         breakHit = SyncItemsBreak.ID;
         break;
       }
-  
+
       // Map transcript fields to SchemaMeetingTranscript
       results.push({
         _id: this.buildItemId(transcriptId), // Unique ID for each transcript
@@ -174,43 +174,50 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
         organizerEmail: transcript.organizer_email,
         user: transcript.user
           ? {
-              email: transcript.user.email,
-              displayName: transcript.user.name || 'Unknown',
-              name: transcript.user.name || undefined,
-            }
+            email: transcript.user.email,
+            displayName: transcript.user.name || 'Unknown',
+            name: transcript.user.name || undefined,
+          }
           : undefined,
         speakers: transcript.speakers
           ? transcript.speakers.map((speaker: any) => ({
-              displayName: speaker.name,
-              email: speaker?.email,
-            }))
+            displayName: speaker.name,
+            email: speaker?.email,
+          }))
           : [],
         meetingAttendees: transcript.meeting_attendees
           ? transcript.meeting_attendees.map((attendee: any) => ({
-              displayName: typeof attendee.displayName === 'string' && attendee.displayName.trim() 
-                ? attendee.displayName.trim() 
-                : 'Unknown',
-              email: attendee.email,
-              phoneNumber: attendee.phoneNumber,
-              name: attendee.name,
-            }))
+            displayName: typeof attendee.displayName === 'string' && attendee.displayName.trim()
+              ? attendee.displayName.trim()
+              : 'Unknown',
+            email: typeof attendee.email === 'string' && attendee.email.trim()
+              ? attendee.email.trim()
+              : 'Unknown',
+            phoneNumber: typeof attendee.phoneNumber === 'string' && attendee.phoneNumber.trim()
+              ? attendee.phoneNumber.trim()
+              : 'Unknown',
+            name: typeof attendee.name === 'string' && attendee.name.trim()
+              ? attendee.name.trim()
+              : 'Unknown',
+          }))
           : [],
+
         duration: transcript.duration,
         dateTime: transcript.date || undefined,
         sentence: transcript.sentences
           ? transcript.sentences.map((sentence: any) => ({
-              rawText: sentence.raw_text,
-              speakerName: sentence.speaker_name,
-            }))
+            rawText: sentence.raw_text,
+            speakerName: sentence.speaker_name,
+          }))
           : [],
         calendarEventId: transcript.cal_id || undefined,
         insertedAt: new Date().toISOString(), // Add the current timestamp
       });
     }
-  
+
     return {
       items: results,
       breakHit, // Indicates if a break ID was encountered
     };
-  }  
+  }
 }
