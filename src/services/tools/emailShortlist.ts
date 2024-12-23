@@ -36,7 +36,7 @@ export class EmailShortlist {
 
         userPrompt += `\nMaximum of ${limit} email IDs`
         const response = await this.llm.prompt(userPrompt, systemPrompt)
-        const jsonResponse: any = JSON.parse(response.choices[0].message.content!)
+        const jsonResponse: any = JSON.parse(response.textResponse)
         const emailIds = jsonResponse.emailIds
         const result: SchemaEmail[] = []
 

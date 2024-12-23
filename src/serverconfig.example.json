@@ -37,17 +37,29 @@
         },
         "llms": {
             "bedrockEndpoint": "",
-            "bedrockKey": ""
+            "bedrockKey": "",
+            "bedrockAWSAccountId": "",
+            "bedrockAWSAccessKeyId": "",
+            "bedrockAWSSecretAccessKey": "",
+            "bedrockAWSRegion": "us-east-1",
+            "groqKey": "",
+            "tavilyKey": "",
+            "agentModel": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+            "agentTokenLimit": 100000,
+            "defaultProvider": "bedrock",
+            "defaultModel": "LLAMA3.1_70B"
         },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15
     },
     "providers": {
         "mock": {
+            "status": "inactive",
             "label": "Mock",
             "batchSize": 20
         },
         "facebook": {
+            "status": "inactive",
             "label": "Facebook",
             "appId": "",
             "appSecret": "",
@@ -63,6 +75,7 @@
             "maxSyncLoops": 5
         },
         "twitter": {
+            "status": "inactive",
             "label": "Twitter",
             "clientID": "",
             "clientSecret": "",
@@ -75,10 +88,10 @@
                 "posts": {
                     "batchSize": 20
                 }
-            },
-            "enabled": false
+            }
         },
         "discord": {
+            "status": "inactive",
             "label": "Discord",
             "clientID": "",
             "clientSecret": "",
@@ -86,6 +99,7 @@
             "sbtImage": "https://data.verida.network/ipfs/QmQsghP7Y1dbZHgoo48hQz8SHdFk2mjmPikhkHg69HHhWb/Gen0/discord-account.png"
         },
         "google": {
+            "status": "active",
             "clientId": "",
             "clientSecret": "",
             "batchSize": 50,
@@ -105,6 +119,7 @@
             }
         },
         "telegram": {
+            "status": "active",
             "label": "Telegram",
             "apiId": 0,
             "apiHash": "",

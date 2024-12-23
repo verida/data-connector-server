@@ -59,6 +59,17 @@ export default class Controller {
 
             const provider = Providers(providerName)
 
+            const providerConfig = provider.getConfig()
+            const status = providerConfig.status
+
+            if (status !== 'active') {
+                // Prevent connecting with a provider that is not active
+                // Throw the same error as from Providers(providerName)
+                throw new Error(`${providerName} not found`)
+            }
+
+            // TODO: Check the provider is enabled and the status is active
+
             await provider.connect(req, res, next)
         } catch (err: any) {
             const message = err.message
