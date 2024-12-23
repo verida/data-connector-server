@@ -131,6 +131,7 @@
             "useDbPos": true
         },
         "slack": {
+            "status": "active",
             "label": "Slack",
             "clientId": "",
             "clientSecret": "",
