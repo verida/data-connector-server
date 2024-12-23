@@ -11,6 +11,7 @@
 - Feature: Auto-summarize long emails when adding into RAG context window without using a LLM (fast and cheap)
 - Feature: Support LLM internet access via `llm/agent` tools
 - Feature: Ensure Agent based prompts always adhere to context window size
+- Feature: Add github, slack, spotify, discord as upcoming connectors
 
 2024-11-25 (v0.2.0)
 ------------------

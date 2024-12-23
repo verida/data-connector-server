@@ -59,7 +59,7 @@
             "batchSize": 20
         },
         "facebook": {
-            "status": "inactive",
+            "status": "upcoming",
             "label": "Facebook",
             "appId": "",
             "appSecret": "",
@@ -91,12 +91,24 @@
             }
         },
         "discord": {
-            "status": "inactive",
+            "status": "upcoming",
             "label": "Discord",
             "clientID": "",
             "clientSecret": "",
             "botToken": "",
             "sbtImage": "https://data.verida.network/ipfs/QmQsghP7Y1dbZHgoo48hQz8SHdFk2mjmPikhkHg69HHhWb/Gen0/discord-account.png"
+        },
+        "github": {
+            "status": "upcoming",
+            "label": "Github"
+        },
+        "slack": {
+            "status": "upcoming",
+            "label": "Slack"
+        },
+        "spotify": {
+            "status": "upcoming",
+            "label": "Spotify"
         },
         "google": {
             "status": "active",
