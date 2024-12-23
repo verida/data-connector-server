@@ -132,6 +132,8 @@
             "useDbPos": true
         },
         "fireflies": {
+            "status": "active",
+            "label": "FireFlies",
             "maxSyncLoops": 1,
             "batchSize": 50            
         }
