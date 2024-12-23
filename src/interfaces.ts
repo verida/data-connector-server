@@ -130,6 +130,7 @@ export interface BaseProviderConfig {
     batchSize?: number
     maxSyncLoops?: number
     breakTimestamp?: string
+    description?: string
     // Custom config for each handler
     handlers?: Record<string, object>
 }

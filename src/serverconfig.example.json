@@ -61,6 +61,7 @@
         "facebook": {
             "status": "upcoming",
             "label": "Facebook",
+            "description": "Sync your followed pages, friends and posts",
             "appId": "",
             "appSecret": "",
             "sbtImage": "https://data.verida.network/ipfs/QmcCoAjMWQpz7FwJi1d7jSh9EJ1m3xY1FRGxPi9pu3Rit7/FacebookBadge.png",
@@ -77,6 +78,7 @@
         "twitter": {
             "status": "inactive",
             "label": "Twitter",
+            "description": "",
             "clientID": "",
             "clientSecret": "",
             "bearerToken": "",
@@ -92,6 +94,7 @@
         },
         "discord": {
             "status": "upcoming",
+            "description": "Sync your connected server list and DMs",
             "label": "Discord",
             "clientID": "",
             "clientSecret": "",
@@ -104,14 +107,18 @@
         },
         "slack": {
             "status": "upcoming",
-            "label": "Slack"
+            "label": "Slack",
+            "description": "Sync your Slack channels and DMs"
         },
         "spotify": {
             "status": "upcoming",
-            "label": "Spotify"
+            "label": "Spotify",
+            "description": "Sync your playlists and listening history"
         },
         "google": {
+            "label": "Google",
             "status": "active",
+            "description": "Sync your gmail, calendar and drive",
             "clientId": "",
             "clientSecret": "",
             "batchSize": 50,
@@ -133,6 +140,7 @@
         "telegram": {
             "status": "active",
             "label": "Telegram",
+            "description": "Sync your messages",
             "apiId": 0,
             "apiHash": "",
             "maxSyncLoops": 1,

@@ -95,7 +95,7 @@ export default class BaseProvider extends EventEmitter {
     }
 
     public getDescription(): string {
-        return ''
+        return this.config.description ? this.config.description : ''
     }
 
     public getOptions(): ConnectionOption[] {

@@ -12,6 +12,7 @@
 - Feature: Support LLM internet access via `llm/agent` tools
 - Feature: Ensure Agent based prompts always adhere to context window size
 - Feature: Add github, slack, spotify, discord as upcoming connectors
+- Feature: Output provider descriptions from the config in the `/providers` endpoint
 
 2024-11-25 (v0.2.0)
 ------------------
