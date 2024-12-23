@@ -9,49 +9,55 @@ import { EmailShortlist } from "../tools/emailShortlist"
 import { PromptSearchServiceConfig } from "./interfaces"
 
 const DEFAULT_PROMPT_SEARCH_SERVICE_CONFIG: PromptSearchServiceConfig = {
-    maxContextLength: 20000, // (~5000 tokens)
     dataTypes: {
         emails: {
-            limit: 30,
-            maxLength: 500,
-            attachmentLength: 500
+            limit: 100,
+            maxLength: 2000,
+            attachmentLength: 1000
         },
         chatMessages: {
-            limit: 100
+            limit: 20
         },
         favorites: {
-            limit: 30
+            limit: 50
         },
         following: {
-            limit: 30
+            limit: 50
         },
         files: {
-            limit: 30,
-            maxLength: 2000
+            limit: 20,
+            maxLength: 5000
         },
         calendarEvents: {
-            limit: 30
+            limit: 50
         },
     }
 }
-
 
 function secondsSince(date: Date) {
     const now = new Date();
     const differenceInMilliseconds = now.getTime() - date.getTime();
     const differenceInSeconds = Math.floor(differenceInMilliseconds / 1000);
     return differenceInSeconds;
-  }
+}
+
+export interface PromptSearchResult {
+    result: string
+    maxContextLength: number
+    timers: Record<string, number>
+    duration: number
+    process: PromptSearchLLMResponse
+    systemPrompt: string
+    llm?: {
+        provider: string
+        model: string
+    }
+}
 
 
 export class PromptSearchService extends VeridaService {
 
-    public async prompt(prompt: string, llm: LLM, config?: PromptSearchServiceConfig): Promise<{
-        result: string,
-        timers: Record<string, number>,
-        duration: number,
-        process: PromptSearchLLMResponse
-    }> {
+    public async prompt(prompt: string, llm: LLM, config?: PromptSearchServiceConfig): Promise<PromptSearchResult> {
         const timers: Record<string, number> = {}
         let start = new Date()
         const startDate = new Date()
@@ -71,6 +77,9 @@ export class PromptSearchService extends VeridaService {
 
         this.verifyPromptSearchResult(promptSearchResult)
 
+        // 1 token ~= 3 characters
+        const maxContextLength = llm.getContextTokens()*3
+
         let chatThreads: ChatThreadResult[] = []
         let emails: SchemaEmail[] = []
         let favourites: SchemaFavourite[] = []
@@ -82,7 +91,6 @@ export class PromptSearchService extends VeridaService {
         const searchService = new SearchService(this.did, this.context)
 
         if (promptSearchResult.search_type == PromptSearchType.KEYWORDS) {
-            console.log(`Searching by keywords: ${promptSearchResult.keywords!}`)
             if (promptSearchResult.databases.indexOf(SearchType.EMAILS) !== -1) {
                 emails = await searchService.schemaByKeywords<SchemaEmail>(SearchType.EMAILS, promptSearchResult.keywords!, promptSearchResult.timeframe, 40)
             }
@@ -104,7 +112,6 @@ export class PromptSearchService extends VeridaService {
         } else {
             const maxDatetime = Helpers.keywordTimeframeToDate(promptSearchResult.timeframe)
             const sort = promptSearchResult.sort == PromptSearchSort.RECENT ? SearchSortType.RECENT : SearchSortType.OLDEST
-            console.log(`Searching by timeframe: ${maxDatetime} ${sort}`)
             if (promptSearchResult.databases.indexOf(SearchType.EMAILS) !== -1) {
                 emails = await searchService.schemaByDateRange<SchemaEmail>(SearchType.EMAILS, maxDatetime, sort, config.dataTypes.emails.limit*3)
                 if (emails.length > config.dataTypes.emails.limit) {
@@ -132,10 +139,9 @@ export class PromptSearchService extends VeridaService {
         timers['search-complete'] = secondsSince(start)
         start = new Date()
 
-        promptSearchResult.search_summary = `Files: ${files.length}, Emails: ${emails.length}, Favorites: ${favourites.length}, Following: ${following.length}, ChatThreads: ${chatThreads.length}, CalandarEvents: ${calendarEvents.length}`
-        console.log(promptSearchResult.search_summary)
+        promptSearchResult.search_summary = `Files: ${files.length}, Emails: ${emails.length}, Favorites: ${favourites.length}, Following: ${following.length}, ChatThreads: ${chatThreads.length}, CalendarEvents: ${calendarEvents.length}`
 
-        let finalPrompt = `Answer this prompt:\n${prompt}\nHere is some of my personal data that may help you provide a relevant answer.\n`
+        let systemPrompt = `Here is some of my personal data that may help you.\n`
         let contextString = ''
 
         let maxChatMessages = config.dataTypes.chatMessages.limit
@@ -182,7 +188,7 @@ export class PromptSearchService extends VeridaService {
             }
 
             extraContext = `To: ${email.toName} <${email.toEmail}>\nFrom: ${email.fromName} <${email.fromEmail}> (${email.name})\nBody: ${body}\n\n`
-            if ((extraContext.length + contextString.length + finalPrompt.length) > config.maxContextLength) {
+            if ((extraContext.length + contextString.length + systemPrompt.length) > maxContextLength) {
                 break
             }
             
@@ -191,22 +197,20 @@ export class PromptSearchService extends VeridaService {
         }
 
         const now = (new Date()).toISOString()
-        finalPrompt += `${contextString}\nThe current time is: ${now}`
+        systemPrompt += `${contextString}\nThe current time is: ${now}`
 
-        // console.log(finalPrompt)
-
-        const finalResponse = await llm.prompt(finalPrompt, undefined, false)
+        const finalResponse = await llm.prompt(prompt, systemPrompt, config.jsonFormat)
         timers['prompt-complete'] = secondsSince(start)
         start = new Date()
         const duration = ((Date.now() - startDate.getTime()) / 1000.0)
 
-        // console.log(contextString)
-
         return {
-            result: finalResponse.choices[0].message.content!,
+            result: finalResponse.textResponse,
+            maxContextLength,
             timers,
             duration,
-            process: promptSearchResult
+            process: promptSearchResult,
+            systemPrompt
         }
     }
 
