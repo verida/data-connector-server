@@ -14,6 +14,7 @@ const SCHEMA_SYNC_LOG = serverconfig.verida.schemas.SYNC_LOG
 const SCHEMA_CONNECTION = serverconfig.verida.schemas.DATA_CONNECTIONS
 const MAX_ERROR_RETRIES = serverconfig.verida.maxHandlerRetries
 const PROVIDER_TIMEOUT = serverconfig.verida.providerTimeoutMins
+const HANDLER_TIMEOUT = serverconfig.verida.handlerTimeoutMins
 
 export default class BaseProvider extends EventEmitter {
 
@@ -260,11 +261,18 @@ export default class BaseProvider extends EventEmitter {
                 }
             }
 
-            await this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`)
-
             this.connection.syncStatus = SyncStatus.ACTIVE
             this.connection.syncStart = Utils.nowTimestamp()
-            await this.saveConnection()
+
+            try {
+                await this.saveConnection()
+            } catch (err) {
+                if (err.message.match('Document update conflict')) {
+                    throw new Error(`Sync has already been requested`)
+                }
+
+                throw err
+            }
 
             const syncHandlers = await this.getSyncHandlers()
             const api = await this.getApi(accessToken, refreshToken)
@@ -318,38 +326,46 @@ export default class BaseProvider extends EventEmitter {
 
             return this.connection
         } catch (err: any) {
+            console.error(err)
             await this.logMessage(SyncProviderLogLevel.ERROR, `Sync error for ${this.getProviderId()} (${err.message})`)
         }
     }
 
     /**
-     * Check if this provider has time out
+     * Check if this provider has timed out
      */
-    protected async isTimedOut(handler?: BaseSyncHandler): Promise<boolean> {
-        // Check the sync log for this provider for an update in the past 15 minutes
-        const syncLog = await this.vault.openDatastore(SCHEMA_SYNC_LOG)
-        const cutoffTimestamp = new Date((new Date()).getTime() - PROVIDER_TIMEOUT * 1000 * 60).toISOString()
+    protected async isTimedOut(syncPosition?: SyncHandlerPosition): Promise<boolean> {
+        if (!syncPosition) {
+            // Check when the sync position was last modified to determine timeout
+            const cutoffTimestamp = new Date((new Date()).getTime() - PROVIDER_TIMEOUT * 1000 * 60).toISOString()
+            const connectionDs = await this.getConnectionDs()
 
-        const logFilter: Partial<SyncProviderLogEntry> = {
-            providerId: this.getProviderId(),
-            accountId: this.getAccountId(),
-            insertedAt: {
-                "$gte": cutoffTimestamp
+            const connectionFilter: Partial<Connection> = {
+                providerId: this.getProviderId(),
+                accountId: this.getAccountId(),
+                syncStart: {
+                    "$gte": cutoffTimestamp
+                }
             }
-        }
 
-        if (handler) {
-            logFilter.handlerId = handler.getId()
-        }
-        
-        const lastLog = await syncLog.getOne(logFilter, {})
+            const result = await connectionDs.getMany(connectionFilter, {})
 
-        if (lastLog) {
-            console.log(`Log entry found in the past ${PROVIDER_TIMEOUT} minutes, so sync hasn't timed out`)
-            return false
-        }
+            if (result.length) {
+                // console.log(`Connection was modified within ${PROVIDER_TIMEOUT} minutes, so connection sync hasn't timed out`)
+                return false
+            }
 
-        return true
+            return true
+        } else {
+            // Check when the handler sync started to determine timeout
+            const cutoffTimestamp = new Date((new Date()).getTime() - HANDLER_TIMEOUT * 1000 * 60).toISOString()
+            if (syncPosition.latestSyncStart >= cutoffTimestamp) {
+                // console.log(`Sync handler latest sync started within ${HANDLER_TIMEOUT} (${syncPosition.handlerId}) hasn't timed out`)
+                return false
+            }
+
+            return true
+        }
     }
 
     protected setNextSync() {
@@ -411,13 +427,13 @@ export default class BaseProvider extends EventEmitter {
 
         if (syncPosition.status == SyncHandlerStatus.SYNCING && !force) {
             // Check for sync timeout
-            const timedOut = await this.isTimedOut()
+            const timedOut = await this.isTimedOut(syncPosition)
             if (timedOut) {
-                await this.logMessage(SyncProviderLogLevel.ERROR, `Sync timeout has been detected, so reseting and initiating sync`, handler.getId())
+                await this.logMessage(SyncProviderLogLevel.ERROR, `Sync timeout has been detected, so resetting and initiating sync`, handler.getId())
                 syncPosition.syncMessage = `Sync timeout has been detected, so resetting`
             } else {
                 await this.logMessage(SyncProviderLogLevel.INFO, `Sync is active for ${handler.getLabel()}, skipping`)
-                console.log(`Sync is active for ${handler.getLabel()}, skipping`)
+                // console.log(`Sync is active for ${handler.getLabel()}, skipping`)
 
                 syncPosition.latestSyncEnd = Utils.nowTimestamp()
                 return {
@@ -446,6 +462,8 @@ export default class BaseProvider extends EventEmitter {
         syncPosition.syncMessage = `Sync starting`
         syncPosition.status = SyncHandlerStatus.SYNCING
 
+        await this.logMessage(SyncProviderLogLevel.INFO, `Starting sync`, handler.getId())
+
         delete syncPosition['_rev']
         await syncPositionsDs.save(syncPosition, {
             forceUpdate: true
@@ -463,6 +481,13 @@ export default class BaseProvider extends EventEmitter {
         while (!this.config.maxSyncLoops || syncCount < this.config.maxSyncLoops) {
             if (syncResults.syncPosition.status == SyncHandlerStatus.SYNCING) {
                 // sync again
+                syncPosition.latestSyncEnd = Utils.nowTimestamp()
+                syncPosition.latestSyncStart = Utils.nowTimestamp()
+                delete syncPosition['_rev']
+                await syncPositionsDs.save(syncPosition, {
+                    forceUpdate: true
+                })
+
                 await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getId()}`, handler.getId(), schemaUri)
                 syncResults = await handler.sync(api, syncPosition, syncPositionsDs)
                 await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncronized ${syncResults.syncResults.length} sync items`, handler.getId(), schemaUri)
@@ -471,6 +496,13 @@ export default class BaseProvider extends EventEmitter {
 
             syncCount++
         }
+
+        syncPosition.latestSyncEnd = Utils.nowTimestamp()
+        syncPosition.status = SyncHandlerStatus.ENABLED
+        delete syncPosition['_rev']
+        await syncPositionsDs.save(syncPosition, {
+            forceUpdate: true
+        })
 
         return syncResults
     }
