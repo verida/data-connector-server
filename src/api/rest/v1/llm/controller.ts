@@ -5,10 +5,8 @@ import { Utils } from "../../../../utils";
 import { HotLoadProgress } from "../../../../services/data";
 import { DataService } from "../../../../services/data";
 import { PromptSearchServiceConfig } from "../../../../services/assistants/interfaces";
-import { PromptSearch } from "../../../../services/tools/promptSearch";
 import { LLMProvider, ProviderModels } from "../../../../services/llmmodels";
 import CONFIG from "../../../../config"
-// import { TimmyTool } from "../../../../services/assistants/timmy-tool";
 import { Agent } from "../../../../services/assistants/agent";
 const _ = require('lodash')
 
