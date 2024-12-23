@@ -36,12 +36,12 @@ $(document).ready(function() {
                 $.each(syncStatusResponse.items, function(key, value) {
                     const connection = value;
                     const handlers = value.handlers;
-    
+
                     const formattedSyncTimes = `Start: ${new Date(connection.syncStart).toLocaleString()}<br>End: ${new Date(connection.syncEnd).toLocaleString()}`;
-    
+
                     const providerDetails = getProviderDetails(connection.providerId);
                     const avatar = connection.profile.avatar.uri ? `<img src="${connection.profile.avatar.uri}" alt="${connection.profile.name}" style="width: 30px; height: 30px;"></img>` : ''
-    
+
                     const row = $(`
                         <tr>
                             <td>
@@ -71,13 +71,13 @@ $(document).ready(function() {
                     `);
                     $('#providerTable').append(row);
                 });
-    
+
                 $('.logs-btn').click(function() {
                     const provider = $(this).data('provider');
                     const providerId = $(this).data('provider-id');
                     window.open(`/developer/data?limit=50&filter=providerId:${provider},accountId:${providerId}&schema=${SYNC_LOG_SCHEMA}&sort=insertedAt:desc`, '_blank');
                 });
-    
+
                 $('.disconnect-btn').click(function() {
                     const connectionId = $(this).data('connection');
                     $.ajax({
@@ -87,20 +87,20 @@ $(document).ready(function() {
                         }
                     })
                 });
-    
+
                 $('.sync-btn').click(function() {
                     const $button = $(this)
                     const connectionId = $(this).data('connection');
                     $button.text('Syncing...')
                     $button.prop('disabled', true);
                     const syncType = $(this).data('sync-type');
-    
+
                     // Start tailing logs
                     const eventSource = new EventSource(`/api/rest/v1/ds/watch/${btoa(SYNC_LOG_SCHEMA)}?key=${veridaKey}`);
-    
+
                     const tableBody = $('#eventTableBody');
                     tableBody.empty()
-    
+
                     function addEventRow(eventResponse) {
                         const eventData = eventResponse.value
                         const rowHtml = `
@@ -114,20 +114,20 @@ $(document).ready(function() {
                         `;
                         tableBody.append(rowHtml);
                       }
-    
+
                     eventSource.addEventListener('message', (item) => {
                         const record = JSON.parse(item.data)
                         addEventRow(record)
                     })
-    
+
                     // Display log modal
                     $('#eventLogModal').modal('show');
-    
+
                     // Handle modal closing
                     $('#eventLogModal').on('hidden.bs.modal', function (e) {
                         eventSource.close()
                       });
-    
+
                     // Initialize sync
                     $.ajax({
                         url: `/api/rest/v1/connections/${connectionId}/sync?key=${veridaKey}`,
@@ -139,14 +139,14 @@ $(document).ready(function() {
                         success: function(response) {
                             $button.prop('disabled', false);
                             $button.text('Sync Now')
-    
+
                             setTimeout(() => {
                                 eventSource.close()
                             }, 5000)
                         }
                     })
                 });
-    
+
                 $('#loadingIndicator').hide(); // Hide the loading indicator
                 $('#loadBtn').prop('disabled', false);
             },
@@ -177,11 +177,27 @@ $(document).ready(function() {
         const $dropdown = $('#providerListDropdown');
         $dropdown.empty();
         $.each(providersData, function(key, provider) {
-            if (provider.id === 'mock') return; // Skip 'mock' provider
-            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/${provider.id}/connect?key=${veridaKey}', '_blank');">
-                <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
-                ${provider.label}
-            </a>`);
+            if (provider.id === 'mock') {
+                return; // Skip 'mock' provider
+            }
+
+            if (provider.status === 'active') {
+                $dropdown.append(`
+                    <a class="dropdown-item" href="#" onclick="window.open('/providers/${provider.id}/connect?key=${veridaKey}', '_blank');">
+                        <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
+                    ${provider.label}
+                    </a>`
+                );
+            }
+            if (provider.status === 'upcoming') {
+                $dropdown.append(`
+                    <div class="dropdown-item">
+                        <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
+                    ${provider.label} (Upcoming)
+                    </div>`
+                );
+            }
+
         });
     }
 

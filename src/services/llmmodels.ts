@@ -15,8 +15,18 @@ export enum LLMProvider {
   
   export const ProviderModels: Record<LLMProvider, Record<string, ProviderModel>> = {
     [LLMProvider.BEDROCK]: {
+      "CLAUDE_HAIKU_3.5": {
+        modelId: `arn:aws:bedrock:us-west-2:${AWS_ACCOUNT_ID}:inference-profile/us.anthropic.claude-3-5-haiku-20241022-v1:0`,
+        systemPrompt: true,
+        contextTokens: 200000
+      },
       "LLAMA3.2_3B": {
         modelId: `arn:aws:bedrock:us-east-1:${AWS_ACCOUNT_ID}:inference-profile/us.meta.llama3-2-3b-instruct-v1:0`,
+        systemPrompt: true,
+        contextTokens: 128000
+      },
+      "LLAMA3.2_11B": {
+        modelId: `arn:aws:bedrock:us-east-1:${AWS_ACCOUNT_ID}:inference-profile/us.meta.llama3-2-11b-instruct-v1:0`,
         systemPrompt: true,
         contextTokens: 128000
       },

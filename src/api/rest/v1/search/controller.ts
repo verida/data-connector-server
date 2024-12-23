@@ -55,11 +55,11 @@ class SearchController {
                 SearchType.EMAILS,
                 SearchType.CHAT_MESSAGES
             ]
-            const limit = req.query.limit ? parseInt(req.query.limit.toString()) : DEFAULT_LIMIT
+            const resultLimit = req.query.limit ? parseInt(req.query.limit.toString()) : DEFAULT_LIMIT
             const minResultsPerType = req.query.minResultsPerType ? parseInt(req.query.minResultsPerType.toString()) : 5
 
             const searchService = new SearchService(did, context)
-            const items = await searchService.multiByKeywords(searchTypes, keywords, timeframe, limit, minResultsPerType)
+            const items = await searchService.multiByKeywords(searchTypes, keywords, timeframe, resultLimit, false, minResultsPerType)
 
             return res.json({
                 items

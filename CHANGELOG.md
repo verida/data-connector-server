@@ -1,4 +1,19 @@
 
+2024-12-24 (v0.3.0)
+------------------
+
+- Fix: Timeout detection was always incorrect due to handler start log message
+- Fix: Only log sync is starting if it passes all checks successfully
+- Fix: Correctly handle document update conflicts caused when a sync is requested a second time, when already active
+- Fix: Correctly populate handler sync start and end timestamps
+- Feature: Support separate handler vs connection timeout config
+- Feature: Add `/llm/agent` endpoint that uses langchain agent with tools
+- Feature: Auto-summarize long emails when adding into RAG context window without using a LLM (fast and cheap)
+- Feature: Support LLM internet access via `llm/agent` tools
+- Feature: Ensure Agent based prompts always adhere to context window size
+- Feature: Add github, slack, spotify, discord as upcoming connectors
+- Feature: Output provider descriptions from the config in the `/providers` endpoint
+
 2024-11-25 (v0.2.0)
 ------------------
 
