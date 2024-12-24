@@ -2574,20 +2574,7 @@
     axios "^0.27.2"
     did-resolver "^4.0.1"
 
-"@verida/account@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@verida/account/-/account-4.1.0.tgz#8227cbe1d64d7df7de45ce402fa6a4d5865d4646"
-  integrity sha512-D5WUKwH2GeUR7+03cjJzxOLtHre74V3ZVFPZBc1F+VoS0x1ObAeh0OGPSDK8ti/LJcQOsF58l/EN7xFHTATHkA==
-  dependencies:
-    "@verida/keyring" "^4.1.0"
-    "@verida/storage-link" "^4.1.0"
-    "@verida/types" "^4.1.0"
-    did-jwt "^6.11.0"
-    did-resolver "^4.0.1"
-    lodash "^4.17.21"
-    tweetnacl-util "^0.15.1"
-
-"@verida/account@^4.4.0":
+"@verida/account@^4.1.0", "@verida/account@^4.4.0":
   version "4.4.0"
   resolved "https://registry.yarnpkg.com/@verida/account/-/account-4.4.0.tgz#f0d8d0ae4919775830cab7705b50e59074e6555a"
   integrity sha512-Lg35VwPlDl8ItXK4FYvmXOPm/dM/taLa27Pi65dhfW5y9KWipWfsti1Bz+yGBYB0JLJBJ3DD9ZAjJ+TRe7/TFg==
