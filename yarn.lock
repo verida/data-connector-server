@@ -2766,18 +2766,7 @@
     bs58 "^5.0.0"
     url "^0.11.0"
 
-"@verida/keyring@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@verida/keyring/-/keyring-4.1.0.tgz#45c178a643f35628e448d5c77ca1c10c6729e047"
-  integrity sha512-M/lbrFnXC0njFrN3MgnyfmQreL1UcWk28IQvbGSV100L6DG8+zsXbb2rLUdUTrz5VnMfi/dLyHRTdR7IXgDA9Q==
-  dependencies:
-    "@verida/encryption-utils" "^4.0.0"
-    "@verida/types" "^4.1.0"
-    ethers "^5.5.1"
-    tweetnacl "^1.0.3"
-    uuid "^8.3.2"
-
-"@verida/keyring@^4.4.0":
+"@verida/keyring@^4.1.0", "@verida/keyring@^4.4.0":
   version "4.4.0"
   resolved "https://registry.yarnpkg.com/@verida/keyring/-/keyring-4.4.0.tgz#113efecfcdcbc02d029a0650ec537eadb6dc8276"
   integrity sha512-kiMuLRHQavcQw/wgFmWybC9KzYdp1iedvtveODbP3JxnZsZjwwIdczOFGvhBM1Yluq2Lt5uUsCDt01C7ynBYIA==
