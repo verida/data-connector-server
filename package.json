@@ -103,7 +103,7 @@
     "@types/node": "^18.11.9",
     "@types/passport": "^1.0.16",
     "@types/uuid": "^10.0.0",
-    "@verida/cli-tools": "^4.1.1",
+    "@verida/cli-tools": "^4.4.0",
     "claudia": "^5.14.1",
     "command-line-interface": "^5.0.0",
     "nodemon": "^2.0.14",
