@@ -12,6 +12,7 @@
         },
         "devMode": true,
         "environment": "banksia",
+        "serverKey": "0x...",
         "testVeridaKey": "0x...",
         "testVeridaNetwork": "banksia",
         "sessionSecret": "empty",
