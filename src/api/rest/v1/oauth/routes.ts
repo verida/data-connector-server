@@ -28,9 +28,9 @@ const router = express.Router();
  * Generate an authorization code for a third party application to exchange for refresh
  * and access tokens.
  */
-router.get("/auth", async (req: Request, res: Response) => {
-  console.log(req.query)
-  const { client_id, auth_request, redirect_uri, consent_sig, state, returnCode } = req.query;
+router.post("/auth", async (req: Request, res: Response) => {
+  console.log(req.body)
+  const { client_id, auth_request, redirect_uri, consent_sig, state, returnCode } = req.body.data;
 
   if (!client_id) {
     return res.status(400).json({ error: "Invalid client or redirect URI" });

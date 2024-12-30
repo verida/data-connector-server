@@ -28,6 +28,12 @@ export class VeridaOAuthClient {
     protected did: string
     protected didDocument?: DIDDocument
 
+    public redirectUris?: string[]
+    public grants: string[] = ["authorization_code", "refresh_token"]
+    public accessTokenLifetime: number = 3600
+    public refreshTokenLifetime?: number = undefined
+
+
     constructor(did: string) {
         this.did = did
     }
@@ -38,7 +44,7 @@ export class VeridaOAuthClient {
     }
 
     public async verifyRequest(redirectUrl: string, authRequest: string, consentSig: string): Promise<void> {
-        // await this._init()
+        // await this.init()
         // @todo: Verify DIDDocument has serviceEndpoint of type `VeridaOAuthServer` that matches redirectUrl
         // @todo: Verify the authRequest is signed by this.did
         // @todo: Verify clientSecret timestamp is within minutes of current timestamp
@@ -48,7 +54,7 @@ export class VeridaOAuthClient {
         // @todo: Throw error if any verification issue
     }
 
-    protected async _init() {
+    public async init() {
         if (this.didDocument) {
             return
         }
