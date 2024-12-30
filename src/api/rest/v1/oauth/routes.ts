@@ -3,19 +3,20 @@ import express, { Request, Response } from "express";
 // import { OAuthModel } from "./model";
 import { Utils } from "../../../../utils";
 import { VeridaOAuthClient } from "./client";
-import { VeridaOAuthServer } from "./server";
+import VeridaOAuthServer from "./server";
 const OAuthServer = require("@node-oauth/express-oauth-server");
+import CONFIG from "../../../../config"
 
 const loggedInUsers: Record<string, string> = {};
 
 // const db = new OAuthMemoryDb();
 // const model = new OAuthModel(db);
 
-db.saveClient({
-  id: "client_id",
-  secret: "client_secret",
-  grants: ["authorization_code", "refresh_token"],
-});
+// db.saveClient({
+//   id: "client_id",
+//   secret: "client_secret",
+//   grants: ["authorization_code", "refresh_token"],
+// });
 
 const oauth = new OAuthServer({
   model: VeridaOAuthServer,
@@ -28,7 +29,8 @@ const router = express.Router();
  * and access tokens.
  */
 router.get("/auth", async (req: Request, res: Response) => {
-  const { client_id, auth_request, redirect_uri, consent_sig, state } = req.query;
+  console.log(req.query)
+  const { client_id, auth_request, redirect_uri, consent_sig, state, returnCode } = req.query;
 
   if (!client_id) {
     return res.status(400).json({ error: "Invalid client or redirect URI" });
@@ -43,9 +45,17 @@ router.get("/auth", async (req: Request, res: Response) => {
     await client.verifyRequest(redirect_uri.toString(), auth_request.toString(), consent_sig.toString())
     const authRequestId = await VeridaOAuthServer.generateAuthorizationCode(auth_request.toString(), redirect_uri.toString())
 
-    // Redirect the user to the third party applicatino with a valid auth_code that can
-    // be used to retrieve access and refresh tokens.
-    return res.redirect(`${redirect_uri}?auth_code=${authRequestId}&state=${state}`);
+    if (CONFIG.verida.devMode && returnCode) {
+      // We are in dev mode and have been asked to return the code, so do that without redirecting
+      // This is used for testing purposes
+      return res.json({
+        auth_code: authRequestId
+      })
+    } else {
+      // Redirect the user to the third party applicatino with a valid auth_code that can
+      // be used to retrieve access and refresh tokens.
+      return res.redirect(`${redirect_uri}?auth_code=${authRequestId}&state=${state}`);
+    }
   } catch (err) {
     return res.status(400).json({ error: `Invalid auth request: ${err.message}`})
   }

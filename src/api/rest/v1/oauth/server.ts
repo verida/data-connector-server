@@ -4,7 +4,6 @@ import { Client, Context } from "@verida/client-ts"
 import { AutoAccount } from "@verida/account-node"
 import { VeridaOAuthClient } from "./client"
 import { VeridaOAuthUser } from "./user"
-import { Date$Input } from "tdlib-native/dist/types"
 
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
 const DID_CLIENT_CONFIG = CONFIG.verida.didClientConfig
@@ -13,6 +12,14 @@ export interface VeridaOAuthCode {
     authorizationCode: string,
     expiresAt: Date,
     redirectUri: string,
+    scope: string[]
+    client: VeridaOAuthClient
+    user: VeridaOAuthUser
+}
+
+export interface VeridaOAuthToken {
+    accessToken: string,
+    accessTokenExpiresAt: string
     scope: string[]
     client: VeridaOAuthClient
     user: VeridaOAuthUser
@@ -71,8 +78,8 @@ class VeridaOAuthServer {
      * Invoked to retrieve an existing access token previously saved through Model#saveToken().
      * @param accessToken 
      */
-    public async getAccessToken(accessToken: string): Promise<VeriadOAuthToken> {
-
+    public async getAccessToken(accessToken: string): Promise<VeridaOAuthToken> {
+        throw new Error("not implemented")
     }
 
     /**

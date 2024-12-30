@@ -15,17 +15,25 @@ const getUserDoc = () => ({ id: 'system' });
 
 const authCodes = []
 
-export function createModel(db: OAuthMemoryDb) {
-  async function getClient (clientId: string, clientSecret: string) {
-    return db.findClient(clientId, clientSecret);
+export class OAuthModel {
+  protected db: OAuthMemoryDb
+
+  constructor(db: OAuthMemoryDb) {
+    this.db = db
   }
 
-  async function validateScope (user: User, client: Client, scope: Scope) {
+  public async getClient (clientId: string, clientSecret: string) {
+    console.log('getClient()')
+    return this.db.findClient(clientId, clientSecret);
+  }
+
+  public async validateScope (user: User, client: Client, scope: Scope) {
+    console.log('validateScope()')
     if (!user || user.id !== 'system') {
       return false;
     }
 
-    if (!client || !db.findClientById(client.id)) {
+    if (!client || !this.db.findClientById(client.id)) {
       return false;
     }
 
@@ -36,17 +44,19 @@ export function createModel(db: OAuthMemoryDb) {
     }
   }
 
-  async function getUserFromClient (_client: Client) {
+  public async getUserFromClient (_client: Client) {
+    console.log('getUserFromClient()')
     // In this setup we don't have any users, so
     // we return an object, representing a "system" user
     // and avoid creating any user documents.
     // The user document is nowhere relevant for accessing resources,
     // so we can safely use it like this.
-    const client = db.findClient(_client.id, _client.secret);
+    const client = this.db.findClient(_client.id, _client.secret);
     return client && getUserDoc();
   }
 
-  async function generateAuthorizationCode(client: Client, user: User, scope: Scope): Promise<string> {
+  public async generateAuthorizationCode(client: Client, user: User, scope: Scope): Promise<string> {
+    console.log('generateAuthorizationCode()')
     // Get the current timestamp
     const timestamp = Date.now().toString();
     const entropy = `${client.id}:${user.did}:${JSON.stringify(scope)}:${timestamp}`
@@ -56,7 +66,8 @@ export function createModel(db: OAuthMemoryDb) {
     return hash.slice(0, 40);
   }
 
-  async function saveToken (token: Token, client: Client, user: User) {
+  public async saveToken (token: Token, client: Client, user: User) {
+    console.log('saveToken()')
     const meta: Meta = {
       clientId: client.id,
       userId: user.id,
@@ -69,18 +80,19 @@ export function createModel(db: OAuthMemoryDb) {
     token.user = user;
 
     if (token.accessToken) {
-      db.saveAccessToken(token.accessToken, meta);
+      this.db.saveAccessToken(token.accessToken, meta);
     }
 
     if (token.refreshToken) {
-      db.saveRefreshToken(token.refreshToken, meta);
+      this.db.saveRefreshToken(token.refreshToken, meta);
     }
 
     return token;
   }
 
-  async function getAccessToken (accessToken: string) {
-    const meta = db.findAccessToken(accessToken);
+  public async getAccessToken (accessToken: string) {
+    console.log('getAccessToken()')
+    const meta = this.db.findAccessToken(accessToken);
 
     if (!meta) {
       return false;
@@ -90,13 +102,14 @@ export function createModel(db: OAuthMemoryDb) {
       accessToken,
       accessTokenExpiresAt: meta.accessTokenExpiresAt,
       user: getUserDoc(),
-      client: db.findClientById(meta.clientId),
+      client: this.db.findClientById(meta.clientId),
       scope: meta.scope
     };
   }
 
-  async function getRefreshToken (refreshToken: string) {
-    const meta = db.findRefreshToken(refreshToken);
+  public async getRefreshToken (refreshToken: string) {
+    console.log('getRefreshToken()')
+    const meta = this.db.findRefreshToken(refreshToken);
 
     if (!meta) {
       return false;
@@ -106,48 +119,41 @@ export function createModel(db: OAuthMemoryDb) {
       refreshToken,
       refreshTokenExpiresAt: meta.refreshTokenExpiresAt,
       user: getUserDoc(),
-      client: db.findClientById(meta.clientId),
+      client: this.db.findClientById(meta.clientId),
       scope: meta.scope
     };
   }
 
-  async function revokeToken (token: Token) {
-    db.deleteRefreshToken(token.refreshToken);
+  public async revokeToken (token: Token) {
+    console.log('revokeToken()')
+    this.db.deleteRefreshToken(token.refreshToken);
 
     return true;
   }
 
-  async function verifyScope (token: Token, scope: Scope) {
+  public async verifyScope (token: Token, scope: Scope) {
+    console.log('verifyScope()')
     if (typeof scope === 'string') {
       return enabledScopes.includes(scope);
     } else {
-      return scope.every(s => enabledScopes.includes(s));
+      return scope.every((s: string) => enabledScopes.includes(s));
     }
   }
 
-  async function saveAuthorizationCode(code: Code, client: Client, user: User) {
-    authCodes.push(code)
-  }
+  // public async saveAuthorizationCode(code: any, client: Client, user: User) {
+  //   console.log('saveAuthorizationCode()')
+  //   authCodes.push(code)
+  // }
 
-  async function getAuthorizationCode(code: string) {
-    return {
-        authorizationCode: code.authorization_code,
-        expiresAt: code.expires_at,
-        redirectUri: code.redirect_uri,
-        scope: code.scope,
-        client: client, // with 'id' property
-        user: user
-      };
-  }
-
-  return  {
-    getClient,
-    saveToken,
-    getAccessToken,
-    getRefreshToken,
-    revokeToken,
-    validateScope,
-    verifyScope,
-    getUserFromClient
-  };
+  // public async getAuthorizationCode(code: any) {
+  //   console.log('getAuthorizationCode()')
+  //   return {
+  //       authorizationCode: code.authorization_code,
+  //       expiresAt: code.expires_at,
+  //       redirectUri: code.redirect_uri,
+  //       scope: code.scope,
+  //       client: client, // with 'id' property
+  //       user: user
+  //     };
+  // }
 }

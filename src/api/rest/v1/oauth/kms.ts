@@ -105,7 +105,9 @@ export class KMS {
             throw new Error(`Unable to save key material to API database: ${keyDb.errors}`)
         }
 
-        return success.id
+        console.log('saved', success)
+        return "true"
+        // return success.id
     }
 
     public static async getDetailsFromApiKey(ownerDid: string, requestingDid: string, apiKey: string): Promise<ApiDetails> {
@@ -140,6 +142,7 @@ export class KMS {
     }
 
     public static async getContextFromSession(veridaSession: VeridaSession): Promise<IContext> {
+        throw new Error('Not implemented')
     }
 
     public static async getKeyDb(context: IContext): Promise<IDatabase> {

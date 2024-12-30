@@ -24,12 +24,14 @@ export class OAuthMemoryDb {
     }
   
     saveClient(client: Client) {
+      console.log('db.saveClient()')
       this.clients.push(client);
   
       return client;
     }
   
     findClient (clientId: string, clientSecret: string) {
+      console.log('db.findClient()')
       return this.clients.find(client => {
         if (clientSecret) {
           return client.id === clientId && client.secret === clientSecret;
@@ -40,30 +42,37 @@ export class OAuthMemoryDb {
     }
   
     findClientById (id: string) {
+      console.log('db.findClientById()')
       return this.clients.find(client => client.id === id);
     }
   
     saveAccessToken (accessToken: string, meta: Meta) {
+      console.log('db.saveAccessToken()')
       this.accessTokens.set(accessToken, meta);
     }
   
     findAccessToken (accessToken: string) {
+      console.log('db.findAccessToken()')
       return this.accessTokens.get(accessToken);
     }
   
     deleteAccessToken (accessToken: string) {
+      console.log('db.deleteAccesstoken()')
       this.accessTokens.delete(accessToken);
     }
   
     saveRefreshToken (refreshToken: string, meta: Meta) {
+      console.log('db.saveRefreshToken()')
       this.refreshTokens.set(refreshToken, meta);
     }
   
     findRefreshToken (refreshToken: string) {
+      console.log('db.findRefreshToken()')
       return this.refreshTokens.get(refreshToken);
     }
   
     deleteRefreshToken (refreshToken: string) {
+      console.log('db.deleteRefreshToken()')
       this.refreshTokens.delete(refreshToken);
     }
   }
