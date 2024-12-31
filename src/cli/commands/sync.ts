@@ -37,14 +37,14 @@ export const Sync: Command<SyncOptions> = {
       return;
     }
 
-    const networkInstance = await Utils.getNetwork(options.key);
-    const did = (await networkInstance.account.did()).toLowerCase();
+    const networkConnection = await Utils.getNetworkConnectionFromPrivateKey(options.key);
+    const did = (await networkConnection.account.did()).toLowerCase();
 
     console.log(
       `Syncing data from (${options.provider}) (${options.providerId ? options.providerId : 'all connections'}) to ${did} on network ${options.network}.`
     );
 
-    const vault = networkInstance.context;
+    const vault = networkConnection.context;
     const logs = await vault.openDatastore(SCHEMA_SYNC_LOG);
     logs.changes(async function (changeInfo: any) {
       const log = <SyncProviderLogEntry>await logs.get(changeInfo.id, {});
@@ -56,14 +56,14 @@ export const Sync: Command<SyncOptions> = {
     }, {});
 
     const syncManager = new SyncManager(
-      networkInstance.context
+      networkConnection.context
     );
 
     const providers = await syncManager.getProviders(
       options.provider,
       options.providerId
     );
-    
+
 
     for (const provider of providers) {
       await provider.sync(

@@ -4,6 +4,8 @@ import { controller } from './controller'
 const router = express.Router()
 router.post('/prompt', controller.prompt)
 router.post('/personal', controller.personalPrompt)
+router.post('/profile', controller.profilePrompt)
 router.get('/hotload', controller.hotLoad)
+router.post('/agent', controller.agent)
 
 export default router

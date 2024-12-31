@@ -20,7 +20,7 @@ class SearchController {
 
     public async chatThreads(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
             const keywordString = req.query.keywords ? req.query.keywords.toString() : ""
             const keywords = keywordString.split(' ')
@@ -45,7 +45,7 @@ class SearchController {
 
     public async universal(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
             const keywordString = req.query.keywords ? req.query.keywords.toString() : ""
             const keywords = keywordString.split(' ')
@@ -55,11 +55,11 @@ class SearchController {
                 SearchType.EMAILS,
                 SearchType.CHAT_MESSAGES
             ]
-            const limit = req.query.limit ? parseInt(req.query.limit.toString()) : DEFAULT_LIMIT
+            const resultLimit = req.query.limit ? parseInt(req.query.limit.toString()) : DEFAULT_LIMIT
             const minResultsPerType = req.query.minResultsPerType ? parseInt(req.query.minResultsPerType.toString()) : 5
 
             const searchService = new SearchService(did, context)
-            const items = await searchService.multiByKeywords(searchTypes, keywords, timeframe, limit, minResultsPerType)
+            const items = await searchService.multiByKeywords(searchTypes, keywords, timeframe, resultLimit, false, minResultsPerType)
 
             return res.json({
                 items
@@ -77,7 +77,7 @@ class SearchController {
 
     public async datastore(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
 
             const schemaName = Utils.getSchemaFromParams(req.params[0])

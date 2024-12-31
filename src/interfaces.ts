@@ -113,7 +113,7 @@ export interface Connection {
     profile: ConnectionProfile
     syncStatus: SyncStatus
     syncFrequency: SyncFrequency
-    syncStart?: string
+    syncStart?: string | object
     syncEnd?: string
     syncNext?: string
     syncMessage?: string
@@ -124,10 +124,13 @@ export interface Connection {
 
 export interface BaseProviderConfig {
     label: string
+    // TODO: Make it required
+    status?: 'active' | 'upcoming' | 'inactive'
     sbtImage: string
     batchSize?: number
     maxSyncLoops?: number
     breakTimestamp?: string
+    description?: string
     // Custom config for each handler
     handlers?: Record<string, object>
 }
@@ -170,6 +173,18 @@ export interface SyncHandlerPosition {
 
     // How many retries have had errors
     errorRetries?: number
+
+    // Timestamp when latest sync started
+    latestSyncStart?: string
+
+    // Timestamp when latest sync ended
+    latestSyncEnd?: string
+
+    // Timestamp of the oldest saved record
+    oldestDataTimestamp?: string
+
+    // Timestamp of the newest saved record
+    newestDataTimestamp?: string
 }
 
 export interface SyncResponse {
@@ -179,12 +194,12 @@ export interface SyncResponse {
 
 export interface SyncProviderLogEntry {
     _id?: string
-    insertedAt?: string
+    insertedAt?: string | object
     providerId: string
     accountId?: string
     handlerId?: string
     schemaUri?: string
-    message: string
+    message: string | object
     level: SyncProviderLogLevel
 }
 

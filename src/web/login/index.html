@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../common.css">
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        Verida Private Data Bridge Login
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger d-none" id="errorBox">
+                            Access denied: Invalid private key or seed phrase or account not authorized
+                        </div>
+                        <div class="alert alert-info d-none" id="infoBox">
+                            Login successful! Redirecting...
+                        </div>
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="privateKey" class="form-label">Private Key / Seed Phrase</label>
+                                <input type="password" class="form-control" id="privateKey" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100" id="loginBtn">Login</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <a name="create-identity" />
+                <h2>Demo Video</h2>
+                <p class="text-center">
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/nRyAzcXUXKs?si=5Ua_wG4l8I28mCbh" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                </p>
+
+                <a name="create-identity" />
+                <h2>Create a Verida Network Account</h2>
+                <p>You must have a Verida Network account to use the Verida Private Data Bridge services. Your account unlocks access to your encrypted data stored on the Verida Network. It's also used to encrypt / decrypt your data for use by applications. You can generate an account and obtain your seed phrase by scanning this QR code and downloading the Verida Mobile Wallet</p>
+                <p class="text-center"><img src="../download-verida-wallet.svg" /></p>
+                <p>Once you have created an account on the Verida Mainnet (Myrtle), you can obtain your seed phrase by navigating to; <strong><i>Settings &rarr; Seed Phrase</i></strong>.</p>
+                <p>It's also possible to create a Verida Network Identity using the Verida SDK Command Line Tools.</p>
+
+                <a name="security" />
+                <h2>Security</h2>
+                <p>This server is running within a <a href="https://docs.marlin.org/learn/what-is-oyster">Marlin Oyster</a> secure enclave that protects all data and computation. This means that no-one, not even the underlying infrastructure provider for this server (Verida Foundation DAO), can access any user data. See <a href="../user/security">Security</a> for more details.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/jquery-3.5.1.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const apiEndpoint = `/api/rest/v1`
+            // Make GET request to load server mode
+            fetch(`${apiEndpoint}/info/status`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json()
+                }
+            })
+            .then(data => {
+                console.log(data)
+                $('.card-header').addClass(`mode-${data.mode}`)
+            })
+
+            // Check if key is already in local storage and validate it
+            const storedKey = localStorage.getItem('veridaKey');
+            if (storedKey) {
+                // Validate the stored key
+                $.ajax({
+                    url: `${apiEndpoint}/account/fromKey?key=${storedKey}`,
+                    type: 'GET',
+                    contentType: 'application/json',
+                    success: function (response) {
+                        if (response.success) {
+                            window.location.href = '/user';
+                        } else {
+                            // If the key is invalid, remove it from local storage
+                            localStorage.removeItem('veridaKey');
+                        }
+                    },
+                    error: function () {
+                        // If there's an error, remove the key from local storage
+                        localStorage.removeItem('veridaKey');
+                    }
+                });
+            }
+
+            // Handle form submission
+            $('#loginForm').on('submit', function (e) {
+                e.preventDefault();
+
+                const privateKey = $('#privateKey').val();
+                $('#errorBox').addClass('d-none');  // Hide any previous error message
+                $('#infoBox').addClass('d-none');   // Hide the info message
+                $('#loginBtn').prop('disabled', true);
+
+                // Make the GET request to the server
+                $.ajax({
+                    url: `/api/rest/v1/account/fromKey?key=${privateKey}`,
+                    type: 'GET',
+                    contentType: 'application/json',
+                    success: function (response) {
+                        if (response.success) {
+                            localStorage.setItem('veridaKey', privateKey);  // Save the key in local storage
+                            $('#infoBox').removeClass('d-none');  // Show success message
+
+                            setTimeout(function () {
+                                window.location.href = '/user';  // Redirect after 3 seconds
+                            }, 3000);
+                        } else {
+                            $('#errorBox').removeClass('d-none');  // Show error message for invalid key
+                            $('#loginBtn').prop('disabled', false);
+                        }
+                    },
+                    error: function (xhr) {
+                        if (xhr.status === 401) {
+                            $('#errorBox').removeClass('d-none');  // Show error message for invalid key
+                        }
+                        $('#loginBtn').prop('disabled', false);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

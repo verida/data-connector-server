@@ -1,21 +1,21 @@
-const qrCodeLink = '';
+// const qrCodeLink = '';
 let requestId = ''
 
-function generateQRCode(link) {
-    const qrCodeContainer = $('#qr-code');
+// function generateQRCode(link) {
+//     const qrCodeContainer = $('#qr-code');
 
-    // Clear previous QR code
-    qrCodeContainer.empty();
+//     // Clear previous QR code
+//     qrCodeContainer.empty();
 
-    // Generate new QR code
-    QRCode.toCanvas(link, function (error, canvas) {
-        if (error) {
-            console.error(error);
-        } else {
-            qrCodeContainer.append(canvas);
-        }
-    });
-}
+//     // Generate new QR code
+//     QRCode.toCanvas(link, function (error, canvas) {
+//         if (error) {
+//             console.error(error);
+//         } else {
+//             qrCodeContainer.append(canvas);
+//         }
+//     });
+// }
 
 function createInputBox(type, placeholder, buttonText, submitFunction) {
     const inputContainer = $('#input-container');
@@ -28,29 +28,59 @@ function createInputBox(type, placeholder, buttonText, submitFunction) {
 
     const submitButton = $('<button>')
         .text(buttonText)
+        .attr('id', 'submitButton')
         .addClass('btn btn-primary my-2')
         .on('click', submitFunction);
 
     inputContainer.append(inputBox).append(submitButton);
 }
 
+function setError(message) {
+    $("#errorContainer").show()
+    $("#errorMessage").text(message)
+    setTimeout(() => {
+        $("#errorContainer").hide()
+    }, 5000)
+}
+
+function disableButton() {
+    $('#submitButton').prop('disabled', true)
+}
+
+function enableButton() {
+    $('#submitButton').prop('disabled', false)
+}
+
 function submitAuthCode() {
+    disableButton()
     const authCode = $('.form-control').val();
-    $.post('/api/rest/v1/telegram/loginSubmit', { type: 'authcode', code: authCode, requestId }, null, 'json');
+    $.post('/api/rest/v1/telegram/loginSubmit', { type: 'authcode', code: authCode, requestId }, null, 'json').fail((jqXHR, textStatus, error) => {
+        setError(`Invalid auth code`)
+        enableButton()
+    })
 }
 
 function submitPhoneNumber() {
+    disableButton()
     const phoneNumber = $('.form-control').val();
-    $.post('/api/rest/v1/telegram/loginSubmit', { type: 'phone', phone: phoneNumber, requestId }, null, 'json');
+    $.post('/api/rest/v1/telegram/loginSubmit', { type: 'phone', phone: phoneNumber, requestId }, null, 'json').fail((jqXHR, textStatus, error) => {
+        setError(`Invalid phone number`)
+        enableButton()
+    })
 }
 
 function submitPassword() {
+    disableButton()
     const password = $('.form-control').val();
-    $.post('/api/rest/v1/telegram/loginSubmit', { type: 'password', password, requestId }, null, 'json');
+    $.post('/api/rest/v1/telegram/loginSubmit', { type: 'password', password, requestId }, null, 'json').fail((jqXHR, textStatus, error) => {
+        setError(`Invalid password`)
+        enableButton()
+    })
 }
 
 $(document).ready(function() {
-    generateQRCode(qrCodeLink);
+    // generateQRCode(qrCodeLink);
+    $("#errorContainer").hide()
 
     const eventSource = new EventSource('/api/rest/v1/telegram/login');
 
@@ -69,5 +99,7 @@ $(document).ready(function() {
         } else if (data.type === 'complete') {
             window.location.href = data.redirect
         }
+
+        enableButton()
     };
 });

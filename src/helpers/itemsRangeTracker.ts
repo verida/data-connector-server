@@ -17,15 +17,43 @@ export class ItemsRangeTracker {
 
     constructor(completedRangesString?: string) {
         if (completedRangesString) {
-          const ranges = completedRangesString.split(',')
-          for (const range of ranges) {
-            const [ startId, endId ] = range.split(':')
-            this.completedRanges.push({
-              startId,
-              endId
-            })
-          }
+            this.import(completedRangesString)
         }
+    }
+
+    public import(rangeString: string) {
+        try {
+            for (const entry of JSON.parse(rangeString)) {
+                this.completedRanges.push({
+                    startId: entry[0] ? entry[0] : undefined,
+                    endId: entry[1] ? entry[1] : undefined,
+                })
+            }
+        } catch (err: any) {
+            // Backwards compatible loading of ranges using old format
+            const ranges = rangeString.split(',')
+            for (const range of ranges) {
+                const [ startId, endId ] = range.split(':')
+                this.completedRanges.push({
+                    startId,
+                    endId
+                })
+            }   
+        }
+    }
+
+    /**
+     * Convert the completed ranges array into a string for saving into the database
+     * 
+     * @returns 
+     */
+    public export(): string {
+        const entries = []
+        for (const range of this.completedRanges) {
+            entries.push([range.startId, range.endId])
+        }
+
+        return JSON.stringify(entries)
     }
 
     /**
@@ -43,8 +71,10 @@ export class ItemsRangeTracker {
             if (range.startId == range.endId) {
                 // All interim items have been deleted, so
                 // we need to merge the two most recent ranges
-                this.completedRanges[1].startId = this.completedRanges[0].startId
-                this.completedRanges.splice(0,1)
+                if (this.completedRanges.length > 1) {
+                    this.completedRanges[1].startId = this.completedRanges[0].startId
+                    this.completedRanges.splice(0,1)
+                }
             } else {
                 this.completedRanges[0].endId = range.startId
 
@@ -128,20 +158,6 @@ export class ItemsRangeTracker {
         }
 
         return {}
-    }
-
-    /**
-     * Convert the completed ranges array into a string for saving into the database
-     * 
-     * @returns 
-     */
-    public export(): string {
-        const groups: string[] = []
-        for (const item of this.completedRanges) {
-            groups.push([item.startId,item.endId].join(':'))
-        }
-
-        return groups.join(',')
     }
 
 }

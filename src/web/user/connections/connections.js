@@ -2,51 +2,22 @@ const SYNC_LOG_SCHEMA = `https://vault.schemas.verida.io/data-connections/activi
 
 $(document).ready(function() {
     // Load the private key from local storage
-    let savedVeridaKey = localStorage.getItem('veridaKey');
-    if (savedVeridaKey) {
-        $('#veridaKey').val(savedVeridaKey);
-    }
-
-    handleButtonStates();
+    const veridaKey = localStorage.getItem('veridaKey');
 
     // Load providers on page load for the dropdown and fetch connections if a key is saved
     loadProviders(() => {
-        if (savedVeridaKey) {
+        if (veridaKey) {
             loadProvidersAndConnections();
         }
     });
 
-    $('#veridaKey').on('change', handleButtonStates);
-
-    function handleButtonStates() {
-        const veridaKey = $('#veridaKey').val().trim();
-
-        if (veridaKey) {
-            $('#loadBtn').prop('disabled', !veridaKey);
-            $('#generateIdentityBtn').toggle(!veridaKey);
-            $('#clearBtn').toggle(!!veridaKey);
-            savedVeridaKey = veridaKey
-            localStorage.setItem('veridaKey', veridaKey)
-        } else {
-            savedVeridaKey = undefined
-            localStorage.removeItem('veridaKey');
-            $('#providerTable').empty();
-        }
-    }
+    $('#eventLogModal').on('hidden.bs.modal', function (e) {
+        loadProvidersAndConnections()
+      });
 
     $('#loadBtn').click(function() {
         // Fetch and display connections
         loadProvidersAndConnections();
-    });
-
-    $('#clearBtn').click(function() {
-        $('#veridaKey').val('');
-        handleButtonStates();
-    });
-
-    $('#generateIdentityBtn').click(function() {
-        alert("Generating a new identity...");
-        // Implement identity generation logic here
     });
 
     function loadProvidersAndConnections() {
@@ -57,22 +28,20 @@ $(document).ready(function() {
         $('#loadingIndicator').show();
         $('#loadBtn').prop('disabled', true);
 
-        const veridaKey = localStorage.getItem('veridaKey');
-
         $.ajax({
-            url: `/api/rest/v1/connections?key=${savedVeridaKey}`,
+            url: `/api/rest/v1/connections?key=${veridaKey}`,
             type: 'GET',
             contentType: 'application/json',
             success: function(syncStatusResponse) {
                 $.each(syncStatusResponse.items, function(key, value) {
                     const connection = value;
                     const handlers = value.handlers;
-    
+
                     const formattedSyncTimes = `Start: ${new Date(connection.syncStart).toLocaleString()}<br>End: ${new Date(connection.syncEnd).toLocaleString()}`;
-    
+
                     const providerDetails = getProviderDetails(connection.providerId);
                     const avatar = connection.profile.avatar.uri ? `<img src="${connection.profile.avatar.uri}" alt="${connection.profile.name}" style="width: 30px; height: 30px;"></img>` : ''
-    
+
                     const row = $(`
                         <tr>
                             <td>
@@ -102,13 +71,13 @@ $(document).ready(function() {
                     `);
                     $('#providerTable').append(row);
                 });
-    
+
                 $('.logs-btn').click(function() {
                     const provider = $(this).data('provider');
                     const providerId = $(this).data('provider-id');
                     window.open(`/developer/data?limit=50&filter=providerId:${provider},accountId:${providerId}&schema=${SYNC_LOG_SCHEMA}&sort=insertedAt:desc`, '_blank');
                 });
-    
+
                 $('.disconnect-btn').click(function() {
                     const connectionId = $(this).data('connection');
                     $.ajax({
@@ -118,20 +87,20 @@ $(document).ready(function() {
                         }
                     })
                 });
-    
+
                 $('.sync-btn').click(function() {
                     const $button = $(this)
                     const connectionId = $(this).data('connection');
                     $button.text('Syncing...')
                     $button.prop('disabled', true);
                     const syncType = $(this).data('sync-type');
-    
+
                     // Start tailing logs
                     const eventSource = new EventSource(`/api/rest/v1/ds/watch/${btoa(SYNC_LOG_SCHEMA)}?key=${veridaKey}`);
-    
+
                     const tableBody = $('#eventTableBody');
                     tableBody.empty()
-    
+
                     function addEventRow(eventResponse) {
                         const eventData = eventResponse.value
                         const rowHtml = `
@@ -145,21 +114,20 @@ $(document).ready(function() {
                         `;
                         tableBody.append(rowHtml);
                       }
-    
+
                     eventSource.addEventListener('message', (item) => {
                         const record = JSON.parse(item.data)
                         addEventRow(record)
                     })
-    
+
                     // Display log modal
                     $('#eventLogModal').modal('show');
-    
+
                     // Handle modal closing
                     $('#eventLogModal').on('hidden.bs.modal', function (e) {
                         eventSource.close()
-                        loadProvidersAndConnections()
                       });
-    
+
                     // Initialize sync
                     $.ajax({
                         url: `/api/rest/v1/connections/${connectionId}/sync?key=${veridaKey}`,
@@ -171,14 +139,14 @@ $(document).ready(function() {
                         success: function(response) {
                             $button.prop('disabled', false);
                             $button.text('Sync Now')
-    
+
                             setTimeout(() => {
                                 eventSource.close()
                             }, 5000)
                         }
                     })
                 });
-    
+
                 $('#loadingIndicator').hide(); // Hide the loading indicator
                 $('#loadBtn').prop('disabled', false);
             },
@@ -209,11 +177,27 @@ $(document).ready(function() {
         const $dropdown = $('#providerListDropdown');
         $dropdown.empty();
         $.each(providersData, function(key, provider) {
-            if (provider.id === 'mock') return; // Skip 'mock' provider
-            $dropdown.append(`<a class="dropdown-item" href="#" onclick="window.open('/providers/${provider.id}/connect?key=${$('#veridaKey').val()}', '_blank');">
-                <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
-                ${provider.label}
-            </a>`);
+            if (provider.id === 'mock') {
+                return; // Skip 'mock' provider
+            }
+
+            if (provider.status === 'active') {
+                $dropdown.append(`
+                    <a class="dropdown-item" href="#" onclick="window.open('/providers/${provider.id}/connect?key=${veridaKey}', '_blank');">
+                        <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
+                    ${provider.label}
+                    </a>`
+                );
+            }
+            if (provider.status === 'upcoming') {
+                $dropdown.append(`
+                    <div class="dropdown-item">
+                        <img src="${provider.icon}" alt="${provider.label}" style="width: 20px; height: 20px; margin-right: 5px;">
+                    ${provider.label} (Upcoming)
+                    </div>`
+                );
+            }
+
         });
     }
 

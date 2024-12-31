@@ -1,6 +1,6 @@
 {
   "name": "@verida/data-connector",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "Verida Data Connector",
   "main": "dist/server.js",
   "scripts": {
@@ -20,17 +20,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/verida/server-template.git"
+    "url": "git+https://github.com/verida/data-connector-server.git"
   },
   "author": "Verida",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/verida/server-template/issues"
+    "url": "https://github.com/verida/data-connector-server/issues"
   },
   "engines": {
-    "node": ">=16.06"
+    "node": ">=18"
   },
-  "homepage": "https://github.com/verida/server-template#readme",
+  "homepage": "https://github.com/verida/data-connector-server#readme",
   "dependencies": {
     "@node-oauth/express-oauth-server": "^4.1.1",
     "@oauth-everything/passport-discord": "^1.0.2",
@@ -38,22 +38,31 @@
     "@superfaceai/passport-twitter-oauth2": "^1.2.3",
     "@types/node": "^20.14.11",
     "@types/passport": "^1.0.16",
+    "@anthropic-ai/tokenizer": "^0.0.4",
+    "@aws-sdk/client-bedrock-runtime": "^3.693.0",
+    "@langchain/aws": "^0.1.2",
+    "@langchain/community": "^0.3.16",
+    "@langchain/core": "^0.3.19",
+    "@notionhq/client": "^2.2.15",
+    "@tensorflow-models/universal-sentence-encoder": "^1.3.3",
     "@verida/account-node": "^4.4.0",
     "@verida/client-ts": "^4.4.0",
     "@verida/did-client": "^4.4.0",
     "@verida/encryption-utils": "^4.0.0",
     "@verida/helpers": "^4.4.0",
     "@verida/types": "^4.4.0",
+    "@verida/vda-common": "^4.4.0",
     "@verida/vda-sbt-client": "^4.4.0",
     "@verida/verifiable-credentials": "^4.4.0",
     "@verida/web3": "^4.4.0",
     "aws-serverless-express": "^3.4.0",
     "axios": "^1.7.2",
     "body-parser": "^1.19.0",
+    "closevector-node": "^0.1.6",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.1",
-    "discord.js": "^14.9.0",
+    "discord.js": "^14.16.3",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-session": "^1.17.3",
@@ -62,6 +71,8 @@
     "gaxios": "^6.7.0",
     "googleapis": "^140.0.1",
     "groq-sdk": "^0.5.0",
+    "hnswlib-node": "^3.0.0",
+    "langchain": "^0.3.6",
     "lodash": "^4.17.21",
     "log4js": "^6.4.1",
     "mailparser": "^3.7.1",
@@ -69,6 +80,7 @@
     "memory-cache": "^0.2.0",
     "minisearch": "^7.1.0",
     "mocha": "^9.2.1",
+    "moment-timezone": "^0.5.45",
     "nano": "^9.0.5",
     "node-imap": "^0.9.6",
     "officeparser": "^4.1.1",
@@ -76,25 +88,30 @@
     "passport-facebook": "^3.0.0",
     "passport-google-oauth20": "^2.0.0",
     "pdf-parse": "^1.1.1",
+    "sanitize-html": "^2.13.1",
     "string-strip-html": "8.5.0",
-    "tdlib-native": "^2.6.0",
+    "tdlib-native": "^3.1.0",
     "ts-mocha": "^9.0.2",
+    "ts-textrank": "^1.0.3",
     "twitter-api-v2": "^1.14.0",
     "uuid": "^10.0.0",
     "xlsx": "^0.18.5",
-    "xoauth2": "^1.2.0"
+    "xoauth2": "^1.2.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
+    "@types/body-parser": "^1.19.5",
     "@types/express-session": "1.17.0",
     "@types/mocha": "^9.1.0",
     "@types/oauth2-server": "^3.0.18",
+    "@types/node": "^18.11.9",
+    "@types/passport": "^1.0.16",
     "@types/uuid": "^10.0.0",
     "@verida/cli-tools": "^4.1.1",
     "claudia": "^5.14.1",
     "command-line-interface": "^5.0.0",
     "nodemon": "^2.0.14",
     "open": "^8.4.2",
-    "typescript": "4.6.3"
+    "typescript": "^5.6.3"
   }
 }

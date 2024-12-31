@@ -28,21 +28,26 @@ export class TelegramApi {
         }
 
         // Loading addon
-        const adapter = await TDLibAddon.create();
-    
-        // Make TDLib shut up. Immediately
-        Client.disableLogs(adapter);
-    
-        const client = new Client(adapter);
-    
-        await client.start()
-        this.client = client
+        try {
+            const adapter = await TDLibAddon.create();
+        
+            // Make TDLib shut up. Immediately
+            Client.disableLogs(adapter);
+        
+            const client = new Client(adapter);
+        
+            await client.start()
+            this.client = client
 
-        if (startClient) {
-            await this.startClient()
+            if (startClient) {
+                await this.startClient()
+            }
+
+            return this.client
+        } catch (err: any) {
+            console.error(`Telegram library error: ${err.message}`)
+            throw new Error(`Internal error with Telegram library`)
         }
-
-        return this.client
     }
     
     public async startClient() {

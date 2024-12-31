@@ -2,15 +2,15 @@ import { Request, Response } from 'express'
 import Providers from "../providers"
 import SyncManager from '../sync-manager'
 import { UniqueRequest } from '../interfaces'
-import { Utils } from '../utils'
-import CONFIG from '../config'
+import { NetworkConnection, Utils } from '../utils'
+import { ContextSession } from '@verida/types'
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
 
 /**
  * Sign in process:
- * 
+ *
  * - Vault opens `connect` via safari
  * - User signs in
  * - Safari redirects to `callback`
@@ -18,42 +18,57 @@ const logger = log4js.getLogger()
  * - User is shown a deeplink which includes connection credentials (access, refresh token)
  * - User clicks deeplink to open Vault
  * - Vault fetches connection and profile information from the DATA_PROFILE_SCHEMA datastore
- * 
+ *
  * Data sync process:
- * 
+ *
  * - ..
  */
 export default class Controller {
 
     /**
      * Initiate an auth connection for a given provider.
-     * 
-     * @param req 
-     * @param res 
-     * @param next 
-     * @returns 
+     *
+     * @param req
+     * @param res
+     * @param next
+     * @returns
      */
     public static async connect(req: Request, res: Response, next: any) {
         try {
             const providerName = req.params.providerId
-            const query = req.query
-            let redirect = query.redirect ? query.redirect.toString() : ''
-            const key = query.key ? query.key.toString() : undefined
-            const did = await Utils.getDidFromKey(key)
 
-            if (!key) {
+            const contextSession: ContextSession | undefined = req.query['api_key'] ? JSON.parse(Buffer.from(req.query['api_key'].toString(), 'base64').toString('utf-8')) : undefined;
+
+            const key = req.query.key ? req.query.key.toString() : undefined
+
+            if (!key && !contextSession) {
                 return res.status(400).send({
-                    error: `Missing key in query parameters`
+                    error: `Missing key or token in query parameters`
                 });
             }
 
+            const did = contextSession?.did || await Utils.getDidFromKey(key)
+
+            let redirect = req.query.redirect ? req.query.redirect.toString() : ''
             // Session data isn't retained if using localhost, so use 127.0.0.1
             // @ts-ignore Session is injected as middleware
             req.session.redirect = redirect
+            req.session.contextSession = contextSession
             req.session.key = key
             req.session.did = did
 
             const provider = Providers(providerName)
+
+            const providerConfig = provider.getConfig()
+            const status = providerConfig.status
+
+            if (status !== 'active') {
+                // Prevent connecting with a provider that is not active
+                // Throw the same error as from Providers(providerName)
+                throw new Error(`${providerName} not found`)
+            }
+
+            // TODO: Check the provider is enabled and the status is active
 
             await provider.connect(req, res, next)
         } catch (err: any) {
@@ -68,20 +83,20 @@ export default class Controller {
                 </div>
             </body>
             </html>`
-            
+
             res.send(output)
         }
     }
 
     /**
      * Facilitate an auth callback for a given provider.
-     * 
+     *
      * Requires `did` in the query string
-     * 
-     * @param req 
-     * @param res 
-     * @param next 
-     * @returns 
+     *
+     * @param req
+     * @param res
+     * @param next
+     * @returns
      */
     public static async callback(req: UniqueRequest, res: Response, next: any) {
         try {
@@ -90,14 +105,23 @@ export default class Controller {
             const provider = Providers(providerId)
 
             const connectionResponse = await provider.callback(req, res, next)
-    
-            const did = req.session.did
-            const key = req.session.key
-            const redirect = req.session.redirect
 
-            const networkInstance = await Utils.getNetwork(key, req.requestId)
+            // TODO: Validate the express session object and remove the type assertions
+            const key = req.session.key as string | undefined
+            const contextSession = req.session.contextSession as ContextSession | undefined
+            const redirect = req.session.redirect as string
 
-            const syncManager = new SyncManager(networkInstance.context, req.requestId)
+            let networkConnection: NetworkConnection
+
+            if (contextSession) {
+                networkConnection = await Utils.getNetworkConnectionFromContextSession(contextSession, req.requestId)
+            } else if (key) {
+                networkConnection = await Utils.getNetworkConnectionFromPrivateKey(key, req.requestId)
+            } else {
+                throw new Error("No credentials provided")
+            }
+
+            const syncManager = new SyncManager(networkConnection.context, req.requestId)
             const connection = await syncManager.saveNewConnection(providerId, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
             // Start syncing (async so we don't block)
@@ -129,11 +153,11 @@ export default class Controller {
                         </div>
                     </body>
                     </html>`
-                
+
                 res.send(output)
             }
             // } else {
-                
+
 
             //     // let redirectPath = 'https://vault.verida.io/connection-success'
             //     // if (redirect != 'deeplink') {
@@ -144,7 +168,7 @@ export default class Controller {
             //     // so the user can pull their profile remotely and store their tokens securely
             //     // This also avoids this server saving those credentials anywhere, they are only stored by the user
             //     //const redirectUrl = `${redirectPath}?provider=${providerName}&accessToken=${connectionResponse.accessToken}&refreshToken=${connectionResponse.refreshToken ? connectionResponse.refreshToken : ''}`
-                
+
 
             //     // @todo: Generate nice looking thank you page
             //     const output = `<html>
@@ -165,7 +189,7 @@ export default class Controller {
             //         </div>
             //     </body>
             //     </html>`
-                
+
             //     res.send(output)
             // }
 
@@ -184,7 +208,7 @@ export default class Controller {
                 </div>
             </body>
             </html>`
-            
+
             res.send(output)
         }
 

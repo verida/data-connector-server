@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About - Verida Private Data Bridge</title>
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../../common.css">
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -24,17 +25,17 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/user/connections">Connections</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/user/ai">Private AI</a>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="/developer/data">Browse Data</a>
+                </li>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="/developer/api">Explore APIs</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="/user/security">Security</a>
                 </li>
-            </ul>
-            <!-- Extra nav item aligned to the right -->
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/developer">Developer Sandbox &rarr;</a>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="https://staging.app.verida.network/" target="_blank">Verida Vault &rarr;</a>
                 </li>
             </ul>
         </div>
@@ -46,6 +47,7 @@
 
         <p>The <strong>Verida Private Data Bridge</strong> (this application) and <strong>Verida Private Data APIs</strong> (also part of this application) are deployed on the first iteration of Verida's Confidential Compute infrastructure. This infrastructure is designed to find the optimum balance between decentralization, security, privacy and performance.</p>
 
+        <a name="compute" />
         <h2>Confidential Compute</h2>
 
         <p>This application is running within a confidential computation environment. This means that no-one, not even the underlying infrastructure provider or Verida can access any user data or view the computation occurring on the node.</p>
@@ -68,25 +70,29 @@
             <li><a href="https://docs.marlin.org/learn/oyster/introduction">Marlin Oyster in depth</a></li>
         </ul>
 
+        <a name="storage" />
         <h2>Confidential Storage</h2>
         <p>Verida APIs integrate the Verida Client SDK within the secure enclave on each confidential compute node. User data is syncronized from the Verida network, decrypted and then loaded into memory for rapid access via API endpoints.</p>
         <p>As such, user data retains all the security and privacy benefits of the Verida Network and user data never leaves the secure enclave, accept via user authorized API requests.</p>
 
+        <a name="llm-privacy" />
         <h2>LLM Privacy</h2>
-        <p>The large language models (LLM) used by this deployment is <i>not</i> running an LLM in a Verida Confidential Compute secure enclave. This deployment is currently using Amazon Web Services Bedrock for LLM access. Secure enclaves do not currently support GPU access which is necessary for performant LLM operations. This is a temporary solution as we are collaborating with partners to enable LLM's to run efficiently and cost effectively within secure enclaves.</p>
+        <p>The large language models (LLM) currently used in the Verida APIs are not currently running in a Verida Confidential Compute secure enclave. Secure enclaves do not currently support GPU access which is necessary for performant LLM operations. The alpha release is using Amazon Web Services Bedrock for LLM access.</p>
 
+        <p>This is a temporary solution as we are collaborating with partners to enable LLM's to run efficiently and cost effectively within secure enclaves. While this is not perfect, we believe the <a href="https://aws.amazon.com/bedrock/security-compliance/">AWS Bedrock privacy architecture and security model</a> is an adequate compromise for the alpha release.</p>
+
+        <a name="private-key" />
         <h2>Private Key / Seed Phrase</h2>
-        <p>You enter your private key or seed phrase into this application to connect to the Verida Confidential Storage network. Your credentials are stored in local storage. You can clear them at any time by clicking the <strong>Clear</strong> button on each page.</p>
-
-        <p><a href="https://aws.amazon.com/bedrock/security-compliance/">Learn earn about the Bedrock privacy architecture and security model</a></p>
+        <p>You enter your private key or seed phrase into this application to connect to the Verida Confidential Storage network. Your credentials are stored in local storage and cached in the secure enclave for rapid access. You can clear them at any time by clicking your name / avatar in the top right of the page and logging out.
 
         <h2>Source Code</h2>
-        <p>TThe source code for the User Data APIs are open source and are contained within the <a href="https://github.com/verida/data-connector-server">Data Connector Server Github Repo</a></p>
+        <p>The source code for the User Data APIs are open source and are contained within the <a href="https://github.com/verida/data-connector-server">Data Connector Server Github Repo</a></p>
     </div>
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="/assets/js/jquery-3.5.1.min.js"></script>
     <!-- Bootstrap JS -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="../../account.js"></script>
 </body>
 </html>

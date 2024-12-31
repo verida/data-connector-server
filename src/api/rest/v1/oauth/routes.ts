@@ -30,7 +30,7 @@ const router = express.Router();
  */
 router.post("/auth", async (req: Request, res: Response) => {
   console.log(req.body)
-  const { context } = await Utils.getNetworkFromRequest(req)
+  const { context } = await Utils.getNetworkConnectionFromRequest(req)
   const { client_id, auth_request, redirect_uri, user_sig, app_sig, state, return_code } = req.body.data;
 
   if (!client_id) {

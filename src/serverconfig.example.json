@@ -10,7 +10,7 @@
             "exposeLogs": false,
             "logsPassword": "a890s7dfna9df7"
         },
-        "devMode": true,
+        "mode": "development",
         "environment": "banksia",
         "serverKey": "0x...",
         "testVeridaKey": "0x...",
@@ -19,8 +19,7 @@
         "didClientConfig": {
             "callType": "web3",
             "network": "banksia",
-            "web3Config": {   
-            }
+            "web3Config": {}
         },
         "schemas": {
             "DATA_CONNECTIONS": "https://vault.schemas.verida.io/data-connections/connection/v0.3.0/schema.json",
@@ -32,22 +31,38 @@
             "FAVOURITE": "https://common.schemas.verida.io/favourite/v0.1.0/schema.json",
             "FILE": "https://common.schemas.verida.io/file/v0.1.0/schema.json",
             "CHAT_GROUP": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
-            "CHAT_MESSAGE": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json"
+            "CHAT_MESSAGE": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
+            "CALENDAR": "https://common.schemas.verida.io/social/calendar/v0.1.0/schema.json",
+            "EVENT": "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
         },
         "llms": {
             "bedrockEndpoint": "",
-            "bedrockKey": ""
+            "bedrockKey": "",
+            "bedrockAWSAccountId": "",
+            "bedrockAWSAccessKeyId": "",
+            "bedrockAWSSecretAccessKey": "",
+            "bedrockAWSRegion": "us-east-1",
+            "groqKey": "",
+            "tavilyKey": "",
+            "agentModel": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+            "agentTokenLimit": 100000,
+            "defaultProvider": "bedrock",
+            "defaultModel": "LLAMA3.1_70B"
         },
         "maxHandlerRetries": 5,
-        "providerTimeoutMins": 15
+        "providerTimeoutMins": 15,
+        "handlerTimeoutMins": 15
     },
     "providers": {
         "mock": {
+            "status": "inactive",
             "label": "Mock",
             "batchSize": 20
         },
         "facebook": {
+            "status": "upcoming",
             "label": "Facebook",
+            "description": "Sync your followed pages, friends and posts",
             "appId": "",
             "appSecret": "",
             "sbtImage": "https://data.verida.network/ipfs/QmcCoAjMWQpz7FwJi1d7jSh9EJ1m3xY1FRGxPi9pu3Rit7/FacebookBadge.png",
@@ -62,7 +77,9 @@
             "maxSyncLoops": 5
         },
         "twitter": {
+            "status": "inactive",
             "label": "Twitter",
+            "description": "",
             "clientID": "",
             "clientSecret": "",
             "bearerToken": "",
@@ -74,34 +91,57 @@
                 "posts": {
                     "batchSize": 20
                 }
-            },
-            "enabled": false
+            }
         },
         "discord": {
+            "status": "upcoming",
+            "description": "Sync your connected server list and DMs",
             "label": "Discord",
             "clientID": "",
             "clientSecret": "",
             "botToken": "",
             "sbtImage": "https://data.verida.network/ipfs/QmQsghP7Y1dbZHgoo48hQz8SHdFk2mjmPikhkHg69HHhWb/Gen0/discord-account.png"
         },
+        "github": {
+            "status": "upcoming",
+            "label": "Github"
+        },
+        "slack": {
+            "status": "upcoming",
+            "label": "Slack",
+            "description": "Sync your Slack channels and DMs"
+        },
+        "spotify": {
+            "status": "upcoming",
+            "label": "Spotify",
+            "description": "Sync your playlists and listening history"
+        },
         "google": {
+            "label": "Google",
+            "status": "active",
+            "description": "Sync your gmail, calendar and drive",
             "clientId": "",
             "clientSecret": "",
             "batchSize": 50,
             "sizeLimit": 10,
             "maxSyncLoops": 1,
-            "breakTimestamp": "2000-07-21T12:07:11.000Z",
             "handlers": {
                 "gmail": {
                     "batchSize": 200
                 },
                 "google-drive-document": {
                     "batchSize": 50
+                },
+                "calendar-event": {
+                    "backdate": "12-months",
+                    "eventBatchSize": 10
                 }
             }
         },
         "telegram": {
+            "status": "active",
             "label": "Telegram",
+            "description": "Sync your messages",
             "apiId": 0,
             "apiHash": "",
             "maxSyncLoops": 1,
@@ -115,8 +155,9 @@
     },
     "providerDefaults": {
         "limitResults": false
+    },
+    "notion": {
+        "apiKey": "",
+        "restrictedAccessDatabaseId": ""
     }
 }
-
-
-

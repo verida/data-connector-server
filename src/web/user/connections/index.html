@@ -5,11 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Connections</title>
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../../common.css">
 </head>
 <body>
+    <!-- <script
+        src="https://js.sentry-cdn.com/cd923d4434a725db36ea55d994624686.min.js"
+        crossorigin="anonymous"
+    ></script> -->
+    <script
+        src="https://browser.sentry-cdn.com/8.33.1/bundle.feedback.min.js"
+        integrity="sha384-Mxv/vPNCoSSGpRryvvX4rPWZo4IL1ZQOG2VxGPI8yypzyhJse3GS4yD2Ct47oBMm"
+        crossorigin="anonymous"
+    ></script>
+    <script>
+        if (typeof Sentry !== 'undefined') {
+            Sentry.onLoad(function() {
+                Sentry.init({
+                    dsn: "https://cd923d4434a725db36ea55d994624686@o4503997119725568.ingest.us.sentry.io/4508061430644736",
+                    integrations: [
+                        Sentry.feedbackIntegration({
+                            colorScheme: "light",
+                            triggerLabel: "Share feedback",
+                            formTitle: "Share Feedback",
+                            submitButtonLabel: "Send Feedback",
+                            messagePlaceholder: "Please describe your feedback...",
+                        }),
+                    ],
+                });
+            });
+        }
+    </script>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="/user/welcome">Private Data Bridge [alpha]</a>
@@ -24,17 +52,17 @@
                 <li class="nav-item">
                     <a class="nav-link active" href="/user/connections">Connections</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/user/ai">Private AI</a>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="/developer/data">Browse Data</a>
+                </li>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="/developer/api">Explore APIs</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/user/security">Security</a>
                 </li>
-            </ul>
-            <!-- Extra nav item aligned to the right -->
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="/developer">Developer Sandbox &rarr;</a>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="https://staging.app.verida.network/" target="_blank">Verida Vault &rarr;</a>
                 </li>
             </ul>
         </div>
@@ -42,14 +70,9 @@
     <div class="container mt-5">
         <h1 class="text-center">Data Connections</h1>
 
-        <!-- Verida Private Key Input, Load, Clear, and Generate Identity Button -->
-        <div class="form-group">
-            <label for="veridaKey">Verida Private Key / Seed Phrase:</label>
-            <input type="password" class="form-control" id="veridaKey" placeholder="Enter your Verida Private Key">
-            <button id="loadBtn" class="btn btn-primary mt-2" disabled="true">Load</button>
-            <button id="clearBtn" class="btn btn-secondary mt-2">Clear</button>
-            <button id="generateIdentityBtn" class="btn btn-info mt-2">Generate Identity</button>
-        </div>
+        <p>Extract data from existing centralized platforms to take ownership of your data. <a href=""https://developers.verida.network/private-data-bridge/data-connections>Learn more about data connections</a></p>
+
+        <p>Connections in development: Telegram, Slack, Discord, Facebook.</p>
 
         <!-- Add Connection Dropdown -->
         <div class="dropdown mt-2">
@@ -59,6 +82,7 @@
             <div class="dropdown-menu" aria-labelledby="addConnectionDropdown" id="providerListDropdown">
                 <!-- Provider list filled by JavaScript -->
             </div>
+            <button id="loadBtn" class="btn btn-primary" disabled="true">Reload Connections</button>
         </div>
 
         <!-- Loading Indicator -->
@@ -117,10 +141,11 @@
     </div>
 
     <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="/assets/js/jquery-3.5.1.min.js"></script>
     <!-- Bootstrap JS -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="connections.js"></script>
+    <script src="../../account.js"></script>
 </body>
 </html>

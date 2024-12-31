@@ -1,5 +1,6 @@
+const _ = require('lodash')
 import { KeywordSearchTimeframe } from "../../helpers/interfaces";
-import { LLM } from "../llm"
+import { LLM, stripNonJson } from "../llm"
 import { SearchType } from "../search";
 
 const systemPrompt = `You are an expert data analyst. When I give you a prompt, you must generate search metadata that will be used to extract relevant information to help answer the prompt.
@@ -12,7 +13,7 @@ You must generate a JSON response containing the following information:
 - output_type: The amount of detail in the output of each search result to provide meaningful context. full_content, summary, headline
 - profile_information; Array of these options only; name, contactInfo, demographics, lifestyle, preferences, habits, financial, health, personality, employment, education, skills, language, interests
 
-JSON only, no explanation or formatting.`
+Output JSON only with no explanation or formatting.`
 
 export enum PromptSearchType {
   KEYWORDS = "keywords",
@@ -43,7 +44,8 @@ export interface PromptSearchLLMResponse {
       "financial" | "health" | "personality" | "employment" | "education" | "skills" |
       "language" | "interests"
     >;
-  }
+    search_summary?: string
+}
 
 export class PromptSearch {
 
@@ -53,10 +55,22 @@ export class PromptSearch {
         this.llm = llm
     }
 
-    public async search(userPrompt: string): Promise<PromptSearchLLMResponse> {
-        const response = await this.llm.prompt(userPrompt, systemPrompt)
-        return <PromptSearchLLMResponse> JSON.parse(response.choices[0].message.content!)
-        
+    public async search(userPrompt: string, retries: number = 3): Promise<PromptSearchLLMResponse> {
+      const response = await this.llm.prompt(userPrompt, systemPrompt, true)
+
+      try {
+        const cleansedJson = stripNonJson(response.textResponse)
+
+        return <PromptSearchLLMResponse> JSON.parse(cleansedJson)
+      } catch (err: any) {
+        console.error(err, retries)
+        console.error(response.textResponse)
+        if (retries <= 0) {
+          throw new Error(`No user data query available`)
+        } else {
+          return await this.search(userPrompt, retries - 1)
+        }
+      }
     }
 
 }

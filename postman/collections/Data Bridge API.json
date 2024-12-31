@@ -1,0 +1,752 @@
+{
+	"info": {
+		"_postman_id": "02d3e0eb-9444-434d-879f-8670a45d58b9",
+		"name": "Data Bridge API",
+		"description": "This API provides an interface to the Verida Private Data Bridge. It supports:\n\n**Providers (ie: Google, Discord):**\n\n- Listing all available providers\n    \n- Fetching a single provider\n    \n\n**Connections for a current user:**\n\n- List all connections\n    \n- Sync all connections\n    \n- Sync a specific connection\n    \n- Disconnect a connection\n    \n- Update a connection\n    \n\n## Terminology\n\n- **Provider**: A third party service (ie: Google)\n    \n- **Handler**: Each provider has one or more handlers that facilitates pulling data of a particular type from a provider (ie: The Google provider has a Gmail handler that syncronizes emails)\n    \n- **Provider Options**: Each provider has configurable options (ie: `batchSize` or `maxAge`)\n    \n- **Connection**: An end user's connection to a provider (ie: Jane's connection to Google)\n    \n- **Connection Config**: An end user's configuration for a connection\n    \n- **Connection Handler Config**: An end user's configuration for a connection handler",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_uid": "20367237-02d3e0eb-9444-434d-879f-8670a45d58b9"
+	},
+	"item": [
+		{
+			"name": "Connections",
+			"item": [
+				{
+					"name": "Connections",
+					"id": "3ad454be-21fc-4025-ab59-f44d027f3992",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/connections",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"connections"
+							]
+						},
+						"description": "Get a list of all connections"
+					},
+					"response": []
+				},
+				{
+					"name": "Sync all",
+					"id": "e6e1b808-0961-4001-a2aa-11b3d239792b",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"instantComplete\": true,\n    \"forceSync\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/connections/sync",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"connections",
+								"sync"
+							]
+						},
+						"description": "Sync all connections\n\n- **instantComplete**: Return without waiting for sync to complete. If `true` then there will be no `connections` object in the result.\n    \n- **forceSync**: Force sync to occur, ignoring the current sync status"
+					},
+					"response": []
+				},
+				{
+					"name": "Sync connection",
+					"id": "35308233-7eac-42e1-a8ac-be023e48340e",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"instantComplete\": true,\n    \"forceSync\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/connections/sync/{{testConnectionId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"connections",
+								"sync",
+								"{{testConnectionId}}"
+							]
+						},
+						"description": "Sync a specific connection\n\n- **instantComplete**: Return without waiting for sync to complete. If `true` then there will be no `connections` object in the result.\n    \n- **forceSync**: Force sync to occur, ignoring the current sync status"
+					},
+					"response": []
+				},
+				{
+					"name": "Disconnect connection",
+					"id": "02e01b9a-e130-4dd9-bec6-fb9eeeebf658",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/connections/{{testConnectionId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"connections",
+								"{{testConnectionId}}"
+							]
+						},
+						"description": "Disconnect a connection"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Connection",
+					"id": "61ecd0fe-a85b-48c4-88e7-437fef88d0fe",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"syncStatus\": \"connected\",\n    \"syncFrequency\": \"day\",\n    \"handlerConfig\": {\n        \"chat-message\": {\n            \"enabled\": true,\n            \"groupTypes\": \"chatTypeBasicGroup,chatTypePrivate,chatTypeSecret\"\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/connections/{{testConnectionId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"connections",
+								"{{testConnectionId}}"
+							]
+						},
+						"description": "Update the connection.\n\nAny properties (including sub-properties of `handlerConfig`) that aren't specified are left unchanged.\n\n- **syncStatus**: (optional) One of \\[`paused` , `connected`\\]\n    \n- **syncFrequency**: (optional) One of \\[ `hour`, `day`, `week` \\]\n    \n- **handlerConfig**: (optional) Object of handlers (key = handlerId) with value another object of key / value pairs representing configuration for the handler. There is a special boolean property `enabled` indicating if the handler is enabled or disabled."
+					},
+					"response": [
+						{
+							"id": "3005898f-12c5-4cbf-812b-fc7db47c75c2",
+							"name": "Update connection",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"syncStatus\": \"connected\",\n    \"syncFrequency\": \"day\",\n    \"handlerConfig\": {\n        \"chat-message\": {\n            \"enabled\": true,\n            \"groupTypes\": \"chatTypeBasicGroup,chatTypePrivate,chatTypeSecret\"\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{apiUrl}}/{{apiVersion}}/connections/{{testConnectionId}}",
+									"host": [
+										"{{apiUrl}}"
+									],
+									"path": [
+										"{{apiVersion}}",
+										"connections",
+										"{{testConnectionId}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express",
+									"uuid": "3200b54e-abb2-4a23-9a62-c67b8bbc68b9"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*",
+									"uuid": "a3100372-8013-4f0a-be28-081070773e9c"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8",
+									"uuid": "7116c9c1-598c-451b-bb5e-cfe04f0ee0ca"
+								},
+								{
+									"key": "Content-Length",
+									"value": "191",
+									"uuid": "d6ce8487-2df4-4665-b4dd-f9616cdf67d3"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"bf-KLH7GnCXXzGVeRPloJ15jck2vuk\"",
+									"uuid": "dd169ebf-4bd6-4db8-852d-380b1a49f41d"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 04:32:08 GMT",
+									"uuid": "14c430b2-3af4-4484-87a5-e2bbcc8aa9cb"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive",
+									"uuid": "361fda72-c932-4874-9f78-28e065441b48"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5",
+									"uuid": "08012b1a-2537-43f5-9ab7-2a885f5fcd95"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"syncStatus\": \"connected\",\n    \"syncFrequency\": \"day\",\n    \"handlers\": [\n        {\n            \"name\": \"chat-message\",\n            \"enabled\": true,\n            \"config\": {\n                \"groupTypes\": \"chatTypeBasicGroup,chatTypePrivate,chatTypeSecret\"\n            }\n        }\n    ]\n}"
+						},
+						{
+							"id": "eb4e7c2b-8fe6-4fae-882d-b147b112e371",
+							"name": "Update handler config",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"handlerConfig\": {\n        \"chat-message\": {\n            \"groupTypes\": \"chatTypeBasicGroup,chatTypePrivate\"\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{apiUrl}}/{{apiVersion}}/connections/{{testConnectionId}}",
+									"host": [
+										"{{apiUrl}}"
+									],
+									"path": [
+										"{{apiVersion}}",
+										"connections",
+										"{{testConnectionId}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express",
+									"uuid": "ef3b6149-2f34-4cb8-bec1-2a62f27d7992"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*",
+									"uuid": "be2c79db-afa7-4a56-bf39-935ecd9c360a"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8",
+									"uuid": "7d7ad5b0-0659-45c7-888c-ea78f816991b"
+								},
+								{
+									"key": "Content-Length",
+									"value": "176",
+									"uuid": "f55f11f0-c6f0-42e6-bb5f-eb9e93c7de84"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"b0-qs5pq51fJE4l6aWao+AXauRadEU\"",
+									"uuid": "2c4d44cb-e787-4cda-9f2d-80336dd688d5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 04:32:29 GMT",
+									"uuid": "504d3f79-2214-48b9-bc6f-57bd0bc57653"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive",
+									"uuid": "0b927c5e-d0d1-4d39-87f8-72186c6341fc"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5",
+									"uuid": "f313b494-6009-49ca-be1f-ce09cd84aae7"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"syncStatus\": \"connected\",\n    \"syncFrequency\": \"day\",\n    \"handlers\": [\n        {\n            \"name\": \"chat-message\",\n            \"enabled\": true,\n            \"config\": {\n                \"groupTypes\": \"chatTypeBasicGroup,chatTypePrivate\"\n            }\n        }\n    ]\n}"
+						},
+						{
+							"id": "c5fb169b-559f-4fe5-8dec-218fd8103dfa",
+							"name": "Pause connection",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"syncStatus\": \"paused\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{apiUrl}}/{{apiVersion}}/connections/{{testConnectionId}}",
+									"host": [
+										"{{apiUrl}}"
+									],
+									"path": [
+										"{{apiVersion}}",
+										"connections",
+										"{{testConnectionId}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express",
+									"uuid": "5af4968c-0a67-405e-af83-8df269d70709"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*",
+									"uuid": "daea7339-9e1d-464b-b4e5-fa6a34547e97"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8",
+									"uuid": "c1b107c0-c3f4-41cb-829e-b82c968474c0"
+								},
+								{
+									"key": "Content-Length",
+									"value": "16",
+									"uuid": "c5bf1f40-8752-434b-8cf4-086f7cf23011"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"10-oV4hJxRVSENxc/wX8+mA4/Pe4tA\"",
+									"uuid": "5320ce58-513a-465a-9716-071bb4a96d4d"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 01:49:43 GMT",
+									"uuid": "e0999bb5-9201-431a-9dfb-7e8fe8cba436"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive",
+									"uuid": "4c57a9f6-ff5e-462f-83eb-f1c551e1e161"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5",
+									"uuid": "f7b71b47-ca56-4200-8486-a7fd4cea811f"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": true\n}"
+						},
+						{
+							"id": "0afca0bf-b41d-46a1-8862-1c55e131ac60",
+							"name": "Invalid sync status",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"syncStatus\": \"pausedz\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{apiUrl}}/{{apiVersion}}/connections/{{testConnectionId}}",
+									"host": [
+										"{{apiUrl}}"
+									],
+									"path": [
+										"{{apiVersion}}",
+										"connections",
+										"{{testConnectionId}}"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express",
+									"uuid": "37ddb244-26d1-41d2-af34-3c15c763c730"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*",
+									"uuid": "181889a9-e438-4b93-a994-43997a50d06a"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8",
+									"uuid": "90150a7d-7809-49ed-bf13-c56e7f43567e"
+								},
+								{
+									"key": "Content-Length",
+									"value": "75",
+									"uuid": "4966da8d-e20b-4568-9c71-e2a15c129920"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"4b-llj3vfJis6LXSfgiN+wrgHAe0Zs\"",
+									"uuid": "38ed08d6-2908-407b-92bc-74838df83f66"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "connect.sid=s%3Ae3VQpdJiwfq9Qnum9iXu_YOYVZrZxVWu.ECCou7NgEwQtVohIIidScLLZhlpipgk9Qajfcw3CsuA; Path=/; HttpOnly",
+									"uuid": "5f2fd31e-e76c-465f-a6b6-64e5be369127"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 01:53:02 GMT",
+									"uuid": "619463f5-3a4d-4a8a-a8f0-4f459f34ae58"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive",
+									"uuid": "fd86558e-5eb4-4f84-bf39-7c82d773a664"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5",
+									"uuid": "e0ce68d6-2d78-49ad-9f7c-0f0ee7d01ced"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": \"Invalid sync status (pausedz) not in [\\\"connected\\\",\\\"paused\\\"]\"\n}"
+						},
+						{
+							"id": "48f06938-5e98-4f7c-893c-e1e3d693440e",
+							"name": "No updates",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{apiUrl}}/{{apiVersion}}/connections/{{testConnectionId}}",
+									"host": [
+										"{{apiUrl}}"
+									],
+									"path": [
+										"{{apiVersion}}",
+										"connections",
+										"{{testConnectionId}}"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express",
+									"uuid": "dbe1a777-1040-406d-9182-adbe62900e0a"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*",
+									"uuid": "5192633a-93b8-45f8-a890-c079e0f846a8"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8",
+									"uuid": "fab4dbba-6924-4e2f-b394-28fc9037ea5f"
+								},
+								{
+									"key": "Content-Length",
+									"value": "45",
+									"uuid": "c9eecf6a-fd4d-4caa-a635-fd9698eb26e9"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"2d-rUmXZ9k2QoL92Wu+GyMtMWjwqMo\"",
+									"uuid": "f3a7e6bb-d4b5-4a44-aef5-ff847a79129d"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "connect.sid=s%3AQAAr6YWyRZq_NbncU5udB-LAN17U37Qh.a9JSOIosNgk3IumiZ1iOmXIqtbKxhMSpNIKOFW4sxAI; Path=/; HttpOnly",
+									"uuid": "83f99914-bfae-4dff-98ce-f489bb9772a5"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 02:00:01 GMT",
+									"uuid": "e3500aee-32b2-4a2c-b667-d3c547484f31"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive",
+									"uuid": "2a83561f-cbaf-4f61-b0f1-081b40eb081e"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5",
+									"uuid": "792836dd-5b30-40f2-b46c-10070d4a3b77"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"message\": \"Nothing updated\"\n}"
+						},
+						{
+							"id": "34b755ab-e5d9-4721-9a26-ba029625adc7",
+							"name": "Invalid update handler config",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"handlerConfig\": {\n        \"chat-message\": {\n            \"groupTypes\": \"chatTypeBasicGroup,chatTypePrivateInvalid\"\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{apiUrl}}/{{apiVersion}}/connections/{{testConnectionId}}",
+									"host": [
+										"{{apiUrl}}"
+									],
+									"path": [
+										"{{apiVersion}}",
+										"connections",
+										"{{testConnectionId}}"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "X-Powered-By",
+									"value": "Express",
+									"uuid": "b4b549d2-786b-4612-a615-7a39af99061e"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*",
+									"uuid": "8810f311-5564-4d00-b5bb-3c3df26d33b0"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8",
+									"uuid": "b13ace19-7ce3-443e-8d58-ad4cedcb98c2"
+								},
+								{
+									"key": "Content-Length",
+									"value": "137",
+									"uuid": "7cee6f23-2364-47f0-806b-849d018a21b1"
+								},
+								{
+									"key": "ETag",
+									"value": "W/\"89-8Hs/BV7y/TKvrHRy/affJtT4XLI\"",
+									"uuid": "d6d4a9a4-1248-4a33-8506-5b5e89198f2a"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 17 Sep 2024 02:25:24 GMT",
+									"uuid": "0ca62d5f-8027-44e3-aad6-1c7b2dd1724f"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive",
+									"uuid": "906f327b-78a4-4a9e-9289-b282e63355d6"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=5",
+									"uuid": "d0248bbe-5ae4-44c3-9821-9e7ccdc473c5"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"success\": false,\n    \"error\": \"Group types: Must be one of [chatTypeBasicGroup, chatTypePrivate, chatTypeSecret], not chatTypePrivateInvalid\"\n}"
+						}
+					]
+				}
+			],
+			"id": "e667d6db-537f-442f-ab8c-0ced168013b4"
+		},
+		{
+			"name": "Providers",
+			"item": [
+				{
+					"name": "Providers",
+					"id": "aa8e75b1-812d-49d6-bb4f-61308528caa8",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/providers",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"providers"
+							]
+						},
+						"description": "List all the available providers"
+					},
+					"response": []
+				},
+				{
+					"name": "Provider",
+					"id": "0a1cb12f-972e-4286-bbd1-935b931d5857",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/{{apiVersion}}/providers/mock",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"{{apiVersion}}",
+								"providers",
+								"mock"
+							]
+						},
+						"description": "Fetch a specific provider"
+					},
+					"response": []
+				}
+			],
+			"id": "c6972133-ec82-4b13-a7b2-c1c863a7dd2a"
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "value",
+				"value": "{{key}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "key",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "652b35d7-257a-47b3-975e-3d5b703621cc",
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "56a0adcb-3613-45c9-b0e1-bc2288d299a0",
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "9c7439e0-d2f5-4f45-a1e9-5d25f695b505",
+			"key": "key",
+			"value": "0x...",
+			"type": "string"
+		},
+		{
+			"id": "257c5063-c830-45b7-b5fc-fcbd8aae09c9",
+			"key": "apiVersion",
+			"value": "v1",
+			"type": "string"
+		},
+		{
+			"id": "f0e00519-545c-4a46-9ec9-ba3d67008e7b",
+			"key": "testConnectionId",
+			"value": "telegram:1234",
+			"type": "string"
+		}
+	]
+}

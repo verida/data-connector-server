@@ -1,3 +1,9 @@
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.innerText = str; // Escapes special characters automatically
+    return div.innerHTML;
+}
+
 $(document).ready(function() {
     let offset = 0;
     const apiUrl = '/api/rest/v1';
@@ -14,11 +20,13 @@ $(document).ready(function() {
         "Email": "https://common.schemas.verida.io/social/email/v0.1.0/schema.json",
         "Chat Group": "https://common.schemas.verida.io/social/chat/group/v0.1.0/schema.json",
         "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
-        "Files": "https://common.schemas.verida.io/file/v0.1.0/schema.json"
+        "Files": "https://common.schemas.verida.io/file/v0.1.0/schema.json",
+        "Calendar": "https://common.schemas.verida.io/social/calendar/v0.1.0/schema.json",
+        "Event": "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
     };
 
     // Load Verida Key and Schema from local storage
-    $('#veridaKey').val(localStorage.getItem('veridaKey') || '');
+    const veridaKey = localStorage.getItem('veridaKey')
 
     // Function to get query parameters
     function getQueryParams() {
@@ -56,7 +64,6 @@ $(document).ready(function() {
     }
 
     function fetchData() {
-        const veridaKey = $('#veridaKey').val();
         const schema = $('#schema').val();
         const limit = parseInt($('#limit').val());
         const offset = parseInt($('#offset').val());
@@ -107,7 +114,7 @@ $(document).ready(function() {
                 results.forEach(row => {
                     let rowHtml = '<tr>';
                     headers.forEach(header => {
-                        rowHtml += `<td>${row[header] || ''}</td>`;
+                        rowHtml += `<td>${escapeHtml(row[header] || '')}</td>`;
                     });
                     rowHtml += `<td><button class="btn btn-danger btn-sm delete-row" data-id="${row._id}">Delete</button></td>`; // Add Delete button
                     rowHtml += '</tr>';
@@ -154,11 +161,6 @@ $(document).ready(function() {
             }
         });
     }
-
-    // Save Verida Key and Schema to local storage
-    $('#veridaKey').on('input', function() {
-        localStorage.setItem('veridaKey', $(this).val());
-    });
 
     $('#schema').on('input', function() {
         localStorage.setItem('schema', $(this).val());
@@ -258,7 +260,6 @@ $(document).ready(function() {
     $('#tableBody').on('click', '.delete-row', function() {
         const id = $(this).data('id');
         const schemaUrl = $('#schema').val();
-        const veridaKey = $('#veridaKey').val();
 
         if (confirm('Are you sure you want to delete this row?')) {
             $.ajax({
@@ -287,7 +288,6 @@ $(document).ready(function() {
     // Handle Destroy confirmation
     $('#confirmDestroy').click(function() {
         const schemaUrl = $('#schema').val();
-        const veridaKey = $('#veridaKey').val();
 
         $.ajax({
             url: `${apiUrl}/ds/${btoa(schemaUrl)}?destroy=true`,
