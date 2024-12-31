@@ -1,13 +1,15 @@
 import { getResolver } from '@verida/vda-did-resolver';
 import { DIDDocument } from '@verida/did-document';
 import { Resolver } from 'did-resolver';
-import { VeridaDocInterface } from '@verida/types';
+import { VeridaDocInterface, IContext } from '@verida/types';
 import { VeridaOAuthUser } from './user';
+import EncryptionUtils from '@verida/encryption-utils';
 
 const vdaDidResolver = getResolver()
 const didResolver = new Resolver(vdaDidResolver)
 
 export interface AuthRequest {
+    appDid: string
     userDid: string
     scopes: string[]
     timestamp: string
@@ -43,15 +45,33 @@ export class VeridaOAuthClient {
         return this.did
     }
 
-    public async verifyRequest(redirectUrl: string, authRequest: string, consentSig: string): Promise<void> {
-        // await this.init()
-        // @todo: Verify DIDDocument has serviceEndpoint of type `VeridaOAuthServer` that matches redirectUrl
+    public async verifyRequest(context: IContext, redirectUrl: string, authRequestString: string, userSig: string, appSig: string): Promise<AuthRequest> {
+        await this.init()
+        const account = context.getAccount()
+        const signerDid = await account.did()
+
+        const authRequest: AuthRequest = JSON.parse(authRequestString)
+
         // @todo: Verify the authRequest is signed by this.did
+        console.log('Verify the authRequest is signed by this.did')
+        const userSigner = await EncryptionUtils.getSigner(authRequestString, userSig)
+        console.log(userSigner, signerDid, authRequest.userDid)
+
+        // if (userSigner != signerDid || userSigner != authRequest.userDid) throw new Error('invalid user signature')
+
+        // @todo: Verify the authRequest is signed by the requesting application
+        console.log('Verify the authRequest is signed by this.did')
+        const appSigner = await EncryptionUtils.getSigner(authRequestString, appSig)
+        console.log(appSigner, signerDid, authRequest.appDid)
+        
+
+        // @todo: Verify DIDDocument has serviceEndpoint of type `VeridaOAuthServer` that matches redirectUrl
+        
         // @todo: Verify clientSecret timestamp is within minutes of current timestamp
         // @todo: Extract the AuthRequest object
-        // @todo: Ensure consentSig is a valid signature of the authRequest signed by authRequest.did
 
-        // @todo: Throw error if any verification issue
+        return authRequest
+
     }
 
     public async init() {

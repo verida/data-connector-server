@@ -30,22 +30,23 @@ const router = express.Router();
  */
 router.post("/auth", async (req: Request, res: Response) => {
   console.log(req.body)
-  const { client_id, auth_request, redirect_uri, consent_sig, state, returnCode } = req.body.data;
+  const { context } = await Utils.getNetworkFromRequest(req)
+  const { client_id, auth_request, redirect_uri, user_sig, app_sig, state, return_code } = req.body.data;
 
   if (!client_id) {
     return res.status(400).json({ error: "Invalid client or redirect URI" });
   }
 
   const client = new VeridaOAuthClient(client_id.toString())
-  if (!redirect_uri || !auth_request || !consent_sig) {
-    return res.status(400).json({ error: "Missing client, redirect URI or auth request" });
+  if (!redirect_uri || !auth_request || !user_sig || !app_sig) {
+    return res.status(400).json({ error: "Missing redirect URI, auth request or signature" });
   }
 
   try {
-    await client.verifyRequest(redirect_uri.toString(), auth_request.toString(), consent_sig.toString())
+    await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString(), app_sig.toString())
     const authRequestId = await VeridaOAuthServer.generateAuthorizationCode(auth_request.toString(), redirect_uri.toString())
 
-    if (CONFIG.verida.devMode && returnCode) {
+    if (CONFIG.verida.devMode && return_code) {
       // We are in dev mode and have been asked to return the code, so do that without redirecting
       // This is used for testing purposes
       return res.json({

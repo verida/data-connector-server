@@ -3,14 +3,32 @@ import { AuthRequestObject } from "../../src/api/rest/v1/oauth/interfaces";
 import Axios from "axios"
 import https from 'https';
 import CONFIG from "../../src/config"
+import { AutoAccount } from "@verida/account-node";
+import { Client } from "@verida/client-ts";
+import { buildContextSession } from "./utils";
 
+const VERIDA_CONTEXT = 'Verida: Vault'
 const NOW = Math.floor(Date.now() / 1000)
 const ENDPOINT = `${CONFIG.serverUrl}/api/rest/v1/oauth`
-const USER_DID = "0xa"
 const SCOPES = ["test-scope"]
-
-const APP_DID = "0xb"
 const APP_REDIRECT_URI = "https://insertyourdomain.com/verida/auth-response"
+
+const userAccount = new AutoAccount({
+    privateKey: CONFIG.verida.testVeridaKey,
+    network: CONFIG.verida.testVeridaNetwork,
+    didClientConfig: CONFIG.verida.didClientConfig
+})
+
+const appAccount = new AutoAccount({
+    privateKey: CONFIG.verida.serverKey,
+    network: CONFIG.verida.testVeridaNetwork,
+    didClientConfig: CONFIG.verida.didClientConfig
+})
+
+const client = new Client({
+    network: CONFIG.verida.testVeridaNetwork,
+    didClientConfig: CONFIG.verida.didClientConfig
+})
 
 // Create an https.Agent that disables certificate validation
 const agent = new https.Agent({
@@ -22,31 +40,55 @@ const axios = Axios.create({
 });
 
 describe(`OAuth tests`, function () {
+    this.timeout(200 * 1000)
 
-    let authCode, refreshToken
+    let authCode, refreshToken, USER_DID, APP_DID
 
     it(`Can get an auth code`, async () => {
+        USER_DID = await userAccount.did()
+        APP_DID = await appAccount.did()
+
         const ARO: AuthRequestObject = {
+            appDID: APP_DID,
             userDID: USER_DID,
             scopes: SCOPES,
             timestamp: NOW
         }
 
-        const consent_sig = "missing"
+        // Sign the ARO to generate a consent signature verifying the user account consents to this request
+        const userKeyring = await userAccount.keyring(VERIDA_CONTEXT)
+        const user_sig = await userKeyring.sign(ARO)
+
+        // Sign the ARO to generate a consent signature verifying the app account generated this request
+        const appKeyring = await appAccount.keyring(VERIDA_CONTEXT)
+        const app_sig = await appKeyring.sign(ARO)
+
+        // Add custom state data that will be passed back to the third party application on successful login
         const state = {}
 
         const request = {
             client_id: APP_DID,
             auth_request: JSON.stringify(ARO),
             redirect_uri: APP_REDIRECT_URI,
-            consent_sig,
+            user_sig,
+            app_sig,
             state: JSON.stringify(state),
-            returnCode: true
+            return_code: true
         }
+
+        await client.connect(userAccount)
+
+        const contextSession = await buildContextSession(userAccount, client)
+        const stringifiedSession = JSON.stringify(contextSession)
+        const sessionToken = Buffer.from(stringifiedSession).toString("base64")
 
         try {
             const response = await axios.post(`${ENDPOINT}/auth`, {
-                data: request
+                data: request,
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-Key": sessionToken
+                }
             })
 
             authCode = response.data.auth_code
