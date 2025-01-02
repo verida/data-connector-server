@@ -2,31 +2,12 @@ import { getResolver } from '@verida/vda-did-resolver';
 import { DIDDocument } from '@verida/did-document';
 import { Resolver } from 'did-resolver';
 import { VeridaDocInterface, IContext, Network } from '@verida/types';
-import { VeridaOAuthUser } from './user';
-import EncryptionUtils from '@verida/encryption-utils';
+import { AuthRequest } from "./interfaces"
 import CONFIG from "../../../../config"
 import { Utils } from '../../../../utils';
 
 const vdaDidResolver = getResolver()
 const didResolver = new Resolver(vdaDidResolver)
-
-export interface AuthRequest {
-    appDID: string
-    userDID: string
-    scopes: string[]
-    timestamp: string
-}
-
-
-export interface OAuthToken {
-    accessToken: string
-    accessTokenExpiresAt: Date
-    refreshToken: string
-    refreshTokenExpiresAt: Date
-    scope: string[]
-    user: VeridaOAuthUser
-    client: VeridaOAuthClient
-}
 
 export class VeridaOAuthClient {
     protected did: string
