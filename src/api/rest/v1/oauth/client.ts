@@ -1,16 +1,18 @@
 import { getResolver } from '@verida/vda-did-resolver';
 import { DIDDocument } from '@verida/did-document';
 import { Resolver } from 'did-resolver';
-import { VeridaDocInterface, IContext } from '@verida/types';
+import { VeridaDocInterface, IContext, Network } from '@verida/types';
 import { VeridaOAuthUser } from './user';
 import EncryptionUtils from '@verida/encryption-utils';
+import CONFIG from "../../../../config"
+import { Utils } from '../../../../utils';
 
 const vdaDidResolver = getResolver()
 const didResolver = new Resolver(vdaDidResolver)
 
 export interface AuthRequest {
-    appDid: string
-    userDid: string
+    appDID: string
+    userDID: string
     scopes: string[]
     timestamp: string
 }
@@ -52,23 +54,45 @@ export class VeridaOAuthClient {
 
         const authRequest: AuthRequest = JSON.parse(authRequestString)
 
-        // @todo: Verify the authRequest is signed by this.did
-        console.log('Verify the authRequest is signed by this.did')
-        const userSigner = await EncryptionUtils.getSigner(authRequestString, userSig)
-        console.log(userSigner, signerDid, authRequest.userDid)
+        // Verify the authRequest is signed by this.did
+        // console.log('Verify the authRequest is signed by this.did')
+        const isValidUserSig = this.didDocument.verifyContextSignature(authRequestString, <Network> CONFIG.verida.environment, `Verida: Vault`, userSig, false)
+        if (!isValidUserSig) {
+            throw new Error(`Invalid user account signature on the auth request`)
+        }
 
-        // if (userSigner != signerDid || userSigner != authRequest.userDid) throw new Error('invalid user signature')
+        if (authRequest.userDID != signerDid) {
+            throw new Error(`Invalid user account signer on the auth request`)
+        }
 
-        // @todo: Verify the authRequest is signed by the requesting application
-        console.log('Verify the authRequest is signed by this.did')
-        const appSigner = await EncryptionUtils.getSigner(authRequestString, appSig)
-        console.log(appSigner, signerDid, authRequest.appDid)
-        
+        // Verify the authRequest is signed by the requesting application
+        // console.log('Verify the authRequest is signed by the app signer')
+        const response = await didResolver.resolve(authRequest.appDID)
+        const appDidDocument = new DIDDocument(<VeridaDocInterface> response.didDocument!)
+        const isValidAppSig = appDidDocument.verifyContextSignature(authRequestString, <Network> CONFIG.verida.environment, `Verida: Vault`, appSig, false)
+        if (!isValidAppSig) {
+            throw new Error(`Invalid application account signature on the auth request`)
+        }
 
         // @todo: Verify DIDDocument has serviceEndpoint of type `VeridaOAuthServer` that matches redirectUrl
-        
-        // @todo: Verify clientSecret timestamp is within minutes of current timestamp
-        // @todo: Extract the AuthRequest object
+        const didDoc = appDidDocument.export()
+        console.log(didDoc)
+        let serverFound = false
+        for (const service of didDoc.service) {
+            console.log(service)
+        }
+
+        // Verify clientSecret timestamp is within minutes of current timestamp
+        const timeoutMins = CONFIG.verida.OAuthRequestTimeoutMins
+        const timeoutMs = timeoutMins * 60 * 1000; // 2 minutes in milliseconds
+
+        const timestampMs = parseInt(authRequest.timestamp) * 1000
+        const now = Date.now(); // Current timestamp in milliseconds
+        const cutoff = now - timeoutMs
+
+        if (timestampMs < cutoff) {
+            throw new Error(`Auth request has expired (${(now - timestampMs) / 1000.0} seconds old > ${timeoutMins})`)
+        }
 
         return authRequest
 

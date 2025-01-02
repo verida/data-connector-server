@@ -51,7 +51,8 @@
         },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15,
-        "handlerTimeoutMins": 15
+        "handlerTimeoutMins": 15,
+        "OAuthRequestTimeoutMins": 2
     },
     "providers": {
         "mock": {

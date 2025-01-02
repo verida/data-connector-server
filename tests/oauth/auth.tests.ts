@@ -83,8 +83,7 @@ describe(`OAuth tests`, function () {
         const sessionToken = Buffer.from(stringifiedSession).toString("base64")
 
         try {
-            const response = await axios.post(`${ENDPOINT}/auth`, {
-                data: request,
+            const response = await axios.post(`${ENDPOINT}/auth`, request, {
                 headers: {
                     "Content-Type": "application/json",
                     "X-API-Key": sessionToken

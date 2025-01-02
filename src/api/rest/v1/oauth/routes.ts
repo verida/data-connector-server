@@ -29,9 +29,8 @@ const router = express.Router();
  * and access tokens.
  */
 router.post("/auth", async (req: Request, res: Response) => {
-  console.log(req.body)
   const { context } = await Utils.getNetworkConnectionFromRequest(req)
-  const { client_id, auth_request, redirect_uri, user_sig, app_sig, state, return_code } = req.body.data;
+  const { client_id, auth_request, redirect_uri, user_sig, app_sig, state, return_code } = req.body;
 
   if (!client_id) {
     return res.status(400).json({ error: "Invalid client or redirect URI" });
