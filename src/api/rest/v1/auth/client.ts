@@ -9,7 +9,7 @@ import { Utils } from '../../../../utils';
 const vdaDidResolver = getResolver()
 const didResolver = new Resolver(vdaDidResolver)
 
-export class VeridaOAuthClient {
+export class AuthClient {
     protected did: string
     protected didDocument?: DIDDocument
 

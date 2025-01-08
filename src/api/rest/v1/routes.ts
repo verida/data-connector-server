@@ -11,11 +11,11 @@ import LLMRoutes from './llm/routes'
 import TelegramRoutes from './telegram/routes'
 import SearchRoutes from "./search/routes"
 import AccountRoutes from './account/routes'
-import OAuth from "./oauth/routes"
+import AuthRoutes from "./auth/routes"
 
 const router = express.Router()
 
-router.use('/oauth', OAuth)
+router.use('/auth', AuthRoutes)
 router.use('/access', accessRouterV1)
 router.use('/providers', ProviderRoutes)
 router.use('/connections', ConnectionRoutes)

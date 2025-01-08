@@ -11,7 +11,7 @@ const DID_CLIENT_CONFIG = CONFIG.verida.didClientConfig
 
 const API_KEY_SESSION_LENGTH = 48
 
-class VeridaOAuthServer {
+class AuthServer {
     private network: Network
     private privateKey: string
     private context: Context
@@ -174,6 +174,6 @@ class VeridaOAuthServer {
 
 const privateKey = CONFIG.verida.serverKey
 const network = <Network> CONFIG.verida.environment
-const server = new VeridaOAuthServer(privateKey, network)
+const server = new AuthServer(privateKey, network)
 
 export default server

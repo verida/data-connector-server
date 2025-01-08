@@ -8,7 +8,7 @@ import serverconfig from './config'
 import { AutoAccount, SessionAccount } from '@verida/account-node'
 import { Request } from 'express'
 import { Service as AccessService } from './api/rest/v1/access/service'
-import VeridaOAuthServer from './api/rest/v1/oauth/server'
+import VeridaOAuthServer from './api/rest/v1/auth/server'
 
 export const VERIDA_DID_REGEXP =
   /did:vda:(devnet|mainnet|testnet):0x[0-9a-fA-F]{40}/;

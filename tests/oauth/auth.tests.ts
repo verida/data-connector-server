@@ -1,5 +1,5 @@
 const assert = require("assert");
-import { AuthRequest } from "../../src/api/rest/v1/oauth/interfaces";
+import { AuthRequest } from "../../src/api/rest/v1/auth/interfaces";
 import Axios from "axios"
 import https from 'https';
 import CONFIG from "../../src/config"

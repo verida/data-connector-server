@@ -2,8 +2,8 @@ import express, { Request, Response } from "express";
 // import { OAuthMemoryDb } from "./db";
 // import { OAuthModel } from "./model";
 import { Utils } from "../../../../utils";
-import { VeridaOAuthClient } from "./client";
-import VeridaOAuthServer from "./server";
+import { AuthClient } from "./client";
+import AuthServer from "./server";
 import { AuthUser } from "./user";
 import { AuthToken } from "./interfaces";
 
@@ -28,7 +28,7 @@ router.post("/auth", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Invalid client or redirect URI" });
   }
 
-  const client = new VeridaOAuthClient(client_id.toString())
+  const client = new AuthClient(client_id.toString())
   if (!redirect_uri) {
     return res.status(400).json({ error: "Missing redirect URI," });
   }
@@ -44,7 +44,7 @@ router.post("/auth", async (req: Request, res: Response) => {
   try {
     const authRequest = await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString())
     const authUser = new AuthUser(context)
-    const authToken = await VeridaOAuthServer.generateAuthToken(authRequest, authUser, sessionString)
+    const authToken = await AuthServer.generateAuthToken(authRequest, authUser, sessionString)
 
     // Redirect the user to the third party application with a valid auth_code that can
     // be used to retrieve access and refresh tokens.
@@ -91,7 +91,7 @@ router.get("/revoke", async function (req, res) {
     })
 
     const authUser = new AuthUser(context)
-    await VeridaOAuthServer.revokeToken(authUser, tokenId)
+    await AuthServer.revokeToken(authUser, tokenId)
     res.send({ revoked: true });
   } catch (err) {
     if (err.message.match('Invalid token')) {
