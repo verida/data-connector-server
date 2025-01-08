@@ -3,13 +3,12 @@ import CONFIG from "../../../../config"
 import { Client, Context } from "@verida/client-ts"
 import { AutoAccount } from "@verida/account-node"
 import EncryptionUtils from "@verida/encryption-utils";
-import { AuthRequest } from "./interfaces"
+import { AuthRequest, AuthToken } from "./interfaces"
+import { AuthUser } from "./user"
 
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
 const DID_CLIENT_CONFIG = CONFIG.verida.didClientConfig
 
-const DB_PENDING_REQUEST = "oauth_pending_requests"
-const DB_TOKEN = "oauth_tokens"
 const API_KEY_SESSION_LENGTH = 48
 
 class VeridaOAuthServer {
@@ -24,7 +23,10 @@ class VeridaOAuthServer {
         this.privateKey = privateKey
     }
 
-    public async verifyAuthToken(token: string, scope?: string): Promise<ContextSession> {
+    public async verifyAuthToken(token: string, scope?: string): Promise<{
+        session: ContextSession
+        tokenId: string
+    }> {
         await this._init()
 
         if (token.length != 84) {
@@ -60,7 +62,10 @@ class VeridaOAuthServer {
             }
 
             // Return a ContextSession instance
-            return <ContextSession> JSON.parse(Buffer.from(session, 'base64').toString('utf-8'));
+            return {
+                session: <ContextSession> JSON.parse(Buffer.from(session, 'base64').toString('utf-8')),
+                tokenId: authTokenId
+            }
         } catch (err: any) {
             if (err.message.match('missing')) {
                 throw new Error('Invalid token (not found)')
@@ -70,7 +75,7 @@ class VeridaOAuthServer {
         }
     }
 
-    public async generateAuthToken(authRequest: AuthRequest, context: IContext, sessionString: string): Promise<string> {
+    public async generateAuthToken(authRequest: AuthRequest, authUser: AuthUser, sessionString: string): Promise<string> {
         await this._init()
 
         // @todo: verify session string DID matches authRequest DID
@@ -106,46 +111,32 @@ class VeridaOAuthServer {
         const serverKeyDb = await this.context.openDatabase('api_keys')
         const result: any = await serverKeyDb.save(appKeyData)
         const apiKeyId = result.id
-
-        const savedRecord = await serverKeyDb.get(apiKeyId)
+        await serverKeyDb.get(apiKeyId)
 
         // @todo: source from this server config
         const endpointUri = ''
 
-        const userKeyData = {
+        const authToken: AuthToken = {
             _id: apiKeyId,
-            servers: [endpointUri]
+            servers: [endpointUri],
+            scopes: authRequest.scopes,
+            appDID: authRequest.appDID
         }
 
-        const userKeyDb = await context.openDatabase('api_keys', {
-            permissions: {
-                read: DatabasePermissionOptionsEnum.PUBLIC,
-                write: DatabasePermissionOptionsEnum.OWNER
-            }
-        })
-
-        await userKeyDb.save(userKeyData)
+        await authUser.saveAuthToken(authToken)
 
         const apiKey = `${apiKeyId}${part1}`
         return apiKey
     }
 
-    public async revokeToken(userContext: IContext, tokenId: string): Promise<void> {
-        // @todo Delete refresh token from `oauth_tokens` database
-
+    public async revokeToken(authUser: AuthUser, tokenId: string): Promise<void> {
         try {
             // Delete the token from the server
             const serverKeyDb = await this.context.openDatabase('api_keys')
             await serverKeyDb.delete(tokenId)
 
             // Delete the token from the user database
-            const userKeyDb = await userContext.openDatabase('api_keys', {
-                permissions: {
-                    read: DatabasePermissionOptionsEnum.PUBLIC,
-                    write: DatabasePermissionOptionsEnum.OWNER
-                }
-            })
-            await userKeyDb.delete(tokenId)
+            await authUser.deleteAuthToken(tokenId)
         } catch (err) {
             console.log(err)
             throw new Error(`Invalid token (${err.message})`)

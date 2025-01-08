@@ -66,7 +66,7 @@ export class VeridaOAuthClient {
         const timeoutMins = CONFIG.verida.OAuthRequestTimeoutMins
         const timeoutMs = timeoutMins * 60 * 1000; // 2 minutes in milliseconds
 
-        const timestampMs = parseInt(authRequest.timestamp) * 1000
+        const timestampMs = authRequest.timestamp * 1000
         const now = Date.now(); // Current timestamp in milliseconds
         const cutoff = now - timeoutMs
 

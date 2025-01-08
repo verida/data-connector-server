@@ -54,7 +54,6 @@ describe(`Auth tests`, function () {
         sessionToken = Buffer.from(stringifiedSession).toString("base64")
 
         USER_DID = await userAccount.did()
-        console.log(USER_DID)
         APP_DID = await appAccount.did()
 
         const ARO: AuthRequest = {
@@ -93,9 +92,7 @@ describe(`Auth tests`, function () {
             if (err.response.status == 302) {
                 const parsedUrl = new URL(err.response.headers.location)
                 authCode = parsedUrl.searchParams.get("auth_token")
-                console.log("authCode", authCode)
                 authCode = decodeURIComponent(authCode)
-                console.log("authCode", authCode)
 
                 assert.ok(authCode, 'Have an auth code')
             } else {
@@ -138,9 +135,39 @@ describe(`Auth tests`, function () {
         }
     })
 
-    // @todo: Can get all tokens (scope: list-auth-tokens)
-    it.skip(`Can fetch auth tokens`, async() => {
+    it(`Can fetch auth tokens`, async() => {
+        try {
+            const response = await axios.get(`${ENDPOINT}/tokens`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-Key": sessionToken
+                }
+            })
 
+            assert.ok(response.data, 'Have a response')
+            assert.ok(response.data.tokens.length, 'Have tokens')
+        } catch (err) {
+            console.error(err.message)
+            console.error(err.response)
+            assert.fail('Failed')
+        }
+    })
+
+    it(`Can fetch info for current token`, async() => {
+        try {
+            const response = await axios.get(`${ENDPOINT}/token`, {
+                headers: {
+                    Authorization: `Bearer ${authCode}`,
+                }
+            })
+
+            assert.ok(response.data, 'Have a response')
+            assert.ok(response.data.token && response.data.token._id, 'Have token data')
+        } catch (err) {
+            console.error(err.message)
+            console.error(err.response)
+            assert.fail('Failed')
+        }
     })
 
     it(`Can't revoke an auth token using an auth token`, async() => {
@@ -200,11 +227,6 @@ describe(`Auth tests`, function () {
                 assert.fail('Failed')
             }
         }
-    })
-
-    // @todo: Can get details for a token (scopes, did, servers)
-    it.skip(`Can fetch auth token info`, async() => {
-
     })
     
 })

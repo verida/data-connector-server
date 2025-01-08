@@ -4,23 +4,11 @@ import express, { Request, Response } from "express";
 import { Utils } from "../../../../utils";
 import { VeridaOAuthClient } from "./client";
 import VeridaOAuthServer from "./server";
-const OAuthServer = require("@node-oauth/express-oauth-server");
-import CONFIG from "../../../../config"
+import { AuthUser } from "./user";
+import { AuthToken } from "./interfaces";
 
 const loggedInUsers: Record<string, string> = {};
 
-// const db = new OAuthMemoryDb();
-// const model = new OAuthModel(db);
-
-// db.saveClient({
-//   id: "client_id",
-//   secret: "client_secret",
-//   grants: ["authorization_code", "refresh_token"],
-// });
-
-const oauth = new OAuthServer({
-  model: VeridaOAuthServer,
-});
 
 const router = express.Router();
 
@@ -55,7 +43,8 @@ router.post("/auth", async (req: Request, res: Response) => {
 
   try {
     const authRequest = await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString())
-    const authToken = await VeridaOAuthServer.generateAuthToken(authRequest, context, sessionString)
+    const authUser = new AuthUser(context)
+    const authToken = await VeridaOAuthServer.generateAuthToken(authRequest, authUser, sessionString)
 
     // Redirect the user to the third party application with a valid auth_code that can
     // be used to retrieve access and refresh tokens.
@@ -101,7 +90,8 @@ router.get("/revoke", async function (req, res) {
       scope: "access-tokens"
     })
 
-    await VeridaOAuthServer.revokeToken(context, tokenId)
+    const authUser = new AuthUser(context)
+    await VeridaOAuthServer.revokeToken(authUser, tokenId)
     res.send({ revoked: true });
   } catch (err) {
     if (err.message.match('Invalid token')) {
@@ -113,14 +103,15 @@ router.get("/revoke", async function (req, res) {
   }
 });
 
-// @todo Get details about a token (did, scopes)
+// @todo Get details about the current token (did, scopes)
 router.get("/token", async function (req, res) {
-  const tokenId = req.query.tokenId.toString()
-
   try {
-    const { context } = await Utils.getNetworkConnectionFromRequest(req)
+    const { context, tokenId } = await Utils.getNetworkConnectionFromRequest(req)
 
-    // @todo: implement
+    const authUser = new AuthUser(context)
+    const authToken: AuthToken = await authUser.getAuthToken(tokenId)
+
+    res.json({ token: authToken });
   } catch (err) {
     if (err.message.match('Invalid token')) {
       return res.status(403).json({ error: err.message })
@@ -140,6 +131,12 @@ router.get("/tokens", async function (req, res) {
       scope: "access-tokens"
     })
 
+    const authUser = new AuthUser(context)
+    const tokens = await authUser.getAuthTokens()
+    return res.json({
+      tokens
+    })
+
     // @todo: implement
   } catch (err) {
     if (err.message.match('Invalid token')) {
@@ -150,31 +147,5 @@ router.get("/tokens", async function (req, res) {
     return res.status(400).json({ error: `Invalid request: ${err.message}`})
   }
 })
-
-// router.get("/login", async (req: Request, res: Response) => {
-//   const { privateKey } = req.body;
-
-//   // Authenticate the user
-//   try {
-//       const connection = await Utils.getNetworkFromRequest(req)
-//       loggedInUsers[connection.did] = privateKey
-
-//         // Retrieve the stored OAuth request details from the session
-//         const { client_id, redirect_uri, scope, state } = req.session.oauthRequest;
-
-//         // Generate an authorization code
-//         const authorizationCode = await model.generateAuthorizationCode(
-//             client_id,
-//             { privateKey, did: connection.did },
-//             scope
-//         );
-
-//         // Redirect back to the client with the authorization code
-//         const redirectUrl = `${redirect_uri}?code=${authorizationCode}&state=${state}`;
-//         res.redirect(redirectUrl);
-//     } catch (err: any) {
-//         return res.status(401).json({ error: "Invalid credentials" });
-//     }
-// });
 
 export default router;

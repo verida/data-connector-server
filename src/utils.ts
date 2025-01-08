@@ -36,6 +36,7 @@ export interface NetworkConnection {
     account: IAccount,
     did: string
     sessionString?: string
+    tokenId?: string
 }
 
 export class Utils {
@@ -51,6 +52,7 @@ export class Utils {
     public static async getNetworkConnectionFromRequest(req: Request, options?: { ignoreAccessCheck?: boolean, checkAdmin?: boolean, scope?: string }): Promise<NetworkConnection> {
         // Extract session
         let session: ContextSession | undefined;
+        let tokenId: string
 
         const authHeader = req.headers.authorization
         if (authHeader) {
@@ -60,7 +62,9 @@ export class Utils {
             }
             const bearerToken = authHeader.split(' ')[1];
 
-            session = await VeridaOAuthServer.verifyAuthToken(bearerToken, options && options.scope ? options.scope : undefined)
+            const authTokenData = await VeridaOAuthServer.verifyAuthToken(bearerToken, options && options.scope ? options.scope : undefined)
+            session = authTokenData.session
+            tokenId = authTokenData.tokenId
         }
 
         const apiKey = req.header('X-API-Key');
@@ -98,6 +102,10 @@ export class Utils {
 
         if (apiKey) {
             networkConnection.sessionString = apiKey
+        }
+
+        if (tokenId) {
+            networkConnection.tokenId = tokenId
         }
 
         return networkConnection

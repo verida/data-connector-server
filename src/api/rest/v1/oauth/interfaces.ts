@@ -5,3 +5,10 @@ export interface AuthRequest {
     scopes: string[]
     timestamp: number
 }
+
+export interface AuthToken {
+    _id: string
+    scopes: string[]
+    servers: string[]
+    appDID: string
+}
