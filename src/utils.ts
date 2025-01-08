@@ -8,6 +8,7 @@ import serverconfig from './config'
 import { AutoAccount, SessionAccount } from '@verida/account-node'
 import { Request } from 'express'
 import { Service as AccessService } from './api/rest/v1/access/service'
+import VeridaOAuthServer from './api/rest/v1/oauth/server'
 
 export const VERIDA_DID_REGEXP =
   /did:vda:(devnet|mainnet|testnet):0x[0-9a-fA-F]{40}/;
@@ -34,6 +35,7 @@ export interface NetworkConnection {
     context: IContext,
     account: IAccount,
     did: string
+    sessionString?: string
 }
 
 export class Utils {
@@ -46,9 +48,20 @@ export class Utils {
      * @param options
      * @returns
      */
-    public static async getNetworkConnectionFromRequest(req: Request, options?: { ignoreAccessCheck?: boolean, checkAdmin?: boolean }): Promise<NetworkConnection> {
+    public static async getNetworkConnectionFromRequest(req: Request, options?: { ignoreAccessCheck?: boolean, checkAdmin?: boolean, scope?: string }): Promise<NetworkConnection> {
         // Extract session
         let session: ContextSession | undefined;
+
+        const authHeader = req.headers.authorization
+        if (authHeader) {
+            // Extract the Bearer token
+            if (authHeader.split(' ').length < 2) {
+                throw new Error(`Invalid token (bearer token missing)`)
+            }
+            const bearerToken = authHeader.split(' ')[1];
+
+            session = await VeridaOAuthServer.verifyAuthToken(bearerToken, options && options.scope ? options.scope : undefined)
+        }
 
         const apiKey = req.header('X-API-Key');
         if (apiKey) {
@@ -81,6 +94,10 @@ export class Utils {
             if (options?.checkAdmin && !accessRecord?.admin) {
                 throw new Error("Access denied")
             }
+        }
+
+        if (apiKey) {
+            networkConnection.sessionString = apiKey
         }
 
         return networkConnection

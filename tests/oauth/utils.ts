@@ -5,12 +5,16 @@ import StorageEngineVerida from '@verida/client-ts/dist/src/context/engines/veri
 
 export async function buildContextSession(account: AutoAccount, client: Client): Promise<ContextSession> {
     const CONTEXT = 'Verida: Vault'
-    const keyring = await account.keyring(CONTEXT)
-    const signature = keyring.getSeed()
-    const did = await account.did()
-
     const context = await client.openContext(CONTEXT, true)
     const contextConfig = await context?.getContextConfig()
+
+    const keyring = await account.keyring(CONTEXT)
+    const signature = keyring.getSeed()
+
+    // If we have a legacy DID, opening the context will change the DID from polpos to mainnet
+    // and ensure there is no issues with the session context having a DID that doesn't
+    // match the DID on the storage nodes (can cause issues when creating a database)
+    const did = await account.did()
 
     // Get a context auth object and force create so we get a new refresh token
     const dbEngine = await context?.getDatabaseEngine(did!, true)
@@ -19,14 +23,16 @@ export async function buildContextSession(account: AutoAccount, client: Client):
 
     const contextAuths: Record<string, VeridaDatabaseAuthContext | undefined> = {}
     for (const endpointUri in endpoints) {
-    const contextAuth = await context?.getAuthContext({
-        force: true,
-        endpointUri: endpointUri,
-        deviceId,
-    } as AuthTypeConfig)
+        const contextAuth = await context?.getAuthContext({
+            force: true,
+            endpointUri: endpointUri,
+            deviceId,
+        } as AuthTypeConfig)
+            contextAuths[endpointUri] = <VeridaDatabaseAuthContext> contextAuth
+    }
 
-        contextAuths[endpointUri] = <VeridaDatabaseAuthContext> contextAuth
-      }
+    // Close the context so it's not open on disk to prevent conflict with the server when it opens the context
+    await context?.close()
 
     return {
         signature,

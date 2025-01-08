@@ -1,5 +1,5 @@
 const assert = require("assert");
-import { AuthRequestObject } from "../../src/api/rest/v1/oauth/interfaces";
+import { AuthRequest } from "../../src/api/rest/v1/oauth/interfaces";
 import Axios from "axios"
 import https from 'https';
 import CONFIG from "../../src/config"
@@ -39,16 +39,25 @@ const axios = Axios.create({
     httpsAgent: agent,
 });
 
-describe(`OAuth tests`, function () {
+describe(`Auth tests`, function () {
     this.timeout(200 * 1000)
 
-    let authCode, refreshToken, USER_DID, APP_DID
+    let authCode, USER_DID, APP_DID, sessionToken
 
-    it(`Can get an auth code`, async () => {
+    it(`Can get an auth token`, async () => {
+        await client.connect(userAccount)
+
+        // Build a context session object, this would normally be done in the user's web browser
+        // once they have logged in
+        const contextSession = await buildContextSession(userAccount, client)
+        const stringifiedSession = JSON.stringify(contextSession)
+        sessionToken = Buffer.from(stringifiedSession).toString("base64")
+
         USER_DID = await userAccount.did()
+        console.log(USER_DID)
         APP_DID = await appAccount.did()
 
-        const ARO: AuthRequestObject = {
+        const ARO: AuthRequest = {
             appDID: APP_DID,
             userDID: USER_DID,
             scopes: SCOPES,
@@ -59,10 +68,6 @@ describe(`OAuth tests`, function () {
         const userKeyring = await userAccount.keyring(VERIDA_CONTEXT)
         const user_sig = await userKeyring.sign(ARO)
 
-        // Sign the ARO to generate a consent signature verifying the app account generated this request
-        const appKeyring = await appAccount.keyring(VERIDA_CONTEXT)
-        const app_sig = await appKeyring.sign(ARO)
-
         // Add custom state data that will be passed back to the third party application on successful login
         const state = {}
 
@@ -71,89 +76,135 @@ describe(`OAuth tests`, function () {
             auth_request: JSON.stringify(ARO),
             redirect_uri: APP_REDIRECT_URI,
             user_sig,
-            app_sig,
-            state: JSON.stringify(state),
-            return_code: true
+            // app_sig,
+            state: JSON.stringify(state)
         }
 
-        await client.connect(userAccount)
-
-        const contextSession = await buildContextSession(userAccount, client)
-        const stringifiedSession = JSON.stringify(contextSession)
-        const sessionToken = Buffer.from(stringifiedSession).toString("base64")
-
         try {
-            const response = await axios.post(`${ENDPOINT}/auth`, request, {
+            await axios.post(`${ENDPOINT}/auth`, request, {
                 headers: {
                     "Content-Type": "application/json",
                     "X-API-Key": sessionToken
-                }
+                },
+                maxRedirects: 0
             })
-
-            authCode = response.data.auth_code
-
-            console.log('Auth code', authCode)
         } catch (err) {
-            console.error(err.message)
-            console.error(err.response)
+            // Max redirects 0 will throw an error with the redirect location
+            if (err.response.status == 302) {
+                const parsedUrl = new URL(err.response.headers.location)
+                authCode = parsedUrl.searchParams.get("auth_token")
+                console.log("authCode", authCode)
+                authCode = decodeURIComponent(authCode)
+                console.log("authCode", authCode)
+
+                assert.ok(authCode, 'Have an auth code')
+            } else {
+                assert.fail(`Failed: ${err.message}`)
+            }
         }
     })
 
-    it(`Can get tokens from auth code`, async() => {
-        const request = new URLSearchParams()
-        request.append('grant_type', 'authorization_code')
-        request.append('code', authCode)
-        request.append('redirect_uri', APP_REDIRECT_URI)
-        request.append('client_id', APP_DID)
-        request.append('client_secret', 'missing')
-
+    it(`Can make a valid scoped request`, async() => {
         try {
-            const response = await axios.post(`${ENDPOINT}/token`, request, {
+            const response = await axios.get(`${ENDPOINT}/check-scope?scope=test-scope`, {
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
+                    Authorization: `Bearer ${authCode}`,
+                  }
             })
 
-            console.log('Response', response.data)
-
-            refreshToken = response.data.refresh_token
+            assert.ok(response.data, 'Have a response')
+            assert.equal(response.data.authenticated, true, 'Successfully authenticated')
         } catch (err) {
             console.error(err.message)
-            console.error(err.response)
+            console.error(err.response.data)
+            assert.fail('Failed')
         }
     })
 
-    it(`Can refresh an access token`, async() => {
-        const request = new URLSearchParams()
-        request.append('grant_type', 'refresh_token')
-        request.append('refresh_token', refreshToken)
-        request.append('client_id', APP_DID)
-        request.append('client_secret', 'missing')
-
+    it(`Can make an invalid scoped request`, async() => {
         try {
-            const response = await axios.post(`${ENDPOINT}/token`, request, {
+            const response = await axios.get(`${ENDPOINT}/check-scope?scope=invalid-scope`, {
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    Authorization: `Bearer ${authCode}`,
                 }
             })
 
-            console.log('Response', response.data)
+            assert.ok(response.data, 'Have a response')
+            assert.equal(response.data.authenticated, false, 'Failed authentication')
+        } catch (err) {
+            console.error(err.message)
+            console.error(err.response.data)
+            assert.fail('Failed')
+        }
+    })
+
+    // @todo: Can get all tokens (scope: list-auth-tokens)
+    it.skip(`Can fetch auth tokens`, async() => {
+
+    })
+
+    it(`Can't revoke an auth token using an auth token`, async() => {
+        try {
+            const tokenId = authCode.substring(0,36)
+            await axios.get(`${ENDPOINT}/revoke?tokenId=${tokenId}`, {
+                headers: {
+                    Authorization: `Bearer ${authCode}`,
+                }
+            })
+
+            assert.fail('Incorrectly revoked auth token')
+        } catch (err) {
+            if (err.response.status == 403) {
+                assert.ok(err.response.data.error.match('invalid scope'), 'Invalid scope error correctly returned')
+            } else {
+                console.error(err.message)
+                console.error(err.response)
+                assert.fail('Failed')
+            }
+        }
+    })
+
+    it(`Can revoke an auth token`, async() => {
+        try {
+            const tokenId = authCode.substring(0,36)
+            const response = await axios.get(`${ENDPOINT}/revoke?tokenId=${tokenId}`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-Key": sessionToken
+                },
+            })
+
+            assert.ok(response.data, 'Have a response')
+            assert.equal(response.data.revoked, true, 'Successfully revoked token')
         } catch (err) {
             console.error(err.message)
             console.error(err.response)
         }
     })
 
-    it(`Can revoke access to a third party application`, async() => {
-        // @todo Implement on server
+    it(`Can no longer use revoked token`, async() => {
+        try {
+            await axios.get(`${ENDPOINT}/check-scope?scope=test-scope`, {
+                headers: {
+                    Authorization: `Bearer ${authCode}`,
+                  }
+            })
 
-        // try {
-        //     const response = await axios.get(`${ENDPOINT}/revoke?client_id=${APP_DID}`)
-
-        //     console.log('Response', response.data)
-        // } catch (err) {
-        //     console.error(err.message)
-        //     console.error(err.response)
-        // }
+            assert.fail('Revoked token was successfully used')
+        } catch (err) {
+            if (err.response.status == 403) {
+                assert.ok(err.response.data.error.match('Invalid token'), 'Invalid token error returned')
+            } else {
+                console.error(err.message)
+                console.error(err.response.data)
+                assert.fail('Failed')
+            }
+        }
     })
+
+    // @todo: Can get details for a token (scopes, did, servers)
+    it.skip(`Can fetch auth token info`, async() => {
+
+    })
+    
 })

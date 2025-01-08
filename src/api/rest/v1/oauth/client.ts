@@ -28,12 +28,16 @@ export class VeridaOAuthClient {
         return this.did
     }
 
-    public async verifyRequest(context: IContext, redirectUrl: string, authRequestString: string, userSig: string, appSig: string): Promise<AuthRequest> {
+    public async verifyRequest(context: IContext, redirectUrl: string, authRequestString: string, userSig: string): Promise<AuthRequest> {
         await this.init()
         const account = context.getAccount()
         const signerDid = await account.did()
 
         const authRequest: AuthRequest = JSON.parse(authRequestString)
+        // Ensure `revoke-tokens` scope is never set
+        if (authRequest.scopes && authRequest.scopes.length) {
+            authRequest.scopes = authRequest.scopes.filter(str => str !== 'access-tokens')
+        }
 
         // Verify the authRequest is signed by this.did
         // console.log('Verify the authRequest is signed by this.did')
@@ -46,21 +50,16 @@ export class VeridaOAuthClient {
             throw new Error(`Invalid user account signer on the auth request`)
         }
 
-        // Verify the authRequest is signed by the requesting application
-        // console.log('Verify the authRequest is signed by the app signer')
+        // Get third party application DID Document
         const response = await didResolver.resolve(authRequest.appDID)
         const appDidDocument = new DIDDocument(<VeridaDocInterface> response.didDocument!)
-        const isValidAppSig = appDidDocument.verifyContextSignature(authRequestString, <Network> CONFIG.verida.environment, `Verida: Vault`, appSig, false)
-        if (!isValidAppSig) {
-            throw new Error(`Invalid application account signature on the auth request`)
-        }
 
         // @todo: Verify DIDDocument has serviceEndpoint of type `VeridaOAuthServer` that matches redirectUrl
         const didDoc = appDidDocument.export()
-        console.log(didDoc)
+        // console.log(didDoc)
         let serverFound = false
         for (const service of didDoc.service) {
-            console.log(service)
+            // console.log(service)
         }
 
         // Verify clientSecret timestamp is within minutes of current timestamp
@@ -76,7 +75,6 @@ export class VeridaOAuthClient {
         }
 
         return authRequest
-
     }
 
     public async init() {

@@ -1,19 +1,16 @@
-import { IDatabase, Network } from "@verida/types"
+import { ContextSession, DatabasePermissionOptionsEnum, IContext, IDatabase, Network } from "@verida/types"
 import CONFIG from "../../../../config"
 import { Client, Context } from "@verida/client-ts"
 import { AutoAccount } from "@verida/account-node"
-import { VeridaOAuthClient } from "./client"
-import { VeridaOAuthUser } from "./user"
-import { AuthCodeRecord, OAuthToken, VeridaOAuthCode, VeridaOAuthToken } from "./interfaces"
+import EncryptionUtils from "@verida/encryption-utils";
+import { AuthRequest } from "./interfaces"
 
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
 const DID_CLIENT_CONFIG = CONFIG.verida.didClientConfig
 
 const DB_PENDING_REQUEST = "oauth_pending_requests"
 const DB_TOKEN = "oauth_tokens"
-
-// @todo: remove
-let lastToken: VeridaOAuthToken
+const API_KEY_SESSION_LENGTH = 48
 
 class VeridaOAuthServer {
     private network: Network
@@ -27,126 +24,132 @@ class VeridaOAuthServer {
         this.privateKey = privateKey
     }
 
-    public async saveAuthorizationCode(code: VeridaOAuthCode, client: VeridaOAuthClient, user: VeridaOAuthUser): Promise<object> {
-        console.log('saveAuthorizationCode()')
+    public async verifyAuthToken(token: string, scope?: string): Promise<ContextSession> {
+        await this._init()
 
-        const requestDb = await this.getDb(DB_PENDING_REQUEST)
-        const pendingRequest: AuthCodeRecord = {
-            _id: code.authorizationCode,
-            expiresAt: code.expiresAt.toISOString(),
-            redirectUri: code.redirectUri,
-            scope: code.scope,
-            appDID: client.id,
-            userDID: user.id,
-            insertedAt: (new Date()).toISOString()
+        if (token.length != 84) {
+            throw new Error(`Invalid token (corrupt)`)
         }
 
-        await requestDb.save(pendingRequest)
+        try {
+            const authTokenId = token.substring(0,36)
+            const part1 = token.substring(36)
 
-        // @todo: Garbage collect expired requests
+            const serverKeyDb = await this.context.openDatabase('api_keys')
+            // @todo: fix typing
+            const authTokenKeyData = <any> await serverKeyDb.get(authTokenId)
 
-        return {
-            code,
-            client,
-            user
-        }
-    }
+            const encryptedAPIKeyData = `${part1}${authTokenKeyData.part2}`
+            const encryptionKey = EncryptionUtils.decodeBase64(authTokenKeyData.encryptionKey)
 
-    public async getAuthorizationCode(code: string): Promise<VeridaOAuthCode> {
-        console.log('getAuthorizationCode()')
+            // const encryptedAPIKeyData = EncryptionUtils.decodeBase64(b64EncryptedAPIKeyData)
+            const apiKeyDataString = EncryptionUtils.symDecrypt(encryptedAPIKeyData, encryptionKey)
+            const apiKeyData = JSON.parse(apiKeyDataString)
 
-        const requestDb = await this.getDb(DB_PENDING_REQUEST)
-        const request = <AuthCodeRecord | undefined> await requestDb.get(code)
+            const {
+                session,
+                scopes,
+                // userDID,
+                // appDID,
+            } = apiKeyData
 
-        if (!request) {
-            throw new Error(`Invalid authorization code (not found)`)
-        }
+            // Verify requested scope matches user granted scopes
+            if (scope && scopes.indexOf(scope) === -1) {
+                // Scope not found
+                throw new Error(`Invalid token (invalid scope)`)
+            }
 
-        const client = new VeridaOAuthClient(request.appDID)
-        const user = new VeridaOAuthUser(request.userDID)
+            // Return a ContextSession instance
+            return <ContextSession> JSON.parse(Buffer.from(session, 'base64').toString('utf-8'));
+        } catch (err: any) {
+            if (err.message.match('missing')) {
+                throw new Error('Invalid token (not found)')
+            }
 
-        return {
-            authorizationCode: request._id,
-            expiresAt: new Date(request.expiresAt),
-            redirectUri: request.redirectUri,
-            scope: request.scope,
-            client,
-            user
+            throw new Error(err.message)
         }
     }
 
-    public async revokeAuthorizationCode(code: string): Promise<boolean> {
-        // Delete from `oauth_pending_requests` database
-        console.log('revokeAuthorizationCode()')
+    public async generateAuthToken(authRequest: AuthRequest, context: IContext, sessionString: string): Promise<string> {
+        await this._init()
 
-        const requestDb = await this.getDb(DB_PENDING_REQUEST)
-        return await requestDb.delete(code)
-    }
+        // @todo: verify session string DID matches authRequest DID
 
-    public async saveToken(token: OAuthToken, client: VeridaOAuthClient, user: VeridaOAuthUser): Promise<VeridaOAuthToken> {
-        // @todo: Save to `oauth_tokens` database
-        console.log('saveToken()')
+        // 1. Generate encryption key
+        const encryptionKey = EncryptionUtils.randomKey(32)
+        const b64Key = EncryptionUtils.encodeBase64(encryptionKey)
 
-        lastToken = {
-            accessToken: token.accessToken,
-            accessTokenExpiresAt: token.accessTokenExpiresAt,
-            refreshToken: token.refreshToken,
-            refreshTokenExpiresAt: token.refreshTokenExpiresAt,
-            scope: token.scope,
-            client,
-            user
+        // 2. Generate API data to be encrypted
+        // @todo type
+        const apiKeyData = {
+            session: sessionString,
+            scopes: authRequest.scopes,
+            userDID: authRequest.userDID,
+            appDID: authRequest.appDID
         }
 
-        return lastToken
+        const apiKeyDataString = JSON.stringify(apiKeyData)
+        const encryptedAPIKeyData = EncryptionUtils.symEncrypt(apiKeyDataString, encryptionKey)
+
+        // 3. Split encrypted key data into two parts
+        
+        // split the b64 session string into two parts, with the last part 48 bytes long
+        const part1 = encryptedAPIKeyData.substring(0, API_KEY_SESSION_LENGTH)
+        const part2 = encryptedAPIKeyData.substring(API_KEY_SESSION_LENGTH)
+
+        const appKeyData = {
+            // _id: auto generated
+            encryptionKey: b64Key,
+            part2
+        }
+
+        const serverKeyDb = await this.context.openDatabase('api_keys')
+        const result: any = await serverKeyDb.save(appKeyData)
+        const apiKeyId = result.id
+
+        const savedRecord = await serverKeyDb.get(apiKeyId)
+
+        // @todo: source from this server config
+        const endpointUri = ''
+
+        const userKeyData = {
+            _id: apiKeyId,
+            servers: [endpointUri]
+        }
+
+        const userKeyDb = await context.openDatabase('api_keys', {
+            permissions: {
+                read: DatabasePermissionOptionsEnum.PUBLIC,
+                write: DatabasePermissionOptionsEnum.OWNER
+            }
+        })
+
+        await userKeyDb.save(userKeyData)
+
+        const apiKey = `${apiKeyId}${part1}`
+        return apiKey
     }
 
-    public async getClient(clientId: string, clientSecret: string): Promise<any> {
-        console.log('getClient', clientId, clientSecret)
-        const client = new VeridaOAuthClient("0x")
-        client.redirectUris = ["https://insertyourdomain.com/verida/auth-response"]
-
-        return client
-    }
-
-    /**
-     * Invoked to retrieve an existing access token previously saved through Model#saveToken().
-     * @param accessToken 
-     */
-    public async getAccessToken(accessToken: string): Promise<VeridaOAuthToken> {
-        console.log('getAccessToken()')
-        throw new Error(" not implemented")
-    }
-
-    public async revokeToken(token: OAuthToken): Promise<boolean> {
+    public async revokeToken(userContext: IContext, tokenId: string): Promise<void> {
         // @todo Delete refresh token from `oauth_tokens` database
-        console.log('revokeToken()')
-        return true
-    }
 
-    /**
-     * Invoked to retrieve an existing access token previously saved through Model#saveToken().
-     * @param accessToken 
-     */
-    public async getRefreshToken(refreshToken: string): Promise<VeridaOAuthToken> {
-        // @todo Fetch from oauth_tokens database
-        console.log('getRefreshToken()')
-        return lastToken
-    }
+        try {
+            // Delete the token from the server
+            const serverKeyDb = await this.context.openDatabase('api_keys')
+            await serverKeyDb.delete(tokenId)
 
-    /**
-     * Invoked to check if the requested scope is valid for a particular client/user combination.
-     * This function is optional. If not implemented, any scope is accepted.
-     * 
-     * @param user 
-     * @param client 
-     * @param scopes 
-     * @returns 
-     */
-    public async validateScope(user: any, client: VeridaOAuthClient, scopes: string[]): Promise<string[]> {
-        // @todo: Verify the scopes match for the user User.verifyScopes(scopes) ?
-        console.log('validateScope()')
-
-        return scopes
+            // Delete the token from the user database
+            const userKeyDb = await userContext.openDatabase('api_keys', {
+                permissions: {
+                    read: DatabasePermissionOptionsEnum.PUBLIC,
+                    write: DatabasePermissionOptionsEnum.OWNER
+                }
+            })
+            await userKeyDb.delete(tokenId)
+        } catch (err) {
+            console.log(err)
+            throw new Error(`Invalid token (${err.message})`)
+        }
     }
 
     protected async _init(): Promise<void> {
@@ -167,6 +170,7 @@ class VeridaOAuthServer {
 
         this.did = await account.did()
 
+        await network.connect(account)
         this.context = <Context> await network.openContext(VAULT_CONTEXT_NAME)
     }
 

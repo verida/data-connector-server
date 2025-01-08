@@ -29,45 +29,127 @@ const router = express.Router();
  * and access tokens.
  */
 router.post("/auth", async (req: Request, res: Response) => {
-  const { context } = await Utils.getNetworkConnectionFromRequest(req)
-  const { client_id, auth_request, redirect_uri, user_sig, app_sig, state, return_code } = req.body;
+  const { context, sessionString } = await Utils.getNetworkConnectionFromRequest(req)
+  const { client_id, auth_request, redirect_uri, user_sig, state } = req.body;
+
+  if (!sessionString) {
+    return res.status(400).json({ error: "Invalid user session key"});
+  }
 
   if (!client_id) {
     return res.status(400).json({ error: "Invalid client or redirect URI" });
   }
 
   const client = new VeridaOAuthClient(client_id.toString())
-  if (!redirect_uri || !auth_request || !user_sig || !app_sig) {
-    return res.status(400).json({ error: "Missing redirect URI, auth request or signature" });
+  if (!redirect_uri) {
+    return res.status(400).json({ error: "Missing redirect URI," });
+  }
+
+  if (!auth_request) {
+    return res.status(400).json({ error: "Missing auth request" });
+  }
+
+  if (!user_sig) {
+    return res.status(400).json({ error: "Missing user signature" });
   }
 
   try {
-    await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString(), app_sig.toString())
-    const authRequestId = await VeridaOAuthServer.generateAuthorizationCode(auth_request.toString(), redirect_uri.toString())
+    const authRequest = await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString())
+    const authToken = await VeridaOAuthServer.generateAuthToken(authRequest, context, sessionString)
 
-    if (CONFIG.verida.devMode && return_code) {
-      // We are in dev mode and have been asked to return the code, so do that without redirecting
-      // This is used for testing purposes
-      return res.json({
-        auth_code: authRequestId
-      })
-    } else {
-      // Redirect the user to the third party applicatino with a valid auth_code that can
-      // be used to retrieve access and refresh tokens.
-      return res.redirect(`${redirect_uri}?auth_code=${authRequestId}&state=${state}`);
-    }
+    // Redirect the user to the third party application with a valid auth_code that can
+    // be used to retrieve access and refresh tokens.
+    return res.redirect(`${redirect_uri}?auth_token=${encodeURIComponent(authToken)}&state=${state}`);
   } catch (err) {
     return res.status(400).json({ error: `Invalid auth request: ${err.message}`})
   }
 });
 
-router.use("/token", oauth.token());
+/**
+ * Check if an access token has a given scope
+ */
+router.get("/check-scope", async function (req, res) {
+  const scope = req.query.scope.toString()
 
-router.get("/test", oauth.authenticate(), async function (req, res) {
-  // @ts-ignore
-  console.log(res.locals.oauth);
-  res.send({ authenticated: true });
+  try {
+    const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+      scope
+    })
+
+    res.send({ authenticated: true });
+  } catch (err) {
+    if (err.message.match('invalid scope')) {
+      res.send({ authenticated: false });
+    } else {
+      if (err.message.match('Invalid token')) {
+        return res.status(403).json({ error: err.message })
+      }
+
+      return res.status(400).json({ error: `Invalid request: ${err.message}`})
+    }
+  }
 });
+
+router.get("/revoke", async function (req, res) {
+  const tokenId = req.query.tokenId.toString()
+
+  try {
+    // We set a scope of `revoke-tokens` to prevent auth tokens from being able to revoke
+    // tokens unless they have the `revoke-tokens` scope (which is intentionally impossible
+    // as `revoke-toknes` scope is intentionally force removed from any requested scopes)
+    const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+      scope: "access-tokens"
+    })
+
+    await VeridaOAuthServer.revokeToken(context, tokenId)
+    res.send({ revoked: true });
+  } catch (err) {
+    if (err.message.match('Invalid token')) {
+      return res.status(403).json({ error: err.message })
+    }
+
+    console.error(err)
+    return res.status(400).json({ error: `Invalid request: ${err.message}`})
+  }
+});
+
+// @todo Get details about a token (did, scopes)
+router.get("/token", async function (req, res) {
+  const tokenId = req.query.tokenId.toString()
+
+  try {
+    const { context } = await Utils.getNetworkConnectionFromRequest(req)
+
+    // @todo: implement
+  } catch (err) {
+    if (err.message.match('Invalid token')) {
+      return res.status(403).json({ error: err.message })
+    }
+
+    console.error(err)
+    return res.status(400).json({ error: `Invalid request: ${err.message}`})
+  }
+})
+
+router.get("/tokens", async function (req, res) {
+  try {
+    // We set a scope of `revoke-tokens` to prevent auth tokens from being able to revoke
+    // tokens unless they have the `revoke-tokens` scope (which is intentionally impossible
+    // as `revoke-toknes` scope is intentionally force removed from any requested scopes)
+    const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+      scope: "access-tokens"
+    })
+
+    // @todo: implement
+  } catch (err) {
+    if (err.message.match('Invalid token')) {
+      return res.status(403).json({ error: err.message })
+    }
+
+    console.error(err)
+    return res.status(400).json({ error: `Invalid request: ${err.message}`})
+  }
+})
 
 // router.get("/login", async (req: Request, res: Response) => {
 //   const { privateKey } = req.body;
