@@ -3,7 +3,7 @@ import CONFIG from "../../../../config"
 import { Client, Context } from "@verida/client-ts"
 import { AutoAccount } from "@verida/account-node"
 import EncryptionUtils from "@verida/encryption-utils";
-import { AuthRequest, AuthToken } from "./interfaces"
+import { APIKeyData, AuthRequest, AuthToken } from "./interfaces"
 import { AuthUser } from "./user"
 
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
@@ -58,7 +58,7 @@ class AuthServer {
             // Verify requested scope matches user granted scopes
             if (scope && scopes.indexOf(scope) === -1) {
                 // Scope not found
-                throw new Error(`Invalid token (invalid scope)`)
+                throw new Error(`Invalid token (invalid scope: ${scope})`)
             }
 
             // Return a ContextSession instance
@@ -75,30 +75,15 @@ class AuthServer {
         }
     }
 
-    public async generateAuthToken(authRequest: AuthRequest, authUser: AuthUser, sessionString: string): Promise<string> {
-        await this._init()
-
-        // @todo: verify session string DID matches authRequest DID
-
-        // 1. Generate encryption key
+    public async createAuthToken(apiKeyData: APIKeyData, authUser: AuthUser, sessionString: string): Promise<string> {
+        // Generate encryption key
         const encryptionKey = EncryptionUtils.randomKey(32)
         const b64Key = EncryptionUtils.encodeBase64(encryptionKey)
 
-        // 2. Generate API data to be encrypted
-        // @todo type
-        const apiKeyData = {
-            session: sessionString,
-            scopes: authRequest.scopes,
-            userDID: authRequest.userDID,
-            appDID: authRequest.appDID
-        }
-
         const apiKeyDataString = JSON.stringify(apiKeyData)
         const encryptedAPIKeyData = EncryptionUtils.symEncrypt(apiKeyDataString, encryptionKey)
-
-        // 3. Split encrypted key data into two parts
         
-        // split the b64 session string into two parts, with the last part 48 bytes long
+        // Split the b64 session string into two parts, with the last part 48 bytes long
         const part1 = encryptedAPIKeyData.substring(0, API_KEY_SESSION_LENGTH)
         const part2 = encryptedAPIKeyData.substring(API_KEY_SESSION_LENGTH)
 
@@ -119,14 +104,31 @@ class AuthServer {
         const authToken: AuthToken = {
             _id: apiKeyId,
             servers: [endpointUri],
-            scopes: authRequest.scopes,
-            appDID: authRequest.appDID
+            scopes: apiKeyData.scopes,
+            appDID: apiKeyData.appDID
         }
 
         await authUser.saveAuthToken(authToken)
 
         const apiKey = `${apiKeyId}${part1}`
         return apiKey
+    }
+
+    public async generateAuthToken(authRequest: AuthRequest, authUser: AuthUser, sessionString: string): Promise<string> {
+        await this._init()
+
+        // @todo: verify session string DID matches authRequest DID
+
+        // 2. Generate API data to be encrypted
+        // @todo type
+        const apiKeyData = {
+            session: sessionString,
+            scopes: authRequest.scopes,
+            userDID: authRequest.userDID,
+            appDID: authRequest.appDID
+        }
+
+        return this.createAuthToken(apiKeyData, authUser, sessionString)
     }
 
     public async revokeToken(authUser: AuthUser, tokenId: string): Promise<void> {

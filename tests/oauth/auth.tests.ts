@@ -42,7 +42,7 @@ const axios = Axios.create({
 describe(`Auth tests`, function () {
     this.timeout(200 * 1000)
 
-    let authCode, USER_DID, APP_DID, sessionToken
+    let authCode, USER_DID, APP_DID, sessionToken, userAuthToken
 
     it(`Can issue an auth token for a third party app`, async () => {
         await client.connect(userAccount)
@@ -155,11 +155,7 @@ describe(`Auth tests`, function () {
 
     it(`Can fetch info for current token`, async() => {
         try {
-            const response = await axios.get(`${ENDPOINT}/token`, {
-                headers: {
-                    Authorization: `Bearer ${authCode}`,
-                }
-            })
+            const response = await axios.get(`${ENDPOINT}/token?tokenId=${encodeURIComponent(authCode)}`)
 
             assert.ok(response.data, 'Have a response')
             assert.ok(response.data.token && response.data.token._id, 'Have token data')
@@ -182,7 +178,7 @@ describe(`Auth tests`, function () {
             assert.fail('Incorrectly revoked auth token')
         } catch (err) {
             if (err.response.status == 403) {
-                assert.ok(err.response.data.error.match('invalid scope'), 'Invalid scope error correctly returned')
+                assert.ok(err.response.data.error.match('Invalid token'), 'No credentials error correctly returned')
             } else {
                 console.error(err.message)
                 console.error(err.response)
@@ -229,21 +225,43 @@ describe(`Auth tests`, function () {
         }
     })
 
-    // it(`Can issue an auth token to a user`, async () => {
-    //     try {
-    //         const response = await axios.post(`${ENDPOINT}/token`, {
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //                 "X-API-Key": sessionToken
-    //             },
-    //         })
+    it(`Can issue an auth token to a user`, async () => {
+        try {
+            const response = await axios.post(`${ENDPOINT}/token`, {
+                scopes: SCOPES
+            }, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-Key": sessionToken
+                },
+            })
 
-    //         console.log(response.data)
-    //     } catch (err) {
-    //         console.error(err.message)
-    //         console.error(err.response.data)
-    //         assert.fail('Failed')
-    //     }
-    // })
+            assert.ok(response.data, 'Have a response')
+            assert.ok(response.data.token, 'Have a token')
+            userAuthToken = response.data.token
+        } catch (err) {
+            console.error(err.message)
+            console.error(err.response.data)
+            assert.fail('Failed')
+        }
+    })
+
+    it(`Can revoke a user generated auth token`, async() => {
+        try {
+            const tokenId = userAuthToken.substring(0,36)
+            const response = await axios.get(`${ENDPOINT}/revoke?tokenId=${tokenId}`, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-API-Key": sessionToken
+                },
+            })
+
+            assert.ok(response.data, 'Have a response')
+            assert.equal(response.data.revoked, true, 'Successfully revoked token')
+        } catch (err) {
+            console.error(err.message)
+            console.error(err.response)
+        }
+    })
     
 })

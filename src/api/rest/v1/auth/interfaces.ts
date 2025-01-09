@@ -10,5 +10,12 @@ export interface AuthToken {
     _id: string
     scopes: string[]
     servers: string[]
-    appDID: string
+    appDID?: string
+}
+
+export interface APIKeyData {
+    session: string,
+    scopes: string[]
+    userDID: string
+    appDID?: string
 }

@@ -50,7 +50,7 @@ export class AuthController {
 
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-            scope
+                scope
             })
 
             res.send({ authenticated: true });
@@ -67,14 +67,18 @@ export class AuthController {
         }
     }
 
+    /**
+     * Get all the available tokens for the current user.
+     * 
+     * Permission is denied for scoped Auth Tokens.
+     * 
+     * @param req 
+     * @param res 
+     * @returns 
+     */
     public async tokens(req: Request, res: Response) {
         try {
-            // We set a scope of `revoke-tokens` to prevent auth tokens from being able to revoke
-            // tokens unless they have the `revoke-tokens` scope (which is intentionally impossible
-            // as `revoke-toknes` scope is intentionally force removed from any requested scopes)
-            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-              scope: "access-tokens"
-            })
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
         
             const authUser = new AuthUser(context)
             const tokens = await authUser.getAuthTokens()
@@ -93,14 +97,25 @@ export class AuthController {
           }
     }
 
+    /**
+     * Get the details for an auth token
+     * 
+     * @param req 
+     * @param res 
+     * @returns 
+     */
     public async token(req: Request, res: Response) {
         try {
+            // Fake inject the token from the query params into the headers so it can be used in Utils
+            const authToken = decodeURIComponent(req.query.tokenId.toString())
+            req.headers.authorization = `Bearer ${authToken}`
+
             const { context, tokenId } = await Utils.getNetworkConnectionFromRequest(req, { ignoreScopeCheck: true })
         
             const authUser = new AuthUser(context)
-            const authToken: AuthToken = await authUser.getAuthToken(tokenId)
-        
-            res.json({ token: authToken });
+            const authTokenObj: AuthToken = await authUser.getAuthToken(tokenId)
+
+            res.json({ token: authTokenObj });
           } catch (err) {
             if (err.message.match('Invalid token')) {
               return res.status(403).json({ error: err.message })
@@ -111,16 +126,18 @@ export class AuthController {
           }
     }
 
+    /**
+     * Revoke an auth token
+     * 
+     * @param req 
+     * @param res 
+     * @returns 
+     */
     public async revoke(req: Request, res: Response) {
         const tokenId = req.query.tokenId.toString()
 
         try {
-            // We set a scope of `revoke-tokens` to prevent auth tokens from being able to revoke
-            // tokens unless they have the `revoke-tokens` scope (which is intentionally impossible
-            // as `revoke-toknes` scope is intentionally force removed from any requested scopes)
-            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-            scope: "access-tokens"
-            })
+            const { context } = await Utils.getNetworkConnectionFromRequest(req)
 
             const authUser = new AuthUser(context)
             await AuthServer.revokeToken(authUser, tokenId)
@@ -135,22 +152,32 @@ export class AuthController {
         }
     }
 
-    // public async createToken(req: Request, res: Response) {
-    //     try {
-    //         const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-    //             scope: "access-tokens"
-    //         })
+    /**
+     * Create a new auth token, not linked to a third party application
+     * 
+     * @param req 
+     * @param res 
+     * @returns 
+     */
+    public async createToken(req: Request, res: Response) {
+        try {
+            const scopes = req.body.scopes
+            const { context, sessionString } = await Utils.getNetworkConnectionFromRequest(req)
 
-    //         res.send({ hey: true });
-    //     } catch (err) {
-    //         if (err.message.match('Invalid token')) {
-    //         return res.status(403).json({ error: err.message })
-    //         }
+            const authUser = new AuthUser(context)
+            const userDID = await context.getAccount().did()
+            const authToken = await AuthServer.createAuthToken({
+                session: sessionString,
+                scopes,
+                userDID
+            }, authUser, sessionString)
 
-    //         console.error(err)
-    //         return res.status(400).json({ error: `Invalid request: ${err.message}`})
-    //     }
-    // }
+            res.send({ token: authToken });
+        } catch (err) {
+            console.error(err)
+            return res.status(400).json({ error: `Invalid request: ${err.message}`})
+        }
+    }
 
 }
 
