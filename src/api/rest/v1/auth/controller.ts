@@ -95,7 +95,7 @@ export class AuthController {
 
     public async token(req: Request, res: Response) {
         try {
-            const { context, tokenId } = await Utils.getNetworkConnectionFromRequest(req)
+            const { context, tokenId } = await Utils.getNetworkConnectionFromRequest(req, { ignoreScopeCheck: true })
         
             const authUser = new AuthUser(context)
             const authToken: AuthToken = await authUser.getAuthToken(tokenId)
@@ -134,6 +134,23 @@ export class AuthController {
             return res.status(400).json({ error: `Invalid request: ${err.message}`})
         }
     }
+
+    // public async createToken(req: Request, res: Response) {
+    //     try {
+    //         const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+    //             scope: "access-tokens"
+    //         })
+
+    //         res.send({ hey: true });
+    //     } catch (err) {
+    //         if (err.message.match('Invalid token')) {
+    //         return res.status(403).json({ error: err.message })
+    //         }
+
+    //         console.error(err)
+    //         return res.status(400).json({ error: `Invalid request: ${err.message}`})
+    //     }
+    // }
 
 }
 

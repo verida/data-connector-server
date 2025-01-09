@@ -44,7 +44,7 @@ describe(`Auth tests`, function () {
 
     let authCode, USER_DID, APP_DID, sessionToken
 
-    it(`Can get an auth token`, async () => {
+    it(`Can issue an auth token for a third party app`, async () => {
         await client.connect(userAccount)
 
         // Build a context session object, this would normally be done in the user's web browser
@@ -228,5 +228,22 @@ describe(`Auth tests`, function () {
             }
         }
     })
+
+    // it(`Can issue an auth token to a user`, async () => {
+    //     try {
+    //         const response = await axios.post(`${ENDPOINT}/token`, {
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //                 "X-API-Key": sessionToken
+    //             },
+    //         })
+
+    //         console.log(response.data)
+    //     } catch (err) {
+    //         console.error(err.message)
+    //         console.error(err.response.data)
+    //         assert.fail('Failed')
+    //     }
+    // })
     
 })
