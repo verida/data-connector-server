@@ -9,7 +9,7 @@ import { buildContextSession } from "./utils";
 
 const VERIDA_CONTEXT = 'Verida: Vault'
 const NOW = Math.floor(Date.now() / 1000)
-const ENDPOINT = `${CONFIG.serverUrl}/api/rest/v1/oauth`
+const ENDPOINT = `${CONFIG.serverUrl}/api/rest/v1/auth`
 const SCOPES = ["test-scope"]
 const APP_REDIRECT_URI = "https://insertyourdomain.com/verida/auth-response"
 
