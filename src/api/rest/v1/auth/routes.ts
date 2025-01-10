@@ -9,5 +9,6 @@ router.get("/revoke", controller.revoke);
 router.post("/token", controller.createToken)
 router.get("/token", controller.token)
 router.get("/tokens", controller.tokens)
+router.get("/scopes", controller.scopes)
 
 export default router;

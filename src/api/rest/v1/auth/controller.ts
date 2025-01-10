@@ -4,6 +4,7 @@ import { AuthClient } from "./client";
 import AuthServer from "./server";
 import { AuthUser } from "./user";
 import { AuthToken } from "./interfaces";
+import SCOPES from "./scopes"
 
 export class AuthController {
 
@@ -50,7 +51,7 @@ export class AuthController {
 
         try {
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scope
+                scopes: [scope]
             })
 
             res.send({ authenticated: true });
@@ -177,6 +178,10 @@ export class AuthController {
             console.error(err)
             return res.status(400).json({ error: `Invalid request: ${err.message}`})
         }
+    }
+
+    public async scopes(req: Request, res: Response) {
+        res.send({ scopes: SCOPES });
     }
 
 }

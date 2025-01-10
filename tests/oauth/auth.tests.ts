@@ -263,5 +263,18 @@ describe(`Auth tests`, function () {
             console.error(err.response)
         }
     })
+
+    it(`Can get a list of all supported scopes`, async() => {
+        try {
+            const response = await axios.get(`${ENDPOINT}/scopes`)
+
+            assert.ok(response.data, 'Have a response')
+            assert.ok(response.data.scopes.length, 'Have scopes')
+            assert.ok(response.data.scopes["ds:file"].description, 'Scopes have a description')
+        } catch (err) {
+            console.error(err.message)
+            console.error(err.response)
+        }
+    })
     
 })
