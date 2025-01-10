@@ -9,8 +9,11 @@ export class DbController {
 
     public async getById(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const dbName = req.params[0]
+
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:db-get-by-id", `db:${dbName}`]
+            })
             const rowId = req.params[1]
             const permissions = Utils.buildPermissions(req)
 
@@ -43,8 +46,10 @@ export class DbController {
 
     public async create(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const dbName = req.params.database
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:db-create", `db:${dbName}`]
+            })
 
             const permissions = Utils.buildPermissions(req)
             const db = await context.openDatabase(dbName, {
@@ -81,8 +86,10 @@ export class DbController {
 
     public async update(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const dbName = req.params.database
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:db-update", `db:${dbName}`]
+            })
 
             const permissions = Utils.buildPermissions(req)
             const db = await context.openDatabase(dbName, {
@@ -135,8 +142,10 @@ export class DbController {
 
     public async query(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const dbName = req.params[0]
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:db-query", `db:${dbName}`]
+            })
 
             const permissions = Utils.buildPermissions(req)
             const db = await context.openDatabase(dbName, {
