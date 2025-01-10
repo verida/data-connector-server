@@ -1,6 +1,3 @@
-/*
-This lets us run the Express server locally 
-*/
 const app = require('./server-app');
 
 
