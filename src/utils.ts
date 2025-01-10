@@ -49,7 +49,7 @@ export class Utils {
      * @param options
      * @returns
      */
-    public static async getNetworkConnectionFromRequest(req: Request, options?: { ignoreAccessCheck?: boolean, checkAdmin?: boolean, scope?: string, ignoreScopeCheck?: boolean }): Promise<NetworkConnection> {
+    public static async getNetworkConnectionFromRequest(req: Request, options?: { ignoreAccessCheck?: boolean, checkAdmin?: boolean, scopes?: string[], ignoreScopeCheck?: boolean }): Promise<NetworkConnection> {
         // Extract session
         let session: ContextSession | undefined;
         let tokenId: string
@@ -65,11 +65,11 @@ export class Utils {
             }
             const bearerToken = authHeader.split(' ')[1];
 
-            if (!options.ignoreScopeCheck && !options.scope) {
+            if (!options.ignoreScopeCheck && !options.scopes) {
                 throw new Error(`Invalid token (insufficient scope)`)
             }
 
-            const authTokenData = await VeridaOAuthServer.verifyAuthToken(bearerToken, options.scope)
+            const authTokenData = await VeridaOAuthServer.verifyAuthToken(bearerToken, options.scopes)
             session = authTokenData.session
             tokenId = authTokenData.tokenId
         }

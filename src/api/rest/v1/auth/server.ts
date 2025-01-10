@@ -23,7 +23,7 @@ class AuthServer {
         this.privateKey = privateKey
     }
 
-    public async verifyAuthToken(token: string, scope?: string): Promise<{
+    public async verifyAuthToken(token: string, requestedScopes?: string[]): Promise<{
         session: ContextSession
         tokenId: string
     }> {
@@ -55,10 +55,12 @@ class AuthServer {
                 // appDID,
             } = apiKeyData
 
-            // Verify requested scope matches user granted scopes
-            if (scope && scopes.indexOf(scope) === -1) {
-                // Scope not found
-                throw new Error(`Invalid token (invalid scope: ${scope})`)
+            // Verify requested scopes matches user granted scopes
+            for (const scope of requestedScopes) {
+                if (scopes && scopes.indexOf(scope) === -1) {
+                    // Scope not found
+                    throw new Error(`Invalid token (invalid scope: ${scope})`)
+                }
             }
 
             // Return a ContextSession instance

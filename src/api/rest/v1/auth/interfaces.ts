@@ -19,3 +19,15 @@ export interface APIKeyData {
     userDID: string
     appDID?: string
 }
+
+export enum ScopeType {
+    DATASTORE = "ds",
+    DATABASE = "db",
+    API = "api",
+    URL = "url"
+}
+
+export interface Scope {
+    type: ScopeType
+    description: string
+}
