@@ -69,6 +69,11 @@ export class LLMController {
 
     public async prompt(req: Request, res: Response) {
         try {
+            // Ensure the user is authenticated
+            await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:llm-profile"]
+            })
+
             const {
                 customEndpoint,
                 llmModelId,
@@ -96,7 +101,9 @@ export class LLMController {
     public async profilePrompt(req: Request, res: Response) {
         let result: any = {}
         try {
-            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:llm-profile-prompt"]
+            })
 
             const schema = req.body.schema
             const promptSearchTip = req.body.promptSearchTip
@@ -118,9 +125,12 @@ export class LLMController {
         }
     }
 
+    // @deprecated
     public async personalPrompt(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:llm-personal-prompt"]
+            })
             const did = await account.did()
             const prompt = req.body.prompt
             let promptConfig: PromptSearchServiceConfig = req.body.promptConfig
@@ -163,6 +173,7 @@ export class LLMController {
      */
     public async hotLoad(req: Request, res: Response) {
         try {
+            // No scopes required as no data is actually shared, just data loaded on the server
             const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
             const did = await account.did()
             const data = new DataService(did, context)
@@ -203,9 +214,17 @@ export class LLMController {
         }
     }
 
+    /**
+     * 
+     * @param req 
+     * @param res 
+     * @returns 
+     */
     public async agent(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:llm-agent-prompt"]
+            })
             const temperature = req.body.temperature ? parseInt(req.body.temperature.toString()) : 0
 
             const rag = new Agent()

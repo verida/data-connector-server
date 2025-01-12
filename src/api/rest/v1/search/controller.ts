@@ -20,7 +20,9 @@ class SearchController {
 
     public async chatThreads(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:search-chat-threads"]
+            })
             const did = await account.did()
             const keywordString = req.query.keywords ? req.query.keywords.toString() : ""
             const keywords = keywordString.split(' ')
@@ -45,7 +47,9 @@ class SearchController {
 
     public async universal(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:search-universal"]
+            })
             const did = await account.did()
             const keywordString = req.query.keywords ? req.query.keywords.toString() : ""
             const keywords = keywordString.split(' ')
@@ -71,16 +75,15 @@ class SearchController {
         }
     }
 
-    public async ds(req: Request, res: Response) {
-        return res.json({hello: 'world'})
-    }
-
     public async datastore(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const { context, account } = await Utils.getNetworkConnectionFromRequest(req, {
+                    scopes: ["api:search-ds", `ds:${schemaName}`]
+            })
             const did = await account.did()
 
-            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            
             const query = req.body.keywords ? req.body.keywords.toString() : undefined
 
             if (!query) {

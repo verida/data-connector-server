@@ -5,6 +5,7 @@ import { AutoAccount } from "@verida/account-node"
 import EncryptionUtils from "@verida/encryption-utils";
 import { APIKeyData, AuthRequest, AuthToken } from "./interfaces"
 import { AuthUser } from "./user"
+import { convertDsScopes } from "./scopes";
 
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
 const DID_CLIENT_CONFIG = CONFIG.verida.didClientConfig
@@ -55,9 +56,11 @@ class AuthServer {
                 // appDID,
             } = apiKeyData
 
+            const convertedScopes = convertDsScopes(scopes)
+
             // Verify requested scopes matches user granted scopes
             for (const scope of requestedScopes) {
-                if (scopes && scopes.indexOf(scope) === -1) {
+                if (convertedScopes && convertedScopes.indexOf(scope) === -1) {
                     // Scope not found
                     throw new Error(`Invalid token (invalid scope: ${scope})`)
                 }

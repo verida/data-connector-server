@@ -264,9 +264,11 @@ describe(`Auth tests`, function () {
         }
     })
 
-    it(`Can get a list of all supported scopes`, async() => {
+    it.only(`Can get a list of all supported scopes`, async() => {
         try {
             const response = await axios.get(`${ENDPOINT}/scopes`)
+
+            console.log(response.data.scopes)
 
             assert.ok(response.data, 'Have a response')
             assert.ok(response.data.scopes.length, 'Have scopes')
@@ -276,5 +278,7 @@ describe(`Auth tests`, function () {
             console.error(err.response)
         }
     })
+
+    // @todo: Can request datastore scope by URL or by short hand
     
 })

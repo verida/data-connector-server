@@ -9,9 +9,11 @@ export class DsController {
 
     public async getById(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
-            const permissions = Utils.buildPermissions(req)
             const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:ds-get-by-id", `ds:${schemaName}`]
+            })
+            const permissions = Utils.buildPermissions(req)
             const rowId = req.params[1]
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore
@@ -42,9 +44,11 @@ export class DsController {
 
     public async create(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:ds-create", `ds:${schemaName}`]
+            })
             const permissions = Utils.buildPermissions(req)
-            const schemaName = Utils.getSchemaFromParams(req.params.schema)
 
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore
@@ -79,9 +83,11 @@ export class DsController {
 
     public async update(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:ds-update", `ds:${schemaName}`]
+            })
             const permissions = Utils.buildPermissions(req)
-            const schemaName = Utils.getSchemaFromParams(req.params.schema)
             const rowId = req.params.recordId
 
             const ds = await context.openDatastore(schemaName, {
@@ -134,9 +140,11 @@ export class DsController {
 
     public async query(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
-            const permissions = Utils.buildPermissions(req)
             const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:ds-query", `ds:${schemaName}`]
+            })
+            const permissions = Utils.buildPermissions(req)
 
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore
@@ -175,9 +183,11 @@ export class DsController {
 
     public async watch(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
-            const permissions = Utils.buildPermissions(req)
             const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:ds-query", `ds:${schemaName}`]
+            })
+            const permissions = Utils.buildPermissions(req)
             const options = req.body.options || {}
 
             const ds = await context.openDatastore(schemaName, {
@@ -238,9 +248,11 @@ export class DsController {
 
     public async delete(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
+            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+                scopes: ["api:ds-delete", `ds:${schemaName}`]
+            })
             const permissions = Utils.buildPermissions(req)
-            const schemaName = Utils.getSchemaFromParams(req.params.schema)
 
             const ds = await context.openDatastore(schemaName, {
                 // @ts-ignore

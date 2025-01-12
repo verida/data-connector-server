@@ -10,7 +10,6 @@ export class DbController {
     public async getById(req: Request, res: Response) {
         try {
             const dbName = req.params[0]
-
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
                 scopes: ["api:db-get-by-id", `db:${dbName}`]
             })
