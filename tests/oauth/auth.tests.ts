@@ -6,6 +6,7 @@ import CONFIG from "../../src/config"
 import { AutoAccount } from "@verida/account-node";
 import { Client } from "@verida/client-ts";
 import { buildContextSession } from "./utils";
+import { expandScopes } from "../../src/api/rest/v1/auth/scopes";
 
 const VERIDA_CONTEXT = 'Verida: Vault'
 const NOW = Math.floor(Date.now() / 1000)
@@ -261,24 +262,67 @@ describe(`Auth tests`, function () {
         } catch (err) {
             console.error(err.message)
             console.error(err.response)
+            assert.fail('Failed')
         }
     })
 
-    it.only(`Can get a list of all supported scopes`, async() => {
+    it(`Can get a list of all supported scopes`, async() => {
         try {
             const response = await axios.get(`${ENDPOINT}/scopes`)
 
             console.log(response.data.scopes)
 
             assert.ok(response.data, 'Have a response')
-            assert.ok(response.data.scopes.length, 'Have scopes')
-            assert.ok(response.data.scopes["ds:file"].description, 'Scopes have a description')
+            assert.ok(Object.keys(response.data.scopes).length, 'Have scopes')
+            assert.ok(response.data.scopes["ds:r:file"].description, 'Scopes have a description')
         } catch (err) {
-            console.error(err.message)
+            console.error(err)
             console.error(err.response)
+            assert.fail('Failed')
         }
     })
 
-    // @todo: Can request datastore scope by URL or by short hand
+    it(`Can successfully expand supported scopes`, async() => {
+        const testSchemaUrl = "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
+        const b64Url = Buffer.from(testSchemaUrl).toString('base64')
+
+        const testScopes = [
+            "ds:r:file",
+            "ds:rw:favourite",
+            "ds:rwd:social-event",
+            "db:r:file",
+            "db:rw:favourite",
+            "db:rwd:social_event",
+            `ds:rwd:base64/${b64Url}`
+        ]        
+        const expandedScopes = expandScopes(testScopes)
+
+        const expectedScopes = [
+            'ds:r:file',
+            'ds:rw:favourite',
+            'ds:rwd:social-event',
+            'db:r:file',
+            'db:rw:favourite',
+            'db:rwd:social_event',
+            `ds:rwd:${testSchemaUrl}`,
+            'ds:r:file',
+            'ds:r:favourite',
+            'ds:w:favourite',
+            'ds:r:social-event',
+            'ds:w:social-event',
+            'ds:d:social-event',
+            'db:r:file',
+            'db:r:favourite',
+            'db:w:favourite',
+            'db:r:social_event',
+            'db:w:social_event',
+            'db:d:social_event',
+            `ds:r:${testSchemaUrl}`,
+            `ds:w:${testSchemaUrl}`,
+            `ds:d:${testSchemaUrl}`
+          ]
+
+          assert.deepEqual(expectedScopes, expandedScopes, 'Expanded scopes match expected scopes')
+    })
     
 })

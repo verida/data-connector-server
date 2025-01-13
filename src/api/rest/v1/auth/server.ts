@@ -5,7 +5,7 @@ import { AutoAccount } from "@verida/account-node"
 import EncryptionUtils from "@verida/encryption-utils";
 import { APIKeyData, AuthRequest, AuthToken } from "./interfaces"
 import { AuthUser } from "./user"
-import { convertDsScopes } from "./scopes";
+import { expandScopes } from "./scopes";
 
 const VAULT_CONTEXT_NAME = 'Verida: Vault'
 const DID_CLIENT_CONFIG = CONFIG.verida.didClientConfig
@@ -56,7 +56,7 @@ class AuthServer {
                 // appDID,
             } = apiKeyData
 
-            const convertedScopes = convertDsScopes(scopes)
+            const convertedScopes = expandScopes(scopes)
 
             // Verify requested scopes matches user granted scopes
             for (const scope of requestedScopes) {

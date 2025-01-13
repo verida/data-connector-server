@@ -40,27 +40,55 @@ const DATASTORE_LOOKUP: Record<string, DatastoreInfo> = {
     },
     "social-event": {
         uri: "https://common.schemas.verida.io/social/event/v0.1.0/schema.json",
-        description: " Calendar events (ie: Meeting with Jane)"
+        description: "Calendar events (ie: Meeting with Jane)"
     },
 }
 
 /**
- * Take an array of scopes and convert any short hand scopes (ie: ds:file) to
- * the URL format scope (ie: ds:base64/ac123)
+ * Take an array of scopes and expand any short hand scopes (ie: ds:file) to
+ * the full scope
  * 
  * @param scopes 
  */
-export function convertDsScopes(scopes: string[]): string[] {
+export function expandScopes(scopes: string[]): string[] {
+    const extraScopes: string[] = []
     for (const i in scopes) {
-        const scope = scopes[i]
-        const matches = scope.match(/base64\/(.*)/)
-        if (matches.length == 2) {
-            const base64Url = Buffer.from(matches[1], 'base64')
-            scopes[i] = base64Url.toString('utf-8')
+        let scope = scopes[i]
+
+        // Convert URL shorthand scopes to full scopes
+        const matches = scope.match(/(r|rw|rwd):base64\/(.*)/)
+        if (matches && matches.length == 3) {
+            const base64Url = Buffer.from(matches[2], 'base64')
+            console.log(base64Url.toString('utf-8'))
+            scope = scopes[i] = `ds:${matches[1]}:${base64Url.toString('utf-8')}`
+        }
+
+        // Expand read / write scopes
+        const matches2 = scope.match(/(ds|db):(r|rw|rwd):(.*)/)
+        if (matches2 && matches2.length == 4) {
+            const scopeType = matches2[1]       // ie: ds
+            const permissions = matches2[2]     // ie: rw
+            const grant = matches2[3]           // ie: social-event
+
+            switch (permissions) {
+                case "r":
+                    extraScopes.push(`${scopeType}:r:${grant}`)
+                    break
+                case "rw":
+                    extraScopes.push(`${scopeType}:r:${grant}`)
+                    extraScopes.push(`${scopeType}:w:${grant}`)
+                    break
+                case "rwd":
+                    extraScopes.push(`${scopeType}:r:${grant}`)
+                    extraScopes.push(`${scopeType}:w:${grant}`)
+                    extraScopes.push(`${scopeType}:d:${grant}`)
+                    break
+            }
+
         }
     }
 
-    return scopes
+    return scopes.concat(extraScopes)
 }
 
 /**
@@ -192,13 +220,30 @@ for (const datastoreId in DATASTORE_LOOKUP) {
     const datastore = DATASTORE_LOOKUP[datastoreId]
 
     const base64Uri = Buffer.from(datastore.uri).toString('base64')
-    SCOPES[`ds:base64/${base64Uri}`] = {
+    SCOPES[`ds:r:base64/${base64Uri}`] = {
         type: ScopeType.DATASTORE,
-        description: `Base64 encoded alias for scope "ds:${datastoreId}"`
+        description: `Read access. Base64 encoded alias for scope "ds:${datastoreId}"`
     }
-    SCOPES[`ds:${datastoreId}`] = {
+    SCOPES[`ds:rw:base64/${base64Uri}`] = {
         type: ScopeType.DATASTORE,
-        description: `${datastore.description}. See ${datastore.uri}`
+        description: `Read and write access. Base64 encoded alias for scope "ds:${datastoreId}"`
+    }
+    SCOPES[`ds:rwd:base64/${base64Uri}`] = {
+        type: ScopeType.DATASTORE,
+        description: `Read, write and delete access. Base64 encoded alias for scope "ds:${datastoreId}"`
+    }
+
+    SCOPES[`ds:r:${datastoreId}`] = {
+        type: ScopeType.DATASTORE,
+        description: `Read access. ${datastore.description}. See ${datastore.uri}`
+    }
+    SCOPES[`ds:rw:${datastoreId}`] = {
+        type: ScopeType.DATASTORE,
+        description: `Read and write access. ${datastore.description}. See ${datastore.uri}`
+    }
+    SCOPES[`ds:rwd:${datastoreId}`] = {
+        type: ScopeType.DATASTORE,
+        description: `Read, write and delete access. ${datastore.description}. See ${datastore.uri}`
     }
 }
 
