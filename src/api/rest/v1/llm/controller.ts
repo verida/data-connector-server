@@ -115,7 +115,9 @@ export class LLMController {
 
             const promptSearchTip = req.body.promptSearchTip
             // const outputSystemPrompt = req.body.systemPrompt || false
-            const prompt = `Analyse my data to populate a JSON object that matches this schema.${promptSearchTip ? promptSearchTip + "\n\n": ""}{\n\n${schema}\n\nOutput JSON only.`
+            const prompt = `Analyse my data to populate a JSON object that precisely matches this schema:\n${JSON.stringify(schema, null, 2)}\n\n${promptSearchTip ? promptSearchTip + "\n\n" : ""}Output JSON only.`
+
+            console.debug(prompt)
 
             const rag = new Agent()
             result = await rag.run(prompt, context)
