@@ -51,15 +51,17 @@ export class AuthClient {
         }
 
         // Get third party application DID Document
-        const response = await didResolver.resolve(authRequest.appDID)
-        const appDidDocument = new DIDDocument(<VeridaDocInterface> response.didDocument!)
+        if (authRequest.appDID) {
+            const response = await didResolver.resolve(authRequest.appDID)
+            const appDidDocument = new DIDDocument(<VeridaDocInterface> response.didDocument!)
 
-        // @todo: Verify DIDDocument has serviceEndpoint of type `VeridaOAuthServer` that matches redirectUrl
-        const didDoc = appDidDocument.export()
-        // console.log(didDoc)
-        let serverFound = false
-        for (const service of didDoc.service) {
-            // console.log(service)
+            // @todo: Verify DIDDocument has serviceEndpoint of type `VeridaOAuthServer` that matches redirectUrl
+            const didDoc = appDidDocument.export()
+            // console.log(didDoc)
+            let serverFound = false
+            for (const service of didDoc.service) {
+                // console.log(service)
+            }
         }
 
         // Verify clientSecret timestamp is within minutes of current timestamp

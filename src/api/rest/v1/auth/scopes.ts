@@ -180,7 +180,7 @@ const SCOPES: Record<string, Scope> = {
     },
     "api:ds-delete": {
         type: ScopeType.API,
-        description: "Query a datastore (DELETE /ds/$dsUrlEncoded/$id)"
+        description: "Delete a record from a datastore (DELETE /ds/$dsUrlEncoded/$id)"
     },
 
     /**
@@ -189,29 +189,29 @@ const SCOPES: Record<string, Scope> = {
      * Dynamically injected below
      */
     "api:llm-prompt": {
-        type: ScopeType.LLM,
+        type: ScopeType.API,
         description: "Run a LLM prompt without access to user data"
     },
     "api:llm-agent-prompt": {
-        type: ScopeType.LLM,
+        type: ScopeType.API,
         description: "Run a LLM agent prompt that has access to user data"
     },
     "api:llm-profile-prompt": {
-        type: ScopeType.LLM,
+        type: ScopeType.API,
         description: "Run a LLM prompt to generate a profile based on user data"
     },
     
 
     "api:search-chat-threads": {
-        type: ScopeType.SEARCH,
+        type: ScopeType.API,
         description: "Perform keyword search across all chat threads"
     },
     "api:search-ds": {
-        type: ScopeType.SEARCH,
+        type: ScopeType.API,
         description: "Perform keywords search across a datastore"
     },
     "api:search-universal": {
-        type: ScopeType.SEARCH,
+        type: ScopeType.API,
         description: "Perform a keyword search across all user data"
     }
 }

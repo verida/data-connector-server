@@ -24,8 +24,6 @@ export enum ScopeType {
     DATASTORE = "ds",
     DATABASE = "db",
     API = "api",
-    LLM = "llm",
-    SEARCH = "search"
 }
 
 export interface Scope {

@@ -38,10 +38,11 @@ export class AuthController {
             const authUser = new AuthUser(context)
             const authToken = await AuthServer.generateAuthToken(authRequest, authUser, sessionString)
 
-            // Redirect the user to the third party application with a valid auth_code that can
-            // be used to retrieve access and refresh tokens.
-            return res.redirect(`${redirect_uri}?auth_token=${encodeURIComponent(authToken)}&state=${state}`);
+            return res.json({
+                redirectUrl: `${redirect_uri}?auth_token=${encodeURIComponent(authToken)}&state=${state}`
+            })
         } catch (err) {
+            console.log(err)
             return res.status(400).json({ error: `Invalid auth request: ${err.message}`})
         }
     }

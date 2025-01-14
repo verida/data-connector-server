@@ -211,7 +211,7 @@ describe(`Auth tests`, function () {
             await axios.get(`${ENDPOINT}/check-scope?scope=test-scope`, {
                 headers: {
                     Authorization: `Bearer ${authCode}`,
-                  }
+                }
             })
 
             assert.fail('Revoked token was successfully used')
