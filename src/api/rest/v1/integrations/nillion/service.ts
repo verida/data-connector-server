@@ -79,7 +79,6 @@ export class Service {
         console.error(error)
       }
 
-      // TODO: Create a Nillion error
       throw new NillionError("Failed to save data to Nillion");
     }
 
