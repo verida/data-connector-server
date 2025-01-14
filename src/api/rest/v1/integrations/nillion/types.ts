@@ -13,8 +13,8 @@ export type ErrorResponse = {
 export type SaveDataV1ErrorResponse = ErrorResponse
 
 export type NillionServiceSaveDataArgs = {
-  nillionBaseUrl: string,
-  nillionBearerToken: string,
+  nillionDbBaseUrl: string,
+  nillionDbBearerToken: string,
   nillionSchemaId: string,
   data: Record<string, unknown>
 }

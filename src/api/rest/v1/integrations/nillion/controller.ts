@@ -22,13 +22,13 @@ export class ControllerV1 {
         throw new BadRequestError("Invalid request body")
       }
 
-      const payload = bodyValidationResult.data
+      const { jsonProfile, params } = bodyValidationResult.data
 
       await this.service.saveData({
-        nillionBaseUrl: payload.integrationParams.nillionDbEndpoint,
-        nillionBearerToken: payload.integrationParams.nillionDbBearerToken,
-        nillionSchemaId: payload.integrationParams.nillionSchemaId,
-        data: payload.jsonProfile
+        data: jsonProfile,
+        nillionDbBaseUrl: params.nillionDbBaseUrl,
+        nillionDbBearerToken: params.nillionDbBearerToken,
+        nillionSchemaId: params.nillionSchemaId,
       })
 
       return res.sendStatus(204)

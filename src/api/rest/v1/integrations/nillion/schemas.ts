@@ -2,9 +2,9 @@ import { z } from "zod";
 
 export const NillionIntegrationV1SaveDataRequestBodySchema = z.object({
   jsonProfile: z.record(z.unknown()),
-  jsonSchema: z.string(),
-  integrationParams: z.object({
-    nillionDbEndpoint: z.string().url(),
+  jsonSchemaUrl: z.string().url(),
+  params: z.object({
+    nillionDbBaseUrl: z.string().url(),
     nillionDbBearerToken: z.string(),
     nillionSchemaId: z.string(),
   })

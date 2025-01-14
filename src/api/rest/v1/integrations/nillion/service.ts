@@ -13,8 +13,8 @@ export class Service {
    * Saves data to the Nillion API.
    *
    * @param args - The arguments for saving data
-   * @param args.nillionBaseUrl - Base URL of the Nillion API
-   * @param args.nillionBearerToken - Bearer token for authentication
+   * @param args.nillionDbBaseUrl - Base URL of the Nillion DB API
+   * @param args.nillionDbBearerToken - Bearer token for authentication
    * @param args.nillionSchemaId - ID of the schema to save data against
    * @param args.data - The data to be saved
    *
@@ -23,12 +23,12 @@ export class Service {
    * @returns Resolves when data is saved successfully
    */
   public async saveData({
-    nillionBaseUrl,
-    nillionBearerToken,
+    nillionDbBaseUrl,
+    nillionDbBearerToken,
     nillionSchemaId,
     data
   }: NillionServiceSaveDataArgs) {
-    console.log("Saving data to Nillion", { nillionBaseUrl, nillionSchemaId })
+    console.log("Saving data to Nillion", { nillionDbBaseUrl, nillionSchemaId })
 
     const payload: NillionV1DataCreateRequestPayload = {
       schema: nillionSchemaId,
@@ -38,13 +38,13 @@ export class Service {
       }]
     }
 
-    const url = new URL(`${nillionBaseUrl}/api/v1/data/create`)
+    const url = new URL(`${nillionDbBaseUrl}/api/v1/data/create`)
 
     console.debug("Calling Nillion API /api/v1/data/create")
     const response = await fetch(url.toString(), {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${nillionBearerToken}`,
+        Authorization: `Bearer ${nillionDbBearerToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
