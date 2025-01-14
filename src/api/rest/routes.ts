@@ -1,7 +1,8 @@
 import express from 'express'
-import v1Routes from './v1/routes'
+import { routerV1 } from './v1/routes'
 
 const router = express.Router()
-router.use('/v1', v1Routes)
+
+router.use('/v1', routerV1)
 
 export default router

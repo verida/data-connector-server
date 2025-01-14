@@ -11,20 +11,19 @@ import LLMRoutes from './llm/routes'
 import TelegramRoutes from './telegram/routes'
 import SearchRoutes from "./search/routes"
 import AccountRoutes from './account/routes'
+import { routerV1 as integrationsRouterV1 } from './integrations/routes'
 
-const router = express.Router()
+export const routerV1 = express.Router()
 
-router.use('/access', accessRouterV1)
-router.use('/providers', ProviderRoutes)
-router.use('/connections', ConnectionRoutes)
-router.use('/db', DbRoutes)
-router.use('/ds', DsRoutes)
-router.use('/admin', AdminRoutes)
-router.use('/info', InfoRoutes)
-router.use('/llm', LLMRoutes)
-router.use('/search', SearchRoutes)
-router.use('/account', AccountRoutes)
-
-router.use('/telegram', TelegramRoutes)
-
-export default router
+routerV1.use('/access', accessRouterV1)
+routerV1.use('/providers', ProviderRoutes)
+routerV1.use('/connections', ConnectionRoutes)
+routerV1.use('/db', DbRoutes)
+routerV1.use('/ds', DsRoutes)
+routerV1.use('/admin', AdminRoutes)
+routerV1.use('/info', InfoRoutes)
+routerV1.use('/llm', LLMRoutes)
+routerV1.use('/search', SearchRoutes)
+routerV1.use('/account', AccountRoutes)
+routerV1.use('/integrations', integrationsRouterV1)
+routerV1.use('/telegram', TelegramRoutes)
