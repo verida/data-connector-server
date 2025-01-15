@@ -175,7 +175,7 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
         user: transcript.user
           ? {
             email: transcript.user.email,
-            displayName: transcript.user.name || 'Unknown',
+            displayName: transcript.user.name || '',
             name: transcript.user.name || undefined,
           }
           : undefined,
@@ -189,21 +189,21 @@ export default class MeetingTranscriptHandler extends BaseSyncHandler {
           ? transcript.meeting_attendees.map((attendee: any) => ({
             displayName: typeof attendee.displayName === 'string' && attendee.displayName.trim()
               ? attendee.displayName.trim()
-              : 'Unknown',
+              : '',
             email: typeof attendee.email === 'string' && attendee.email.trim()
               ? attendee.email.trim()
-              : 'Unknown',
+              : '',
             phoneNumber: typeof attendee.phoneNumber === 'string' && attendee.phoneNumber.trim()
               ? attendee.phoneNumber.trim()
-              : 'Unknown',
+              : '',
             name: typeof attendee.name === 'string' && attendee.name.trim()
               ? attendee.name.trim()
-              : 'Unknown',
+              : '',
           }))
           : [],
 
         duration: transcript.duration,
-        dateTime: transcript.date || undefined,
+        dateTime: new Date(transcript.date).toISOString(),
         sentence: transcript.sentences
           ? transcript.sentences.map((sentence: any) => ({
             rawText: sentence.raw_text,
