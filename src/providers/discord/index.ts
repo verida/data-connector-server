@@ -20,7 +20,7 @@ export interface DiscordProviderConfig extends BaseProviderConfig {
 }
 
 // Note: If scopes change a user needs to disconnect and reconnect the app
-const SCOPE = [Scope.IDENTIFY, Scope.EMAIL, Scope.GUILDS, 'guilds.members.read']
+const SCOPE = [Scope.IDENTIFY, Scope.EMAIL, Scope.GUILDS, 'guilds.members.read', Scope.MESSAGES_READ, 'dm_channels.read']
 
 export default class DiscordProvider extends Base {
 
