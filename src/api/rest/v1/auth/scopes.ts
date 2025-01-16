@@ -59,7 +59,6 @@ export function expandScopes(scopes: string[]): string[] {
         const matches = scope.match(/(r|rw|rwd):base64\/(.*)/)
         if (matches && matches.length == 3) {
             const base64Url = Buffer.from(matches[2], 'base64')
-            console.log(base64Url.toString('utf-8'))
             scope = scopes[i] = `ds:${matches[1]}:${base64Url.toString('utf-8')}`
         }
 
