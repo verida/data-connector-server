@@ -1,6 +1,6 @@
 
 export interface AuthRequest {
-    appDID: string
+    appDID?: string
     userDID: string
     scopes: string[]
     timestamp: number
