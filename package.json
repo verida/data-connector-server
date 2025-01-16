@@ -43,7 +43,7 @@
     "@superfaceai/passport-twitter-oauth2": "^1.2.3",
     "@tensorflow-models/universal-sentence-encoder": "^1.3.3",
     "@verida/account-node": "^4.4.0",
-    "@verida/client-ts": "^4.4.0",
+    "@verida/client-ts": "^4.4.1",
     "@verida/did-client": "^4.4.0",
     "@verida/encryption-utils": "^4.0.0",
     "@verida/helpers": "^4.4.0",
