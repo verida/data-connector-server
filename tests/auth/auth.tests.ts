@@ -81,24 +81,21 @@ describe(`Auth tests`, function () {
         }
 
         try {
-            await axios.post(`${ENDPOINT}/auth`, request, {
+            const response = await axios.post(`${ENDPOINT}/auth`, request, {
                 headers: {
                     "Content-Type": "application/json",
                     "X-API-Key": sessionToken
-                },
-                maxRedirects: 0
+                }
             })
-        } catch (err) {
-            // Max redirects 0 will throw an error with the redirect location
-            if (err.response.status == 302) {
-                const parsedUrl = new URL(err.response.headers.location)
-                authCode = parsedUrl.searchParams.get("auth_token")
-                authCode = decodeURIComponent(authCode)
 
-                assert.ok(authCode, 'Have an auth code')
-            } else {
-                assert.fail(`Failed: ${err.message}`)
-            }
+            const redirectUrl = response.data.redirectUrl
+            const parsedUrl = new URL(redirectUrl)
+            authCode = parsedUrl.searchParams.get("auth_token")
+            authCode = decodeURIComponent(authCode)
+
+            assert.ok(authCode, 'Have an auth code')
+        } catch (err) {
+            assert.fail(`Failed: ${err.message}`)
         }
     })
 
@@ -270,7 +267,7 @@ describe(`Auth tests`, function () {
         try {
             const response = await axios.get(`${ENDPOINT}/scopes`)
 
-            console.log(response.data.scopes)
+            // console.log(response.data.scopes)
 
             assert.ok(response.data, 'Have a response')
             assert.ok(Object.keys(response.data.scopes).length, 'Have scopes')
