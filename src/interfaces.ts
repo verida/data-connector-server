@@ -113,7 +113,7 @@ export interface Connection {
     profile: ConnectionProfile
     syncStatus: SyncStatus
     syncFrequency: SyncFrequency
-    syncStart?: string
+    syncStart?: string | object
     syncEnd?: string
     syncNext?: string
     syncMessage?: string
@@ -124,10 +124,13 @@ export interface Connection {
 
 export interface BaseProviderConfig {
     label: string
+    // TODO: Make it required
+    status?: 'active' | 'upcoming' | 'inactive'
     sbtImage: string
     batchSize?: number
     maxSyncLoops?: number
     breakTimestamp?: string
+    description?: string
     // Custom config for each handler
     handlers?: Record<string, object>
 }
@@ -196,7 +199,7 @@ export interface SyncProviderLogEntry {
     accountId?: string
     handlerId?: string
     schemaUri?: string
-    message: string
+    message: string | object
     level: SyncProviderLogLevel
 }
 

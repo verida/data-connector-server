@@ -1,6 +1,6 @@
 const _ = require('lodash')
 import { KeywordSearchTimeframe } from "../../helpers/interfaces";
-import { LLM } from "../llm"
+import { LLM, stripNonJson } from "../llm"
 import { SearchType } from "../search";
 
 const systemPrompt = `You are an expert data analyst. When I give you a prompt, you must generate search metadata that will be used to extract relevant information to help answer the prompt.
@@ -55,21 +55,22 @@ export class PromptSearch {
         this.llm = llm
     }
 
-    public async search(userPrompt: string, retries = 3): Promise<PromptSearchLLMResponse> {
-        const response = await this.llm.prompt(userPrompt, systemPrompt, true)
+    public async search(userPrompt: string, retries: number = 3): Promise<PromptSearchLLMResponse> {
+      const response = await this.llm.prompt(userPrompt, systemPrompt, true)
 
-        try {
-          return <PromptSearchLLMResponse> JSON.parse(response.choices[0].message.content!)
-        } catch (err: any) {
-          console.log(err, retries)
-          console.log(response.choices[0].message.content)
-          if (retries <= 0) {
-            throw new Error(`No user data query available`)
-          } else {
-            this.search(userPrompt, retries--)
-          }
+      try {
+        const cleansedJson = stripNonJson(response.textResponse)
+
+        return <PromptSearchLLMResponse> JSON.parse(cleansedJson)
+      } catch (err: any) {
+        console.error(err, retries)
+        console.error(response.textResponse)
+        if (retries <= 0) {
+          throw new Error(`No user data query available`)
+        } else {
+          return await this.search(userPrompt, retries - 1)
         }
-        
+      }
     }
 
 }

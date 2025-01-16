@@ -36,18 +36,32 @@
         },
         "llms": {
             "bedrockEndpoint": "",
-            "bedrockKey": ""
+            "bedrockKey": "",
+            "bedrockAWSAccountId": "",
+            "bedrockAWSAccessKeyId": "",
+            "bedrockAWSSecretAccessKey": "",
+            "bedrockAWSRegion": "us-east-1",
+            "groqKey": "",
+            "tavilyKey": "",
+            "agentModel": "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+            "agentTokenLimit": 100000,
+            "defaultProvider": "bedrock",
+            "defaultModel": "LLAMA3.1_70B"
         },
         "maxHandlerRetries": 5,
-        "providerTimeoutMins": 15
+        "providerTimeoutMins": 15,
+        "handlerTimeoutMins": 15
     },
     "providers": {
         "mock": {
+            "status": "inactive",
             "label": "Mock",
             "batchSize": 20
         },
         "facebook": {
+            "status": "upcoming",
             "label": "Facebook",
+            "description": "Sync your followed pages, friends and posts",
             "appId": "",
             "appSecret": "",
             "sbtImage": "https://data.verida.network/ipfs/QmcCoAjMWQpz7FwJi1d7jSh9EJ1m3xY1FRGxPi9pu3Rit7/FacebookBadge.png",
@@ -62,7 +76,9 @@
             "maxSyncLoops": 5
         },
         "twitter": {
+            "status": "inactive",
             "label": "Twitter",
+            "description": "",
             "clientID": "",
             "clientSecret": "",
             "bearerToken": "",
@@ -74,17 +90,35 @@
                 "posts": {
                     "batchSize": 20
                 }
-            },
-            "enabled": false
+            }
         },
         "discord": {
+            "status": "upcoming",
+            "description": "Sync your connected server list and DMs",
             "label": "Discord",
             "clientID": "",
             "clientSecret": "",
             "botToken": "",
             "sbtImage": "https://data.verida.network/ipfs/QmQsghP7Y1dbZHgoo48hQz8SHdFk2mjmPikhkHg69HHhWb/Gen0/discord-account.png"
         },
+        "github": {
+            "status": "upcoming",
+            "label": "Github"
+        },
+        "slack": {
+            "status": "upcoming",
+            "label": "Slack",
+            "description": "Sync your Slack channels and DMs"
+        },
+        "spotify": {
+            "status": "upcoming",
+            "label": "Spotify",
+            "description": "Sync your playlists and listening history"
+        },
         "google": {
+            "label": "Google",
+            "status": "active",
+            "description": "Sync your gmail, calendar and drive",
             "clientId": "",
             "clientSecret": "",
             "batchSize": 50,
@@ -104,7 +138,9 @@
             }
         },
         "telegram": {
+            "status": "active",
             "label": "Telegram",
+            "description": "Sync your messages",
             "apiId": 0,
             "apiHash": "",
             "maxSyncLoops": 1,
