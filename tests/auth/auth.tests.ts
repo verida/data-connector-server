@@ -283,6 +283,10 @@ describe(`Auth tests`, function () {
         const testSchemaUrl = "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
         const b64Url = Buffer.from(testSchemaUrl).toString('base64')
 
+        const fileSchema = "https://common.schemas.verida.io/file/v0.1.0/schema.json"
+        const favouriteSchema = "https://common.schemas.verida.io/favourite/v0.1.0/schema.json"
+        const socialEventSchema = "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
+
         const testScopes = [
             "ds:r:file",
             "ds:rw:favourite",
@@ -292,22 +296,16 @@ describe(`Auth tests`, function () {
             "db:rwd:social_event",
             `ds:rwd:base64/${b64Url}`
         ]        
+
         const expandedScopes = expandScopes(testScopes)
 
         const expectedScopes = [
-            'ds:r:file',
-            'ds:rw:favourite',
-            'ds:rwd:social-event',
-            'db:r:file',
-            'db:rw:favourite',
-            'db:rwd:social_event',
-            `ds:rwd:${testSchemaUrl}`,
-            'ds:r:file',
-            'ds:r:favourite',
-            'ds:w:favourite',
-            'ds:r:social-event',
-            'ds:w:social-event',
-            'ds:d:social-event',
+            `ds:r:${fileSchema}`,
+            `ds:r:${favouriteSchema}`,
+            `ds:w:${favouriteSchema}`,
+            `ds:r:${socialEventSchema}`,
+            `ds:w:${socialEventSchema}`,
+            `ds:d:${socialEventSchema}`,
             'db:r:file',
             'db:r:favourite',
             'db:w:favourite',

@@ -46,16 +46,16 @@ const DATASTORE_LOOKUP: Record<string, DatastoreInfo> = {
 
 /**
  * Take an array of scopes and expand any short hand scopes (ie: ds:file) to
- * the full scope
+ * the full scope. Convert base64 encoded URL scopes to have the actual URL.
  * 
  * @param scopes 
  */
 export function expandScopes(scopes: string[]): string[] {
-    const extraScopes: string[] = []
+    const expandedScopes: string[] = []
     for (const i in scopes) {
         let scope = scopes[i]
 
-        // Convert URL shorthand scopes to full scopes
+        // Unwrap base64 encoded URL scopes to expanded URL scopes
         const matches = scope.match(/(r|rw|rwd):base64\/(.*)/)
         if (matches && matches.length == 3) {
             const base64Url = Buffer.from(matches[2], 'base64')
@@ -67,27 +67,37 @@ export function expandScopes(scopes: string[]): string[] {
         if (matches2 && matches2.length == 4) {
             const scopeType = matches2[1]       // ie: ds
             const permissions = matches2[2]     // ie: rw
-            const grant = matches2[3]           // ie: social-event
+            let grant = matches2[3]           // ie: social-event
+
+            // Convert URL shorthand scopes to full scopes
+            if (typeof DATASTORE_LOOKUP[grant] !== "undefined" && scopeType == "ds") {
+                grant = DATASTORE_LOOKUP[grant].uri
+            }
 
             switch (permissions) {
                 case "r":
-                    extraScopes.push(`${scopeType}:r:${grant}`)
+                    expandedScopes.push(`${scopeType}:r:${grant}`)
                     break
                 case "rw":
-                    extraScopes.push(`${scopeType}:r:${grant}`)
-                    extraScopes.push(`${scopeType}:w:${grant}`)
+                    expandedScopes.push(`${scopeType}:r:${grant}`)
+                    expandedScopes.push(`${scopeType}:w:${grant}`)
                     break
                 case "rwd":
-                    extraScopes.push(`${scopeType}:r:${grant}`)
-                    extraScopes.push(`${scopeType}:w:${grant}`)
-                    extraScopes.push(`${scopeType}:d:${grant}`)
+                    expandedScopes.push(`${scopeType}:r:${grant}`)
+                    expandedScopes.push(`${scopeType}:w:${grant}`)
+                    expandedScopes.push(`${scopeType}:d:${grant}`)
                     break
             }
 
+            scope = undefined
+        }
+
+        if (scope) {
+            expandedScopes.push(scope)
         }
     }
 
-    return scopes.concat(extraScopes)
+    return expandedScopes
 }
 
 /**
