@@ -294,7 +294,8 @@ describe(`Auth tests`, function () {
             "db:r:file",
             "db:rw:favourite",
             "db:rwd:social_event",
-            `ds:rwd:base64/${b64Url}`
+            `ds:rwd:base64/${b64Url}`,
+            "api:llm-agent-prompt"
         ]        
 
         const expandedScopes = expandScopes(testScopes)
@@ -314,7 +315,8 @@ describe(`Auth tests`, function () {
             'db:d:social_event',
             `ds:r:${testSchemaUrl}`,
             `ds:w:${testSchemaUrl}`,
-            `ds:d:${testSchemaUrl}`
+            `ds:d:${testSchemaUrl}`,
+            "api:llm-agent-prompt"
           ]
 
           assert.deepEqual(expectedScopes, expandedScopes, 'Expanded scopes match expected scopes')
