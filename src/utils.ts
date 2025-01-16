@@ -69,6 +69,10 @@ export class Utils {
                 throw new Error(`Invalid token (insufficient scope)`)
             }
 
+            if (options.ignoreScopeCheck && !options.scopes) {
+                options.scopes = []
+            }
+
             const authTokenData = await VeridaOAuthServer.verifyAuthToken(bearerToken, options.scopes)
             session = authTokenData.session
             tokenId = authTokenData.tokenId
