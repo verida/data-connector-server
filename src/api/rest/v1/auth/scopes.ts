@@ -1,11 +1,11 @@
 import { Scope, ScopeType } from "./interfaces"
 
-interface DatastoreInfo {
-    uri: string
+interface ScopeInfo {
+    uri?: string
     description: string
 }
 
-const DATASTORE_LOOKUP: Record<string, DatastoreInfo> = {
+export const DATASTORE_LOOKUP: Record<string, ScopeInfo> = {
     "social-following": {
         uri: "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
         description: "Social media following (ie: Facebook pages followed)"
@@ -44,13 +44,46 @@ const DATASTORE_LOOKUP: Record<string, DatastoreInfo> = {
     },
 }
 
+export const DATABASE_LOOKUP: Record<string, ScopeInfo> = {
+    "db:social_following": {
+        description: `Social media followings (ie: Facebook pages followed)`
+    },
+    "db:social_post": {
+        description: `Social media posts`
+    },
+    "db:social_email": {
+        description: `Emails`
+    },
+    "db:favourite": {
+        description: `Favourites (ie: Liked videos, bookmarks)`
+    },
+    "db:file": {
+        description: `Files (ie: Google docs)`
+    },
+    "db:social_chat_group": {
+        description: `Chat groups (ie: Telegram groups)`
+    },
+    "db:social_chat_message": {
+        description: `Chat messages`
+    },
+    "db:calendar_data": {
+        description: `Calendars database`
+    },
+    "db:calendar_event": {
+        description: `Calendars`
+    },
+    "db:social_event": {
+        description: `Calendar events`
+    }
+}
+
 /**
  * Take an array of scopes and expand any short hand scopes (ie: ds:file) to
  * the full scope. Convert base64 encoded URL scopes to have the actual URL.
  * 
  * @param scopes 
  */
-export function expandScopes(scopes: string[]): string[] {
+export function expandScopes(scopes: string[], expandPermissions: boolean = true): string[] {
     const expandedScopes: string[] = []
     for (const i in scopes) {
         let scope = scopes[i]
@@ -74,19 +107,23 @@ export function expandScopes(scopes: string[]): string[] {
                 grant = DATASTORE_LOOKUP[grant].uri
             }
 
-            switch (permissions) {
-                case "r":
-                    expandedScopes.push(`${scopeType}:r:${grant}`)
-                    break
-                case "rw":
-                    expandedScopes.push(`${scopeType}:r:${grant}`)
-                    expandedScopes.push(`${scopeType}:w:${grant}`)
-                    break
-                case "rwd":
-                    expandedScopes.push(`${scopeType}:r:${grant}`)
-                    expandedScopes.push(`${scopeType}:w:${grant}`)
-                    expandedScopes.push(`${scopeType}:d:${grant}`)
-                    break
+            if (expandPermissions) {
+                switch (permissions) {
+                    case "r":
+                        expandedScopes.push(`${scopeType}:r:${grant}`)
+                        break
+                    case "rw":
+                        expandedScopes.push(`${scopeType}:r:${grant}`)
+                        expandedScopes.push(`${scopeType}:w:${grant}`)
+                        break
+                    case "rwd":
+                        expandedScopes.push(`${scopeType}:r:${grant}`)
+                        expandedScopes.push(`${scopeType}:w:${grant}`)
+                        expandedScopes.push(`${scopeType}:d:${grant}`)
+                        break
+                }
+            } else {
+                expandedScopes.push(`${scopeType}:${permissions}:${grant}`)
             }
 
             scope = undefined
@@ -109,63 +146,23 @@ const SCOPES: Record<string, Scope> = {
      */
     "api:db-get-by-id": {
         type: ScopeType.API,
-        description: "Get database record by ID (GET /db/$dbName/$id)"
+        description: "Get database record by ID (GET /db/$dbName/$id)",
+        userNote: `Get individual database records`
     },
     "api:db-create": {
         type: ScopeType.API,
-        description: "Create a database record (POST /db/$dbName)"
+        description: "Create a database record (POST /db/$dbName)",
+        userNote: `Create database records`
     },
     "api:db-update": {
         type: ScopeType.API,
-        description: "Update a database record (PUT /db/$dbName/$id)"
+        description: "Update a database record (PUT /db/$dbName/$id)",
+        userNote: `Update database records`
     },
     "api:db-query": {
         type: ScopeType.API,
-        description: "Query a database (POST /db/query/$dbName)"
-    },
-
-    /**
-     * Database Access Scopes
-     */
-    "db:social_following": {
-        type: ScopeType.DATABASE,
-        description: "Social media following database (ie: Facebook pages followed)"
-    },
-    "db:social_post": {
-        type: ScopeType.DATABASE,
-        description: "Social media post database"
-    },
-    "db:social_email": {
-        type: ScopeType.DATABASE,
-        description: "Email database"
-    },
-    "db:favourite": {
-        type: ScopeType.DATABASE,
-        description: "Favourites database (ie: Liked videos, bookmarks)"
-    },
-    "db:file": {
-        type: ScopeType.DATABASE,
-        description: "Files database (ie: Documents)"
-    },
-    "db:social_chat_group": {
-        type: ScopeType.DATABASE,
-        description: "Chat groups (ie: Telegram groups)"
-    },
-    "db:social_chat_message": {
-        type: ScopeType.DATABASE,
-        description: "Chat messages"
-    },
-    "db:calendar_data": {
-        type: ScopeType.DATABASE,
-        description: "Calendars (deprecated, use calendar_event)"
-    },
-    "db:calendar_event": {
-        type: ScopeType.DATABASE,
-        description: "Calendars"
-    },
-    "db:social_event": {
-        type: ScopeType.DATABASE,
-        description: "Calendar events"
+        description: "Query a database (POST /db/query/$dbName)",
+        userNote: `Query a database`
     },
 
     /**
@@ -173,23 +170,28 @@ const SCOPES: Record<string, Scope> = {
      */
     "api:ds-get-by-id": {
         type: ScopeType.API,
-        description: "Get datastore record by ID (GET /ds/$dsUrlEncoded/$id)"
+        description: "Get datastore record by ID (GET /ds/$dsUrlEncoded/$id)",
+        userNote: `Get individual data`
     },
     "api:ds-create": {
         type: ScopeType.API,
-        description: "Create a datastore record (POST /ds/$dsUrlEncoded)"
+        description: "Create a datastore record (POST /ds/$dsUrlEncoded)",
+        userNote: `Create new data`
     },
     "api:ds-update": {
         type: ScopeType.API,
-        description: "Update a datastore record (PUT /ds/$dsUrlEncoded/$id)"
+        description: "Update a datastore record (PUT /ds/$dsUrlEncoded/$id)",
+        userNote: `Update data`
     },
     "api:ds-query": {
         type: ScopeType.API,
-        description: "Query a datastore (POST /ds/query/$dsUrlEncoded) or watch a datastore (GET /ds/watch/$dsUrlEncoded)"
+        description: "Query a datastore (POST /ds/query/$dsUrlEncoded) or watch a datastore (GET /ds/watch/$dsUrlEncoded)",
+        userNote: `Query data`
     },
     "api:ds-delete": {
         type: ScopeType.API,
-        description: "Delete a record from a datastore (DELETE /ds/$dsUrlEncoded/$id)"
+        description: "Delete a record from a datastore (DELETE /ds/$dsUrlEncoded/$id)",
+        userNote: `Delete data`
     },
 
     /**
@@ -199,29 +201,35 @@ const SCOPES: Record<string, Scope> = {
      */
     "api:llm-prompt": {
         type: ScopeType.API,
-        description: "Run a LLM prompt without access to user data"
+        description: "Run a LLM prompt without access to user data",
+        userNote: `Run a LLM prompt without access to user data`
     },
     "api:llm-agent-prompt": {
         type: ScopeType.API,
-        description: "Run a LLM agent prompt that has access to user data"
+        description: "Run a LLM agent prompt that has access to user data",
+        userNote: `Run a LLM agent prompt that has access to user data`
     },
     "api:llm-profile-prompt": {
         type: ScopeType.API,
-        description: "Run a LLM prompt to generate a profile based on user data"
+        description: "Run a LLM prompt to generate a profile based on user data",
+        userNote: `Run a LLM prompt to generate a profile based on user data`
     },
     
 
     "api:search-chat-threads": {
         type: ScopeType.API,
-        description: "Perform keyword search across all chat threads"
+        description: "Perform keyword search across all chat threads",
+        userNote: `Perform keyword search across all chat threads`
     },
     "api:search-ds": {
         type: ScopeType.API,
-        description: "Perform keywords search across a datastore"
+        description: "Perform keywords search across a datastore",
+        userNote: `Perform keywords search across specific types of data`
     },
     "api:search-universal": {
         type: ScopeType.API,
-        description: "Perform a keyword search across all user data"
+        description: "Perform a keyword search across all user data",
+        userNote: `Perform a keyword search across all accessible data`
     }
 }
 

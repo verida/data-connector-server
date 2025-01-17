@@ -267,7 +267,7 @@ describe(`Auth tests`, function () {
         try {
             const response = await axios.get(`${ENDPOINT}/scopes`)
 
-            // console.log(response.data.scopes)
+            console.log(response.data.scopes)
 
             assert.ok(response.data, 'Have a response')
             assert.ok(Object.keys(response.data.scopes).length, 'Have scopes')
@@ -320,6 +320,93 @@ describe(`Auth tests`, function () {
           ]
 
           assert.deepEqual(expectedScopes, expandedScopes, 'Expanded scopes match expected scopes')
+    })
+
+    it(`Can successfully resolve scopes`, async() => {
+        const testSchemaUrl = "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
+        const b64Url = Buffer.from(testSchemaUrl).toString('base64')
+
+        const testScopes = [
+            "ds:r:file",
+            "ds:rw:favourite",
+            "ds:rwd:social-event",
+            "db:r:file",
+            "db:rw:favourite",
+            "db:rwd:social_event",
+            `ds:rwd:base64/${b64Url}`,
+            "api:llm-agent-prompt"
+        ]
+
+        const expectedScopesResponse = [
+            {
+              type: 'ds',
+              permissions: [ 'r' ],
+              description: 'A file',
+              name: 'File',
+              uri: 'https://common.schemas.verida.io/file/v0.1.0/schema.json'
+            },
+            {
+              type: 'ds',
+              permissions: [ 'r', 'w' ],
+              description: 'Favourite links across all platforms',
+              name: 'Favourite',
+              uri: 'https://common.schemas.verida.io/favourite/v0.1.0/schema.json'
+            },
+            {
+              type: 'ds',
+              permissions: [ 'r', 'w', 'd' ],
+              description: 'Schema for a calendar event',
+              name: 'Event',
+              uri: 'https://common.schemas.verida.io/social/event/v0.1.0/schema.json'
+            },
+            {
+              type: 'db',
+              name: 'file',
+              permissions: [ 'r' ],
+              description: 'Files (ie: Google docs)'
+            },
+            {
+              type: 'db',
+              name: 'favourite',
+              permissions: [ 'r', 'w' ],
+              description: 'Favourites (ie: Liked videos, bookmarks)'
+            },
+            {
+              type: 'db',
+              name: 'social_event',
+              permissions: [ 'r', 'w', 'd' ],
+              description: 'Calendar events'
+            },
+            {
+              type: 'ds',
+              permissions: [ 'r', 'w', 'd' ],
+              description: 'Schema for a calendar event',
+              name: 'Event',
+              uri: 'https://common.schemas.verida.io/social/event/v0.1.0/schema.json'
+            },
+            {
+              type: 'api',
+              name: 'llm-agent-prompt',
+              description: 'Run a LLM agent prompt that has access to user data'
+            }
+        ]
+
+        try {
+            const endpoint = new URL(`${ENDPOINT}/resolve-scopes`)
+            for (const scope of testScopes) {
+                endpoint.searchParams.append('scopes', scope)
+            }
+
+            const response = await axios.get(`${endpoint.toString()}`)
+
+            assert.ok(response.data, 'Have a response')
+            assert.ok(Object.keys(response.data.scopes).length, 'Have scopes')
+            assert.deepEqual(expectedScopesResponse, response.data.scopes, 'Resolved scopes match expected scopes response')
+        } catch (err) {
+            console.error(err)
+            console.error(err.response)
+            assert.fail('Failed')
+        }
     })
     
 })

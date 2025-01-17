@@ -3,8 +3,24 @@ import { Utils } from "../../../../utils";
 import { AuthClient } from "./client";
 import AuthServer from "./server";
 import { AuthUser } from "./user";
-import { AuthToken } from "./interfaces";
-import SCOPES from "./scopes"
+import { AuthToken, ScopeType } from "./interfaces";
+import SCOPES, { DATABASE_LOOKUP, DATASTORE_LOOKUP, expandScopes } from "./scopes"
+import axios from "axios";
+
+type ResolvedScopePermission = ("r" | "w" | "d")
+
+interface ResolvedScope {
+    type?: ScopeType
+    name?: string
+    permissions?: ResolvedScopePermission[],
+    description?: string
+    uri?: string
+}
+
+const SCHEMA_CACHE: Record<string, {
+    description: string,
+    title: string
+}> = {}
 
 export class AuthController {
 
@@ -183,6 +199,75 @@ export class AuthController {
 
     public async scopes(req: Request, res: Response) {
         res.send({ scopes: SCOPES });
+    }
+
+    public async resolveScopes(req: Request, res: Response) {
+        const scopes = <string[]> req.query.scopes
+
+        // Expand scopes
+        const resolvedScopes = expandScopes(scopes, false)
+
+        // Add user data
+        const finalScopes: ResolvedScope[] = []
+        for (const scope of resolvedScopes) {
+            const scopeParts = scope.split(":")
+            const scopeType = <ScopeType> scopeParts[0]
+
+            switch (scopeType) {
+                case ScopeType.API:
+                    finalScopes.push({
+                        type: scopeType,
+                        name: scopeParts[1],
+                        description: SCOPES[scope].userNote
+                    })
+                    break
+                case ScopeType.DATABASE:
+                    const scopePermissions = scopeParts[1]
+                    const permissions: ResolvedScopePermission[] = []
+                    for (const p of scopePermissions) {
+                        permissions.push(<ResolvedScopePermission> p)
+                    }
+
+                    finalScopes.push({
+                        type: scopeType,
+                        name: scopeParts[2],
+                        permissions,
+                        description: DATABASE_LOOKUP[`db:${scopeParts[2]}`]?.description
+                    })
+                    break
+                case ScopeType.DATASTORE:
+                    const scopePermissions1 = scopeParts[1]
+                    const permissions1: ResolvedScopePermission[] = []
+                    for (const p of scopePermissions1) {
+                        permissions1.push(<ResolvedScopePermission> p)
+                    }
+
+                    scopeParts.splice(0,2)
+                    const schemaUrl = scopeParts.join(":")
+
+                    if (!SCHEMA_CACHE[schemaUrl]) {
+                        const response = await axios.get(schemaUrl)
+                        SCHEMA_CACHE[schemaUrl] = {
+                            description: response.data.description,
+                            title: response.data.title
+                        }
+                    }
+
+                    const schemaTitle = SCHEMA_CACHE[schemaUrl].title
+                    const schemaDescription = SCHEMA_CACHE[schemaUrl].description
+
+                    finalScopes.push({
+                        type: scopeType,
+                        permissions: permissions1,
+                        description: schemaDescription,
+                        name: schemaTitle,
+                        uri: schemaUrl
+                    })
+                    break
+            }
+        }
+
+        res.send({ scopes: finalScopes });
     }
 
 }

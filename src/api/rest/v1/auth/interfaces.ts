@@ -29,4 +29,5 @@ export enum ScopeType {
 export interface Scope {
     type: ScopeType
     description: string
+    userNote?: string
 }
