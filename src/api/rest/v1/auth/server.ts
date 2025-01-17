@@ -7,7 +7,7 @@ import { APIKeyData, AuthRequest, AuthToken } from "./interfaces"
 import { AuthUser } from "./user"
 import { expandScopes } from "./scopes";
 
-const VAULT_CONTEXT_NAME = 'Verida: Vault'
+const SERVER_CONTEXT_NAME = 'Verida: Data Connector Server'
 const DID_CLIENT_CONFIG = CONFIG.verida.didClientConfig
 
 const API_KEY_SESSION_LENGTH = 48
@@ -169,7 +169,7 @@ class AuthServer {
         this.did = await account.did()
 
         await network.connect(account)
-        this.context = <Context> await network.openContext(VAULT_CONTEXT_NAME)
+        this.context = <Context> await network.openContext(SERVER_CONTEXT_NAME)
     }
 
     private async getDb(dbName: string): Promise<IDatabase> {
