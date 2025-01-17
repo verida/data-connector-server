@@ -332,6 +332,7 @@ describe(`Auth tests`, function () {
             "ds:rwd:https://vault.schemas.verida.io/wallets/v0.1.1/schema.json",
             `ds:r:base64/${Buffer.from('https://vault.schemas.verida.io/wallets/v0.2.0/schema.json').toString('base64')}`,
             "ds:r:https://core.schemas.verida.io/storage/database/v0.1.0/schema.json",
+            "ds:r:https://core.schemas.verida.io/invalid/v0.1.0/schema.json",
             "db:r:storage_database",
             "db:r:user_wallet",
             "db:rwd:user_wallet",
@@ -350,23 +351,34 @@ describe(`Auth tests`, function () {
             {
               type: 'ds',
               permissions: [ 'r' ],
+              description: 'Schema not found',
+              name: 'Unknown',
+              uri: 'https://core.schemas.verida.io/invalid/v0.1.0/schema.json',
+              knownSchema: false
+            },
+            {
+              type: 'ds',
+              permissions: [ 'r' ],
               description: 'A file',
               name: 'File',
-              uri: 'https://common.schemas.verida.io/file/v0.1.0/schema.json'
+              uri: 'https://common.schemas.verida.io/file/v0.1.0/schema.json',
+              knownSchema: true
             },
             {
               type: 'ds',
               permissions: [ 'r', 'w' ],
               description: 'Favourite links across all platforms',
               name: 'Favourite',
-              uri: 'https://common.schemas.verida.io/favourite/v0.1.0/schema.json'
+              uri: 'https://common.schemas.verida.io/favourite/v0.1.0/schema.json',
+              knownSchema: true
             },
             {
               type: 'ds',
               permissions: [ 'r', 'w', 'd' ],
               description: 'Schema for a calendar event',
               name: 'Event',
-              uri: 'https://common.schemas.verida.io/social/event/v0.1.0/schema.json'
+              uri: 'https://common.schemas.verida.io/social/event/v0.1.0/schema.json',
+              knownSchema: true
             },
             {
               type: 'db',
@@ -391,7 +403,8 @@ describe(`Auth tests`, function () {
               permissions: [ 'r', 'w', 'd' ],
               description: 'Schema for a calendar event',
               name: 'Event',
-              uri: 'https://common.schemas.verida.io/social/event/v0.1.0/schema.json'
+              uri: 'https://common.schemas.verida.io/social/event/v0.1.0/schema.json',
+              knownSchema: true
             },
             {
               type: 'api',

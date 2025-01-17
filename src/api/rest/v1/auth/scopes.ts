@@ -53,6 +53,11 @@ export const DATASTORE_LOOKUP: Record<string, ScopeInfo> = {
     },
 }
 
+export function isKnownSchema(schemaUrl: string) {
+    const knownSchemas = Object.values(DATASTORE_LOOKUP).map(item => item.uri)
+    return knownSchemas.indexOf(schemaUrl) !== -1
+}
+
 export const DATABASE_LOOKUP: Record<string, ScopeInfo> = {
     "db:social_following": {
         description: `Social media followings (ie: Facebook pages followed)`

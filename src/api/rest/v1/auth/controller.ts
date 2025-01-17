@@ -4,7 +4,7 @@ import { AuthClient } from "./client";
 import AuthServer from "./server";
 import { AuthUser } from "./user";
 import { AuthToken, ScopeType } from "./interfaces";
-import SCOPES, { DATABASE_LOOKUP, DATASTORE_LOOKUP, expandScopes } from "./scopes"
+import SCOPES, { DATABASE_LOOKUP, DATASTORE_LOOKUP, expandScopes, isKnownSchema } from "./scopes"
 import axios from "axios";
 
 type ResolvedScopePermission = ("r" | "w" | "d")
@@ -15,6 +15,7 @@ interface ResolvedScope {
     permissions?: ResolvedScopePermission[],
     description?: string
     uri?: string
+    knownSchema?: boolean
 }
 
 const SCHEMA_CACHE: Record<string, {
@@ -268,7 +269,8 @@ export class AuthController {
                         permissions: permissions1,
                         description: schemaDescription,
                         name: schemaTitle,
-                        uri: schemaUrl
+                        uri: schemaUrl,
+                        knownSchema: isKnownSchema(schemaUrl)
                     })
                     break
             }
