@@ -327,6 +327,15 @@ describe(`Auth tests`, function () {
         const b64Url = Buffer.from(testSchemaUrl).toString('base64')
 
         const testScopes = [
+            // Add scopes that are not permitted
+            "ds:r:https://vault.schemas.verida.io/wallets/v0.1.0/schema.json",
+            "ds:rwd:https://vault.schemas.verida.io/wallets/v0.1.1/schema.json",
+            `ds:r:base64/${Buffer.from('https://vault.schemas.verida.io/wallets/v0.2.0/schema.json').toString('base64')}`,
+            "ds:r:https://core.schemas.verida.io/storage/database/v0.1.0/schema.json",
+            "db:r:storage_database",
+            "db:r:user_wallet",
+            "db:rwd:user_wallet",
+            // Add scopes that are valid
             "ds:r:file",
             "ds:rw:favourite",
             "ds:rwd:social-event",

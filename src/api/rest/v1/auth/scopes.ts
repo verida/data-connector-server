@@ -5,6 +5,15 @@ interface ScopeInfo {
     description: string
 }
 
+const INVALID_SCOPE_REGEXES: RegExp[] = [
+    // User wallets
+    /db:([rwd]*):user_wallet/,
+    /\/wallets\/([^\/]*)\/schema.json/,
+    // Storage database
+    /db:([rwd]*):storage_database/,
+    /\/storage\/database\/([^\/]*)\/schema.json/
+]
+
 export const DATASTORE_LOOKUP: Record<string, ScopeInfo> = {
     "social-following": {
         uri: "https://common.schemas.verida.io/social/following/v0.1.0/schema.json",
@@ -93,6 +102,19 @@ export function expandScopes(scopes: string[], expandPermissions: boolean = true
         if (matches && matches.length == 3) {
             const base64Url = Buffer.from(matches[2], 'base64')
             scope = scopes[i] = `ds:${matches[1]}:${base64Url.toString('utf-8')}`
+        }
+
+        // Skip scope if it's not permitted
+        let skipScope = false
+        for (const regex of INVALID_SCOPE_REGEXES) {
+            if (scope.match(regex)) {
+                skipScope = true
+                break
+            }
+        }
+
+        if (skipScope) {
+            continue
         }
 
         // Expand read / write scopes
