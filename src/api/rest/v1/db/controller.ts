@@ -11,7 +11,7 @@ export class DbController {
         try {
             const dbName = req.params[0]
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:db-get-by-id", `db:${dbName}`]
+                scopes: ["api:db-get-by-id", `db:r:${dbName}`]
             })
             const rowId = req.params[1]
             const permissions = Utils.buildPermissions(req)
@@ -47,7 +47,7 @@ export class DbController {
         try {
             const dbName = req.params.database
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:db-create", `db:${dbName}`]
+                scopes: ["api:db-create", `db:w:${dbName}`]
             })
 
             const permissions = Utils.buildPermissions(req)
@@ -87,7 +87,7 @@ export class DbController {
         try {
             const dbName = req.params.database
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:db-update", `db:${dbName}`]
+                scopes: ["api:db-update", `db:w:${dbName}`]
             })
 
             const permissions = Utils.buildPermissions(req)
@@ -143,7 +143,7 @@ export class DbController {
         try {
             const dbName = req.params[0]
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:db-query", `db:${dbName}`]
+                scopes: ["api:db-query", `db:r:${dbName}`]
             })
 
             const permissions = Utils.buildPermissions(req)

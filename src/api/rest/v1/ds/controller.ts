@@ -11,7 +11,7 @@ export class DsController {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-get-by-id", `ds:${schemaName}`]
+                scopes: ["api:ds-get-by-id", `ds:r:${schemaName}`]
             })
             const permissions = Utils.buildPermissions(req)
             const rowId = req.params[1]
@@ -46,7 +46,7 @@ export class DsController {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-create", `ds:${schemaName}`]
+                scopes: ["api:ds-create", `ds:w:${schemaName}`]
             })
             const permissions = Utils.buildPermissions(req)
 
@@ -85,7 +85,7 @@ export class DsController {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-update", `ds:${schemaName}`]
+                scopes: ["api:ds-update", `ds:w:${schemaName}`]
             })
             const permissions = Utils.buildPermissions(req)
             const rowId = req.params.recordId
@@ -142,7 +142,7 @@ export class DsController {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-query", `ds:${schemaName}`]
+                scopes: ["api:ds-query", `ds:r:${schemaName}`]
             })
             const permissions = Utils.buildPermissions(req)
 
@@ -185,7 +185,7 @@ export class DsController {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-query", `ds:${schemaName}`]
+                scopes: ["api:ds-query", `ds:r:${schemaName}`]
             })
             const permissions = Utils.buildPermissions(req)
             const options = req.body.options || {}
@@ -250,7 +250,7 @@ export class DsController {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
             const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-delete", `ds:${schemaName}`]
+                scopes: ["api:ds-delete", `ds:d:${schemaName}`]
             })
             const permissions = Utils.buildPermissions(req)
 
