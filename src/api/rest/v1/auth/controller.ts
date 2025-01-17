@@ -246,10 +246,17 @@ export class AuthController {
                     const schemaUrl = scopeParts.join(":")
 
                     if (!SCHEMA_CACHE[schemaUrl]) {
-                        const response = await axios.get(schemaUrl)
-                        SCHEMA_CACHE[schemaUrl] = {
-                            description: response.data.description,
-                            title: response.data.title
+                        try {
+                            const response = await axios.get(schemaUrl)
+                            SCHEMA_CACHE[schemaUrl] = {
+                                description: response.data.description,
+                                title: response.data.title
+                            }
+                        } catch (err: any) {
+                            SCHEMA_CACHE[schemaUrl] = {
+                                description: `Schema not found`,
+                                title: `Unknown`
+                            }
                         }
                     }
 
