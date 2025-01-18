@@ -56,11 +56,11 @@ class AuthServer {
                 // appDID,
             } = apiKeyData
 
-            const convertedScopes = expandScopes(scopes)
+            const { resolvedScopes } = expandScopes(scopes)
 
             // Verify requested scopes matches user granted scopes
             for (const scope of requestedScopes) {
-                if (convertedScopes && convertedScopes.indexOf(scope) === -1) {
+                if (resolvedScopes && resolvedScopes.indexOf(scope) === -1) {
                     // Scope not found
                     throw new Error(`Invalid token (invalid scope: ${scope})`)
                 }

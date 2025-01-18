@@ -4,6 +4,10 @@ interface ScopeInfo {
     uri?: string
     description: string
 }
+export interface ExpandedScopes {
+    resolvedScopes: string[],
+    scopeValidity: Record<string, boolean>
+}
 
 const INVALID_SCOPE_REGEXES: RegExp[] = [
     // User wallets
@@ -97,7 +101,8 @@ export const DATABASE_LOOKUP: Record<string, ScopeInfo> = {
  * 
  * @param scopes 
  */
-export function expandScopes(scopes: string[], expandPermissions: boolean = true): string[] {
+export function expandScopes(scopes: string[], expandPermissions: boolean = true): ExpandedScopes {
+    const scopeValidity: Record<string, boolean> = {}
     const expandedScopes: string[] = []
     for (const i in scopes) {
         let scope = scopes[i]
@@ -119,6 +124,7 @@ export function expandScopes(scopes: string[], expandPermissions: boolean = true
         }
 
         if (skipScope) {
+            scopeValidity[scope] = false
             continue
         }
 
@@ -153,15 +159,20 @@ export function expandScopes(scopes: string[], expandPermissions: boolean = true
                 expandedScopes.push(`${scopeType}:${permissions}:${grant}`)
             }
 
+            scopeValidity[scopes[i]] = true
             scope = undefined
         }
 
         if (scope) {
+            scopeValidity[scopes[i]] = true
             expandedScopes.push(scope)
         }
     }
 
-    return expandedScopes
+    return {
+        resolvedScopes: expandedScopes,
+        scopeValidity
+    }
 }
 
 /**

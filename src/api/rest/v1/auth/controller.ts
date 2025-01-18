@@ -210,7 +210,7 @@ export class AuthController {
         }
 
         // Expand scopes
-        const resolvedScopes = expandScopes(scopes, false)
+        const { resolvedScopes, scopeValidity } = expandScopes(scopes, false)
 
         // Add user data
         const finalScopes: ResolvedScope[] = []
@@ -221,7 +221,8 @@ export class AuthController {
             switch (scopeType) {
                 case ScopeType.API:
                     if (!SCOPES[scope]) {
-                        // ignore invalid API scopes
+                        // Invalid API scopes
+                        scopeValidity[scope] = false
                         break
                     }
 
@@ -263,10 +264,9 @@ export class AuthController {
                                 title: response.data.title
                             }
                         } catch (err: any) {
-                            SCHEMA_CACHE[schemaUrl] = {
-                                description: `Schema not found`,
-                                title: `Unknown`
-                            }
+                            // Schema couldnt' be found, so ignore this scope and set as invalid
+                            scopeValidity[scope] = false
+                            break
                         }
                     }
 
@@ -285,7 +285,7 @@ export class AuthController {
             }
         }
 
-        res.send({ scopes: finalScopes });
+        res.send({ scopes: finalScopes, scopeValidity });
     }
 
 }

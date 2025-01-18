@@ -298,7 +298,7 @@ describe(`Auth tests`, function () {
             "api:llm-agent-prompt"
         ]        
 
-        const expandedScopes = expandScopes(testScopes)
+        const { resolvedScopes, scopeValidity } = expandScopes(testScopes)
 
         const expectedScopes = [
             `ds:r:${fileSchema}`,
@@ -319,7 +319,20 @@ describe(`Auth tests`, function () {
             "api:llm-agent-prompt"
           ]
 
-          assert.deepEqual(expectedScopes, expandedScopes, 'Expanded scopes match expected scopes')
+          assert.deepEqual(resolvedScopes, expectedScopes, 'Expanded scopes match expected scopes')
+
+          const expectedScopeValidity = {
+            'ds:r:file': true,
+            'ds:rw:favourite': true,
+            'ds:rwd:social-event': true,
+            'db:r:file': true,
+            'db:rw:favourite': true,
+            'db:rwd:social_event': true,
+            'ds:rwd:https://common.schemas.verida.io/social/event/v0.1.0/schema.json': true,
+            'api:llm-agent-prompt': true
+          }
+
+          assert.deepEqual(scopeValidity, expectedScopeValidity, 'Scope validity matches expected scopes')
     })
 
     it(`Can successfully resolve scopes`, async() => {
@@ -344,18 +357,11 @@ describe(`Auth tests`, function () {
             "db:rw:favourite",
             "db:rwd:social_event",
             `ds:rwd:base64/${b64Url}`,
-            "api:llm-agent-prompt"
+            "api:llm-agent-prompt",
+            "api:invalid"
         ]
 
         const expectedScopesResponse = [
-            {
-              type: 'ds',
-              permissions: [ 'r' ],
-              description: 'Schema not found',
-              name: 'Unknown',
-              uri: 'https://core.schemas.verida.io/invalid/v0.1.0/schema.json',
-              knownSchema: false
-            },
             {
               type: 'ds',
               permissions: [ 'r' ],
@@ -413,12 +419,35 @@ describe(`Auth tests`, function () {
             }
         ]
 
+        const expectedScopeValidity = {
+            'ds:r:https://vault.schemas.verida.io/wallets/v0.1.0/schema.json': false,
+            'ds:rwd:https://vault.schemas.verida.io/wallets/v0.1.1/schema.json': false,
+            'ds:r:https://vault.schemas.verida.io/wallets/v0.2.0/schema.json': false,
+            'ds:r:https://core.schemas.verida.io/storage/database/v0.1.0/schema.json': false,
+            'ds:r:https://core.schemas.verida.io/invalid/v0.1.0/schema.json': false,
+            'db:r:storage_database': false,
+            'db:r:user_wallet': false,
+            'db:rwd:user_wallet': false,
+            'ds:r:file': true,
+            'ds:rw:favourite': true,
+            'ds:rwd:social-event': true,
+            'db:r:file': true,
+            'db:rw:favourite': true,
+            'db:rwd:social_event': true,
+            'ds:rwd:https://common.schemas.verida.io/social/event/v0.1.0/schema.json': true,
+            'api:llm-agent-prompt': true,
+            'api:invalid': false
+        }
+
         try {
             const response = await resolveScopes(ENDPOINT, testScopes)
 
             assert.ok(response.data, 'Have a response')
             assert.ok(Object.keys(response.data.scopes).length, 'Have scopes')
             assert.deepEqual(expectedScopesResponse, response.data.scopes, 'Resolved scopes match expected scopes response')
+
+            assert.ok(Object.keys(response.data.scopeValidity).length, 'Have scope validity')
+            assert.deepEqual(expectedScopeValidity, response.data.scopeValidity, 'Resolved scopes validity match expected values')
         } catch (err) {
             console.error(err)
             console.error(err.response)
