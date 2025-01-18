@@ -10,9 +10,7 @@ export class DsController {
     public async getById(req: Request, res: Response) {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-get-by-id", `ds:r:${schemaName}`]
-            })
+            const { context } = req.veridaNetworkConnection
             const permissions = Utils.buildPermissions(req)
             const rowId = req.params[1]
             const ds = await context.openDatastore(schemaName, {
@@ -45,9 +43,7 @@ export class DsController {
     public async create(req: Request, res: Response) {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-create", `ds:w:${schemaName}`]
-            })
+            const { context } = req.veridaNetworkConnection
             const permissions = Utils.buildPermissions(req)
 
             const ds = await context.openDatastore(schemaName, {
@@ -84,9 +80,7 @@ export class DsController {
     public async update(req: Request, res: Response) {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-update", `ds:w:${schemaName}`]
-            })
+            const { context } = req.veridaNetworkConnection
             const permissions = Utils.buildPermissions(req)
             const rowId = req.params.recordId
 
@@ -141,9 +135,7 @@ export class DsController {
     public async query(req: Request, res: Response) {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-query", `ds:r:${schemaName}`]
-            })
+            const { context } = req.veridaNetworkConnection
             const permissions = Utils.buildPermissions(req)
 
             const ds = await context.openDatastore(schemaName, {
@@ -184,9 +176,7 @@ export class DsController {
     public async watch(req: Request, res: Response) {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-query", `ds:r:${schemaName}`]
-            })
+            const { context } = req.veridaNetworkConnection
             const permissions = Utils.buildPermissions(req)
             const options = req.body.options || {}
 
@@ -249,9 +239,7 @@ export class DsController {
     public async delete(req: Request, res: Response) {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params[0])
-            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
-                scopes: ["api:ds-delete", `ds:d:${schemaName}`]
-            })
+            const { context } = req.veridaNetworkConnection
             const permissions = Utils.buildPermissions(req)
 
             const ds = await context.openDatastore(schemaName, {
