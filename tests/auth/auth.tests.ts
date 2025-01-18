@@ -5,7 +5,7 @@ import https from 'https';
 import CONFIG from "../../src/config"
 import { AutoAccount } from "@verida/account-node";
 import { Client } from "@verida/client-ts";
-import { buildContextSession } from "./utils";
+import { buildContextSession, resolveScopes } from "./utils";
 import { expandScopes } from "../../src/api/rest/v1/auth/scopes";
 
 const VERIDA_CONTEXT = 'Verida: Vault'
@@ -414,16 +414,30 @@ describe(`Auth tests`, function () {
         ]
 
         try {
-            const endpoint = new URL(`${ENDPOINT}/resolve-scopes`)
-            for (const scope of testScopes) {
-                endpoint.searchParams.append('scopes', scope)
-            }
-
-            const response = await axios.get(`${endpoint.toString()}`)
+            const response = await resolveScopes(ENDPOINT, testScopes)
 
             assert.ok(response.data, 'Have a response')
             assert.ok(Object.keys(response.data.scopes).length, 'Have scopes')
             assert.deepEqual(expectedScopesResponse, response.data.scopes, 'Resolved scopes match expected scopes response')
+        } catch (err) {
+            console.error(err)
+            console.error(err.response)
+            assert.fail('Failed')
+        }
+    })
+
+    it(`Can successfully resolve scopes - edgecases`, async() => {
+        try {
+            // A single scope, resolves
+            let response
+            response = await resolveScopes(ENDPOINT, ["api:llm-agent-prompt"])
+            assert.equal(response.data.scopes.length, 1, "A single scope is returned")
+            assert.equal(response.data.scopes[0].name, "llm-agent-prompt", "Correct scope name returned")
+            assert.equal(response.data.scopes[0].type, "api", "Correct scope type returned")
+
+            // An invalid api scope returns empty scopes
+            response = await resolveScopes(ENDPOINT, ["api:invalid"])
+            assert.equal(response.data.scopes.length, 0, "Scopes are empty")
         } catch (err) {
             console.error(err)
             console.error(err.response)

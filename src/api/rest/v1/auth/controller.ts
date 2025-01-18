@@ -203,7 +203,11 @@ export class AuthController {
     }
 
     public async resolveScopes(req: Request, res: Response) {
-        const scopes = <string[]> req.query.scopes
+        let scopes = <string[]> req.query.scopes
+
+        if (!Array.isArray(scopes)) {
+            scopes = [scopes]
+        }
 
         // Expand scopes
         const resolvedScopes = expandScopes(scopes, false)
@@ -216,6 +220,11 @@ export class AuthController {
 
             switch (scopeType) {
                 case ScopeType.API:
+                    if (!SCOPES[scope]) {
+                        // ignore invalid API scopes
+                        break
+                    }
+
                     finalScopes.push({
                         type: scopeType,
                         name: scopeParts[1],

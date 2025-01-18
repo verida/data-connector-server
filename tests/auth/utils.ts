@@ -1,7 +1,18 @@
+import Axios from "axios"
+import https from 'https';
 import { AutoAccount } from "@verida/account-node";
 import { Client } from "@verida/client-ts";
 import { AuthTypeConfig, ContextSession, VeridaDatabaseAuthContext } from "@verida/types"
 import StorageEngineVerida from '@verida/client-ts/dist/src/context/engines/verida/database/engine'
+
+// Create an https.Agent that disables certificate validation
+const agent = new https.Agent({
+    rejectUnauthorized: false,
+});
+
+const axios = Axios.create({
+    httpsAgent: agent,
+});
 
 export async function buildContextSession(account: AutoAccount, client: Client): Promise<ContextSession> {
     const CONTEXT = 'Verida: Vault'
@@ -42,4 +53,13 @@ export async function buildContextSession(account: AutoAccount, client: Client):
         contextName: CONTEXT,
     }
 
+}
+
+export async function resolveScopes(ENDPOINT, scopes: string[]) {
+    const endpoint = new URL(`${ENDPOINT}/resolve-scopes`)
+    for (const scope of scopes) {
+        endpoint.searchParams.append('scopes', scope)
+    }
+
+    return await axios.get(`${endpoint.toString()}`)
 }
