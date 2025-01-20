@@ -24,11 +24,6 @@ const appAccount = new AutoAccount({
     didClientConfig: CONFIG.verida.didClientConfig
 })
 
-const client = new Client({
-    network: CONFIG.verida.testVeridaNetwork,
-    didClientConfig: CONFIG.verida.didClientConfig
-})
-
 // Create an https.Agent that disables certificate validation
 const agent = new https.Agent({
     rejectUnauthorized: false,
@@ -94,58 +89,63 @@ export async function authenticate(scopes: string[]): Promise<{
     APP_DID: string,
     sessionToken: string
 }> {
+    const client = new Client({
+        network: CONFIG.verida.testVeridaNetwork,
+        didClientConfig: CONFIG.verida.didClientConfig
+    })
+    
     await client.connect(userAccount)
 
-        // Build a context session object, this would normally be done in the user's web browser
-        // once they have logged in
-        const contextSession = await buildContextSession(userAccount, client)
-        const stringifiedSession = JSON.stringify(contextSession)
-        const sessionToken = Buffer.from(stringifiedSession).toString("base64")
+    // Build a context session object, this would normally be done in the user's web browser
+    // once they have logged in
+    const contextSession = await buildContextSession(userAccount, client)
+    const stringifiedSession = JSON.stringify(contextSession)
+    const sessionToken = Buffer.from(stringifiedSession).toString("base64")
 
-        const USER_DID = await userAccount.did()
-        const APP_DID = await appAccount.did()
+    const USER_DID = await userAccount.did()
+    const APP_DID = await appAccount.did()
 
-        const ARO: AuthRequest = {
-            appDID: APP_DID,
-            userDID: USER_DID,
-            scopes,
-            timestamp: NOW
+    const ARO: AuthRequest = {
+        appDID: APP_DID,
+        userDID: USER_DID,
+        scopes,
+        timestamp: NOW
+    }
+
+    // Sign the ARO to generate a consent signature verifying the user account consents to this request
+    const userKeyring = await userAccount.keyring(VERIDA_CONTEXT)
+    const user_sig = await userKeyring.sign(ARO)
+
+    // Add custom state data that will be passed back to the third party application on successful login
+    const state = {}
+
+    const request = {
+        client_id: APP_DID,
+        auth_request: JSON.stringify(ARO),
+        redirect_uri: APP_REDIRECT_URI,
+        user_sig,
+        // app_sig,
+        state: JSON.stringify(state)
+    }
+
+    const response = await axios.post(`${ENDPOINT}/auth`, request, {
+        headers: {
+            "Content-Type": "application/json",
+            "X-API-Key": sessionToken
         }
+    })
 
-        // Sign the ARO to generate a consent signature verifying the user account consents to this request
-        const userKeyring = await userAccount.keyring(VERIDA_CONTEXT)
-        const user_sig = await userKeyring.sign(ARO)
+    const redirectUrl = response.data.redirectUrl
+    const parsedUrl = new URL(redirectUrl)
+    let authCode = parsedUrl.searchParams.get("auth_token")
+    authCode = decodeURIComponent(authCode!)
 
-        // Add custom state data that will be passed back to the third party application on successful login
-        const state = {}
-
-        const request = {
-            client_id: APP_DID,
-            auth_request: JSON.stringify(ARO),
-            redirect_uri: APP_REDIRECT_URI,
-            user_sig,
-            // app_sig,
-            state: JSON.stringify(state)
-        }
-
-        const response = await axios.post(`${ENDPOINT}/auth`, request, {
-            headers: {
-                "Content-Type": "application/json",
-                "X-API-Key": sessionToken
-            }
-        })
-
-        const redirectUrl = response.data.redirectUrl
-        const parsedUrl = new URL(redirectUrl)
-        let authCode = parsedUrl.searchParams.get("auth_token")
-        authCode = decodeURIComponent(authCode!)
-
-        return {
-            authCode,
-            USER_DID,
-            APP_DID,
-            sessionToken
-        }
+    return {
+        authCode,
+        USER_DID,
+        APP_DID,
+        sessionToken
+    }
 }
 
 export async function revokeToken(authCode: string, sessionToken: string) {
@@ -168,5 +168,6 @@ export async function revokeToken(authCode: string, sessionToken: string) {
         }
 
         console.error('Unknown revoke error:', err.message)
+        console.log(err.response.data)
     }
 }

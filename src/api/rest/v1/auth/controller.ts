@@ -59,7 +59,6 @@ export class AuthController {
                 redirectUrl: `${redirect_uri}?auth_token=${encodeURIComponent(authToken)}&state=${state}`
             })
         } catch (err) {
-            console.log(err)
             return res.status(400).json({ error: `Invalid auth request: ${err.message}`})
         }
     }
@@ -75,13 +74,13 @@ export class AuthController {
             res.send({ authenticated: true });
         } catch (err) {
             if (err.message.match('invalid scope')) {
-            res.send({ authenticated: false });
+                res.send({ authenticated: false });
             } else {
-            if (err.message.match('Invalid token')) {
-                return res.status(403).json({ error: err.message })
-            }
+                if (err.message.match('Invalid token')) {
+                    return res.status(403).json({ error: err.message })
+                }
 
-            return res.status(400).json({ error: `Invalid request: ${err.message}`})
+                return res.status(400).json({ error: `Invalid request: ${err.message}`})
             }
         }
     }
@@ -104,8 +103,6 @@ export class AuthController {
             return res.json({
               tokens
             })
-        
-            // @todo: implement
           } catch (err) {
             if (err.message.match('Invalid token')) {
               return res.status(403).json({ error: err.message })

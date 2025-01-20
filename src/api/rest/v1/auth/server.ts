@@ -114,9 +114,7 @@ class AuthServer {
         const apiKeyId = result.id
         await serverKeyDb.get(apiKeyId)
 
-        // @todo: source from this server config
-        const endpointUri = ''
-
+        const endpointUri = CONFIG.serverUrl
         const authToken: AuthToken = {
             _id: apiKeyId,
             servers: [endpointUri],
@@ -133,11 +131,7 @@ class AuthServer {
     public async generateAuthToken(authRequest: AuthRequest, authUser: AuthUser, sessionString: string): Promise<string> {
         await this._init()
 
-        // @todo: verify session string DID matches authRequest DID
-
-        // 2. Generate API data to be encrypted
-        // @todo type
-        const apiKeyData = {
+        const apiKeyData: APIKeyData = {
             session: sessionString,
             scopes: authRequest.scopes,
             userDID: authRequest.userDID,
