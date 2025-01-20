@@ -37,6 +37,15 @@ export interface NetworkConnection {
     did: string
     sessionString?: string
     tokenId?: string
+    // Limit read access to these datastore schemas (built from scopes)
+    limitDatastoreSchemas?: string[]
+}
+
+export interface NetworkConnectionRequestOptions {
+    ignoreAccessCheck?: boolean,
+    checkAdmin?: boolean,
+    scopes?: string[],
+    ignoreScopeCheck?: boolean
 }
 
 export class Utils {
@@ -49,7 +58,7 @@ export class Utils {
      * @param options
      * @returns
      */
-    public static async getNetworkConnectionFromRequest(req: Request, options?: { ignoreAccessCheck?: boolean, checkAdmin?: boolean, scopes?: string[], ignoreScopeCheck?: boolean }): Promise<NetworkConnection> {
+    public static async getNetworkConnectionFromRequest(req: Request, options?: NetworkConnectionRequestOptions): Promise<NetworkConnection> {
         // Extract session
         let session: ContextSession | undefined;
         let tokenId: string
@@ -58,6 +67,7 @@ export class Utils {
         }
 
         const authHeader = req.headers.authorization
+        let limitDatastoreSchemas = undefined
         if (authHeader) {
             // Extract the Bearer token
             if (authHeader.split(' ').length < 2) {
@@ -76,6 +86,7 @@ export class Utils {
             const authTokenData = await VeridaOAuthServer.verifyAuthToken(bearerToken, options.scopes)
             session = authTokenData.session
             tokenId = authTokenData.tokenId
+            limitDatastoreSchemas = authTokenData.readAccessDatastoreSchemas
         }
 
         const apiKey = req.header('X-API-Key');
@@ -117,6 +128,10 @@ export class Utils {
 
         if (tokenId) {
             networkConnection.tokenId = tokenId
+        }
+
+        if (limitDatastoreSchemas) {
+            networkConnection.limitDatastoreSchemas = limitDatastoreSchemas
         }
 
         return networkConnection

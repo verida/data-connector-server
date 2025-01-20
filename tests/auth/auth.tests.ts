@@ -1,35 +1,16 @@
 const assert = require("assert");
-import { AuthRequest } from "../../src/api/rest/v1/auth/interfaces";
 import Axios from "axios"
 import https from 'https';
 import CONFIG from "../../src/config"
-import { AutoAccount } from "@verida/account-node";
-import { Client } from "@verida/client-ts";
-import { buildContextSession, resolveScopes } from "./utils";
+
+import { authenticate, resolveScopes, revokeToken } from "./utils";
 import { expandScopes } from "../../src/api/rest/v1/auth/scopes";
 
-const VERIDA_CONTEXT = 'Verida: Vault'
-const NOW = Math.floor(Date.now() / 1000)
-const ENDPOINT = `${CONFIG.serverUrl}/api/rest/v1/auth`
+const ENDPOINT = `${CONFIG.serverUrl}/api/rest/v1`
+const AUTH_ENDPOINT = `${ENDPOINT}/auth`
 const SCOPES = ["test-scope"]
-const APP_REDIRECT_URI = "https://insertyourdomain.com/verida/auth-response"
-
-const userAccount = new AutoAccount({
-    privateKey: CONFIG.verida.testVeridaKey,
-    network: CONFIG.verida.testVeridaNetwork,
-    didClientConfig: CONFIG.verida.didClientConfig
-})
-
-const appAccount = new AutoAccount({
-    privateKey: CONFIG.verida.serverKey,
-    network: CONFIG.verida.testVeridaNetwork,
-    didClientConfig: CONFIG.verida.didClientConfig
-})
-
-const client = new Client({
-    network: CONFIG.verida.testVeridaNetwork,
-    didClientConfig: CONFIG.verida.didClientConfig
-})
+const GRANTED_DATASTORE = "https://common.schemas.verida.io/social/post/v0.1.0/schema.json"
+const DENIED_DATASTORE = "https://common.schemas.verida.io/social/email/v0.1.0/schema.json"
 
 // Create an https.Agent that disables certificate validation
 const agent = new https.Agent({
@@ -43,55 +24,13 @@ const axios = Axios.create({
 describe(`Auth tests`, function () {
     this.timeout(200 * 1000)
 
-    let authCode, USER_DID, APP_DID, sessionToken, userAuthToken
+    let authCode, authCode2, authCode3, sessionToken, sessionToken2, sessionToken3, userAuthToken
 
     it(`Can issue an auth token for a third party app`, async () => {
-        await client.connect(userAccount)
-
-        // Build a context session object, this would normally be done in the user's web browser
-        // once they have logged in
-        const contextSession = await buildContextSession(userAccount, client)
-        const stringifiedSession = JSON.stringify(contextSession)
-        sessionToken = Buffer.from(stringifiedSession).toString("base64")
-
-        USER_DID = await userAccount.did()
-        APP_DID = await appAccount.did()
-
-        const ARO: AuthRequest = {
-            appDID: APP_DID,
-            userDID: USER_DID,
-            scopes: SCOPES,
-            timestamp: NOW
-        }
-
-        // Sign the ARO to generate a consent signature verifying the user account consents to this request
-        const userKeyring = await userAccount.keyring(VERIDA_CONTEXT)
-        const user_sig = await userKeyring.sign(ARO)
-
-        // Add custom state data that will be passed back to the third party application on successful login
-        const state = {}
-
-        const request = {
-            client_id: APP_DID,
-            auth_request: JSON.stringify(ARO),
-            redirect_uri: APP_REDIRECT_URI,
-            user_sig,
-            // app_sig,
-            state: JSON.stringify(state)
-        }
-
         try {
-            const response = await axios.post(`${ENDPOINT}/auth`, request, {
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-API-Key": sessionToken
-                }
-            })
-
-            const redirectUrl = response.data.redirectUrl
-            const parsedUrl = new URL(redirectUrl)
-            authCode = parsedUrl.searchParams.get("auth_token")
-            authCode = decodeURIComponent(authCode)
+            const authResponse = await authenticate(SCOPES)
+            authCode = authResponse.authCode
+            sessionToken = authResponse.sessionToken
 
             assert.ok(authCode, 'Have an auth code')
         } catch (err) {
@@ -101,7 +40,7 @@ describe(`Auth tests`, function () {
 
     it(`Can make a valid scoped request`, async() => {
         try {
-            const response = await axios.get(`${ENDPOINT}/check-scope?scope=test-scope`, {
+            const response = await axios.get(`${AUTH_ENDPOINT}/check-scope?scope=test-scope`, {
                 headers: {
                     Authorization: `Bearer ${authCode}`,
                   }
@@ -118,7 +57,7 @@ describe(`Auth tests`, function () {
 
     it(`Can make an invalid scoped request`, async() => {
         try {
-            const response = await axios.get(`${ENDPOINT}/check-scope?scope=invalid-scope`, {
+            const response = await axios.get(`${AUTH_ENDPOINT}/check-scope?scope=invalid-scope`, {
                 headers: {
                     Authorization: `Bearer ${authCode}`,
                 }
@@ -135,7 +74,7 @@ describe(`Auth tests`, function () {
 
     it(`Can fetch auth tokens`, async() => {
         try {
-            const response = await axios.get(`${ENDPOINT}/tokens`, {
+            const response = await axios.get(`${AUTH_ENDPOINT}/tokens`, {
                 headers: {
                     "Content-Type": "application/json",
                     "X-API-Key": sessionToken
@@ -153,7 +92,7 @@ describe(`Auth tests`, function () {
 
     it(`Can fetch info for current token`, async() => {
         try {
-            const response = await axios.get(`${ENDPOINT}/token?tokenId=${encodeURIComponent(authCode)}`)
+            const response = await axios.get(`${AUTH_ENDPOINT}/token?tokenId=${encodeURIComponent(authCode)}`)
 
             assert.ok(response.data, 'Have a response')
             assert.ok(response.data.token && response.data.token._id, 'Have token data')
@@ -167,7 +106,7 @@ describe(`Auth tests`, function () {
     it(`Can't revoke an auth token using an auth token`, async() => {
         try {
             const tokenId = authCode.substring(0,36)
-            await axios.get(`${ENDPOINT}/revoke?tokenId=${tokenId}`, {
+            await axios.get(`${AUTH_ENDPOINT}/revoke?tokenId=${tokenId}`, {
                 headers: {
                     Authorization: `Bearer ${authCode}`,
                 }
@@ -188,7 +127,7 @@ describe(`Auth tests`, function () {
     it(`Can revoke an auth token`, async() => {
         try {
             const tokenId = authCode.substring(0,36)
-            const response = await axios.get(`${ENDPOINT}/revoke?tokenId=${tokenId}`, {
+            const response = await axios.get(`${AUTH_ENDPOINT}/revoke?tokenId=${tokenId}`, {
                 headers: {
                     "Content-Type": "application/json",
                     "X-API-Key": sessionToken
@@ -205,7 +144,7 @@ describe(`Auth tests`, function () {
 
     it(`Can no longer use revoked token`, async() => {
         try {
-            await axios.get(`${ENDPOINT}/check-scope?scope=test-scope`, {
+            await axios.get(`${AUTH_ENDPOINT}/check-scope?scope=test-scope`, {
                 headers: {
                     Authorization: `Bearer ${authCode}`,
                 }
@@ -225,7 +164,7 @@ describe(`Auth tests`, function () {
 
     it(`Can issue an auth token to a user`, async () => {
         try {
-            const response = await axios.post(`${ENDPOINT}/token`, {
+            const response = await axios.post(`${AUTH_ENDPOINT}/token`, {
                 scopes: SCOPES
             }, {
                 headers: {
@@ -247,7 +186,7 @@ describe(`Auth tests`, function () {
     it(`Can revoke a user generated auth token`, async() => {
         try {
             const tokenId = userAuthToken.substring(0,36)
-            const response = await axios.get(`${ENDPOINT}/revoke?tokenId=${tokenId}`, {
+            const response = await axios.get(`${AUTH_ENDPOINT}/revoke?tokenId=${tokenId}`, {
                 headers: {
                     "Content-Type": "application/json",
                     "X-API-Key": sessionToken
@@ -265,9 +204,9 @@ describe(`Auth tests`, function () {
 
     it(`Can get a list of all supported scopes`, async() => {
         try {
-            const response = await axios.get(`${ENDPOINT}/scopes`)
+            const response = await axios.get(`${AUTH_ENDPOINT}/scopes`)
 
-            console.log(response.data.scopes)
+            // console.log(response.data.scopes)
 
             assert.ok(response.data, 'Have a response')
             assert.ok(Object.keys(response.data.scopes).length, 'Have scopes')
@@ -440,7 +379,7 @@ describe(`Auth tests`, function () {
         }
 
         try {
-            const response = await resolveScopes(ENDPOINT, testScopes)
+            const response = await resolveScopes(AUTH_ENDPOINT, testScopes)
 
             assert.ok(response.data, 'Have a response')
             assert.ok(Object.keys(response.data.scopes).length, 'Have scopes')
@@ -459,13 +398,13 @@ describe(`Auth tests`, function () {
         try {
             // A single scope, resolves
             let response
-            response = await resolveScopes(ENDPOINT, ["api:llm-agent-prompt"])
+            response = await resolveScopes(AUTH_ENDPOINT, ["api:llm-agent-prompt"])
             assert.equal(response.data.scopes.length, 1, "A single scope is returned")
             assert.equal(response.data.scopes[0].name, "llm-agent-prompt", "Correct scope name returned")
             assert.equal(response.data.scopes[0].type, "api", "Correct scope type returned")
 
             // An invalid api scope returns empty scopes
-            response = await resolveScopes(ENDPOINT, ["api:invalid"])
+            response = await resolveScopes(AUTH_ENDPOINT, ["api:invalid"])
             assert.equal(response.data.scopes.length, 0, "Scopes are empty")
         } catch (err) {
             console.error(err)
@@ -473,5 +412,99 @@ describe(`Auth tests`, function () {
             assert.fail('Failed')
         }
     })
-    
+
+    it(`Can successfully make middleware requests with appropriate scopes`, async() => {
+        const authResponse = await authenticate([
+            "api:ds-query",
+            "api:llm-agent-prompt",
+            "api:search-ds",
+            `ds:r:${GRANTED_DATASTORE}`
+        ])
+        authCode2 = authResponse.authCode
+        sessionToken2 = authResponse.sessionToken
+
+        try {
+            // Make ds search (granted datastore)
+            const r1 = await axios.post(`${ENDPOINT}/search/datastore/${btoa(GRANTED_DATASTORE)}`, {
+                keywords: "phone number",
+                index: ["name"]
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authCode2}`,
+                }
+            })
+
+            assert.ok(r1.data, "Response")
+            assert.ok(r1.data.total >= 0, "Valid response")
+        } catch (err) {
+            assert.fail('Failed to search granted datastore')
+        }
+
+        // Make ds search (denied datastore)
+        try {
+            await axios.post(`${ENDPOINT}/search/datastore/${btoa(DENIED_DATASTORE)}`, {
+                keywords: "phone number",
+                index: ["name"]
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authCode2}`,
+                }
+            })
+            
+            assert.fail("Denied datastore was accessible")
+        } catch (err)  {
+            assert.ok(err.response.data.error.match('invalid scope'))
+        }
+
+        // Make LLM agent prompt query
+        try {
+            const response = await axios.post(`${ENDPOINT}/llm/agent`, {
+                prompt: "Generate JSON list of the names of all the tools you can access",
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authCode2}`,
+                }
+            })
+            
+            const expectedTools = [ 'SocialPostFetch', 'SocialPostQuery', 'KeywordIndex', 'WebSearch' ]
+            assert.deepEqual(response.data.tools, expectedTools, 'Expected tools returned')
+        } catch (err)  {
+            console.log(err.message)
+            console.log(err.response.data)
+            assert.fail("Failed to make LLM request")
+        }
+
+        // @todo: check that if you have access to no datastores, then you can't access any (rather than access all)
+    })
+
+    it(`No datastore access if no datastores granted (edge case test)`, async() => {
+        const authResponse = await authenticate([
+            "api:search-ds",
+        ])
+        authCode3 = authResponse.authCode
+        sessionToken3 = authResponse.sessionToken
+
+        // Make ds search (denied datastore)
+        try {
+            await axios.post(`${ENDPOINT}/search/datastore/${btoa(DENIED_DATASTORE)}`, {
+                keywords: "phone number",
+                index: ["name"]
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authCode3}`,
+                }
+            })
+            
+            assert.fail("Denied datastore was accessible")
+        } catch (err)  {
+            assert.ok(err.response.data.error.match('invalid scope'), 'Invalid scope error returned')
+            assert.ok(err.response.data.error.match(DENIED_DATASTORE), 'Error mentions denied datastore')
+        }
+    })
+
+    this.afterAll(async () => {
+        await revokeToken(authCode, sessionToken2)
+        await revokeToken(authCode2, sessionToken2)
+        await revokeToken(authCode3, sessionToken3)
+    })
 })

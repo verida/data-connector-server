@@ -26,7 +26,8 @@ class AuthServer {
 
     public async verifyAuthToken(token: string, requestedScopes?: string[]): Promise<{
         session: ContextSession
-        tokenId: string
+        tokenId: string,
+        readAccessDatastoreSchemas: string[]
     }> {
         await this._init()
 
@@ -66,10 +67,20 @@ class AuthServer {
                 }
             }
 
+            // Build a list of datastore read scopes
+            const readAccessDatastoreSchemas: string[] = []
+            for (const scope of resolvedScopes) {
+                const dsMatches = scope.match("^ds:r:(.*)")
+                if (dsMatches && dsMatches.length == 2) {
+                    readAccessDatastoreSchemas.push(dsMatches[1])
+                }
+            }
+
             // Return a ContextSession instance
             return {
                 session: <ContextSession> JSON.parse(Buffer.from(session, 'base64').toString('utf-8')),
-                tokenId: authTokenId
+                tokenId: authTokenId,
+                readAccessDatastoreSchemas
             }
         } catch (err: any) {
             if (err.message.match('missing')) {
@@ -103,9 +114,7 @@ class AuthServer {
         const apiKeyId = result.id
         await serverKeyDb.get(apiKeyId)
 
-        // @todo: source from this server config
-        const endpointUri = ''
-
+        const endpointUri = CONFIG.serverUrl
         const authToken: AuthToken = {
             _id: apiKeyId,
             servers: [endpointUri],
@@ -122,11 +131,7 @@ class AuthServer {
     public async generateAuthToken(authRequest: AuthRequest, authUser: AuthUser, sessionString: string): Promise<string> {
         await this._init()
 
-        // @todo: verify session string DID matches authRequest DID
-
-        // 2. Generate API data to be encrypted
-        // @todo type
-        const apiKeyData = {
+        const apiKeyData: APIKeyData = {
             session: sessionString,
             scopes: authRequest.scopes,
             userDID: authRequest.userDID,
@@ -145,7 +150,6 @@ class AuthServer {
             // Delete the token from the user database
             await authUser.deleteAuthToken(tokenId)
         } catch (err) {
-            console.log(err)
             throw new Error(`Invalid token (${err.message})`)
         }
     }
