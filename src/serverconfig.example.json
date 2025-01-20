@@ -111,9 +111,13 @@
             "description": "Sync your Slack channels and DMs"
         },
         "spotify": {
-            "status": "upcoming",
+            "status": "active",
             "label": "Spotify",
-            "description": "Sync your playlists and listening history"
+            "description": "Sync your playlists and listening history",
+            "clientId": "",
+            "clientSecret": "",
+            "batchSize": 50,           
+            "maxSyncLoops": 1
         },
         "google": {
             "label": "Google",
@@ -150,13 +154,6 @@
             "messagesPerGroupLimit": 100,
             "maxGroupSize": 50,
             "useDbPos": true
-        },
-        "spotify": {
-            "label": "Spotify",
-            "clientId": "",
-            "clientSecret": "",
-            "batchSize": 50,           
-            "maxSyncLoops": 1
         }
     },
     "providerDefaults": {
