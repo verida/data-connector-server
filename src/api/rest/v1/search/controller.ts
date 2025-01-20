@@ -56,7 +56,6 @@ class SearchController {
         }
     }
 
-    // @todo: Restrict by limitDatastoreSchemas
     public async universal(req: Request, res: Response) {
         try {
             const { context, account, limitDatastoreSchemas } = req.veridaNetworkConnection
@@ -73,7 +72,7 @@ class SearchController {
             const minResultsPerType = req.query.minResultsPerType ? parseInt(req.query.minResultsPerType.toString()) : 5
 
             const searchService = new SearchService(did, context)
-            const items = await searchService.multiByKeywords(searchTypes, keywords, timeframe, resultLimit, false, minResultsPerType)
+            const items = await searchService.multiByKeywords(searchTypes, keywords, timeframe, resultLimit, false, minResultsPerType, limitDatastoreSchemas)
 
             return res.json({
                 items

@@ -24,7 +24,7 @@ const axios = Axios.create({
 describe(`Auth tests`, function () {
     this.timeout(200 * 1000)
 
-    let authCode, authCode2, sessionToken, sessionToken2, userAuthToken
+    let authCode, authCode2, authCode3, sessionToken, sessionToken2, sessionToken3, userAuthToken
 
     it(`Can issue an auth token for a third party app`, async () => {
         try {
@@ -413,10 +413,7 @@ describe(`Auth tests`, function () {
         }
     })
 
-    // @todo: Test new middleware works correctly
-    it.only(`Can successfully make middleware requests with appropriate scopes`, async() => {
-        // Note: The test user must have some data in the datastore being used for testing purposes
-        
+    it(`Can successfully make middleware requests with appropriate scopes`, async() => {
         const authResponse = await authenticate([
             "api:ds-query",
             "api:llm-agent-prompt",
@@ -459,14 +456,55 @@ describe(`Auth tests`, function () {
             assert.ok(err.response.data.error.match('invalid scope'))
         }
 
-        // @todo: Make LLM agent prompt query
+        // Make LLM agent prompt query
+        try {
+            const response = await axios.post(`${ENDPOINT}/llm/agent`, {
+                prompt: "Generate JSON list of the names of all the tools you can access",
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authCode2}`,
+                }
+            })
+            
+            const expectedTools = [ 'SocialPostFetch', 'SocialPostQuery', 'KeywordIndex', 'WebSearch' ]
+            assert.deepEqual(response.data.tools, expectedTools, 'Expected tools returned')
+        } catch (err)  {
+            console.log(err.message)
+            console.log(err.response.data)
+            assert.fail("Failed to make LLM request")
+        }
 
-        // @todo: test admin endpoints
-        
+        // @todo: check that if you have access to no datastores, then you can't access any (rather than access all)
+    })
+
+    it(`No datastore access if no datastores granted (edge case test)`, async() => {
+        const authResponse = await authenticate([
+            "api:search-ds",
+        ])
+        authCode3 = authResponse.authCode
+        sessionToken3 = authResponse.sessionToken
+
+        // Make ds search (denied datastore)
+        try {
+            await axios.post(`${ENDPOINT}/search/datastore/${btoa(DENIED_DATASTORE)}`, {
+                keywords: "phone number",
+                index: ["name"]
+            }, {
+                headers: {
+                    Authorization: `Bearer ${authCode3}`,
+                }
+            })
+            
+            assert.fail("Denied datastore was accessible")
+        } catch (err)  {
+            assert.ok(err.response.data.error.match('invalid scope'), 'Invalid scope error returned')
+            assert.ok(err.response.data.error.match(DENIED_DATASTORE), 'Error mentions denied datastore')
+        }
     })
 
     this.afterAll(async () => {
         await revokeToken(authCode, sessionToken2)
         await revokeToken(authCode2, sessionToken2)
+        await revokeToken(authCode3, sessionToken3)
     })
 })

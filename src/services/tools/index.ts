@@ -18,7 +18,7 @@ export function getTools(context: IContext, limitSchemas?: string[], tokenLimit:
     }
 
     // tools["VectoreStore"] = new VectoreStoreTool(context)
-    tools["KeywordIndex"] = new KeywordIndexTool(context, tokenLimit)
+    tools["KeywordIndex"] = new KeywordIndexTool(context, limitSchemas, tokenLimit)
 
     tools["WebSearch"] = new TavilySearchResults({
         maxResults: 2,
