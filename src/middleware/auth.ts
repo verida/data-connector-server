@@ -23,7 +23,7 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
 
         // Inject datastore scope from request params
         if (config.dsScope) {
-            const dsName = Utils.getSchemaFromParams(req.params[0])
+            const dsName = Utils.getSchemaFromParams(req.params.schema)
             scopes.push(`ds:${config.dsScope}:${dsName}`)
         }
 

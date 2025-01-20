@@ -4,12 +4,12 @@ import auth from "../../../../middleware/auth";
 
 const router = express.Router()
 
-router.get(/get\/(.*)\/(.*)$/,  auth({
+router.get("/get/:schema/:recordId",  auth({
     scopes: ["api:ds-get-by-id"],
     dbScope: "r"
 }), controller.getById)
 
-router.post(/query\/(.*)$/, auth({
+router.post("/query/:schema", auth({
     scopes: ["api:ds-query"],
     dbScope: "r"
 }),  controller.query)
@@ -24,7 +24,7 @@ router.delete("/:schema/:recordId", auth({
     dbScope: "d"
 }),  controller.delete)
 
-router.get(/watch\/(.*)$/, auth({
+router.get("/watch/:schema", auth({
     scopes: ["api:ds-query"],
     dbScope: "r"
 }),  controller.watch)
