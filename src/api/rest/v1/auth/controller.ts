@@ -12,6 +12,7 @@ type ResolvedScopePermission = ("r" | "w" | "d")
 interface ResolvedScope {
     type?: ScopeType
     name?: string
+    namePlural?: string
     permissions?: ResolvedScopePermission[],
     description?: string
     uri?: string
@@ -21,6 +22,7 @@ interface ResolvedScope {
 const SCHEMA_CACHE: Record<string, {
     description: string,
     title: string
+    titlePlural: string
 }> = {}
 
 export class AuthController {
@@ -258,7 +260,8 @@ export class AuthController {
                             const response = await axios.get(schemaUrl)
                             SCHEMA_CACHE[schemaUrl] = {
                                 description: response.data.description,
-                                title: response.data.title
+                                title: response.data.title,
+                                titlePlural: response.data.titlePlural
                             }
                         } catch (err: any) {
                             // Schema couldnt' be found, so ignore this scope and set as invalid
@@ -268,6 +271,7 @@ export class AuthController {
                     }
 
                     const schemaTitle = SCHEMA_CACHE[schemaUrl].title
+                    const schemaTitlePlural = SCHEMA_CACHE[schemaUrl].titlePlural
                     const schemaDescription = SCHEMA_CACHE[schemaUrl].description
 
                     finalScopes.push({
@@ -275,6 +279,7 @@ export class AuthController {
                         permissions: permissions1,
                         description: schemaDescription,
                         name: schemaTitle,
+                        namePlural: schemaTitlePlural,
                         uri: schemaUrl,
                         knownSchema: isKnownSchema(schemaUrl)
                     })
