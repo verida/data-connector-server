@@ -93,7 +93,8 @@ export class Agent {
         output_tokens: llmOutput.completionTokens,
         total_tokens: llmOutput.totalTokens
       },
-      duration: (run.end_time - run.start_time)
+      duration: (run.end_time - run.start_time),
+      tools: Object.keys(toolsByName)
      }
 
      return result
