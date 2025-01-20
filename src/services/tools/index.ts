@@ -7,9 +7,9 @@ import { KeywordIndexTool } from "./keywordIndex";
 import { TavilySearchResults } from "@langchain/community/tools/tavily_search"
 import CONFIG from "../../config"
 
-export function getTools(context: IContext, tokenLimit: number = 100000): Record<string, Tool> {
+export function getTools(context: IContext, limitSchemas?: string[], tokenLimit: number = 100000): Record<string, Tool> {
     // Get data schema tools
-    const dataSchemas = getDataSchemas()
+    const dataSchemas = getDataSchemas(limitSchemas)
     const tools: Record<string, Tool> = {}
 
     for (const dataSchema of dataSchemas) {

@@ -3,7 +3,31 @@ import https from 'https';
 import { AutoAccount } from "@verida/account-node";
 import { Client } from "@verida/client-ts";
 import { AuthTypeConfig, ContextSession, VeridaDatabaseAuthContext } from "@verida/types"
+import CONFIG from "../../src/config"
+import { AuthRequest } from "../../src/api/rest/v1/auth/interfaces";
 import StorageEngineVerida from '@verida/client-ts/dist/src/context/engines/verida/database/engine'
+
+const VERIDA_CONTEXT = 'Verida: Vault'
+const NOW = Math.floor(Date.now() / 1000)
+const ENDPOINT = `${CONFIG.serverUrl}/api/rest/v1/auth`
+const APP_REDIRECT_URI = "https://insertyourdomain.com/verida/auth-response"
+
+const userAccount = new AutoAccount({
+    privateKey: CONFIG.verida.testVeridaKey,
+    network: CONFIG.verida.testVeridaNetwork,
+    didClientConfig: CONFIG.verida.didClientConfig
+})
+
+const appAccount = new AutoAccount({
+    privateKey: CONFIG.verida.serverKey,
+    network: CONFIG.verida.testVeridaNetwork,
+    didClientConfig: CONFIG.verida.didClientConfig
+})
+
+const client = new Client({
+    network: CONFIG.verida.testVeridaNetwork,
+    didClientConfig: CONFIG.verida.didClientConfig
+})
 
 // Create an https.Agent that disables certificate validation
 const agent = new https.Agent({
@@ -62,4 +86,87 @@ export async function resolveScopes(ENDPOINT, scopes: string[]) {
     }
 
     return await axios.get(`${endpoint.toString()}`)
+}
+
+export async function authenticate(scopes: string[]): Promise<{
+    authCode: string,
+    USER_DID: string,
+    APP_DID: string,
+    sessionToken: string
+}> {
+    await client.connect(userAccount)
+
+        // Build a context session object, this would normally be done in the user's web browser
+        // once they have logged in
+        const contextSession = await buildContextSession(userAccount, client)
+        const stringifiedSession = JSON.stringify(contextSession)
+        const sessionToken = Buffer.from(stringifiedSession).toString("base64")
+
+        const USER_DID = await userAccount.did()
+        const APP_DID = await appAccount.did()
+
+        const ARO: AuthRequest = {
+            appDID: APP_DID,
+            userDID: USER_DID,
+            scopes,
+            timestamp: NOW
+        }
+
+        // Sign the ARO to generate a consent signature verifying the user account consents to this request
+        const userKeyring = await userAccount.keyring(VERIDA_CONTEXT)
+        const user_sig = await userKeyring.sign(ARO)
+
+        // Add custom state data that will be passed back to the third party application on successful login
+        const state = {}
+
+        const request = {
+            client_id: APP_DID,
+            auth_request: JSON.stringify(ARO),
+            redirect_uri: APP_REDIRECT_URI,
+            user_sig,
+            // app_sig,
+            state: JSON.stringify(state)
+        }
+
+        const response = await axios.post(`${ENDPOINT}/auth`, request, {
+            headers: {
+                "Content-Type": "application/json",
+                "X-API-Key": sessionToken
+            }
+        })
+
+        const redirectUrl = response.data.redirectUrl
+        const parsedUrl = new URL(redirectUrl)
+        let authCode = parsedUrl.searchParams.get("auth_token")
+        authCode = decodeURIComponent(authCode!)
+
+        return {
+            authCode,
+            USER_DID,
+            APP_DID,
+            sessionToken
+        }
+}
+
+export async function revokeToken(authCode: string, sessionToken: string) {
+    if (!authCode) {
+        return
+    }
+
+    try {
+        const tokenId = authCode.substring(0,36)
+        await axios.get(`${ENDPOINT}/revoke?tokenId=${tokenId}`, {
+            headers: {
+                "Content-Type": "application/json",
+                "X-API-Key": sessionToken
+            },
+        })
+    } catch (err) {
+        if (err.response?.data?.error?.match('Invalid token')) {
+            // Token already revoked, so all good
+            return
+        }
+
+        console.error('Unknown revoke error:', err.message)
+    }
 }

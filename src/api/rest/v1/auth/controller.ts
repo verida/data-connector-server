@@ -68,7 +68,7 @@ export class AuthController {
         const scope = req.query.scope.toString()
 
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req, {
+            await Utils.getNetworkConnectionFromRequest(req, {
                 scopes: [scope]
             })
 

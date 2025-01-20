@@ -26,7 +26,8 @@ class AuthServer {
 
     public async verifyAuthToken(token: string, requestedScopes?: string[]): Promise<{
         session: ContextSession
-        tokenId: string
+        tokenId: string,
+        readAccessDatastoreSchemas: string[]
     }> {
         await this._init()
 
@@ -66,10 +67,20 @@ class AuthServer {
                 }
             }
 
+            // Build a list of datastore read scopes
+            const readAccessDatastoreSchemas: string[] = []
+            for (const scope of resolvedScopes) {
+                const dsMatches = scope.match("^ds:r:(.*)")
+                if (dsMatches && dsMatches.length == 2) {
+                    readAccessDatastoreSchemas.push(dsMatches[1])
+                }
+            }
+
             // Return a ContextSession instance
             return {
                 session: <ContextSession> JSON.parse(Buffer.from(session, 'base64').toString('utf-8')),
-                tokenId: authTokenId
+                tokenId: authTokenId,
+                readAccessDatastoreSchemas
             }
         } catch (err: any) {
             if (err.message.match('missing')) {
@@ -145,7 +156,6 @@ class AuthServer {
             // Delete the token from the user database
             await authUser.deleteAuthToken(tokenId)
         } catch (err) {
-            console.log(err)
             throw new Error(`Invalid token (${err.message})`)
         }
     }

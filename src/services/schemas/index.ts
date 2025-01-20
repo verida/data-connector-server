@@ -8,12 +8,24 @@ import post from "./post"
 import favourite from "./favourite"
 import chatMessage from "./chatMessage"
 
-export function getDataSchemas(): BaseDataSchema[] {
-    return [calendarEvent, chatGroup, chatMessage, email, file, following, post, favourite]
+export function getDataSchemas(limitSchemas?: string[]): BaseDataSchema[] {
+    const schemaDefs = [calendarEvent, chatGroup, chatMessage, email, file, following, post, favourite]
+    if (limitSchemas) {
+        const finalSchemas = []
+        for (const schemaDef of schemaDefs) {
+            if (limitSchemas.indexOf(schemaDef.getUrl()) !== -1) {
+                finalSchemas.push(schemaDef)
+            }
+        }
+
+        return finalSchemas
+    } else {
+        return schemaDefs
+    }
 }
 
-export function getDataSchemasDict() {
-    const schemas = getDataSchemas()
+export function getDataSchemasDict(limitSchemas?: string[]) {
+    const schemas = getDataSchemas(limitSchemas)
     const dataSchemaDict: Record<string, BaseDataSchema> = schemas.reduce((obj, item) => {
         // @ts-ignore
         obj[item.getUrl()] = item
