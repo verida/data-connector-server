@@ -8,6 +8,9 @@ import { DataService } from "../../../../services/data";
 import { LLMProvider, ProviderModels } from "../../../../services/llmmodels";
 import CONFIG from "../../../../config"
 import { Agent } from "../../../../services/assistants/agent";
+import { z } from "zod";
+import axios from "axios";
+
 const _ = require('lodash')
 
 const DEFAULT_LLM_MODEL = CONFIG.verida.llms.defaultModel
@@ -97,11 +100,21 @@ export class LLMController {
         let result: any = {}
         try {
             const { context, limitDatastoreSchemas } = req.veridaNetworkConnection
+            const providedSchema = req.body.schema
 
-            const schema = req.body.schema
+            // The body can provide the schema object directly
+            let schema = providedSchema
+
+            // Or a URL. In such case, fetch the schema from the URL
+            const parsedSchemaUrlResult = z.string().url().safeParse(providedSchema)
+            if (parsedSchemaUrlResult.success) {
+                const schemaFetchResponse = await axios.get(parsedSchemaUrlResult.data)
+                schema = schemaFetchResponse.data
+            }
+
             const promptSearchTip = req.body.promptSearchTip
             // const outputSystemPrompt = req.body.systemPrompt || false
-            const prompt = `Analyse my data to populate a JSON object that matches this schema.${promptSearchTip ? promptSearchTip + "\n\n": ""}{\n\n${schema}\n\nOutput JSON only.`
+            const prompt = `Analyse my data to populate a JSON object that precisely matches this schema:\n${JSON.stringify(schema, null, 2)}\n\n${promptSearchTip ? promptSearchTip + "\n\n" : ""}Output JSON only.`
 
             const rag = new Agent()
             result = await rag.run(prompt, context, limitDatastoreSchemas)
