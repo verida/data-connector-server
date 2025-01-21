@@ -213,11 +213,14 @@ export class AuthController {
         // Expand scopes
         const { resolvedScopes, scopeValidity } = expandScopes(scopes, false)
 
+        const progressScopes: Record<string, ResolvedScope> = {}
+
         // Add user data
-        const finalScopes: ResolvedScope[] = []
+        // const finalScopes: ResolvedScope[] = []
         for (const scope of resolvedScopes) {
             const scopeParts = scope.split(":")
             const scopeType = <ScopeType> scopeParts[0]
+            let scopeId = `${scopeType}`
 
             switch (scopeType) {
                 case ScopeType.API:
@@ -227,11 +230,15 @@ export class AuthController {
                         break
                     }
 
-                    finalScopes.push({
+                    const apiGrant = scopeParts[1]
+                    scopeId = `${scopeId}:${apiGrant}`
+
+                    progressScopes[scopeId] = {
                         type: scopeType,
-                        name: scopeParts[1],
+                        name: apiGrant,
                         description: SCOPES[scope].userNote
-                    })
+                    }
+
                     break
                 case ScopeType.DATABASE:
                     const scopePermissions = scopeParts[1]
@@ -240,12 +247,24 @@ export class AuthController {
                         permissions.push(<ResolvedScopePermission> p)
                     }
 
-                    finalScopes.push({
-                        type: scopeType,
-                        name: scopeParts[2],
-                        permissions,
-                        description: DATABASE_LOOKUP[`db:${scopeParts[2]}`]?.description
-                    })
+                    const dbGrant = scopeParts[2]
+                    scopeId = `${scopeId}:${dbGrant}`
+
+                    if (progressScopes[scopeId]) {
+                        for (const perm of permissions) {
+                            if (progressScopes[scopeId].permissions.indexOf(perm) === -1) {
+                                progressScopes[scopeId].permissions.push(perm)
+                            }
+                        }
+                    } else {
+                        progressScopes[scopeId] = {
+                            type: scopeType,
+                            name: dbGrant,
+                            permissions,
+                            description: DATABASE_LOOKUP[`db:${dbGrant}`]?.description
+                        }
+                    }
+
                     break
                 case ScopeType.DATASTORE:
                     const scopePermissions1 = scopeParts[1]
@@ -272,24 +291,34 @@ export class AuthController {
                         }
                     }
 
-                    const schemaTitle = SCHEMA_CACHE[schemaUrl].title
-                    const schemaTitlePlural = SCHEMA_CACHE[schemaUrl].titlePlural
-                    const schemaDescription = SCHEMA_CACHE[schemaUrl].description
+                    scopeId = `${scopeId}:${schemaUrl}`
 
-                    finalScopes.push({
-                        type: scopeType,
-                        permissions: permissions1,
-                        description: schemaDescription,
-                        name: schemaTitle,
-                        namePlural: schemaTitlePlural,
-                        uri: schemaUrl,
-                        knownSchema: isKnownSchema(schemaUrl)
-                    })
+                    if (progressScopes[scopeId]) {
+                        for (const perm of permissions1) {
+                            if (progressScopes[scopeId].permissions.indexOf(perm) === -1) {
+                                progressScopes[scopeId].permissions.push(perm)
+                            }
+                        }
+                    } else {
+                        const schemaTitle = SCHEMA_CACHE[schemaUrl].title
+                        const schemaTitlePlural = SCHEMA_CACHE[schemaUrl].titlePlural
+                        const schemaDescription = SCHEMA_CACHE[schemaUrl].description
+
+                        progressScopes[scopeId] = {
+                            type: scopeType,
+                            permissions: permissions1,
+                            description: schemaDescription,
+                            name: schemaTitle,
+                            namePlural: schemaTitlePlural,
+                            uri: schemaUrl,
+                            knownSchema: isKnownSchema(schemaUrl)
+                        }
+                    }
                     break
             }
         }
 
-        res.send({ scopes: finalScopes, scopeValidity });
+        res.send({ scopes: Object.values(progressScopes), scopeValidity });
     }
 
 }

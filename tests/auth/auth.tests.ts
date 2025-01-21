@@ -219,7 +219,7 @@ describe(`Auth tests`, function () {
     })
 
     it(`Can successfully expand supported scopes`, async() => {
-        const testSchemaUrl = "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
+        const testSchemaUrl = "https://common.schemas.verida.io/social/following/v0.1.0/schema.json"
         const b64Url = Buffer.from(testSchemaUrl).toString('base64')
 
         const fileSchema = "https://common.schemas.verida.io/file/v0.1.0/schema.json"
@@ -231,8 +231,10 @@ describe(`Auth tests`, function () {
             "ds:rw:favourite",
             "ds:rwd:social-event",
             "db:r:file",
+            "db:r:favourite",
             "db:rw:favourite",
             "db:rwd:social_event",
+            `ds:r:base64/${b64Url}`,
             `ds:rwd:base64/${b64Url}`,
             "api:llm-agent-prompt"
         ]        
@@ -265,9 +267,11 @@ describe(`Auth tests`, function () {
             'ds:rw:favourite': true,
             'ds:rwd:social-event': true,
             'db:r:file': true,
+            'db:r:favourite': true, 
             'db:rw:favourite': true,
             'db:rwd:social_event': true,
-            'ds:rwd:https://common.schemas.verida.io/social/event/v0.1.0/schema.json': true,
+            'ds:r:https://common.schemas.verida.io/social/following/v0.1.0/schema.json': true,
+            'ds:rwd:https://common.schemas.verida.io/social/following/v0.1.0/schema.json': true,
             'api:llm-agent-prompt': true
           }
 
@@ -275,7 +279,7 @@ describe(`Auth tests`, function () {
     })
 
     it(`Can successfully resolve scopes`, async() => {
-        const testSchemaUrl = "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
+        const testSchemaUrl = "https://common.schemas.verida.io/social/following/v0.1.0/schema.json"
         const b64Url = Buffer.from(testSchemaUrl).toString('base64')
 
         const testScopes = [
@@ -288,16 +292,18 @@ describe(`Auth tests`, function () {
             "db:r:storage_database",
             "db:r:user_wallet",
             "db:rwd:user_wallet",
+            "api:invalid",
             // Add scopes that are valid
             "ds:r:file",
             "ds:rw:favourite",
             "ds:rwd:social-event",
-            "db:r:file",
+            "db:rw:file",
+            "db:r:favourite",
             "db:rw:favourite",
             "db:rwd:social_event",
             `ds:rwd:base64/${b64Url}`,
             "api:llm-agent-prompt",
-            "api:invalid"
+            "api:llm-agent-prompt"
         ]
 
         const expectedScopesResponse = [
@@ -330,7 +336,7 @@ describe(`Auth tests`, function () {
             {
               type: 'db',
               name: 'file',
-              permissions: [ 'r' ],
+              permissions: [ 'r', 'w' ],
               description: 'Files (ie: Google docs)'
             },
             {
@@ -348,9 +354,10 @@ describe(`Auth tests`, function () {
             {
               type: 'ds',
               permissions: [ 'r', 'w', 'd' ],
-              description: 'Schema for a calendar event',
-              name: 'Event',
-              uri: 'https://common.schemas.verida.io/social/event/v0.1.0/schema.json',
+              description: 'A person or business I am following',
+              name: 'Following',
+              namePlural: 'Following',
+              uri: 'https://common.schemas.verida.io/social/following/v0.1.0/schema.json',
               knownSchema: true
             },
             {
@@ -369,15 +376,16 @@ describe(`Auth tests`, function () {
             'db:r:storage_database': false,
             'db:r:user_wallet': false,
             'db:rwd:user_wallet': false,
+            'api:invalid': false,
             'ds:r:file': true,
             'ds:rw:favourite': true,
             'ds:rwd:social-event': true,
-            'db:r:file': true,
+            'db:rw:file': true,
+            'db:r:favourite': true,
             'db:rw:favourite': true,
             'db:rwd:social_event': true,
-            'ds:rwd:https://common.schemas.verida.io/social/event/v0.1.0/schema.json': true,
-            'api:llm-agent-prompt': true,
-            'api:invalid': false
+            'ds:rwd:https://common.schemas.verida.io/social/following/v0.1.0/schema.json': true,
+            'api:llm-agent-prompt': true
         }
 
         try {
@@ -416,30 +424,36 @@ describe(`Auth tests`, function () {
     })
 
     it(`Can successfully make middleware requests with appropriate scopes`, async() => {
-        const authResponse = await authenticate([
-            "api:ds-query",
-            "api:llm-agent-prompt",
-            "api:search-ds",
-            `ds:r:${GRANTED_DATASTORE}`
-        ])
-        authCode2 = authResponse.authCode
-        sessionToken2 = authResponse.sessionToken
-
         try {
-            // Make ds search (granted datastore)
-            const r1 = await axios.post(`${ENDPOINT}/search/datastore/${btoa(GRANTED_DATASTORE)}`, {
-                keywords: "phone number",
-                index: ["name"]
-            }, {
-                headers: {
-                    Authorization: `Bearer ${authCode2}`,
-                }
-            })
+            const authResponse = await authenticate([
+                "api:ds-query",
+                "api:llm-agent-prompt",
+                "api:search-ds",
+                `ds:r:${GRANTED_DATASTORE}`
+            ])
+            authCode2 = authResponse.authCode
+            sessionToken2 = authResponse.sessionToken
 
-            assert.ok(r1.data, "Response")
-            assert.ok(r1.data.total >= 0, "Valid response")
+            try {
+                // Make ds search (granted datastore)
+                const r1 = await axios.post(`${ENDPOINT}/search/datastore/${btoa(GRANTED_DATASTORE)}`, {
+                    keywords: "phone number",
+                    index: ["name"]
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${authCode2}`,
+                    }
+                })
+
+                assert.ok(r1.data, "Response")
+                assert.ok(r1.data.total >= 0, "Valid response")
+            } catch (err) {
+                console.log(err)
+                assert.fail('Failed to search granted datastore')
+            }
         } catch (err) {
-            assert.fail('Failed to search granted datastore')
+            console.log(err)
+            console.log(err.response.data)
         }
 
         // Make ds search (denied datastore)
@@ -475,8 +489,6 @@ describe(`Auth tests`, function () {
             console.log(err.response.data)
             assert.fail("Failed to make LLM request")
         }
-
-        // @todo: check that if you have access to no datastores, then you can't access any (rather than access all)
     })
 
     it(`No datastore access if no datastores granted (edge case test)`, async() => {

@@ -95,15 +95,28 @@ export const DATABASE_LOOKUP: Record<string, ScopeInfo> = {
     }
 }
 
+function appendNewOnly(scopes: string[], newScope: string): string[] {
+    if (scopes.indexOf(newScope) === -1) {
+        scopes.push(newScope)
+    }
+
+    return scopes
+}
+
 /**
  * Take an array of scopes and expand any short hand scopes (ie: ds:file) to
  * the full scope. Convert base64 encoded URL scopes to have the actual URL.
+ * 
+ * If the same datastore or database scope is listed multiple times, merge them.
+ * 
+ * (ie: ds:r:<schema> and ds:rw:<schema>)
  * 
  * @param scopes 
  */
 export function expandScopes(scopes: string[], expandPermissions: boolean = true): ExpandedScopes {
     const scopeValidity: Record<string, boolean> = {}
     const expandedScopes: string[] = []
+
     for (const i in scopes) {
         let scope = scopes[i]
 
@@ -130,10 +143,11 @@ export function expandScopes(scopes: string[], expandPermissions: boolean = true
 
         // Expand read / write scopes
         const matches2 = scope.match(/(ds|db):(r|rw|rwd):(.*)/)
-        if (matches2 && matches2.length == 4) {
+        if (matches2 && matches2.length >= 4) {
             const scopeType = matches2[1]       // ie: ds
             const permissions = matches2[2]     // ie: rw
-            let grant = matches2[3]           // ie: social-event
+            matches2.splice(0,3)
+            let grant = matches2.join(':')       // ie: social-event
 
             // Convert URL shorthand scopes to full scopes
             if (typeof DATASTORE_LOOKUP[grant] !== "undefined" && scopeType == "ds") {
@@ -143,20 +157,20 @@ export function expandScopes(scopes: string[], expandPermissions: boolean = true
             if (expandPermissions) {
                 switch (permissions) {
                     case "r":
-                        expandedScopes.push(`${scopeType}:r:${grant}`)
+                        appendNewOnly(expandedScopes, `${scopeType}:r:${grant}`)
                         break
                     case "rw":
-                        expandedScopes.push(`${scopeType}:r:${grant}`)
-                        expandedScopes.push(`${scopeType}:w:${grant}`)
+                        appendNewOnly(expandedScopes, `${scopeType}:r:${grant}`)
+                        appendNewOnly(expandedScopes, `${scopeType}:w:${grant}`)
                         break
                     case "rwd":
-                        expandedScopes.push(`${scopeType}:r:${grant}`)
-                        expandedScopes.push(`${scopeType}:w:${grant}`)
-                        expandedScopes.push(`${scopeType}:d:${grant}`)
+                        appendNewOnly(expandedScopes, `${scopeType}:r:${grant}`)
+                        appendNewOnly(expandedScopes, `${scopeType}:w:${grant}`)
+                        appendNewOnly(expandedScopes, `${scopeType}:d:${grant}`)
                         break
                 }
             } else {
-                expandedScopes.push(`${scopeType}:${permissions}:${grant}`)
+                appendNewOnly(expandedScopes, `${scopeType}:${permissions}:${grant}`)
             }
 
             scopeValidity[scopes[i]] = true
@@ -165,7 +179,7 @@ export function expandScopes(scopes: string[], expandPermissions: boolean = true
 
         if (scope) {
             scopeValidity[scopes[i]] = true
-            expandedScopes.push(scope)
+            appendNewOnly(expandedScopes, scope)
         }
     }
 
