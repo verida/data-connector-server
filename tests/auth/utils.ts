@@ -12,13 +12,13 @@ const NOW = Math.floor(Date.now() / 1000)
 const ENDPOINT = `${CONFIG.serverUrl}/api/rest/v1/auth`
 const APP_REDIRECT_URI = "https://insertyourdomain.com/verida/auth-response"
 
-const userAccount = new AutoAccount({
+export const userAccount = new AutoAccount({
     privateKey: CONFIG.verida.testVeridaKey,
     network: CONFIG.verida.testVeridaNetwork,
     didClientConfig: CONFIG.verida.didClientConfig
 })
 
-const appAccount = new AutoAccount({
+export const appAccount = new AutoAccount({
     privateKey: CONFIG.verida.serverKey,
     network: CONFIG.verida.testVeridaNetwork,
     didClientConfig: CONFIG.verida.didClientConfig

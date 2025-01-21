@@ -20,3 +20,9 @@ export interface UsageAccount {
     userDID: string
     insertedAt: string
 }
+
+export interface UsageStats {
+    connectedAccounts: number
+    requests: number
+    resultSize: number
+}
