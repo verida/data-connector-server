@@ -12,7 +12,7 @@ router.get("/chatThreads", auth({
     scopes: ["api:search-chat-threads"]
 }), controller.chatThreads)
 
-router.post(/datastore\/(.*)$/, auth({
+router.post("/datastore/:schema", auth({
     scopes: ["api:search-ds"],
     dsScope: "r"
 }), controller.datastore)
