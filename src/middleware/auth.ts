@@ -51,7 +51,12 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
         // Override the `send` method to capture the response content length
         res.send = function (body: any): Response {
             const duration = Date.now() - start; // Calculate latency
-            const responseLength = body ? Buffer.byteLength(body, 'utf8') : 0; // Calculate the response length in characters
+
+            let responseLength = 0
+            if (body) {
+                const output = (typeof body == "string" ? body : JSON.stringify(body))
+                responseLength = body ? Buffer.byteLength(output, 'utf8') : 0; // Calculate the response length in characters
+            }
 
             if (req.veridaNetworkConnection.appDID) {
                 const request: UsageRequest = {
