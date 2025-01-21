@@ -35,6 +35,7 @@ export interface NetworkConnection {
     context: IContext,
     account: IAccount,
     did: string
+    appDID?: string
     sessionString?: string
     tokenId?: string
     // Limit read access to these datastore schemas (built from scopes)
@@ -68,6 +69,7 @@ export class Utils {
 
         const authHeader = req.headers.authorization
         let limitDatastoreSchemas = undefined
+        let appDID = undefined
         if (authHeader) {
             // Extract the Bearer token
             if (authHeader.split(' ').length < 2) {
@@ -87,6 +89,7 @@ export class Utils {
             session = authTokenData.session
             tokenId = authTokenData.tokenId
             limitDatastoreSchemas = authTokenData.readAccessDatastoreSchemas
+            appDID = authTokenData.appDID
         }
 
         const apiKey = req.header('X-API-Key');
@@ -132,6 +135,10 @@ export class Utils {
 
         if (limitDatastoreSchemas) {
             networkConnection.limitDatastoreSchemas = limitDatastoreSchemas
+        }
+
+        if (appDID) {
+            networkConnection.appDID = appDID
         }
 
         return networkConnection

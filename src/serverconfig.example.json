@@ -49,6 +49,12 @@
             "defaultProvider": "bedrock",
             "defaultModel": "LLAMA3.1_70B"
         },
+        "usageDb": {
+            "dsn": "",
+            "dbName": "api-usage",
+            "accountsCollection": "accounts",
+            "requestsCollection": "requests"
+        },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15,
         "handlerTimeoutMins": 15,

@@ -27,7 +27,8 @@ class AuthServer {
     public async verifyAuthToken(token: string, requestedScopes?: string[]): Promise<{
         session: ContextSession
         tokenId: string,
-        readAccessDatastoreSchemas: string[]
+        readAccessDatastoreSchemas: string[],
+        appDID: string
     }> {
         await this._init()
 
@@ -80,7 +81,8 @@ class AuthServer {
             return {
                 session: <ContextSession> JSON.parse(Buffer.from(session, 'base64').toString('utf-8')),
                 tokenId: authTokenId,
-                readAccessDatastoreSchemas
+                readAccessDatastoreSchemas,
+                appDID: this.did
             }
         } catch (err: any) {
             if (err.message.match('missing')) {
