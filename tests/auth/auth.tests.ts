@@ -306,6 +306,7 @@ describe(`Auth tests`, function () {
               permissions: [ 'r' ],
               description: 'A file',
               name: 'File',
+              namePlural: 'Files',
               uri: 'https://common.schemas.verida.io/file/v0.1.0/schema.json',
               knownSchema: true
             },
@@ -314,6 +315,7 @@ describe(`Auth tests`, function () {
               permissions: [ 'r', 'w' ],
               description: 'Favourite links across all platforms',
               name: 'Favourite',
+              namePlural: 'Favourites',
               uri: 'https://common.schemas.verida.io/favourite/v0.1.0/schema.json',
               knownSchema: true
             },
