@@ -12,6 +12,7 @@
         },
         "mode": "development",
         "environment": "banksia",
+        "serverKey": "0x...",
         "testVeridaKey": "0x...",
         "testVeridaNetwork": "banksia",
         "sessionSecret": "empty",
@@ -48,9 +49,16 @@
             "defaultProvider": "bedrock",
             "defaultModel": "LLAMA3.1_70B"
         },
+        "usageDb": {
+            "dsn": "",
+            "dbName": "api-usage",
+            "accountsCollection": "accounts",
+            "requestsCollection": "requests"
+        },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15,
-        "handlerTimeoutMins": 15
+        "handlerTimeoutMins": 15,
+        "OAuthRequestTimeoutMins": 2
     },
     "providers": {
         "mock": {

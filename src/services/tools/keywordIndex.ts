@@ -1,12 +1,13 @@
 import { Tool } from "@langchain/core/tools";
 import { IContext } from "@verida/types";
-import { SearchService } from "../search";
+import { SearchService, SearchType } from "../search";
 import { convertRecordsToRAGContext } from "./utils"
 // import { BaseQueryToolConfig, CouchDBQuerySchemaType } from "../../services/interfaces";
 
 export class KeywordIndexTool extends Tool {
   private context: IContext
   private tokenLimit: number
+  private limitSchemas?: string[]
 
   name = "KeywordIndex"
   description = `This tool will search a keyword database to find relevant data.
@@ -42,17 +43,18 @@ export class KeywordIndexTool extends Tool {
 }
 `
 
-  constructor(context: IContext, tokenLimit: number = 100000) {
+  constructor(context: IContext, limitSchemas?: string[], tokenLimit: number = 100000) {
     super()
     this.context = context
     this.tokenLimit = tokenLimit
+    this.limitSchemas = limitSchemas
   }
 
   public async _call(args: string) {
     try {
       const params = JSON.parse(args)
 
-      const searchTypes = params.searchTypes
+      const searchTypes = <SearchType[]> params.searchTypes
       const keywordsList = params.keywordsList
       const timeFrame = params.timeFrame
       const resultLimit = params.resultLimit || 20
@@ -62,7 +64,7 @@ export class KeywordIndexTool extends Tool {
       const did = await account.did()
       const dataService = new SearchService(did, this.context)
 
-      const results = await dataService.multiByKeywords(searchTypes, keywordsList, timeFrame, resultLimit, true)
+      const results = await dataService.multiByKeywords(searchTypes, keywordsList, timeFrame, resultLimit, true, undefined, this.limitSchemas)
 
       return convertRecordsToRAGContext(results, tokenLimit)
 

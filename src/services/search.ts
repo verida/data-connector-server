@@ -333,10 +333,10 @@ export class SearchService extends VeridaService {
         return result
     }
 
-    public async multiByKeywords(searchTypes: SearchType[], keywordsList: string[], timeframe: KeywordSearchTimeframe, resultLimit: number = 20, outputRagString: boolean = false, minResultsPerType: number = 10) {
+    public async multiByKeywords(searchTypes: SearchType[], keywordsList: string[], timeframe: KeywordSearchTimeframe, resultLimit: number = 20, outputRagString: boolean = false, minResultsPerType: number = 10, limitSchemas?: string[]) {
         const query = keywordsList.join(' ')
         const dataService = new DataService(this.did, this.context)
-        const dataSchemaDict = getDataSchemasDict()
+        const dataSchemaDict = getDataSchemasDict(limitSchemas)
 
         const maxDatetime = Helpers.keywordTimeframeToDate(timeframe)
 
@@ -351,6 +351,10 @@ export class SearchService extends VeridaService {
             }
 
             const dataSchema = dataSchemaDict[schemaUri]
+            if (!dataSchema) {
+                // console.log(`skipping schema ${schemaUri} (probably insufficient permissions)`)
+                continue
+            }
 
             if (dataSchema.getName() == "ChatMessage") {
                 const results = await this.chatThreadsByKeywords(keywordsList, timeframe, 10, resultLimit)
