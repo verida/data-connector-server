@@ -17,7 +17,7 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
 
         // Inject database scope from request params
         if (config.dbScope) {
-            const dbName = req.params[0]
+            const dbName = req.params.database
             scopes.push(`db:${config.dbScope}:${dbName}`)
         }
 

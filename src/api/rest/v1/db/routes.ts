@@ -4,12 +4,12 @@ import auth from "../../../../middleware/auth";
 
 const router = express.Router()
 
-router.get(/get\/(.*)\/(.*)$/, auth({
+router.get("/get/:database/:recordId", auth({
     scopes: ["api:db-get-by-id"],
     dbScope: "r"
 }), controller.getById)
 
-router.post(/query\/(.*)$/, auth({
+router.post("/query/:database", auth({
     scopes: ["api:db-query"],
     dbScope: "r"
 }), controller.query)
