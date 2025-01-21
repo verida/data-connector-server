@@ -3,7 +3,6 @@ import Base from "../BaseProvider";
 import { SpotifyProviderConfig } from "./interfaces";
 import { ConnectionCallbackResponse, PassportProfile } from "../../interfaces";
 import { Client, OAuthScopeEnum, OAuthToken } from "spotify-api-sdk";
-import { access } from "fs";
 import SpotifyFollowing from "./spotify-following";
 import SpotifyFavoriteHandler from "./spotify-favorite";
 import SpotifyPlayHistory from "./spotify-history";
