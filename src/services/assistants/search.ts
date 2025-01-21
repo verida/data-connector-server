@@ -57,6 +57,7 @@ export interface PromptSearchResult {
 
 export class PromptSearchService extends VeridaService {
 
+    // Note: Does not implement datastore scope secrity
     public async prompt(prompt: string, llm: LLM, config?: PromptSearchServiceConfig): Promise<PromptSearchResult> {
         const timers: Record<string, number> = {}
         let start = new Date()
