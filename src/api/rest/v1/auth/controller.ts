@@ -4,6 +4,7 @@ import { AuthClient } from "./client";
 import AuthServer from "./server";
 import { AuthUser } from "./user";
 import { AuthToken, ScopeType } from "./interfaces";
+import UsageManager from "../../../../services/usage/manager"
 import SCOPES, { DATABASE_LOOKUP, DATASTORE_LOOKUP, expandScopes, isKnownSchema } from "./scopes"
 import axios from "axios";
 
@@ -56,6 +57,7 @@ export class AuthController {
             const authRequest = await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString())
             const authUser = new AuthUser(context)
             const authToken = await AuthServer.generateAuthToken(authRequest, authUser, sessionString)
+            await UsageManager.connectAccount(authRequest.appDID, authRequest.userDID)
 
             return res.json({
                 redirectUrl: `${redirect_uri}?auth_token=${encodeURIComponent(authToken)}&state=${state}`

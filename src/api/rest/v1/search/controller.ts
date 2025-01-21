@@ -86,7 +86,7 @@ class SearchController {
 
     public async datastore(req: Request, res: Response) {
         try {
-            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            const schemaName = Utils.getSchemaFromParams(req.params.schema)
             const { context, account, limitDatastoreSchemas } = req.veridaNetworkConnection
             const did = await account.did()
 
