@@ -9,7 +9,7 @@ export class DbController {
 
     public async getById(req: Request, res: Response) {
         try {
-            const dbName = req.params[0]
+            const dbName = req.params.database
             const { context } = req.veridaNetworkConnection
             const rowId = req.params[1]
             const permissions = Utils.buildPermissions(req)
@@ -135,7 +135,7 @@ export class DbController {
 
     public async query(req: Request, res: Response) {
         try {
-            const dbName = req.params[0]
+            const dbName = req.params.database
             const { context } = req.veridaNetworkConnection
 
             const permissions = Utils.buildPermissions(req)
