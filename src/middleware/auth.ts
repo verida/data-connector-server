@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { NetworkConnectionRequestOptions, Utils } from '../utils';
 import UsageManager from "../services/usage/manager"
+import BillingManager from "../services/billing/manager"
 import { UsageRequest } from '../services/usage/interfaces';
 
 export interface AuthMiddlewareConfig {
@@ -8,6 +9,7 @@ export interface AuthMiddlewareConfig {
     scopes?: string[]
     dbScope?: "r" | "w" | "d",
     dsScope?: "r" | "w" | "d",
+    credits?: number
     options?: NetworkConnectionRequestOptions
 }
 
@@ -45,6 +47,14 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
             return res.status(403).json({ error: err.message })
         }
 
+        // Check we have sufficient credits
+        if (config.credits) {
+            const didBalance = await BillingManager.getBalance(req.veridaNetworkConnection.did)
+            if (didBalance < config.credits) {
+                throw new Error(`Unsufficient credits. (${config.credits} required, but only ${didBalance})`)
+            }
+        }
+
         // Store the original `send` method to capture the response body
         const originalSend = res.send;
 
@@ -79,6 +89,10 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
                     }
                 } catch (err) {
                     // Not JSON response, so ignore
+                }
+
+                if (config.credits) {
+                    request.credits = config.credits
                 }
 
                 UsageManager.logRequest(request)

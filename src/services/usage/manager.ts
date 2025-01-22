@@ -2,10 +2,11 @@ import { Collection, MongoClient } from "mongodb"
 import CONFIG from "../../config"
 import { UsageAccount, UsageRequest, UsageStats } from "./interfaces"
 
-const DSN = CONFIG.verida.usageDb.dsn
-const DB_NAME = CONFIG.verida.usageDb.dbName
-const ACCOUNTS_COLLECTION = CONFIG.verida.usageDb.accountsCollection
-const REQUEST_COLLECTION = CONFIG.verida.usageDb.requestsCollection
+const DSN = CONFIG.verida.centralDb.dsn
+const DB_NAME = CONFIG.verida.centralDb.dbName
+const APP_USERS_COLLECTION = CONFIG.verida.centralDb.appUsersCollection
+const REQUEST_COLLECTION = CONFIG.verida.centralDb.requestsCollection
+const ACCOUNT_COLLECTION = CONFIG.verida.centralDb.accountsCollection
 
 export function nowTimestamp() {
     return new Date().toISOString()
@@ -26,8 +27,7 @@ class UsageManager {
             insertedAt: nowTimestamp()
         }
 
-        const collection = await this.getCollection(ACCOUNTS_COLLECTION)
-
+        const collection = await this.getCollection(APP_USERS_COLLECTION)
         try {
             await collection.insertOne(usageAccount)
         } catch (err) {
@@ -45,10 +45,13 @@ class UsageManager {
             return
         }
 
-        const collection = await this.getCollection(REQUEST_COLLECTION)
-
+        const requestCollection = await this.getCollection(REQUEST_COLLECTION)
         usageRequest.insertedAt = nowTimestamp()
-        await collection.insertOne(usageRequest)
+        await requestCollection.insertOne(usageRequest)
+
+        const accountCollection = await this.getCollection(ACCOUNT_COLLECTION)
+        // @todo: decrement account credits
+        // @todo: increment user credits
     }
 
     public async getRequests(did: string): Promise<any> {
@@ -57,7 +60,9 @@ class UsageManager {
         }
 
         const collection = await this.getCollection(REQUEST_COLLECTION)
-        return collection.find({}).toArray()
+        return await collection.find({
+            appDID: did
+        }).toArray()
     }
 
     public async getAccountCount(did: string): Promise<number> {
@@ -65,7 +70,7 @@ class UsageManager {
             throw new Error('Usage not available')
         }
 
-        const collection = await this.getCollection(ACCOUNTS_COLLECTION)
+        const collection = await this.getCollection(APP_USERS_COLLECTION)
         return collection.countDocuments({
             appDID: did
         })
@@ -136,8 +141,8 @@ class UsageManager {
                 return
             }
 
-            const accountCollection = await this.getCollection(ACCOUNTS_COLLECTION)
-            await accountCollection.createIndex({
+            const appUsersCollection = await this.getCollection(APP_USERS_COLLECTION)
+            await appUsersCollection.createIndex({
                 appDID: 1,
                 userDID: 1
             }, {

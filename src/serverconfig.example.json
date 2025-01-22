@@ -49,11 +49,18 @@
             "defaultProvider": "bedrock",
             "defaultModel": "LLAMA3.1_70B"
         },
-        "usageDb": {
+        "centralDb": {
             "dsn": "",
-            "dbName": "api-usage",
-            "accountsCollection": "accounts",
-            "requestsCollection": "requests"
+            "dbName": "dcs",
+            "appUsersCollection": "appUsers",
+            "requestsCollection": "requests",
+            "accountsCollection": "accounts"
+        },
+        "billing": {
+            "appFreeCredits": 200,
+            "userFreeCredits": 50,
+            "defaultCredit": 1,
+            "userCreditsPerRequest": 0.5
         },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15,

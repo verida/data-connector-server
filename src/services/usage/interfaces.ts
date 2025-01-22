@@ -10,6 +10,7 @@ export interface UsageRequest {
     userDID: string
     resultSize: number
     path: string
+    credits?: number
     tokens?: UsageRequestTokens
     latency: number
     insertedAt?: string
