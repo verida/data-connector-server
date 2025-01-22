@@ -33,9 +33,9 @@ export class MinisearchService {
     limit: number = 20,
     permissions: Record<string, string> = {},
   ): Promise<MinisearchServiceSearchResult> {
-    console.log(
-      `Searching for ${query} in ${schemaName} with index ${indexFields}`
-    );
+    // console.log(
+    //   `Searching for ${query} in ${schemaName} with index ${indexFields}`
+    // );
 
     const searchService = new DataService(did, context)
     const results = await searchService.searchIndex(schemaName, query, limit, undefined, searchOptions, indexFields, storeFields)
