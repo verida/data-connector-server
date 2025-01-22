@@ -24,4 +24,5 @@ export interface PromptSearchServiceConfig {
     dataTypes?: PromptSearchServiceDataTypes
     promptSearchConfig?: PromptSearchLLMResponse
     jsonFormat?: boolean
+    limitDatastoreSchemas?: string[]
 }

@@ -12,9 +12,12 @@ import TelegramRoutes from './telegram/routes'
 import FireFliesRoutes from './fireflies/routes'
 import SearchRoutes from "./search/routes"
 import AccountRoutes from './account/routes'
+import AuthRoutes from "./auth/routes"
+import AppRoutes from "./app/routes"
 
 const router = express.Router()
 
+router.use('/auth', AuthRoutes)
 router.use('/access', accessRouterV1)
 router.use('/providers', ProviderRoutes)
 router.use('/connections', ConnectionRoutes)
@@ -25,6 +28,7 @@ router.use('/info', InfoRoutes)
 router.use('/llm', LLMRoutes)
 router.use('/search', SearchRoutes)
 router.use('/account', AccountRoutes)
+router.use('/app', AppRoutes)
 
 router.use('/telegram', TelegramRoutes)
 router.use('/fireflies', FireFliesRoutes)
