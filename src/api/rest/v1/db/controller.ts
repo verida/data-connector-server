@@ -11,7 +11,7 @@ export class DbController {
         try {
             const dbName = req.params.database
             const { context } = req.veridaNetworkConnection
-            const rowId = req.params[1]
+            const rowId = req.params.recordId
             const permissions = Utils.buildPermissions(req)
 
             const db = await context.openDatabase(dbName, {
