@@ -3,6 +3,7 @@ import Axios from "axios"
 import https from 'https';
 import CONFIG from "../../src/config"
 import BillingManager, { AccountType } from "../../src/services/billing/manager"
+import AlchemyManager from "../../src/services/billing/alchemy"
 
 import { appAccount, authenticate, buildClient, buildSessionToken, revokeToken } from "../auth/utils";
 
@@ -159,6 +160,18 @@ describe(`Auth tests`, function () {
             console.log(err)
             assert.fail('Failed to search granted datastore')
         }
+    })
+
+    it(`Can get an alchemy transaction`, async() => {
+        const result = await AlchemyManager.getTransaction("0x3ad745c13f212f063e23429a3ac2eaf05d69bfca71bf8657edcee99d4af6ede2")
+        console.log(result)
+        // console.log(result.amount.toString())
+    })
+
+    it(`Can get a VDA token price`, async() => {
+        const result = await AlchemyManager.getVDAPrice()
+        console.log(result)
+        // console.log(result.amount.toString())
     })
 
     this.afterAll(async () => {

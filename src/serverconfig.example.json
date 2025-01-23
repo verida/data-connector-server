@@ -54,13 +54,18 @@
             "dbName": "dcs",
             "appUsersCollection": "appUsers",
             "requestsCollection": "requests",
-            "accountsCollection": "accounts"
+            "accountsCollection": "accounts",
+            "depositsCollection": "deposits"
         },
         "billing": {
             "appFreeCredits": 200,
             "userFreeCredits": 50,
-            "defaultCredit": 1,
-            "userCreditsPerRequest": 0.5
+            "defaultCredits": 1,
+            "userCreditsPerRequest": 0.5,
+            "depositAddress": ""
+        },
+        "alchemy": {
+            "key": ""
         },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15,
