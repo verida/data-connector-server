@@ -49,6 +49,12 @@ export class AppController {
     }
 
     public async depositCrypto(req: Request, res: Response) {
+        if (!BillingManager.isEnabled) {
+            return res.status(500).send({
+                "error": "Billing is disabled"
+            })
+        }
+
         const { did, network } = req.veridaNetworkConnection
         const { txnId, fromAddress, amount, signature } = req.body
         const didDocument = await network.didClient.get(did)

@@ -58,6 +58,7 @@
             "depositsCollection": "deposits"
         },
         "billing": {
+            "enabled": false,
             "appFreeCredits": 200,
             "userFreeCredits": 50,
             "defaultCredits": 1,

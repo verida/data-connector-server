@@ -44,7 +44,7 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
             }
 
             // Check we have sufficient credits
-            if (config.credits) {
+            if (config.credits && BillingManager.isEnabled) {
                 const did = req.veridaNetworkConnection.appDID ? req.veridaNetworkConnection.appDID : req.veridaNetworkConnection.did
                 const didBalance = await BillingManager.getBalance(did)
 

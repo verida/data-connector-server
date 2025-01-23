@@ -30,7 +30,16 @@ export function nowTimestamp() {
 
 class BillingManager {
 
+    private enabled: boolean
     private client?: MongoClient
+
+    constructor(enabled: boolean) {
+        this.enabled = enabled
+    }
+
+    public get isEnabled() {
+        return this.enabled
+    }
 
     public async registerAccount(did: string, type: AccountType) {
         if (!await this.init()) {
@@ -170,6 +179,10 @@ class BillingManager {
     }
 
     public async handleRequest(request: UsageRequest) {
+        if (!this.enabled) {
+            return
+        }
+    
         if (request.appDID) {
             await this.ensureAccountExists(request.appDID)
         }
@@ -271,5 +284,5 @@ class BillingManager {
     }
 }
 
-const manager = new BillingManager()
+const manager = new BillingManager(CONFIG.verida.billing.enabled)
 export default manager
