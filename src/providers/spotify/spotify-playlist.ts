@@ -1,12 +1,9 @@
 import CONFIG from "../../config";
 import {
-    SyncProviderLogEvent,
-    SyncProviderLogLevel,
     SyncHandlerPosition,
     SyncResponse,
     SyncHandlerStatus,
-    ProviderHandlerOption,
-    ConnectionOptionType
+    ProviderHandlerOption
 } from "../../interfaces";
 import { SchemaPlaylist, SchemaPlaylistType, SchemaSpotifyTrack } from "../../schemas";
 import { SpotifyHandlerConfig } from "./interfaces";
@@ -15,8 +12,7 @@ import InvalidTokenError from "../InvalidTokenError";
 import BaseSyncHandler from "../BaseSyncHandler";
 import { Client, PlaylistsController } from "spotify-api-sdk";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
-
-const MAX_BATCH_SIZE = 50;
+import { Person } from "../google/interfaces";
 
 export default class SpotifyPlaylistHandler extends BaseSyncHandler {
 
@@ -50,18 +46,19 @@ export default class SpotifyPlaylistHandler extends BaseSyncHandler {
 
         try {
             const limit = this.config.batchSize;
-          
+
             const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
             let items: SchemaPlaylist[] = [];
 
             let currentRange = rangeTracker.nextRange();
-            let offset = currentRange.startId ?? currentRange.startId;
+            let offset = currentRange.startId ? currentRange.startId : '0';
+
             const response = await playlistsController.getAListOfCurrentUsersPlaylists(limit, parseInt(offset));
 
             const result = await this.buildResults(response.result.items);
             items = result.items;
 
-            let nextOffset = response.result.offset + response.result.limit;
+            let nextOffset = response.result.offset + response.result.total;
 
             if (items.length) {
                 rangeTracker.completedRange({
@@ -138,35 +135,49 @@ export default class SpotifyPlaylistHandler extends BaseSyncHandler {
         for (const playlist of items) {
             const playlistId = playlist.id;
             const playlistName = playlist.name;
-            const description = playlist.description || '';
-            const collaborative = playlist.collaborative;
             const externalUrl = playlist.external_urls?.spotify ?? '';
-            const href = playlist.href ?? '';
             const icon = playlist.images?.[0]?.url ?? '';
-            
-            const tracks: SchemaSpotifyTrack[] = playlist.tracks.items.map((track: any) => {
-                return {
-                    id: track.track.id,
-                    title: track.track.name,
-                    artist: track.track.artists.map((artist: any) => artist.name).join(", "),
-                    album: track.track.album.name,
-                    thumbnail: track.track.album.images?.[0]?.url ?? '',
-                    url: track.track.external_urls?.spotify ?? '',
-                    type: SchemaPlaylistType.AUDIO, // Default to audio, or update if needed for videos
-                };
-            });
+            const owner: Person = playlist.owner;
+
+            const tracks: SchemaSpotifyTrack[] = await this.getPlaylistTracks(playlist.tracks.href, this.connection.accessToken);
 
             results.push({
                 _id: this.buildItemId(playlistId),
+                sourceAccountId: this.provider.getAccountId(),
+                sourceApplication: this.getProviderApplicationUrl(),
+                sourceId: playlistId,
+                sourceData: playlist,
+                schema: CONFIG.verida.schemas.PLAYLIST,
                 name: playlistName,
                 icon: icon,
-                uri: externalUrl,
+                uri: 'externalUrl',
                 type: SchemaPlaylistType.AUDIO,
                 tracks: tracks,
-                owner: undefined
+                owner: owner,
+                insertedAt: new Date().toISOString()
             });
         }
 
         return { items: results };
+    }
+
+    private async getPlaylistTracks(playlistTracksUrl: string, accessToken: string): Promise<SchemaSpotifyTrack[]> {
+        const response = await fetch(playlistTracksUrl, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        const data = await response.json();
+        
+        return data.items.map((item: any) => {
+            const track = item.track;
+            return {
+                id: track.id,
+                title: track.name,               
+                duration: track.duration_ms,                
+                url: track.external_urls?.spotify ?? ''
+            };
+        });
     }
 }
