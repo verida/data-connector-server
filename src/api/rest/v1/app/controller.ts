@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import UsageManager from "../../../../services/usage/manager"
+import BillingManager from "../../../../services/billing/manager"
 
 export class AppController {
 
@@ -25,9 +26,26 @@ export class AppController {
         const endDateTime = req.params.end ? req.params.end.toString() : undefined
         
         return res.json({
-            stats: await UsageManager.getUsageStats(did, startDateTime, endDateTime)
+            usage: await UsageManager.getUsageStats(did, startDateTime, endDateTime)
         })
     }
+
+    public async balance(req: Request, res: Response) {
+        const { did } = req.veridaNetworkConnection
+        
+        return res.json({
+            balance: await BillingManager.getBalance(did)
+        })
+    }
+
+    public async deposits(req: Request, res: Response) {
+        const { did } = req.veridaNetworkConnection
+        
+        return res.json({
+            deposits: await BillingManager.getDeposits(did)
+        })
+    }
+
 
 }
 

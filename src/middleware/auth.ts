@@ -7,8 +7,8 @@ import { UsageRequest } from '../services/usage/interfaces';
 export interface AuthMiddlewareConfig {
     sessionRequired?: boolean
     scopes?: string[]
-    dbScope?: "r" | "w" | "d",
-    dsScope?: "r" | "w" | "d",
+    dbScope?: "r" | "w" | "d"
+    dsScope?: "r" | "w" | "d"
     credits?: number
     options?: NetworkConnectionRequestOptions
 }
@@ -42,17 +42,19 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
             if (config.sessionRequired && !req.veridaNetworkConnection.sessionString) {
                 throw new Error(`Session is required`)
             }
+
+            // Check we have sufficient credits
+            if (config.credits) {
+                const did = req.veridaNetworkConnection.appDID ? req.veridaNetworkConnection.appDID : req.veridaNetworkConnection.did
+                const didBalance = await BillingManager.getBalance(did)
+
+                if (didBalance < config.credits) {
+                    throw new Error(`Unsufficient credits. (${config.credits} required, but only ${didBalance})`)
+                }
+            }
         } catch(err: any) {
             // do we log this?
             return res.status(403).json({ error: err.message })
-        }
-
-        // Check we have sufficient credits
-        if (config.credits) {
-            const didBalance = await BillingManager.getBalance(req.veridaNetworkConnection.did)
-            if (didBalance < config.credits) {
-                throw new Error(`Unsufficient credits. (${config.credits} required, but only ${didBalance})`)
-            }
         }
 
         // Store the original `send` method to capture the response body

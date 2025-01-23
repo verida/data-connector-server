@@ -33,12 +33,11 @@ const axios = Axios.create({
     httpsAgent: agent,
 });
 
-export async function buildContextSession(account: AutoAccount, client: Client): Promise<ContextSession> {
-    const CONTEXT = 'Verida: Vault'
-    const context = await client.openContext(CONTEXT, true)
+export async function buildContextSession(account: AutoAccount, client: Client, contextName: string): Promise<ContextSession> {
+    const context = await client.openContext(contextName, true)
     const contextConfig = await context?.getContextConfig()
 
-    const keyring = await account.keyring(CONTEXT)
+    const keyring = await account.keyring(contextName)
     const signature = keyring.getSeed()
 
     // If we have a legacy DID, opening the context will change the DID from polpos to mainnet
@@ -69,7 +68,7 @@ export async function buildContextSession(account: AutoAccount, client: Client):
         did,
         contextConfig: contextConfig!,
         contextAuths,
-        contextName: CONTEXT,
+        contextName,
     }
 
 }
@@ -83,24 +82,32 @@ export async function resolveScopes(ENDPOINT, scopes: string[]) {
     return await axios.get(`${endpoint.toString()}`)
 }
 
+export async function buildSessionToken(account: AutoAccount, client: Client, contextName: string = VERIDA_CONTEXT) {
+    const contextSession = await buildContextSession(account, client, contextName)
+    const stringifiedSession = JSON.stringify(contextSession)
+    return Buffer.from(stringifiedSession).toString("base64")
+}
+
+export function buildClient() {
+    return new Client({
+        network: CONFIG.verida.testVeridaNetwork,
+        didClientConfig: CONFIG.verida.didClientConfig
+    })
+}
+
 export async function authenticate(scopes: string[]): Promise<{
     authCode: string,
     USER_DID: string,
     APP_DID: string,
     sessionToken: string
 }> {
-    const client = new Client({
-        network: CONFIG.verida.testVeridaNetwork,
-        didClientConfig: CONFIG.verida.didClientConfig
-    })
+    const client = buildClient()
     
     await client.connect(userAccount)
 
     // Build a context session object, this would normally be done in the user's web browser
     // once they have logged in
-    const contextSession = await buildContextSession(userAccount, client)
-    const stringifiedSession = JSON.stringify(contextSession)
-    const sessionToken = Buffer.from(stringifiedSession).toString("base64")
+    const sessionToken = await buildSessionToken(userAccount, client)
 
     const USER_DID = await userAccount.did()
     const APP_DID = await appAccount.did()

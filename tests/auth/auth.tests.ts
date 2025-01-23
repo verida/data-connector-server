@@ -517,7 +517,7 @@ describe(`Auth tests`, function () {
     })
 
     this.afterAll(async () => {
-        await revokeToken(authCode, sessionToken2)
+        await revokeToken(authCode, sessionToken)
         await revokeToken(authCode2, sessionToken2)
         await revokeToken(authCode3, sessionToken3)
     })

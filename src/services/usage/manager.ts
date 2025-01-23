@@ -1,6 +1,7 @@
 import { Collection, MongoClient } from "mongodb"
 import CONFIG from "../../config"
 import { UsageAccount, UsageRequest, UsageStats } from "./interfaces"
+import BillingManager from "../billing/manager"
 
 const DSN = CONFIG.verida.centralDb.dsn
 const DB_NAME = CONFIG.verida.centralDb.dbName
@@ -22,8 +23,8 @@ class UsageManager {
         }
 
         const usageAccount: UsageAccount = {
-            appDID,
-            userDID,
+            appDID: this.normalizeDID(appDID),
+            userDID: this.normalizeDID(userDID),
             insertedAt: nowTimestamp()
         }
 
@@ -45,19 +46,22 @@ class UsageManager {
             return
         }
 
+        usageRequest.appDID = usageRequest.appDID ? this.normalizeDID(usageRequest.appDID) : usageRequest.appDID
+        usageRequest.userDID = usageRequest.userDID ? this.normalizeDID(usageRequest.userDID) : usageRequest.userDID
+
         const requestCollection = await this.getCollection(REQUEST_COLLECTION)
         usageRequest.insertedAt = nowTimestamp()
         await requestCollection.insertOne(usageRequest)
 
-        const accountCollection = await this.getCollection(ACCOUNT_COLLECTION)
-        // @todo: decrement account credits
-        // @todo: increment user credits
+        await BillingManager.handleRequest(usageRequest)
     }
 
     public async getRequests(did: string): Promise<any> {
         if (!await this.init()) {
             throw new Error('Usage not available')
         }
+
+        did = this.normalizeDID(did)
 
         const collection = await this.getCollection(REQUEST_COLLECTION)
         return await collection.find({
@@ -72,7 +76,7 @@ class UsageManager {
 
         const collection = await this.getCollection(APP_USERS_COLLECTION)
         return collection.countDocuments({
-            appDID: did
+            appDID: this.normalizeDID(did)
         })
     }
 
@@ -80,6 +84,8 @@ class UsageManager {
         if (!await this.init()) {
             throw new Error('Usage not available')
         }
+
+        did = this.normalizeDID(did)
 
         const match: any = {
             appDID: did
@@ -193,6 +199,10 @@ class UsageManager {
         }
 
         return true
+    }
+
+    private normalizeDID(did: string) {
+        return did.replace('mainnet', 'polpos')
     }
 }
 
