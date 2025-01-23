@@ -144,34 +144,53 @@ describe(`Auth tests`, function () {
         }
     })
 
+    it(`Can get an alchemy transaction`, async() => {
+        const result = await AlchemyManager.getTransaction("0xa4a8c94184b4677fd71f4a50e4230ebabe2694194aebc507e29a11e272e18242")
+
+        assert.ok(result, 'Have a result')
+        assert.equal(result.from, "0x35d254687c4e8c7c1d49785dbf4b792f86ad1907", "Correct from value")
+        assert.equal(result.to, "0xcf05d450b08d3fa49da476deb825dc211160a9d5", "Correct to value")
+        assert.equal(result.amount, BigInt("748879093268939383562"), "Correct amount value")
+    })
+
+    it(`Can get a VDA token price`, async() => {
+        const result = await AlchemyManager.getVDAPrice()
+        assert.ok(typeof result == "number", 'Result is a valid number')
+    })
+
     it.skip(`Can deposit VDA tokens`, async() => {
+        // Note: This only works if the transaction info below is for a valid
+        // transaction sent to CONFIG.verida.billing.depositAddress that hasn't
+        // already been saved to MongoDB
         try {
-            // Make ds search (granted datastore)
-            const response = await axios.post(`${ENDPOINT}/app/deposit`, {
+            const txnId = "0xa4a8c94184b4677fd71f4a50e4230ebabe2694194aebc507e29a11e272e18242"
+            const fromAddress = "0x35d254687c4e8c7c1d49785dbf4b792f86ad1907"
+            const amount = "748.879093268939383562"
+
+            const proofMessage = `txn: ${txnId}\nfrom:${fromAddress}\namount:${amount}`
+            const keyring = await appAccount.keyring('Verida: Vault')
+            const signature = await keyring.sign(proofMessage)
+
+            const response = await axios.post(`${ENDPOINT}/app/deposit-crypto`, {
+                txnId,
+                fromAddress,
+                amount,
+                signature
             }, {
                 headers: {
                     "Content-Type": "application/json",
                     "X-API-Key": sessionToken
                 }
             })
+
+            assert.ok(response.data, 'Have a response')
+            assert.equal(response.data.success, true, 'Have a success response')
             
             console.log(response.data)
         } catch (err) {
             console.log(err)
             assert.fail('Failed to search granted datastore')
         }
-    })
-
-    it(`Can get an alchemy transaction`, async() => {
-        const result = await AlchemyManager.getTransaction("0x3ad745c13f212f063e23429a3ac2eaf05d69bfca71bf8657edcee99d4af6ede2")
-        console.log(result)
-        // console.log(result.amount.toString())
-    })
-
-    it(`Can get a VDA token price`, async() => {
-        const result = await AlchemyManager.getVDAPrice()
-        console.log(result)
-        // console.log(result.amount.toString())
     })
 
     this.afterAll(async () => {

@@ -15,5 +15,6 @@ router.get('/account-count', appAuth, Controller.accountCount)
 router.get('/usage', appAuth, Controller.usage)
 router.get('/balance', appAuth, Controller.balance)
 router.get('/deposits', appAuth, Controller.deposits)
+router.post('/deposit-crypto', appAuth, Controller.depositCrypto)
 
 export default router

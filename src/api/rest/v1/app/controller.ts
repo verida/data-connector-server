@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import UsageManager from "../../../../services/usage/manager"
 import BillingManager from "../../../../services/billing/manager"
+import Alchemy from "../../../../services/billing/alchemy"
+import { BillingTxnType } from "../../../../services/billing/interfaces";
 
 export class AppController {
 
@@ -43,6 +45,37 @@ export class AppController {
         
         return res.json({
             deposits: await BillingManager.getDeposits(did)
+        })
+    }
+
+    public async depositCrypto(req: Request, res: Response) {
+        const { did, network } = req.veridaNetworkConnection
+        const { txnId, fromAddress, amount, signature } = req.body
+        const didDocument = await network.didClient.get(did)
+
+        try {
+            await BillingManager.verifyCryptoDeposit(didDocument, txnId, fromAddress, amount, signature)
+
+            const tokenPrice = await Alchemy.getVDAPrice()
+            const depositAmount = parseFloat(tokenPrice.toString())
+
+            const credits = parseFloat((amount / depositAmount).toString())
+
+            await BillingManager.deposit({
+                did,
+                txnId,
+                credits: parseFloat(credits.toString()),
+                description: 'Account deposit',
+                txnType: BillingTxnType.CRYPTO
+            })
+        } catch (err) {
+            return res.status(500).send({
+                "error": err.message
+            })
+        }
+
+        return res.json({
+            success: true
         })
     }
 

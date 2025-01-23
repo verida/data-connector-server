@@ -2,6 +2,9 @@ import { Collection, MongoClient, ObjectId } from "mongodb"
 import CONFIG from "../../config"
 import { UsageRequest } from "../usage/interfaces"
 import { BillingDeposit, BillingTxnType } from "./interfaces"
+import AlchemyManager from "./alchemy"
+import { Utils } from "alchemy-sdk"
+import { IDIDDocument, Network as VeridaNetwork } from "@verida/types"
 
 const DSN = CONFIG.verida.centralDb.dsn
 const DB_NAME = CONFIG.verida.centralDb.dbName
@@ -11,6 +14,10 @@ const DEPOSIT_COLLECTION = CONFIG.verida.centralDb.depositsCollection
 const APP_DID_FREE_CREDITS = CONFIG.verida.billing.appFreeCredits
 const USER_DID_FREE_CREDITS = CONFIG.verida.billing.userFreeCredits
 const USER_CREDITS_PER_REQUEST = CONFIG.verida.billing.userCreditsPerRequest
+
+const DEPOSIT_ADDRESS = CONFIG.verida.billing.depositAddress
+const NETWORK = <VeridaNetwork> CONFIG.verida.network
+const CONTEXT_NAME = "Verida: Vault"
 
 export enum AccountType {
     APP = "app",
@@ -82,15 +89,51 @@ class BillingManager {
     }
 
     public async deposit(depositInfo: Omit<BillingDeposit, "insertedAt">) {
-        const collection = await this.getCollection(DEPOSIT_COLLECTION)
+        const depositsCollection = await this.getCollection(DEPOSIT_COLLECTION)
+        depositInfo.did = this.normalizeDID(depositInfo.did)
 
         try {
-            await collection.insertOne({
+            await depositsCollection.insertOne({
                 ...depositInfo,
                 insertedAt: nowTimestamp()
             })
         } catch (err) {
-            throw new Error(`Unable to save deposit`)
+            throw new Error(`Unable to save deposit, already registered`)
+        }
+
+        try {
+            const accountsCollection = await this.getCollection(ACCOUNTS_COLLECTION)
+            await accountsCollection.updateOne({
+                did: depositInfo.did
+            }, {
+                "$inc": {
+                    credits: depositInfo.credits
+                }
+            })
+        } catch (err) {
+            throw new Error(`Unable to increase account credits`)
+        }
+    }
+
+    public async verifyCryptoDeposit(didDocument: IDIDDocument, txnId: string, fromAddress: string, amount: number, signature: string) {
+        // Verify signature
+        const proofMessage = `txn: ${txnId}\nfrom:${fromAddress}\namount:${amount}`
+        const validSig = didDocument.verifyContextSignature(proofMessage, NETWORK, CONTEXT_NAME, signature, false)
+        
+        if (!validSig) {
+            throw new Error('Invalid deposit signature')
+        }
+
+        // Verify deposit
+        try {
+            const result = await AlchemyManager.getTransaction(txnId)
+            const expectedValue = Utils.parseUnits(amount.toString(), 18).toBigInt()
+
+            if (result.from != fromAddress || result.to != DEPOSIT_ADDRESS || result.amount != expectedValue) {
+                throw new Error('Invalid deposit transaction')
+            }
+        } catch (err) {
+            throw new Error('Invalid deposit transaction')
         }
     }
 
@@ -187,6 +230,13 @@ class BillingManager {
             const accountsCollection = await this.getCollection(ACCOUNTS_COLLECTION)
             await accountsCollection.createIndex({
                 did: 1
+            }, {
+                unique: true
+            })
+
+            const depositsCollection = await this.getCollection(DEPOSIT_COLLECTION)
+            await depositsCollection.createIndex({
+                txnId: 1
             }, {
                 unique: true
             })
