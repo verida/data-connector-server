@@ -361,8 +361,8 @@ export class DataService extends EventEmitter {
     //     }
     // }
 
-    public async hotLoadIndexes(): Promise<void> {
-        const dataSchemas = getDataSchemas()
+    public async hotLoadIndexes(limitDatastoreSchemas?: string[]): Promise<void> {
+        const dataSchemas = getDataSchemas(limitDatastoreSchemas)
         this.startProgress(Object.keys(dataSchemas).length * 3)
 
         const promises: Promise<MiniSearch<any>>[] = []

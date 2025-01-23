@@ -48,7 +48,7 @@ export default class Controller {
                 instantComplete
             } = req.body
 
-            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
+            const networkInstance = req.veridaNetworkConnection
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
 
             if (instantComplete) {
@@ -82,7 +82,7 @@ export default class Controller {
                 forceSync
             } = req.body
 
-            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
+            const networkInstance = req.veridaNetworkConnection
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
             const connection = await syncManager.getConnection(connectionId)
 
@@ -115,7 +115,7 @@ export default class Controller {
             const providerId = query.providerId ? query.providerId.toString() : undefined
             const accountId = query.accountId ? query.accountId.toString() : undefined
 
-            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
+            const networkInstance = req.veridaNetworkConnection
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
             const connections = await syncManager.getProviders(providerId, accountId)
 
@@ -164,7 +164,7 @@ export default class Controller {
     public static async update(req: UniqueRequest, res: Response) {
         try {
             const connectionId = req.params.connectionId
-            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
+            const networkInstance = req.veridaNetworkConnection
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
 
             const connection = await syncManager.getConnection(connectionId)
@@ -255,7 +255,7 @@ export default class Controller {
     public static async disconnect(req: UniqueRequest, res: Response, next: any) {
         try {
             const connectionId = req.params.connectionId
-            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
+            const networkInstance = req.veridaNetworkConnection
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
 
             const connection = await syncManager.getProvider(connectionId)
@@ -286,8 +286,8 @@ export default class Controller {
             // Tell the client to retry every 10 seconds if connectivity is lost
             res.write('retry: 10000\n\n')
 
-            const query = req.query
-            const networkInstance = await Utils.getNetworkConnectionFromRequest(req)
+            // const query = req.query
+            const networkInstance = req.veridaNetworkConnection
 
             const logsDs = await networkInstance.context.openDatastore(SCHEMA_SYNC_LOG)
             const logsDb = await logsDs.getDb()

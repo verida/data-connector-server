@@ -5,7 +5,7 @@ import { ChatPromptTemplate } from "@langchain/core/prompts"
 import { createToolCallingAgent } from "langchain/agents"
 import { AgentExecutor } from "langchain/agents"
 import { getTools } from "../tools";
-import { Run, RunCollectorCallbackHandler } from "langchain/callbacks";
+import { RunCollectorCallbackHandler } from "langchain/callbacks";
 
 const BEDROCK_AWS_REGION = CONFIG.verida.llms.bedrockAWSRegion;
 const BEDROCK_AWS_SECRET_ACCESS_KEY = CONFIG.verida.llms.bedrockAWSSecretKey;
@@ -14,8 +14,8 @@ const MODEL = CONFIG.verida.llms.agentModel;
 const MODEL_MAX_TOKENS = CONFIG.verida.llms.agentTokenLimit
 
 export class Agent {
-  public async run(promptString: string, context: IContext, temperature: number = 0) {
-    const toolsByName = getTools(context, MODEL_MAX_TOKENS)
+  public async run(promptString: string, context: IContext, limitSchemas?: string[], temperature: number = 0) {
+    const toolsByName = getTools(context, limitSchemas, MODEL_MAX_TOKENS)
 
     const tools = Object.values(toolsByName)
 
@@ -93,7 +93,8 @@ export class Agent {
         output_tokens: llmOutput.completionTokens,
         total_tokens: llmOutput.totalTokens
       },
-      duration: (run.end_time - run.start_time)
+      duration: (run.end_time - run.start_time),
+      tools: Object.keys(toolsByName)
      }
 
      return result
