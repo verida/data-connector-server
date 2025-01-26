@@ -28,11 +28,11 @@ export default class SpotifyPlayHistory extends BaseSyncHandler {
     }
 
     public getName(): string {
-        return "spotify-play-history";
+        return "spotify-history";
     }
 
     public getSchemaUri(): string {
-        return CONFIG.verida.schemas.PLAY_HISTORY;
+        return CONFIG.verida.schemas.HISTORY;
     }
 
     public getProviderApplicationUrl(): string {
@@ -68,10 +68,12 @@ export default class SpotifyPlayHistory extends BaseSyncHandler {
             const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
             let items: SchemaHistory[] = [];
 
+            // Timestamp based 
             let currentRange = rangeTracker.nextRange();
-            let offset = currentRange.startId;
+            let offset = currentRange.startId ?? 0;
 
-            const response = await playerController.getRecentlyPlayed(this.config.batchSize);
+            const response = await playerController.getRecentlyPlayed(this.config.batchSize, BigInt(offset));
+
             const result = await this.buildResults(response.result.items, currentRange.endId);
             items = result.items;
 
@@ -94,7 +96,7 @@ export default class SpotifyPlayHistory extends BaseSyncHandler {
                 const backfillOffset = currentRange.startId;
                 const backfillBatchSize = this.config.batchSize - items.length;
 
-                const backfillResponse = await playerController.getRecentlyPlayed(backfillBatchSize);
+                const backfillResponse = await playerController.getRecentlyPlayed(backfillBatchSize, BigInt(backfillOffset));
                 const backfillResult = await this.buildResults(backfillResponse.result.items, currentRange.endId);
                 items = items.concat(backfillResult.items);
 
@@ -146,47 +148,54 @@ export default class SpotifyPlayHistory extends BaseSyncHandler {
 
     protected async buildResults(
         items: any[],
-        breakId: string
+        breakTimeStamp: string
     ): Promise<{ items: SchemaHistory[], breakHit?: SyncItemsBreak }> {
         const results: SchemaHistory[] = [];
         let breakHit: SyncItemsBreak;
 
         for (const playHistory of items) {
             const trackId = playHistory.track.id;
+            if (!trackId) {
+                console.warn('Missing track ID:', playHistory.track);
+                continue;
+            }
 
-            if (breakId && trackId === breakId) {
+            const playedAt = playHistory.playedAt   
+            
+            if (breakTimeStamp && playedAt <= new Date(breakTimeStamp).toISOString()) {
                 const logEvent: SyncProviderLogEvent = {
                     level: SyncProviderLogLevel.DEBUG,
-                    message: `Break ID hit (${breakId})`
+                    message: `Break timestamp hit (${new Date(breakTimeStamp).toISOString()})`
                 };
                 this.emit('log', logEvent);
-                breakHit = SyncItemsBreak.ID;
+                breakHit = SyncItemsBreak.TIMESTAMP;
                 break;
             }
 
-            const trackName = playHistory.track.name;
-            const albumName = playHistory.track.album.name;
-            const artists = playHistory.track.artists.map((artist: any) => artist.name).join(", ");
-            const uri = playHistory.track.externalUrls?.spotify ?? playHistory.track.uri ?? '';
-            const icon = playHistory.track.album.images?.[0]?.url ?? '';
-            const playedAt = playHistory.played_at;
-
+            const trackName = playHistory.track.name || 'Unknown Track';            
+            const durationMs = playHistory.track.durationMs || 0;
+            const artists = playHistory.track.artists?.map((artist: any) => artist?.name || 'Unknown Artist').join(", ") || 'Unknown Artist';
+            const uri = playHistory.track.externalUrls?.spotify || playHistory.track.uri || '';
+            const icon = playHistory.track.album?.images?.[0]?.url || '';
+        
             results.push({
                 _id: this.buildItemId(trackId),
                 name: `${trackName} by ${artists}`,
                 icon: icon,
-                uri: uri,
+                url: uri,
                 sourceId: trackId,
                 sourceData: playHistory.track,
                 sourceAccountId: this.provider.getAccountId(),
                 sourceApplication: this.getProviderApplicationUrl(),
                 insertedAt: new Date().toISOString(),
                 timestamp: playedAt,
+                duration: Number(durationMs) / 1000,
                 activityType: SchemaHistoryActivityType.LISTENING
             });
+           
         }
 
-        return { items: results, breakHit};
+        return { items: results, breakHit };
     }
 }
 

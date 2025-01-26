@@ -4,7 +4,7 @@ import { SpotifyProviderConfig } from "./interfaces";
 import { ConnectionCallbackResponse, PassportProfile } from "../../interfaces";
 import { Client, OAuthScopeEnum, OAuthToken } from "spotify-api-sdk";
 import SpotifyFollowing from "./spotify-following";
-import SpotifyFavoriteHandler from "./spotify-favorite";
+import SpotifyFavouriteHandler from "./spotify-favourite";
 import SpotifyPlayHistory from "./spotify-history";
 import SpotifyPlaylistHandler from "./spotify-playlist";
 
@@ -29,7 +29,7 @@ export default class SpotifyProvider extends Base {
     public syncHandlers(): any[] {
         return [
             SpotifyFollowing, 
-            SpotifyFavoriteHandler,
+            SpotifyFavouriteHandler,
             SpotifyPlayHistory,
             SpotifyPlaylistHandler
         ];
@@ -42,6 +42,7 @@ export default class SpotifyProvider extends Base {
             OAuthScopeEnum.UserReadEmail,
             OAuthScopeEnum.UserFollowRead,            
             OAuthScopeEnum.UserTopRead,
+            OAuthScopeEnum.UserReadRecentlyPlayed
         ];
     }
 

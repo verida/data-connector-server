@@ -19,11 +19,11 @@ export default class SpotifyPlaylistHandler extends BaseSyncHandler {
     protected config: SpotifyHandlerConfig;
 
     public getLabel(): string {
-        return "Spotify Playlists";
+        return "Spotify Playlist";
     }
 
     public getName(): string {
-        return "spotify-playlists";
+        return "spotify-playlist";
     }
 
     public getSchemaUri(): string {

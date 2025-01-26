@@ -10,7 +10,7 @@
 6. Note down your `Client ID` and `Client Secret`
 7. Add your redirect URI (typically `http://localhost:5021/callback/spotify` for local development)
 
-## Spotify Favorite(User's Top Tracks)
+## Spotify Favourite(User's Top Tracks)
 
 GET https://api.spotify.com/v1/me/top/tracks
 

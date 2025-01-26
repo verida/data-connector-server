@@ -17,16 +17,16 @@ import { Client, UsersController } from "spotify-api-sdk";
 
 const MAX_BATCH_SIZE = 50;
 
-export default class SpotifyFavoriteHandler extends BaseSyncHandler {
+export default class SpotifyFavouriteHandler extends BaseSyncHandler {
 
     protected config: SpotifyHandlerConfig;
 
     public getLabel(): string {
-        return "Spotify Favorite Tracks";
+        return "Spotify Favourite Tracks";
     }
 
     public getName(): string {
-        return "spotify-favorites";
+        return "spotify-favourite";
     }
 
     public getSchemaUri(): string {
