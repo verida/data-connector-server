@@ -158,6 +158,17 @@
             "messagesPerGroupLimit": 100,
             "maxGroupSize": 50,
             "useDbPos": true
+        },
+        "slack": {
+            "status": "active",
+            "label": "Slack",
+            "clientId": "",
+            "clientSecret": "",
+            "stateSecret": "",
+            "maxSyncLoops": 1,
+            "maxBatchSize": 200,
+            "messagesPerGroupLimit": 50,
+            "channelTypes": ["im", "private_channel", "public_channel"]            
         }
     },
     "providerDefaults": {
