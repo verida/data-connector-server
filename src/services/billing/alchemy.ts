@@ -1,10 +1,12 @@
-// Imports the Alchemy SDK
-import { Alchemy, Network, Utils } from "alchemy-sdk"
+import { Decimal128 } from "mongodb"
+import { Alchemy, Network } from "alchemy-sdk"
+import { Utils } from "../../utils"
 import CONFIG from "../../config"
 const API_KEY = CONFIG.verida.alchemy.key
 
 const VDA_ADDRESS = "0x683565196c3eab450003c964d4bad1fd3068d4cc"
 const VDA_NETWORK = Network.MATIC_MAINNET
+const PRICE_CACHE_DURATION_MINS = 15
 
 // Configures the Alchemy SDK
 const config = {
@@ -12,10 +14,13 @@ const config = {
     network: VDA_NETWORK, // Replace with your network
 };
 
+let priceCache: number = undefined
+let priceCacheExpiry: number = undefined
+
 export interface TransactionInfo {
     to: string
     from: string
-    amount: BigInt
+    amount: Decimal128
 }
 
 class AlchemyManager {
@@ -53,7 +58,7 @@ class AlchemyManager {
 
             const from = `0x${log.topics[1].slice(26)}`; // Decode the "from" address from the topics
             const to = `0x${log.topics[2].slice(26)}`;   // Decode the "to" address from the topics
-            const amount = BigInt(log.data);              // Decode the "value" from the data (this will be in the smallest token unit)
+            const amount = new Decimal128(log.data);              // Decode the "value" from the data (this will be in the smallest token unit)
 
             result = {
                 to,
@@ -70,6 +75,10 @@ class AlchemyManager {
     }
 
     public async getVDAPrice(): Promise<Number> {
+        if (priceCache && priceCacheExpiry < Utils.nowEpoch()) {
+            return priceCache
+        }
+
         const result = await this.connection.prices.getTokenPriceByAddress([{
             network: VDA_NETWORK,
             address: VDA_ADDRESS
@@ -77,10 +86,13 @@ class AlchemyManager {
 
         if (result.data?.length) {
             const vdaPrice = result.data[0]
-            return parseFloat(vdaPrice.prices[0].value)
+            priceCache = parseFloat(vdaPrice.prices[0].value)
+        } else {
+            console.error(`Unable to locate VDA price`)
         }
 
-        throw new Error(`Unable to locate VDA price`)
+        priceCacheExpiry = Utils.nowEpoch() + PRICE_CACHE_DURATION_MINS*60
+        return priceCache
     }
 
 }
