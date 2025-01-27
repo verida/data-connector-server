@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OAuth2 Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .client-icon {
+      width: 50px;
+      height: 50px;
+    }
+    .scope-list {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    .scope-list li {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <div class="card">
+      <div class="card-header text-center">
+        <img id="clientIcon" src="CLIENT_ICON_URL" alt="Client Icon" class="client-icon rounded-circle">
+        <h3 id="clientName">CLIENT_NAME</h3>
+        <p>is requesting access to your account</p>
+      </div>
+      <div class="card-body">
+        <!-- Requested Scopes -->
+        <h5>Requested Permissions:</h5>
+        <ul class="scope-list" id="scopeList">
+          <!-- Populate with requested scopes -->
+          <li>View your profile</li>
+          <li>Access your email</li>
+        </ul>
+        
+        <!-- Private Key Input -->
+        <form id="loginForm" method="POST" action="/login">
+          <div class="mb-3">
+            <label for="privateKey" class="form-label">Enter Your Private Key</label>
+            <input type="password" class="form-control" id="privateKey" name="privateKey" placeholder="Private Key" required>
+          </div>
+
+          <!-- Hidden Fields for Client and Redirect URL -->
+          <input type="hidden" name="client_id" value="CLIENT_ID">
+          <input type="hidden" name="redirect_uri" value="REDIRECT_URI">
+          <input type="hidden" name="scope" value="REQUESTED_SCOPES">
+
+          <!-- Approve Button -->
+          <button type="submit" class="btn btn-success btn-block">Approve</button>
+        </form>
+      </div>
+      <div class="card-footer text-muted text-center">
+        By clicking Approve, you allow CLIENT_NAME to access your data as described.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // This script should dynamically set the client information, requested scopes, and redirect URL
+    document.getElementById('clientIcon').src = "CLIENT_ICON_URL";  // Set dynamically
+    document.getElementById('clientName').textContent = "CLIENT_NAME";  // Set dynamically
+    document.getElementById('scopeList').innerHTML = `
+      <li>View your profile</li>
+      <li>Access your email</li>
+    `;  // Populate this with dynamic scopes
+  </script>
+
+</body>
+</html>

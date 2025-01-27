@@ -1,12 +1,13 @@
 import express from 'express'
 import Controller from './controller'
+import auth from "../../../../middleware/auth";
 
 const router = express.Router()
 
-router.get('/', Controller.connections)
-router.post('/sync', Controller.sync)
-router.post('/:connectionId/sync', Controller.syncConnection)
-router.put('/:connectionId', Controller.update)
-router.delete('/:connectionId', Controller.disconnect)
+router.get('/', auth(), Controller.connections)
+router.post('/sync', auth(), Controller.sync)
+router.post('/:connectionId/sync', auth(), Controller.syncConnection)
+router.put('/:connectionId', auth(), Controller.update)
+router.delete('/:connectionId', auth(), Controller.disconnect)
 
 export default router
