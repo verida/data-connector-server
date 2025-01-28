@@ -1,6 +1,8 @@
 
 import { z } from "zod";
-import { NillionV1DataCreateResponseSchema } from "./schemas";
+import { NillionIntegrationConfigSchema, NillionV1DataCreateResponseSchema } from "./schemas";
+
+export type NillionIntegrationConfig = z.infer<typeof NillionIntegrationConfigSchema>
 
 // TODO: Move this error response type to a shared location for other endpoint to use
 export type ErrorResponse = {
@@ -13,15 +15,13 @@ export type ErrorResponse = {
 export type SaveDataV1ErrorResponse = ErrorResponse
 
 export type NillionServiceSaveDataArgs = {
-  nillionDbBaseUrl: string,
-  nillionDbBearerToken: string,
   nillionSchemaId: string,
   data: Record<string, unknown>
 }
 
 export type NillionV1DataCreateRequestPayload = {
   schema: string,
-  data: Record<string, unknown>[]
+  data: object[]
 }
 
 export type NillionV1DataCreateResponse = z.infer<typeof NillionV1DataCreateResponseSchema>

@@ -166,5 +166,10 @@
     "notion": {
         "apiKey": "",
         "restrictedAccessDatabaseId": ""
+    },
+    "integrations": {
+        "nillion": {
+            "hosts": []
+        }
     }
 }

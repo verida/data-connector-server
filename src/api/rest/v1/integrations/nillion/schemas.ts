@@ -1,11 +1,16 @@
 import { z } from "zod";
 
+export const NillionIntegrationConfigSchema = z.object({
+  hosts: z.array(z.object({
+    baseUrl: z.string().url(),
+    bearerToken: z.string(),
+  })).min(1),
+})
+
 export const NillionIntegrationV1SaveDataRequestBodySchema = z.object({
   jsonProfile: z.record(z.unknown()),
   jsonSchemaUrl: z.string().url(),
   params: z.object({
-    nillionDbBaseUrl: z.string().url(),
-    nillionDbBearerToken: z.string(),
     nillionSchemaId: z.string(),
   })
 })

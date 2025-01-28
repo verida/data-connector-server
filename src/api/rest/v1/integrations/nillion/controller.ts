@@ -26,8 +26,6 @@ export class ControllerV1 {
 
       await this.service.saveData({
         data: jsonProfile,
-        nillionDbBaseUrl: params.nillionDbBaseUrl,
-        nillionDbBearerToken: params.nillionDbBearerToken,
         nillionSchemaId: params.nillionSchemaId,
       })
 
@@ -43,6 +41,9 @@ export class ControllerV1 {
       }
 
       // Handle other error types if needed
+
+      // If internal error, log it and return a generic error message with a 500 status
+      console.error(error)
 
       return res.status(500).send({
         status: "error",
