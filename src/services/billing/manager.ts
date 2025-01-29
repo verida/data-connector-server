@@ -130,7 +130,7 @@ class BillingManager {
 
     public async verifyCryptoDeposit(didDocument: IDIDDocument, txnId: string, fromAddress: string, amount: number, signature: string): Promise<void> {
         // Verify signature
-        const proofMessage = `txn: ${txnId}\nfrom:${fromAddress}\namount:${amount}`
+        const proofMessage = `txn: ${txnId}\nfrom: ${fromAddress}\namount: ${amount}`
         const validSig = didDocument.verifyContextSignature(proofMessage, NETWORK, CONTEXT_NAME, signature, false)
         
         if (!validSig) {
@@ -140,7 +140,7 @@ class BillingManager {
         // Verify deposit
         try {
             const result = await AlchemyManager.getTransaction(txnId)
-            const expectedValue = new Decimal128(amount.toString())
+            const expectedValue = BigInt(amount.toString())
 
             if (result.from != fromAddress || result.to != DEPOSIT_ADDRESS || result.amount != expectedValue) {
                 throw new Error('Invalid deposit transaction')
@@ -267,7 +267,8 @@ class BillingManager {
     public async hasCredits(did: string, credits: number): Promise<boolean> {
         const vdaAmount = await this.convertCreditsToVDA(credits)
         const balance = await this.getBalance(did)
-        if (BigInt(balance.toString()) < BigInt(vdaAmount)) {
+
+        if (balance < this.numberToWei(vdaAmount)) {
             return false
         }
 

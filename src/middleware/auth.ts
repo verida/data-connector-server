@@ -48,7 +48,7 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
                 const did = req.veridaNetworkConnection.appDID ? req.veridaNetworkConnection.appDID : req.veridaNetworkConnection.did
 
                 if (!BillingManager.hasCredits(did, config.credits)) {
-                    throw new Error(`Unsufficient credits. (${config.credits} required, but only ${didBalance})`)
+                    throw new Error(`Unsufficient credits. ${config.credits} required.`)
                 }
             }
         } catch(err: any) {

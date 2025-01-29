@@ -54,12 +54,8 @@ export class AuthController {
             return res.status(400).json({ error: "Missing user signature" });
         }
 
-        if (!payer) {
-            return res.status(400).json({ error: "Missing payer (user or app)" });
-        }
-
         try {
-            const authRequest = await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString(), payer.toString())
+            const authRequest = await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString())
             const authUser = new AuthUser(context)
             const authToken = await AuthServer.generateAuthToken(authRequest, authUser, sessionString)
             await UsageManager.connectAccount(authRequest.appDID, authRequest.userDID)

@@ -6,6 +6,7 @@ import { AuthTypeConfig, ContextSession, VeridaDatabaseAuthContext } from "@veri
 import CONFIG from "../../src/config"
 import { AuthRequest } from "../../src/api/rest/v1/auth/interfaces";
 import StorageEngineVerida from '@verida/client-ts/dist/src/context/engines/verida/database/engine'
+import { BillingAccountType } from "../../src/services/billing/interfaces";
 
 const VERIDA_CONTEXT = 'Verida: Vault'
 const NOW = Math.floor(Date.now() / 1000)
@@ -116,7 +117,8 @@ export async function authenticate(scopes: string[]): Promise<{
         appDID: APP_DID,
         userDID: USER_DID,
         scopes,
-        timestamp: NOW
+        timestamp: NOW,
+        payer: BillingAccountType.APP
     }
 
     const authRequest = JSON.stringify(ARO)

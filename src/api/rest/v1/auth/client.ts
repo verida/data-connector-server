@@ -36,7 +36,7 @@ export class AuthClient {
         return this.did
     }
 
-    public async verifyRequest(context: IContext, redirectUrl: string, authRequestString: string, userSig: string, payer: string): Promise<AuthRequest> {
+    public async verifyRequest(context: IContext, redirectUrl: string, authRequestString: string, userSig: string): Promise<AuthRequest> {
         await this.init()
         const account = context.getAccount()
         const signerDid = await account.did()
@@ -58,8 +58,8 @@ export class AuthClient {
             throw new Error(`Invalid user account signer on the auth request`)
         }
 
-        if (["user", "app"].indexOf(payer) === -1 || authRequest.payer != payer) {
-            throw new Error(`Invalid payer (${payer}) or mis-match with auth request`)
+        if ([BillingAccountType.APP, BillingAccountType.USER].indexOf(authRequest.payer) === -1) {
+            throw new Error(`Invalid payer (${authRequest.payer}) or mis-match with auth request`)
         }
 
         // Get third party application DID Document
