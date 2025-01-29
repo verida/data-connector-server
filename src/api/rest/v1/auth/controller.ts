@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
 import { Utils } from "../../../../utils";
 import { AuthClient } from "./client";
+import { BillingAccountType } from "../../../../services/billing/interfaces";
 import AuthServer from "./server";
 import { AuthUser } from "./user";
 import { AuthToken, ScopeType } from "./interfaces";
 import UsageManager from "../../../../services/usage/manager"
-import SCOPES, { DATABASE_LOOKUP, DATASTORE_LOOKUP, expandScopes, isKnownSchema } from "./scopes"
+import SCOPES, { DATABASE_LOOKUP, expandScopes, isKnownSchema } from "./scopes"
 import axios from "axios";
 
 type ResolvedScopePermission = ("r" | "w" | "d")
@@ -30,7 +31,7 @@ export class AuthController {
 
     public async auth(req: Request, res: Response) {
         const { context, sessionString } = await Utils.getNetworkConnectionFromRequest(req)
-        const { client_id, auth_request, redirect_uri, user_sig, state } = req.body;
+        const { client_id, auth_request, redirect_uri, user_sig, payer, state } = req.body;
 
         if (!sessionString) {
             return res.status(400).json({ error: "Invalid user session key"});
@@ -53,8 +54,12 @@ export class AuthController {
             return res.status(400).json({ error: "Missing user signature" });
         }
 
+        if (!payer) {
+            return res.status(400).json({ error: "Missing payer (user or app)" });
+        }
+
         try {
-            const authRequest = await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString())
+            const authRequest = await client.verifyRequest(context, redirect_uri.toString(), auth_request.toString(), user_sig.toString(), payer.toString())
             const authUser = new AuthUser(context)
             const authToken = await AuthServer.generateAuthToken(authRequest, authUser, sessionString)
             await UsageManager.connectAccount(authRequest.appDID, authRequest.userDID)
@@ -189,7 +194,8 @@ export class AuthController {
             const authToken = await AuthServer.createAuthToken({
                 session: sessionString,
                 scopes,
-                userDID
+                userDID,
+                payer: BillingAccountType.USER
             }, authUser, sessionString)
 
             res.send({ token: authToken });

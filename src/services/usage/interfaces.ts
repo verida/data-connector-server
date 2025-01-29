@@ -6,7 +6,7 @@ export interface UsageRequestTokens {
 }
 
 export interface UsageRequest {
-    appDID: string
+    appDID?: string
     userDID: string
     resultSize: number
     path: string

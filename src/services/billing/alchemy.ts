@@ -1,4 +1,3 @@
-import { Decimal128 } from "mongodb"
 import { Alchemy, Network } from "alchemy-sdk"
 import { Utils } from "../../utils"
 import CONFIG from "../../config"
@@ -20,7 +19,7 @@ let priceCacheExpiry: number = undefined
 export interface TransactionInfo {
     to: string
     from: string
-    amount: Decimal128
+    amount: BigInt
 }
 
 class AlchemyManager {
@@ -56,9 +55,9 @@ class AlchemyManager {
                 return
             }
 
+            const amount = BigInt(log.data)
             const from = `0x${log.topics[1].slice(26)}`; // Decode the "from" address from the topics
             const to = `0x${log.topics[2].slice(26)}`;   // Decode the "to" address from the topics
-            const amount = new Decimal128(log.data);              // Decode the "value" from the data (this will be in the smallest token unit)
 
             result = {
                 to,
@@ -74,7 +73,7 @@ class AlchemyManager {
         return result
     }
 
-    public async getVDAPrice(): Promise<Number> {
+    public async getVDAPrice(): Promise<number> {
         if (priceCache && priceCacheExpiry < Utils.nowEpoch()) {
             return priceCache
         }

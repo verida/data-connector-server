@@ -15,6 +15,7 @@
         "serverKey": "0x...",
         "testVeridaKey": "0x...",
         "testVeridaNetwork": "banksia",
+        "testServerKey": "0x...",
         "sessionSecret": "empty",
         "didClientConfig": {
             "callType": "web3",

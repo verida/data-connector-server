@@ -5,9 +5,17 @@ import { VeridaDocInterface, IContext, Network } from '@verida/types';
 import { AuthRequest } from "./interfaces"
 import CONFIG from "../../../../config"
 import { Utils } from '../../../../utils';
+import { BillingAccountType } from '../../../../services/billing/interfaces';
 
 const vdaDidResolver = getResolver()
 const didResolver = new Resolver(vdaDidResolver)
+
+const VAULT_CONTEXT_NAME = `Verida: Vault`
+
+const PAYER_TYPES = [
+    BillingAccountType.APP,
+    BillingAccountType.USER
+]
 
 export class AuthClient {
     protected did: string
@@ -28,10 +36,11 @@ export class AuthClient {
         return this.did
     }
 
-    public async verifyRequest(context: IContext, redirectUrl: string, authRequestString: string, userSig: string): Promise<AuthRequest> {
+    public async verifyRequest(context: IContext, redirectUrl: string, authRequestString: string, userSig: string, payer: string): Promise<AuthRequest> {
         await this.init()
         const account = context.getAccount()
         const signerDid = await account.did()
+        const userKeyring = await account.keyring(VAULT_CONTEXT_NAME)
 
         const authRequest: AuthRequest = JSON.parse(authRequestString)
         // Ensure `revoke-tokens` scope is never set
@@ -39,9 +48,8 @@ export class AuthClient {
             authRequest.scopes = authRequest.scopes.filter(str => str !== 'access-tokens')
         }
 
-        // Verify the authRequest is signed by this.did
-        // console.log('Verify the authRequest is signed by this.did')
-        const isValidUserSig = this.didDocument.verifyContextSignature(authRequestString, <Network> CONFIG.verida.environment, `Verida: Vault`, userSig, false)
+        // Verify the authRequest is signed by the user
+        const isValidUserSig = await userKeyring.verifySig(authRequestString, userSig)
         if (!isValidUserSig) {
             throw new Error(`Invalid user account signature on the auth request`)
         }
@@ -50,19 +58,23 @@ export class AuthClient {
             throw new Error(`Invalid user account signer on the auth request`)
         }
 
-        // Get third party application DID Document
-        if (authRequest.appDID) {
-            const response = await didResolver.resolve(authRequest.appDID)
-            const appDidDocument = new DIDDocument(<VeridaDocInterface> response.didDocument!)
-
-            // @todo: Verify DIDDocument has serviceEndpoint of type `VeridaOAuthServer` that matches redirectUrl
-            const didDoc = appDidDocument.export()
-            // console.log(didDoc)
-            let serverFound = false
-            for (const service of didDoc.service) {
-                // console.log(service)
-            }
+        if (["user", "app"].indexOf(payer) === -1 || authRequest.payer != payer) {
+            throw new Error(`Invalid payer (${payer}) or mis-match with auth request`)
         }
+
+        // Get third party application DID Document
+        // if (authRequest.appDID) {
+        //     const response = await didResolver.resolve(authRequest.appDID)
+        //     const appDidDocument = new DIDDocument(<VeridaDocInterface> response.didDocument!)
+
+        //     // @todo: Verify DIDDocument has serviceEndpoint of type `VeridaOAuthServer` that matches redirectUrl
+        //     const didDoc = appDidDocument.export()
+        //     // console.log(didDoc)
+        //     let serverFound = false
+        //     for (const service of didDoc.service) {
+        //         // console.log(service)
+        //     }
+        // }
 
         // Verify clientSecret timestamp is within minutes of current timestamp
         const timeoutMins = CONFIG.verida.OAuthRequestTimeoutMins

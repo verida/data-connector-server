@@ -3,6 +3,18 @@ import UsageManager from "../../../../services/usage/manager"
 import BillingManager from "../../../../services/billing/manager"
 import Alchemy from "../../../../services/billing/alchemy"
 import { BillingTxnType } from "../../../../services/billing/interfaces";
+import { Utils } from "alchemy-sdk";
+
+function bigintReplacer(key: string, value: any) {
+    if (typeof value === 'bigint') {
+      return value.toString(); // Convert BigInt to string
+    }
+    return value;
+  }
+
+function serialize(data: any): string {
+    return JSON.parse(JSON.stringify(data, bigintReplacer))
+}
 
 export class AppController {
 
@@ -17,9 +29,9 @@ export class AppController {
     public async accountCount(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
         
-        return res.json({
+        return res.json(serialize({
             count: await UsageManager.getAccountCount(did)
-        })
+        }))
     }
 
     public async usage(req: Request, res: Response) {
@@ -27,25 +39,26 @@ export class AppController {
         const startDateTime = req.params.start ? req.params.start.toString() : undefined
         const endDateTime = req.params.end ? req.params.end.toString() : undefined
         
-        return res.json({
+        return res.json(serialize({
             usage: await UsageManager.getUsageStats(did, startDateTime, endDateTime)
-        })
+        }))
     }
 
     public async balance(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
         
-        return res.json({
-            balance: await BillingManager.getBalance(did)
-        })
+        const balance = await BillingManager.getBalance(did)
+        return res.json(serialize({
+            balance
+        }))
     }
 
     public async deposits(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
         
-        return res.json({
+        return res.json(serialize({
             deposits: await BillingManager.getDeposits(did)
-        })
+        }))
     }
 
     public async depositCrypto(req: Request, res: Response) {
@@ -62,15 +75,11 @@ export class AppController {
         try {
             await BillingManager.verifyCryptoDeposit(didDocument, txnId, fromAddress, amount, signature)
 
-            const tokenPrice = await Alchemy.getVDAPrice()
-            const depositAmount = parseFloat(tokenPrice.toString())
-
-            const credits = parseFloat((amount / depositAmount).toString())
 
             await BillingManager.deposit({
                 did,
                 txnId,
-                credits: parseFloat(credits.toString()),
+                tokens: Utils.parseUnits(amount.toString(), 18).toString(),
                 description: 'Account deposit',
                 txnType: BillingTxnType.CRYPTO
             })

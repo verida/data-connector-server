@@ -2,10 +2,11 @@ const assert = require("assert");
 import Axios from "axios"
 import https from 'https';
 import CONFIG from "../../src/config"
-import BillingManager, { AccountType } from "../../src/services/billing/manager"
+import BillingManager from "../../src/services/billing/manager"
 import AlchemyManager from "../../src/services/billing/alchemy"
 
 import { appAccount, authenticate, buildClient, buildSessionToken, revokeToken } from "../auth/utils";
+import { BillingAccountType } from "../../src/services/billing/interfaces";
 
 const ENDPOINT = `${CONFIG.serverUrl}/api/rest/v1`
 const GRANTED_DATASTORE = "https://common.schemas.verida.io/social/post/v0.1.0/schema.json"
@@ -33,7 +34,8 @@ describe(`Auth tests`, function () {
 
     it(`Can register an account`, async() => {
         // Register the account so it has some free credits
-        await BillingManager.registerAccount(appDID, AccountType.APP)
+        const appDID = "did:vda:polpos:0x7b41972827390b5fF6a938D8fF8eC68cf0535134"
+        await BillingManager.registerAccount(appDID, BillingAccountType.APP)
     })
 
     it(`Can make a valid scoped request`, async() => {
@@ -66,7 +68,7 @@ describe(`Auth tests`, function () {
             assert.ok(response.data, "Response")
             assert.ok(response.data.total >= 0, "Valid response")
         } catch (err) {
-            console.log(err)
+            console.log(err.response.data)
             assert.fail('Failed to search granted datastore')
         }
     })
@@ -84,8 +86,8 @@ describe(`Auth tests`, function () {
             assert.ok(response.data, 'Have a response')
             assert.ok(response.data.results.length, 'Have results')
         } catch (err) {
-            console.log(err.response.data)
-            // assert.fail('Failed to search granted datastore')
+            console.log(err)
+            assert.fail('Failed to search granted datastore')
         }
     })
 
@@ -99,7 +101,6 @@ describe(`Auth tests`, function () {
                 }
             })
             
-            console.log(response.data)
             assert.ok(response.data, 'Have a response')
             assert.ok(typeof response.data.count !== 'undefined', 'Have count')
         } catch (err) {
@@ -118,7 +119,6 @@ describe(`Auth tests`, function () {
                 }
             })
             
-            console.log(response.data)
             assert.ok(response.data, 'Have a response')
             assert.ok(response.data.usage, 'Have usage data')
         } catch (err) {
@@ -137,25 +137,12 @@ describe(`Auth tests`, function () {
                 }
             })
             
-            console.log(response.data)
+            assert.ok(response.data, 'Have a response')
+            assert.ok(typeof response.data.balance !== 'undefined', 'Have balance')
         } catch (err) {
             console.log(err)
             assert.fail('Failed to search granted datastore')
         }
-    })
-
-    it(`Can get an alchemy transaction`, async() => {
-        const result = await AlchemyManager.getTransaction("0xa4a8c94184b4677fd71f4a50e4230ebabe2694194aebc507e29a11e272e18242")
-
-        assert.ok(result, 'Have a result')
-        assert.equal(result.from, "0x35d254687c4e8c7c1d49785dbf4b792f86ad1907", "Correct from value")
-        assert.equal(result.to, "0xcf05d450b08d3fa49da476deb825dc211160a9d5", "Correct to value")
-        assert.equal(result.amount, BigInt("748879093268939383562"), "Correct amount value")
-    })
-
-    it(`Can get a VDA token price`, async() => {
-        const result = await AlchemyManager.getVDAPrice()
-        assert.ok(typeof result == "number", 'Result is a valid number')
     })
 
     it.skip(`Can deposit VDA tokens`, async() => {

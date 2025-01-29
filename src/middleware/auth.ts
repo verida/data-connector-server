@@ -46,9 +46,8 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
             // Check we have sufficient credits
             if (config.credits && BillingManager.isEnabled) {
                 const did = req.veridaNetworkConnection.appDID ? req.veridaNetworkConnection.appDID : req.veridaNetworkConnection.did
-                const didBalance = await BillingManager.getBalance(did)
 
-                if (didBalance < config.credits) {
+                if (!BillingManager.hasCredits(did, config.credits)) {
                     throw new Error(`Unsufficient credits. (${config.credits} required, but only ${didBalance})`)
                 }
             }
@@ -97,7 +96,7 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
                     request.credits = config.credits
                 }
 
-                UsageManager.logRequest(request)
+                UsageManager.logRequest(request, req.veridaNetworkConnection.payer)
             }
 
             // Call the original send method to send the response

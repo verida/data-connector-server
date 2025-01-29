@@ -2,6 +2,7 @@ import { Collection, MongoClient } from "mongodb"
 import CONFIG from "../../config"
 import { UsageAccount, UsageRequest, UsageStats } from "./interfaces"
 import BillingManager from "../billing/manager"
+import { BillingAccountType } from "../billing/interfaces"
 
 const DSN = CONFIG.verida.centralDb.dsn
 const DB_NAME = CONFIG.verida.centralDb.dbName
@@ -41,7 +42,7 @@ class UsageManager {
         }
     }
 
-    public async logRequest(usageRequest: UsageRequest) {
+    public async logRequest(usageRequest: UsageRequest, payer: BillingAccountType) {
         if (!await this.init()) {
             return
         }
@@ -53,7 +54,7 @@ class UsageManager {
         usageRequest.insertedAt = nowTimestamp()
         await requestCollection.insertOne(usageRequest)
 
-        await BillingManager.handleRequest(usageRequest)
+        await BillingManager.handleRequest(usageRequest, payer)
     }
 
     public async getRequests(did: string): Promise<any> {

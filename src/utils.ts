@@ -9,6 +9,7 @@ import { AutoAccount, SessionAccount } from '@verida/account-node'
 import { Request } from 'express'
 import { Service as AccessService } from './api/rest/v1/access/service'
 import VeridaOAuthServer from './api/rest/v1/auth/server'
+import { BillingAccountType } from './services/billing/interfaces'
 
 export const VERIDA_DID_REGEXP =
   /did:vda:(devnet|mainnet|testnet):0x[0-9a-fA-F]{40}/;
@@ -40,6 +41,7 @@ export interface NetworkConnection {
     tokenId?: string
     // Limit read access to these datastore schemas (built from scopes)
     limitDatastoreSchemas?: string[]
+    payer?: BillingAccountType
 }
 
 export interface NetworkConnectionRequestOptions {
@@ -70,6 +72,8 @@ export class Utils {
         const authHeader = req.headers.authorization
         let limitDatastoreSchemas = undefined
         let appDID = undefined
+        let payer = undefined
+
         if (authHeader) {
             // Extract the Bearer token
             if (authHeader.split(' ').length < 2) {
@@ -90,6 +94,7 @@ export class Utils {
             tokenId = authTokenData.tokenId
             limitDatastoreSchemas = authTokenData.readAccessDatastoreSchemas
             appDID = authTokenData.appDID
+            payer = authTokenData.payer
         }
 
         const apiKey = req.header('X-API-Key');
@@ -139,6 +144,10 @@ export class Utils {
 
         if (appDID) {
             networkConnection.appDID = appDID
+        }
+
+        if (payer) {
+            networkConnection.payer = payer
         }
 
         return networkConnection
@@ -366,8 +375,12 @@ export class Utils {
       return did
     }
 
-    public static nowTimestamp() {
+    public static nowTimestamp(): string {
         return (new Date()).toISOString()
+    }
+
+    public static nowEpoch(): number {
+        return Math.floor(Date.now() / 1000)
     }
 
     public static buildPermissions(req: Request) {

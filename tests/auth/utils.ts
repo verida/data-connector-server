@@ -19,7 +19,7 @@ export const userAccount = new AutoAccount({
 })
 
 export const appAccount = new AutoAccount({
-    privateKey: CONFIG.verida.serverKey,
+    privateKey: CONFIG.verida.testServerKey,
     network: CONFIG.verida.testVeridaNetwork,
     didClientConfig: CONFIG.verida.didClientConfig
 })
@@ -119,16 +119,18 @@ export async function authenticate(scopes: string[]): Promise<{
         timestamp: NOW
     }
 
+    const authRequest = JSON.stringify(ARO)
+
     // Sign the ARO to generate a consent signature verifying the user account consents to this request
     const userKeyring = await userAccount.keyring(VERIDA_CONTEXT)
-    const user_sig = await userKeyring.sign(ARO)
+    const user_sig = await userKeyring.sign(authRequest)
 
     // Add custom state data that will be passed back to the third party application on successful login
     const state = {}
 
     const request = {
         client_id: APP_DID,
-        auth_request: JSON.stringify(ARO),
+        auth_request: authRequest,
         redirect_uri: APP_REDIRECT_URI,
         user_sig,
         // app_sig,

@@ -1,8 +1,10 @@
+import { BillingAccountType } from "../../../../services/billing/interfaces"
 
 export interface AuthRequest {
     appDID?: string
     userDID: string
     scopes: string[]
+    payer?: BillingAccountType
     timestamp: number
 }
 
@@ -16,6 +18,7 @@ export interface AuthToken {
 export interface APIKeyData {
     session: string,
     scopes: string[]
+    payer: BillingAccountType
     userDID: string
     appDID?: string
 }
