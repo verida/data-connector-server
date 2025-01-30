@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import UsageManager from "../../../../services/usage/manager"
 import BillingManager from "../../../../services/billing/manager"
+import AlchemyManager from "../../../../services/billing/alchemy"
 import Alchemy from "../../../../services/billing/alchemy"
-import { BillingTxnType } from "../../../../services/billing/interfaces";
+import { BillingAccountType, BillingTxnType } from "../../../../services/billing/interfaces";
 import { Utils } from "alchemy-sdk";
 
 function bigintReplacer(key: string, value: any) {
@@ -17,6 +18,30 @@ function serialize(data: any): string {
 }
 
 export class AppController {
+
+    public async getAccount(req: Request, res: Response) {
+        const { did } = req.veridaNetworkConnection
+
+        const account = await BillingManager.getAccount(did)
+
+        if (!account) {
+            return res.status(404).json({
+                success: false
+            })
+        }
+        
+        return res.json({
+            account
+        })
+    }
+
+    public async register(req: Request, res: Response) {
+        const { did } = req.veridaNetworkConnection
+        
+        return res.json({
+            success: await BillingManager.registerAccount(did, BillingAccountType.APP)
+        })
+    }
 
     public async requests(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
@@ -53,6 +78,13 @@ export class AppController {
         }))
     }
 
+    public async vdaPrice(req: Request, res: Response) {
+        const vdaPrice = await AlchemyManager.getVDAPrice()
+        return res.json({
+            price: vdaPrice
+        })
+    }
+
     public async deposits(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
         
@@ -84,7 +116,7 @@ export class AppController {
                 txnType: BillingTxnType.CRYPTO
             })
         } catch (err) {
-            return res.status(500).send({
+            return res.status(400).send({
                 "error": err.message
             })
         }

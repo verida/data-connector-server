@@ -32,6 +32,10 @@ class AlchemyManager {
 
     public async getTransaction(txnHash: string): Promise<TransactionInfo> {
         const response = await this.connection.transact.getTransaction(txnHash)
+        if (!response) {
+            throw new Error('Transaction not found')
+        }
+
         const block = response.blockNumber
         const tokenAddress = VDA_ADDRESS
         let result: TransactionInfo

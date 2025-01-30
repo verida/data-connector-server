@@ -38,7 +38,22 @@ class BillingManager {
         return this.enabled
     }
 
-    public async registerAccount(did: string, type: BillingAccountType): Promise<void> {
+    public async getAccount(did: string): Promise<BillingAccount | undefined> {
+        if (!await this.init()) {
+            throw new Error('Usage not available')
+        }
+
+        did = this.normalizeDID(did)
+
+        const collection = await this.getCollection(ACCOUNTS_COLLECTION)
+        const result = await collection.findOne<BillingAccount>({
+            did
+        })
+
+        return result
+    }
+
+    public async registerAccount(did: string, type: BillingAccountType): Promise<boolean> {
         if (!await this.init()) {
             return
         }
@@ -52,17 +67,26 @@ class BillingManager {
             tokens = this.numberToWei(USER_DID_FREE_CREDITS)
         }
 
-        await this.ensureAccountExists(did)
+        const accountCreated = await this.ensureAccountExists(did)
 
-        await this.deposit({
-            did,
-            tokens: tokens.toString(),
-            description: "Free welcome credits",
-            txnType: BillingTxnType.FREE
-        })
+        if (accountCreated) {
+            await this.deposit({
+                did,
+                tokens: tokens.toString(),
+                description: "Free welcome credits",
+                txnType: BillingTxnType.FREE
+            })
+        }
+
+        return accountCreated
     }
 
-    public async ensureAccountExists(did: string): Promise<void> {
+    /**
+     * 
+     * @param did 
+     * @returns boolean indicating if the account was created
+     */
+    public async ensureAccountExists(did: string): Promise<boolean> {
         did = this.normalizeDID(did)
         const collection = await this.getCollection(ACCOUNTS_COLLECTION)
         try {
@@ -74,10 +98,12 @@ class BillingManager {
                 },
                 insertedAt: nowTimestamp()
             })
+
+            return true
         } catch (err) {
             if (err.message.match('duplicate key error')) {
                 // Already exists
-                return
+                return false
             }
 
             throw new Error(`Unable to create account`)
@@ -138,15 +164,22 @@ class BillingManager {
         }
 
         // Verify deposit
+        let result
         try {
-            const result = await AlchemyManager.getTransaction(txnId)
-            const expectedValue = BigInt(amount.toString())
-
-            if (result.from != fromAddress || result.to != DEPOSIT_ADDRESS || result.amount != expectedValue) {
-                throw new Error('Invalid deposit transaction')
-            }
+            result = await AlchemyManager.getTransaction(txnId)
         } catch (err) {
-            throw new Error('Invalid deposit transaction')
+            console.error(err.message)
+            throw new Error(`Invalid deposit: ${err.message}`)
+        }
+
+        const expectedValue = this.numberToWei(amount)
+
+        if (result.from.toLowerCase() != fromAddress.toLowerCase()) {
+            throw new Error(`From address doesn't match transaction`)
+        } else if (result.to.toLowerCase() != DEPOSIT_ADDRESS.toLowerCase()) {
+            throw new Error(`Incorrect deposit address`)
+        } else if (result.amount != expectedValue) {
+            throw new Error(`VDA amount does not match transaction`)
         }
     }
 
