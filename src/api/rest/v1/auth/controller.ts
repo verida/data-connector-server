@@ -31,7 +31,7 @@ export class AuthController {
 
     public async auth(req: Request, res: Response) {
         const { context, sessionString } = await Utils.getNetworkConnectionFromRequest(req)
-        const { client_id, auth_request, redirect_uri, user_sig, payer, state } = req.body;
+        const { client_id, auth_request, redirect_uri, user_sig, state } = req.body;
 
         if (!sessionString) {
             return res.status(400).json({ error: "Invalid user session key"});
@@ -131,12 +131,15 @@ export class AuthController {
             const authToken = decodeURIComponent(req.query.tokenId.toString())
             req.headers.authorization = `Bearer ${authToken}`
 
-            const { context, tokenId } = await Utils.getNetworkConnectionFromRequest(req, { ignoreScopeCheck: true })
+            const { context, tokenId, did } = await Utils.getNetworkConnectionFromRequest(req, { ignoreScopeCheck: true })
         
             const authUser = new AuthUser(context)
             const authTokenObj: AuthToken = await authUser.getAuthToken(tokenId)
 
-            res.json({ token: authTokenObj });
+            res.json({ token: {
+                did,
+                ...authTokenObj
+            } });
           } catch (err) {
             if (err.message.match('Invalid token')) {
               return res.status(403).json({ error: err.message })

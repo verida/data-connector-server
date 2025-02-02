@@ -4,7 +4,6 @@ import { Resolver } from 'did-resolver';
 import { VeridaDocInterface, IContext, Network } from '@verida/types';
 import { AuthRequest } from "./interfaces"
 import CONFIG from "../../../../config"
-import { Utils } from '../../../../utils';
 import { BillingAccountType } from '../../../../services/billing/interfaces';
 
 const vdaDidResolver = getResolver()
