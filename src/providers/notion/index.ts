@@ -4,7 +4,7 @@ import Base from "../BaseProvider";
 import { NotionProviderConfig } from "./interfaces";
 import { ConnectionCallbackResponse, PassportProfile } from "../../interfaces";
 import passport from "passport";
-import NotionStrategy from "./NotionStrategy"; // Import the corrected NotionStrategy class
+import NotionStrategy from "./NotionStrategy"; 
 
 export default class NotionProvider extends Base {
   protected config: NotionProviderConfig;
@@ -44,9 +44,6 @@ export default class NotionProvider extends Base {
         "notion",
         { failureRedirect: "/failure/notion", failureMessage: true },
         (err: any, user: any) => {
-
-            console.log("++++++")
-            console.log(user)
           if (err) {
             return reject(err);
           }
@@ -54,12 +51,12 @@ export default class NotionProvider extends Base {
             return reject(new Error("No user data returned from Notion"));
           }
 
-          const profile = this.formatProfile(user.profile);
+          const profile = this.formatProfile(user);
 
           resolve({
             id: profile.id,
-            accessToken: user.accessToken,
-            refreshToken: user.refreshToken,
+            accessToken: user.access_token,
+            refreshToken: user.access_token, // Notion does not provide refresh tokens currently
             profile: {
               username: profile.connectionProfile.username,
               ...profile,
@@ -87,21 +84,22 @@ export default class NotionProvider extends Base {
     );
   }
 
-  private formatProfile(notionProfile: any): PassportProfile {
-    const email = notionProfile.email || null;
+  private formatProfile(notionData: any): PassportProfile {
+    const owner = notionData.owner?.user;
+    const email = owner?.person?.email || null;
 
     return {
-      id: notionProfile.id,
+      id: owner?.id || "", 
       provider: this.getProviderName(),
-      displayName: notionProfile.name || email || notionProfile.id,
+      displayName: owner?.name || email || owner?.id || "Unknown",
       name: {
         familyName: "",
-        givenName: notionProfile.name || "",
+        givenName: owner?.name || "",
       },
-      photos: [],
+      photos: owner?.avatar_url ? [{ value: owner.avatar_url }] : [],
       connectionProfile: {
-        username: email ? email.split("@")[0] : notionProfile.id,
-        readableId: email || notionProfile.id,
+        username: email ? email.split("@")[0] : owner?.id || "unknown",
+        readableId: email || owner?.id || "unknown",
         email: email,
         verified: true,
       },
