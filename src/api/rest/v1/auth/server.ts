@@ -40,7 +40,7 @@ class AuthServer {
 
         try {
             const authTokenId = token.substring(0,36)
-            const part1 = token.substring(36)
+            const part1 = token.substring(36).replace('_', '+')
 
             const serverKeyDb = await this.context.openDatabase('api_keys')
             // @todo: fix typing
@@ -66,7 +66,7 @@ class AuthServer {
             for (const scope of requestedScopes) {
                 if (resolvedScopes && resolvedScopes.indexOf(scope) === -1) {
                     // Scope not found
-                    throw new Error(`Invalid token (invalid scope: ${scope})`)
+                    throw new Error(`Invalid permission (Missing scope: ${scope})`)
                 }
             }
 
@@ -129,7 +129,8 @@ class AuthServer {
 
         await authUser.saveAuthToken(authToken)
 
-        const apiKey = `${apiKeyId}${part1}`
+        // Note: + is replaced with _ as "+" creates issues in query strings
+        const apiKey = `${apiKeyId}${part1.replace('+', '_')}`
         return apiKey
     }
 
