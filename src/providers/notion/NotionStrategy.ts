@@ -3,7 +3,13 @@ import https from "https";
 import { URL } from "url";
 import passport from "passport";
 
-export default class NotionStrategy {
+interface NotionStrategyOptions {
+    clientID: string;
+    clientSecret: string;
+    callbackURL: string;
+}
+
+export default class NotionStrategy extends passport.Strategy {
     name = "notion";
     private _clientID: string;
     private _clientSecret: string;
@@ -11,7 +17,8 @@ export default class NotionStrategy {
     private _authorizationURL: string;
     private _tokenURL: string;
 
-    constructor({ clientID, clientSecret, callbackURL }: { clientID: string; clientSecret: string; callbackURL: string }) {
+    constructor({ clientID, clientSecret, callbackURL }: NotionStrategyOptions) {
+        super();
         if (!clientID || !clientSecret || !callbackURL) {
             throw new TypeError("Missing required options for NotionStrategy");
         }
@@ -22,43 +29,27 @@ export default class NotionStrategy {
         this._tokenURL = "https://api.notion.com/v1/oauth/token";
     }
 
-    async authenticate(req: Request, options: any) {
+    async authenticate(req: Request, options?: any) {
         options = options || {};
-        if (req.query && req.query.code) {
+        if (req.query?.code) {
             try {
                 const oauthData = await this.getOAuthAccessToken(req.query.code as string);
                 
                 if (oauthData.owner.type !== "user") {
-                    throw new Error(`Notion API token not owned by user, instead: ${oauthData.owner.type}`);
+                    return this.fail(`Notion API token not owned by user, instead: ${oauthData.owner.type}`);
                 }
 
-                return oauthData;
+                return this.success(oauthData);
             } catch (error) {
-                this.error(error as Error);
+                return this.error(error);
             }
         } else {
             const authUrl = new URL(this._authorizationURL);
             authUrl.searchParams.set("client_id", this._clientID);
             authUrl.searchParams.set("redirect_uri", this._callbackURL);
             authUrl.searchParams.set("response_type", "code");
-            this.redirect(authUrl.toString());
+            return this.redirect(authUrl.toString());
         }
-    }
-
-    error(err: any) {
-        throw new Error("Error occurred in NotionStrategy");
-    }
-
-    fail(info: any) {
-        throw new Error("Failure in NotionStrategy");
-    }
-
-    success(user: any) {
-        throw new Error("Success callback not implemented.");
-    }
-
-    redirect(url: string) {
-        throw new Error("Redirect callback not implemented.");
     }
 
     private async getOAuthAccessToken(code: string): Promise<any> {
