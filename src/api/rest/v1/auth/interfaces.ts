@@ -33,4 +33,5 @@ export interface Scope {
     type: ScopeType
     description: string
     userNote?: string
+    credits?: number
 }

@@ -7,6 +7,7 @@ import { AuthUser } from "./user";
 import { AuthToken, ScopeType } from "./interfaces";
 import UsageManager from "../../../../services/usage/manager"
 import SCOPES, { DATABASE_LOOKUP, expandScopes, isKnownSchema } from "./scopes"
+import CONFIG from "../../../../config"
 import axios from "axios";
 
 type ResolvedScopePermission = ("r" | "w" | "d")
@@ -19,6 +20,7 @@ interface ResolvedScope {
     description?: string
     uri?: string
     knownSchema?: boolean
+    credits: number
 }
 
 const SCHEMA_CACHE: Record<string, {
@@ -227,6 +229,8 @@ export class AuthController {
             const scopeType = <ScopeType> scopeParts[0]
             let scopeId = `${scopeType}`
 
+            const credits = CONFIG.verida.billing.routeCredits[scope] ? CONFIG.verida.billing.routeCredits[scope] : CONFIG.verida.billing.defaultCredits
+
             switch (scopeType) {
                 case ScopeType.API:
                     if (!SCOPES[scope]) {
@@ -241,6 +245,7 @@ export class AuthController {
                     progressScopes[scopeId] = {
                         type: scopeType,
                         name: apiGrant,
+                        credits,
                         description: SCOPES[scope].userNote
                     }
 
@@ -266,6 +271,7 @@ export class AuthController {
                             type: scopeType,
                             name: dbGrant,
                             permissions,
+                            credits,
                             description: DATABASE_LOOKUP[`db:${dbGrant}`]?.description
                         }
                     }
@@ -316,6 +322,7 @@ export class AuthController {
                             name: schemaTitle,
                             namePlural: schemaTitlePlural,
                             uri: schemaUrl,
+                            credits,
                             knownSchema: isKnownSchema(schemaUrl)
                         }
                     }

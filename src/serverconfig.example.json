@@ -64,7 +64,14 @@
             "userFreeCredits": 50,
             "defaultCredits": 1,
             "userCreditsPerRequest": 0.5,
-            "depositAddress": ""
+            "depositAddress": "",
+            "routeCredits": {
+                "api:llm-prompt": 2,
+                "api:llm-agent-prompt": 5,
+                "api:llm-profile-prompt": 10,
+                "api:search-universal": 2,
+                "api:search-chat-threads": 2
+            }
         },
         "alchemy": {
             "key": ""

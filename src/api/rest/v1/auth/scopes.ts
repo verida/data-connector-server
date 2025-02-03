@@ -1,4 +1,7 @@
 import { Scope, ScopeType } from "./interfaces"
+import CONFIG from "../../../../config"
+
+const DEFAULT_CREDITS = CONFIG.verida.billing.defaultCredits
 
 interface ScopeInfo {
     uri?: string
@@ -266,7 +269,6 @@ const SCOPES: Record<string, Scope> = {
         description: "Run a LLM prompt to generate a profile based on user data",
         userNote: `Run a LLM prompt to generate a profile based on user data`
     },
-    
 
     "api:search-chat-threads": {
         type: ScopeType.API,
@@ -313,6 +315,23 @@ for (const datastoreId in DATASTORE_LOOKUP) {
     SCOPES[`ds:rwd:${datastoreId}`] = {
         type: ScopeType.DATASTORE,
         description: `Read, write and delete access. ${datastore.description}. See ${datastore.uri}`
+    }
+}
+
+// Add credit info to API scopes
+for (const scope in SCOPES) {
+    if (SCOPES[scope].type == ScopeType.API) {
+        if (CONFIG.verida.billing.routeCredits[scope]) {
+            SCOPES[scope] = {
+                ...SCOPES[scope],
+                credits: CONFIG.verida.billing.routeCredits[scope]
+            }
+        } else {
+            SCOPES[scope] = {
+                ...SCOPES[scope],
+                credits: DEFAULT_CREDITS
+            }
+        }
     }
 }
 
