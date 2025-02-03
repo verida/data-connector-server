@@ -1,11 +1,14 @@
 import { Collection, MongoClient } from "mongodb"
 import CONFIG from "../../config"
 import { UsageAccount, UsageRequest, UsageStats } from "./interfaces"
+import BillingManager from "../billing/manager"
+import { BillingAccountType } from "../billing/interfaces"
 
-const DSN = CONFIG.verida.usageDb.dsn
-const DB_NAME = CONFIG.verida.usageDb.dbName
-const ACCOUNTS_COLLECTION = CONFIG.verida.usageDb.accountsCollection
-const REQUEST_COLLECTION = CONFIG.verida.usageDb.requestsCollection
+const DSN = CONFIG.verida.centralDb.dsn
+const DB_NAME = CONFIG.verida.centralDb.dbName
+const APP_USERS_COLLECTION = CONFIG.verida.centralDb.appUsersCollection
+const REQUEST_COLLECTION = CONFIG.verida.centralDb.requestsCollection
+const ACCOUNT_COLLECTION = CONFIG.verida.centralDb.accountsCollection
 
 export function nowTimestamp() {
     return new Date().toISOString()
@@ -21,13 +24,12 @@ class UsageManager {
         }
 
         const usageAccount: UsageAccount = {
-            appDID,
-            userDID,
+            appDID: this.normalizeDID(appDID),
+            userDID: this.normalizeDID(userDID),
             insertedAt: nowTimestamp()
         }
 
-        const collection = await this.getCollection(ACCOUNTS_COLLECTION)
-
+        const collection = await this.getCollection(APP_USERS_COLLECTION)
         try {
             await collection.insertOne(usageAccount)
         } catch (err) {
@@ -40,15 +42,19 @@ class UsageManager {
         }
     }
 
-    public async logRequest(usageRequest: UsageRequest) {
+    public async logRequest(usageRequest: UsageRequest, payer: BillingAccountType) {
         if (!await this.init()) {
             return
         }
 
-        const collection = await this.getCollection(REQUEST_COLLECTION)
+        usageRequest.appDID = usageRequest.appDID ? this.normalizeDID(usageRequest.appDID) : usageRequest.appDID
+        usageRequest.userDID = usageRequest.userDID ? this.normalizeDID(usageRequest.userDID) : usageRequest.userDID
 
+        const requestCollection = await this.getCollection(REQUEST_COLLECTION)
         usageRequest.insertedAt = nowTimestamp()
-        await collection.insertOne(usageRequest)
+        await requestCollection.insertOne(usageRequest)
+
+        await BillingManager.handleRequest(usageRequest, payer)
     }
 
     public async getRequests(did: string): Promise<any> {
@@ -56,8 +62,12 @@ class UsageManager {
             throw new Error('Usage not available')
         }
 
+        did = this.normalizeDID(did)
+
         const collection = await this.getCollection(REQUEST_COLLECTION)
-        return collection.find({}).toArray()
+        return await collection.find({
+            appDID: did
+        }).toArray()
     }
 
     public async getAccountCount(did: string): Promise<number> {
@@ -65,9 +75,9 @@ class UsageManager {
             throw new Error('Usage not available')
         }
 
-        const collection = await this.getCollection(ACCOUNTS_COLLECTION)
+        const collection = await this.getCollection(APP_USERS_COLLECTION)
         return collection.countDocuments({
-            appDID: did
+            appDID: this.normalizeDID(did)
         })
     }
 
@@ -75,6 +85,8 @@ class UsageManager {
         if (!await this.init()) {
             throw new Error('Usage not available')
         }
+
+        did = this.normalizeDID(did)
 
         const match: any = {
             appDID: did
@@ -136,8 +148,8 @@ class UsageManager {
                 return
             }
 
-            const accountCollection = await this.getCollection(ACCOUNTS_COLLECTION)
-            await accountCollection.createIndex({
+            const appUsersCollection = await this.getCollection(APP_USERS_COLLECTION)
+            await appUsersCollection.createIndex({
                 appDID: 1,
                 userDID: 1
             }, {
@@ -188,6 +200,10 @@ class UsageManager {
         }
 
         return true
+    }
+
+    private normalizeDID(did: string) {
+        return did.replace('mainnet', 'polpos')
     }
 }
 

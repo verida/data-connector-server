@@ -1,13 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { NetworkConnectionRequestOptions, Utils } from '../utils';
 import UsageManager from "../services/usage/manager"
+import BillingManager from "../services/billing/manager"
 import { UsageRequest } from '../services/usage/interfaces';
 
 export interface AuthMiddlewareConfig {
     sessionRequired?: boolean
     scopes?: string[]
-    dbScope?: "r" | "w" | "d",
-    dsScope?: "r" | "w" | "d",
+    dbScope?: "r" | "w" | "d"
+    dsScope?: "r" | "w" | "d"
+    credits?: number
     options?: NetworkConnectionRequestOptions
 }
 
@@ -39,6 +41,15 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
             // Ensure session is provided if required
             if (config.sessionRequired && !req.veridaNetworkConnection.sessionString) {
                 throw new Error(`Session is required`)
+            }
+
+            // Check we have sufficient credits
+            if (config.credits && BillingManager.isEnabled) {
+                const did = req.veridaNetworkConnection.appDID ? req.veridaNetworkConnection.appDID : req.veridaNetworkConnection.did
+
+                if (!BillingManager.hasCredits(did, config.credits)) {
+                    throw new Error(`Unsufficient credits. ${config.credits} required.`)
+                }
             }
         } catch(err: any) {
             // do we log this?
@@ -81,7 +92,11 @@ export default function AuthMiddleware(config: AuthMiddlewareConfig = {}) {
                     // Not JSON response, so ignore
                 }
 
-                UsageManager.logRequest(request)
+                if (config.credits) {
+                    request.credits = config.credits
+                }
+
+                UsageManager.logRequest(request, req.veridaNetworkConnection.payer)
             }
 
             // Call the original send method to send the response
