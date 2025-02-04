@@ -1,4 +1,13 @@
 
+2024-02-04 (v1.0.0)
+------------------
+
+- Feature: Add support for API request usage tracking
+- Feature: Support for depositing VDA for adding credits
+- Feature: Support schema URI in in profile prompt endpoint
+- Feature: Support new auth token based authentication
+- Feature: Support auth token tracking who is paying (user or app)
+
 2024-12-24 (v0.3.0)
 ------------------
 

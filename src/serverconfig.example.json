@@ -12,8 +12,10 @@
         },
         "mode": "development",
         "environment": "banksia",
+        "serverKey": "0x...",
         "testVeridaKey": "0x...",
         "testVeridaNetwork": "banksia",
+        "testServerKey": "0x...",
         "sessionSecret": "empty",
         "didClientConfig": {
             "callType": "web3",
@@ -48,9 +50,36 @@
             "defaultProvider": "bedrock",
             "defaultModel": "LLAMA3.1_70B"
         },
+        "centralDb": {
+            "dsn": "",
+            "dbName": "dcs",
+            "appUsersCollection": "appUsers",
+            "requestsCollection": "requests",
+            "accountsCollection": "accounts",
+            "depositsCollection": "deposits"
+        },
+        "billing": {
+            "enabled": false,
+            "appFreeCredits": 200,
+            "userFreeCredits": 50,
+            "defaultCredits": 1,
+            "userCreditsPerRequest": 0.5,
+            "depositAddress": "",
+            "routeCredits": {
+                "api:llm-prompt": 2,
+                "api:llm-agent-prompt": 5,
+                "api:llm-profile-prompt": 10,
+                "api:search-universal": 2,
+                "api:search-chat-threads": 2
+            }
+        },
+        "alchemy": {
+            "key": ""
+        },
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15,
-        "handlerTimeoutMins": 15
+        "handlerTimeoutMins": 15,
+        "OAuthRequestTimeoutMins": 2
     },
     "providers": {
         "mock": {
