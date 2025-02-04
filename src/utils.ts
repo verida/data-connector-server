@@ -10,6 +10,7 @@ import { Request } from 'express'
 import { Service as AccessService } from './api/rest/v1/access/service'
 import VeridaOAuthServer from './api/rest/v1/auth/server'
 import { BillingAccountType } from './services/billing/interfaces'
+import CONFIG from "./config"
 
 export const VERIDA_DID_REGEXP =
   /did:vda:(devnet|mainnet|testnet):0x[0-9a-fA-F]{40}/;
@@ -116,7 +117,7 @@ export class Utils {
             throw new Error("No credentials provided")
         }
 
-        if (!options?.ignoreAccessCheck) {
+        if (!options?.ignoreAccessCheck && CONFIG.verida.accessCheckEnabled) {
             const accessService = new AccessService()
 
             const accessRecord = await accessService.getAccessRecord(networkConnection.did)
