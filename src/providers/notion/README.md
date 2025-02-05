@@ -7,7 +7,7 @@
     - Click **New Integration**  
     - Add an integration name and redirect Urls    
     - Choose the capabilities needed (Read Content, Read Comments, Read Users)  
-3. Copy the `Integration Token` (Secret Key) - store it securely  
+3. Copy the `Secret Key` and `Public Key` - store it securely  
 
 ## Authentication  
 
