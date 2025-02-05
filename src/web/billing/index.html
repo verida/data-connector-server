@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit VDA Tokens</title>
+
+    <!-- Latest Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Latest jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Latest Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        /* Custom styles for the navigation and content */
+        .nav-link.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .side-nav {
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            padding-top: 20px;
+        }
+
+        .side-nav .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .content {
+            margin-left: 270px;
+            padding: 20px;
+        }
+
+        /* Custom style for the collapsible indicator */
+        .nav-link.collapsed::after {
+            content: '\f0fe'; /* FontAwesome down arrow */
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            margin-left: 10px;
+        }
+
+        .nav-link:not(.collapsed)::after {
+            content: '\f0f8'; /* FontAwesome up arrow */
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="d-flex">
+        <!-- Left Navigation Menu -->
+        <div class="side-nav bg-light p-3">
+            <h4>Menu</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="dashboardLink">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="#" id="creditsLink">Credits</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link collapsed" href="#sandboxMenu" data-bs-toggle="collapse" aria-expanded="false" aria-controls="sandboxMenu">Sandbox</a>
+                    <ul class="collapse" id="sandboxMenu">
+                        <li class="nav-item">
+                            <a class="nav-link ps-4" href="#" id="generateApiKeyLink">Generate API Key</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link ps-4" href="#" id="apiRequestsLink">API Requests</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link ps-4" href="#" id="browseDataLink">Browse Data</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content">
+            <h2>Deposit VDA Tokens</h2>
+
+            <!-- Display Current Credits -->
+            <div class="mb-3">
+                <label for="currentCredits" class="form-label">Your Current Credits:</label>
+                <input type="text" class="form-control" id="currentCredits" disabled value="50,000"> <!-- Example Credits -->
+            </div>
+
+            <form id="depositForm">
+                <div id="step1">
+                    <div class="mb-3">
+                        <label for="walletAddress" class="form-label">Polygon Wallet Address</label>
+                        <input type="text" class="form-control" id="walletAddress" required>
+                        <div id="addressError" class="text-danger" style="display: none;">Please enter a valid Ethereum address (0x followed by 40 hex characters).</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tokenAmount" class="form-label">Number of VDA Tokens</label>
+                        <input type="number" class="form-control" id="tokenAmount" min="1000" max="100000" required>
+                        <div id="tokenAmountError" class="text-danger" style="display: none;">Please enter a number between 1,000 and 100,000 tokens.</div>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="nextStepButton">Next Step</button>
+                </div>
+
+                <div id="step2" style="display: none;">
+                    <h3>Complete Your Transaction</h3>
+                    <div class="mb-3">
+                        <label for="transactionHash" class="form-label">Transaction Hash</label>
+                        <input type="text" class="form-control" id="transactionHash" required>
+                    </div>
+                    <button type="submit" class="btn btn-success" id="submitDepositButton">Submit Deposit</button>
+                    <button type="button" class="btn btn-secondary" id="backButton">Back</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Regex for validating Ethereum address (Polygon address is same format)
+            const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+
+            // Next step button click event
+            $('#nextStepButton').click(function () {
+                const walletAddress = $('#walletAddress').val();
+                const tokenAmount = $('#tokenAmount').val();
+
+                // Validate wallet address and token amount
+                if (!ethAddressRegex.test(walletAddress)) {
+                    $('#addressError').show();
+                } else {
+                    $('#addressError').hide();
+                }
+
+                if (tokenAmount < 1000 || tokenAmount > 100000) {
+                    $('#tokenAmountError').show();
+                } else {
+                    $('#tokenAmountError').hide();
+                }
+
+                if (ethAddressRegex.test(walletAddress) && tokenAmount >= 1000 && tokenAmount <= 100000) {
+                    $('#step1').hide();
+                    $('#step2').show();
+                }
+            });
+
+            // Back button click event
+            $('#backButton').click(function () {
+                $('#step2').hide();
+                $('#step1').show();
+            });
+
+            // Submit deposit button click event
+            $('#submitDepositButton').click(function () {
+                const transactionHash = $('#transactionHash').val();
+
+                if (!transactionHash) {
+                    alert('Please enter the transaction hash to submit your deposit.');
+                } else {
+                    alert('Deposit Submitted Successfully!');
+                    // Here you could add functionality to handle the deposit submission
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

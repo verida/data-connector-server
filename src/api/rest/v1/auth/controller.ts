@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
 import { Utils } from "../../../../utils";
 import { AuthClient } from "./client";
+import { BillingAccountType } from "../../../../services/billing/interfaces";
 import AuthServer from "./server";
 import { AuthUser } from "./user";
 import { AuthToken, ScopeType } from "./interfaces";
 import UsageManager from "../../../../services/usage/manager"
-import SCOPES, { DATABASE_LOOKUP, DATASTORE_LOOKUP, expandScopes, isKnownSchema } from "./scopes"
+import SCOPES, { DATABASE_LOOKUP, expandScopes, isKnownSchema } from "./scopes"
+import CONFIG from "../../../../config"
 import axios from "axios";
 
 type ResolvedScopePermission = ("r" | "w" | "d")
@@ -18,6 +20,7 @@ interface ResolvedScope {
     description?: string
     uri?: string
     knownSchema?: boolean
+    credits: number
 }
 
 const SCHEMA_CACHE: Record<string, {
@@ -130,12 +133,15 @@ export class AuthController {
             const authToken = decodeURIComponent(req.query.tokenId.toString())
             req.headers.authorization = `Bearer ${authToken}`
 
-            const { context, tokenId } = await Utils.getNetworkConnectionFromRequest(req, { ignoreScopeCheck: true })
+            const { context, tokenId, did } = await Utils.getNetworkConnectionFromRequest(req, { ignoreScopeCheck: true })
         
             const authUser = new AuthUser(context)
             const authTokenObj: AuthToken = await authUser.getAuthToken(tokenId)
 
-            res.json({ token: authTokenObj });
+            res.json({ token: {
+                did,
+                ...authTokenObj
+            } });
           } catch (err) {
             if (err.message.match('Invalid token')) {
               return res.status(403).json({ error: err.message })
@@ -189,7 +195,8 @@ export class AuthController {
             const authToken = await AuthServer.createAuthToken({
                 session: sessionString,
                 scopes,
-                userDID
+                userDID,
+                payer: BillingAccountType.USER
             }, authUser, sessionString)
 
             res.send({ token: authToken });
@@ -222,6 +229,8 @@ export class AuthController {
             const scopeType = <ScopeType> scopeParts[0]
             let scopeId = `${scopeType}`
 
+            const credits = CONFIG.verida.billing.routeCredits[scope] ? CONFIG.verida.billing.routeCredits[scope] : CONFIG.verida.billing.defaultCredits
+
             switch (scopeType) {
                 case ScopeType.API:
                     if (!SCOPES[scope]) {
@@ -236,6 +245,7 @@ export class AuthController {
                     progressScopes[scopeId] = {
                         type: scopeType,
                         name: apiGrant,
+                        credits,
                         description: SCOPES[scope].userNote
                     }
 
@@ -261,6 +271,7 @@ export class AuthController {
                             type: scopeType,
                             name: dbGrant,
                             permissions,
+                            credits,
                             description: DATABASE_LOOKUP[`db:${dbGrant}`]?.description
                         }
                     }
@@ -311,6 +322,7 @@ export class AuthController {
                             name: schemaTitle,
                             namePlural: schemaTitlePlural,
                             uri: schemaUrl,
+                            credits,
                             knownSchema: isKnownSchema(schemaUrl)
                         }
                     }

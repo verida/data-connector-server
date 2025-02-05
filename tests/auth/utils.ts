@@ -6,6 +6,7 @@ import { AuthTypeConfig, ContextSession, VeridaDatabaseAuthContext } from "@veri
 import CONFIG from "../../src/config"
 import { AuthRequest } from "../../src/api/rest/v1/auth/interfaces";
 import StorageEngineVerida from '@verida/client-ts/dist/src/context/engines/verida/database/engine'
+import { BillingAccountType } from "../../src/services/billing/interfaces";
 
 const VERIDA_CONTEXT = 'Verida: Vault'
 const NOW = Math.floor(Date.now() / 1000)
@@ -19,7 +20,7 @@ export const userAccount = new AutoAccount({
 })
 
 export const appAccount = new AutoAccount({
-    privateKey: CONFIG.verida.serverKey,
+    privateKey: CONFIG.verida.testServerKey,
     network: CONFIG.verida.testVeridaNetwork,
     didClientConfig: CONFIG.verida.didClientConfig
 })
@@ -33,12 +34,11 @@ const axios = Axios.create({
     httpsAgent: agent,
 });
 
-export async function buildContextSession(account: AutoAccount, client: Client): Promise<ContextSession> {
-    const CONTEXT = 'Verida: Vault'
-    const context = await client.openContext(CONTEXT, true)
+export async function buildContextSession(account: AutoAccount, client: Client, contextName: string): Promise<ContextSession> {
+    const context = await client.openContext(contextName, true)
     const contextConfig = await context?.getContextConfig()
 
-    const keyring = await account.keyring(CONTEXT)
+    const keyring = await account.keyring(contextName)
     const signature = keyring.getSeed()
 
     // If we have a legacy DID, opening the context will change the DID from polpos to mainnet
@@ -69,7 +69,7 @@ export async function buildContextSession(account: AutoAccount, client: Client):
         did,
         contextConfig: contextConfig!,
         contextAuths,
-        contextName: CONTEXT,
+        contextName,
     }
 
 }
@@ -83,24 +83,32 @@ export async function resolveScopes(ENDPOINT, scopes: string[]) {
     return await axios.get(`${endpoint.toString()}`)
 }
 
+export async function buildSessionToken(account: AutoAccount, client: Client, contextName: string = VERIDA_CONTEXT) {
+    const contextSession = await buildContextSession(account, client, contextName)
+    const stringifiedSession = JSON.stringify(contextSession)
+    return Buffer.from(stringifiedSession).toString("base64")
+}
+
+export function buildClient() {
+    return new Client({
+        network: CONFIG.verida.testVeridaNetwork,
+        didClientConfig: CONFIG.verida.didClientConfig
+    })
+}
+
 export async function authenticate(scopes: string[]): Promise<{
     authCode: string,
     USER_DID: string,
     APP_DID: string,
     sessionToken: string
 }> {
-    const client = new Client({
-        network: CONFIG.verida.testVeridaNetwork,
-        didClientConfig: CONFIG.verida.didClientConfig
-    })
+    const client = buildClient()
     
     await client.connect(userAccount)
 
     // Build a context session object, this would normally be done in the user's web browser
     // once they have logged in
-    const contextSession = await buildContextSession(userAccount, client)
-    const stringifiedSession = JSON.stringify(contextSession)
-    const sessionToken = Buffer.from(stringifiedSession).toString("base64")
+    const sessionToken = await buildSessionToken(userAccount, client)
 
     const USER_DID = await userAccount.did()
     const APP_DID = await appAccount.did()
@@ -109,19 +117,22 @@ export async function authenticate(scopes: string[]): Promise<{
         appDID: APP_DID,
         userDID: USER_DID,
         scopes,
-        timestamp: NOW
+        timestamp: NOW,
+        payer: BillingAccountType.APP
     }
+
+    const authRequest = JSON.stringify(ARO)
 
     // Sign the ARO to generate a consent signature verifying the user account consents to this request
     const userKeyring = await userAccount.keyring(VERIDA_CONTEXT)
-    const user_sig = await userKeyring.sign(ARO)
+    const user_sig = await userKeyring.sign(authRequest)
 
     // Add custom state data that will be passed back to the third party application on successful login
     const state = {}
 
     const request = {
         client_id: APP_DID,
-        auth_request: JSON.stringify(ARO),
+        auth_request: authRequest,
         redirect_uri: APP_REDIRECT_URI,
         user_sig,
         // app_sig,

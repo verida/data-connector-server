@@ -6,6 +6,7 @@ import EncryptionUtils from "@verida/encryption-utils";
 import { APIKeyData, AuthRequest, AuthToken } from "./interfaces"
 import { AuthUser } from "./user"
 import { expandScopes } from "./scopes";
+import { BillingAccountType } from "../../../../services/billing/interfaces";
 
 const SERVER_CONTEXT_NAME = 'Verida: Data Connector Server'
 const DID_CLIENT_CONFIG = CONFIG.verida.didClientConfig
@@ -28,7 +29,8 @@ class AuthServer {
         session: ContextSession
         tokenId: string,
         readAccessDatastoreSchemas: string[],
-        appDID: string
+        appDID: string,
+        payer: BillingAccountType
     }> {
         await this._init()
 
@@ -38,7 +40,7 @@ class AuthServer {
 
         try {
             const authTokenId = token.substring(0,36)
-            const part1 = token.substring(36)
+            const part1 = token.substring(36).replace('_', '+')
 
             const serverKeyDb = await this.context.openDatabase('api_keys')
             // @todo: fix typing
@@ -49,13 +51,13 @@ class AuthServer {
 
             // const encryptedAPIKeyData = EncryptionUtils.decodeBase64(b64EncryptedAPIKeyData)
             const apiKeyDataString = EncryptionUtils.symDecrypt(encryptedAPIKeyData, encryptionKey)
-            const apiKeyData = JSON.parse(apiKeyDataString)
+            const apiKeyData: APIKeyData = JSON.parse(apiKeyDataString)
 
             const {
                 session,
                 scopes,
-                // userDID,
-                // appDID,
+                payer,
+                appDID,
             } = apiKeyData
 
             const { resolvedScopes } = expandScopes(scopes)
@@ -64,7 +66,7 @@ class AuthServer {
             for (const scope of requestedScopes) {
                 if (resolvedScopes && resolvedScopes.indexOf(scope) === -1) {
                     // Scope not found
-                    throw new Error(`Invalid token (invalid scope: ${scope})`)
+                    throw new Error(`Invalid permission (Missing scope: ${scope})`)
                 }
             }
 
@@ -82,7 +84,8 @@ class AuthServer {
                 session: <ContextSession> JSON.parse(Buffer.from(session, 'base64').toString('utf-8')),
                 tokenId: authTokenId,
                 readAccessDatastoreSchemas,
-                appDID: this.did
+                appDID,
+                payer
             }
         } catch (err: any) {
             if (err.message.match('missing')) {
@@ -126,7 +129,8 @@ class AuthServer {
 
         await authUser.saveAuthToken(authToken)
 
-        const apiKey = `${apiKeyId}${part1}`
+        // Note: + is replaced with _ as "+" creates issues in query strings
+        const apiKey = `${apiKeyId}${part1.replace('+', '_')}`
         return apiKey
     }
 
@@ -136,6 +140,7 @@ class AuthServer {
         const apiKeyData: APIKeyData = {
             session: sessionString,
             scopes: authRequest.scopes,
+            payer: authRequest.payer ? authRequest.payer : BillingAccountType.APP,
             userDID: authRequest.userDID,
             appDID: authRequest.appDID
         }
@@ -154,6 +159,12 @@ class AuthServer {
         } catch (err) {
             throw new Error(`Invalid token (${err.message})`)
         }
+    }
+
+    public async getDid(): Promise<string> {
+        await this._init()
+
+        return this.did!
     }
 
     protected async _init(): Promise<void> {
@@ -176,11 +187,6 @@ class AuthServer {
 
         await network.connect(account)
         this.context = <Context> await network.openContext(SERVER_CONTEXT_NAME)
-    }
-
-    private async getDb(dbName: string): Promise<IDatabase> {
-        await this._init()
-        return await this.context.openDatabase(dbName)
     }
 
 }

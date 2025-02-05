@@ -1,6 +1,6 @@
 {
   "name": "@verida/data-connector",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Verida Data Connector",
   "main": "dist/server.js",
   "scripts": {
@@ -54,6 +54,7 @@
     "@verida/vda-sbt-client": "^4.4.1",
     "@verida/verifiable-credentials": "^4.4.0",
     "@verida/web3": "^4.4.0",
+    "alchemy-sdk": "^3.5.1",
     "aws-serverless-express": "^3.4.0",
     "axios": "^1.7.2",
     "body-parser": "^1.19.0",
