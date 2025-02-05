@@ -37,7 +37,7 @@
     "@langchain/aws": "^0.1.2",
     "@langchain/community": "^0.3.16",
     "@langchain/core": "^0.3.19",
-    "@nillion/nilql": "^0.0.0-alpha.6",
+    "@nillion/nilql": "^0.0.0-alpha.9",
     "@node-oauth/express-oauth-server": "^4.1.1",
     "@notionhq/client": "^2.2.15",
     "@oauth-everything/passport-discord": "^1.0.2",

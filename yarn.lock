@@ -1473,11 +1473,12 @@
   dependencies:
     sparse-bitfield "^3.0.3"
 
-"@nillion/nilql@^0.0.0-alpha.6":
-  version "0.0.0-alpha.6"
-  resolved "https://registry.yarnpkg.com/@nillion/nilql/-/nilql-0.0.0-alpha.6.tgz#9e90b4d4b2aa9ecde79810c439e0cf37f8350711"
-  integrity sha512-P/zFFN8YHxKS8B+JPfZHwpv4/ulDiJMOeNaNiWan+O7MQ+Vxx/t7PS1+Bm+DtIqNEXCRCNIiyWw74dc68h/nBA==
+"@nillion/nilql@^0.0.0-alpha.9":
+  version "0.0.0-alpha.9"
+  resolved "https://registry.yarnpkg.com/@nillion/nilql/-/nilql-0.0.0-alpha.9.tgz#224e58e996e3d1f3658fea035b779e53f5c9fb93"
+  integrity sha512-k2m0l0p32lZQ3gkDMsdm155mQG4H7KLxnCfgEPVLtMyp9WPypSL0TaP77T2JhVvINvqM5UggiEiqmUv3s7JTlQ==
   dependencies:
+    bigint-crypto-utils "^3.3.0"
     libsodium-wrappers-sumo "^0.7.15"
     paillier-bigint "^3.4.3"
 

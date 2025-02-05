@@ -48,9 +48,6 @@ export class Service {
 
     const hosts = this.config.hosts
 
-    // TODO: To validate with Nillion but I assume the secret key is generated
-    // based on the number of nodes to which the data is eventually stored
-    // const cluster = { nodes: [{}, {}, {}] };
     const cluster = { nodes: hosts.map(() => ({})) };
     const secretKey = await nilql.SecretKey.generate(cluster, {
       store: true,
