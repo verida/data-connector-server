@@ -4,6 +4,9 @@ import { SearchService, SearchType } from "../../../../services/search"
 import { MinisearchService, SearchResultItem } from "../../../../services/minisearch";
 import { SchemaRecord } from "../../../../schemas";
 import { KeywordSearchTimeframe } from "../../../../helpers/interfaces";
+import { getDataSchemasDict } from "../../../../services/schemas";
+import chatMessage from "../../../../services/schemas/chatMessage"
+import chatGroup from "../../../../services/schemas/chatGroup"
 
 const DEFAULT_LIMIT = 20
 
@@ -20,7 +23,17 @@ class SearchController {
 
     public async chatThreads(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const { context, account, limitDatastoreSchemas } = req.veridaNetworkConnection
+
+            const validDataSchemas = getDataSchemasDict(limitDatastoreSchemas)
+            const validSchemaUrls = Object.keys(validDataSchemas)
+
+            if (!validSchemaUrls.indexOf(chatMessage.getUrl()) || !validSchemaUrls.indexOf(chatGroup.getUrl())) {
+                return res.status(403).json({
+                    error: `Insufficient permission to access chat threads`
+                })
+            }
+
             const did = await account.did()
             const keywordString = req.query.keywords ? req.query.keywords.toString() : ""
             const keywords = keywordString.split(' ')
@@ -45,7 +58,7 @@ class SearchController {
 
     public async universal(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const { context, account, limitDatastoreSchemas } = req.veridaNetworkConnection
             const did = await account.did()
             const keywordString = req.query.keywords ? req.query.keywords.toString() : ""
             const keywords = keywordString.split(' ')
@@ -55,11 +68,11 @@ class SearchController {
                 SearchType.EMAILS,
                 SearchType.CHAT_MESSAGES
             ]
-            const limit = req.query.limit ? parseInt(req.query.limit.toString()) : DEFAULT_LIMIT
+            const resultLimit = req.query.limit ? parseInt(req.query.limit.toString()) : DEFAULT_LIMIT
             const minResultsPerType = req.query.minResultsPerType ? parseInt(req.query.minResultsPerType.toString()) : 5
 
             const searchService = new SearchService(did, context)
-            const items = await searchService.multiByKeywords(searchTypes, keywords, timeframe, limit, minResultsPerType)
+            const items = await searchService.multiByKeywords(searchTypes, keywords, timeframe, resultLimit, false, minResultsPerType, limitDatastoreSchemas)
 
             return res.json({
                 items
@@ -71,16 +84,16 @@ class SearchController {
         }
     }
 
-    public async ds(req: Request, res: Response) {
-        return res.json({hello: 'world'})
-    }
-
     public async datastore(req: Request, res: Response) {
         try {
-            const { context, account } = await Utils.getNetworkConnectionFromRequest(req)
+            const schemaName = Utils.getSchemaFromParams(req.params.schema)
+            const { context, account, limitDatastoreSchemas } = req.veridaNetworkConnection
             const did = await account.did()
 
-            const schemaName = Utils.getSchemaFromParams(req.params[0])
+            if (limitDatastoreSchemas.indexOf(schemaName) === -1) {
+                throw new Error(`Invalid permission to access ${schemaName}`)
+            }
+            
             const query = req.body.keywords ? req.body.keywords.toString() : undefined
 
             if (!query) {

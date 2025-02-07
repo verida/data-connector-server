@@ -8,6 +8,9 @@ import serverconfig from './config'
 import { AutoAccount, SessionAccount } from '@verida/account-node'
 import { Request } from 'express'
 import { Service as AccessService } from './api/rest/v1/access/service'
+import VeridaOAuthServer from './api/rest/v1/auth/server'
+import { BillingAccountType } from './services/billing/interfaces'
+import CONFIG from "./config"
 
 export const VERIDA_DID_REGEXP =
   /did:vda:(devnet|mainnet|testnet):0x[0-9a-fA-F]{40}/;
@@ -34,6 +37,19 @@ export interface NetworkConnection {
     context: IContext,
     account: IAccount,
     did: string
+    appDID?: string
+    sessionString?: string
+    tokenId?: string
+    // Limit read access to these datastore schemas (built from scopes)
+    limitDatastoreSchemas?: string[]
+    payer?: BillingAccountType
+}
+
+export interface NetworkConnectionRequestOptions {
+    ignoreAccessCheck?: boolean,
+    checkAdmin?: boolean,
+    scopes?: string[],
+    ignoreScopeCheck?: boolean
 }
 
 export class Utils {
@@ -46,9 +62,41 @@ export class Utils {
      * @param options
      * @returns
      */
-    public static async getNetworkConnectionFromRequest(req: Request, options?: { ignoreAccessCheck?: boolean, checkAdmin?: boolean }): Promise<NetworkConnection> {
+    public static async getNetworkConnectionFromRequest(req: Request, options?: NetworkConnectionRequestOptions): Promise<NetworkConnection> {
         // Extract session
         let session: ContextSession | undefined;
+        let tokenId: string
+        if (!options) {
+            options = {}
+        }
+
+        const authHeader = req.headers.authorization
+        let limitDatastoreSchemas = undefined
+        let appDID = undefined
+        let payer = undefined
+
+        if (authHeader) {
+            // Extract the Bearer token
+            if (authHeader.split(' ').length < 2) {
+                throw new Error(`Invalid token (bearer token missing)`)
+            }
+            const bearerToken = authHeader.split(' ')[1];
+
+            if (!options.ignoreScopeCheck && !options.scopes) {
+                throw new Error(`Invalid token (insufficient scope)`)
+            }
+
+            if (options.ignoreScopeCheck && !options.scopes) {
+                options.scopes = []
+            }
+
+            const authTokenData = await VeridaOAuthServer.verifyAuthToken(bearerToken, options.scopes)
+            session = authTokenData.session
+            tokenId = authTokenData.tokenId
+            limitDatastoreSchemas = authTokenData.readAccessDatastoreSchemas
+            appDID = authTokenData.appDID
+            payer = authTokenData.payer
+        }
 
         const apiKey = req.header('X-API-Key');
         if (apiKey) {
@@ -69,7 +117,7 @@ export class Utils {
             throw new Error("No credentials provided")
         }
 
-        if (!options?.ignoreAccessCheck) {
+        if (!options?.ignoreAccessCheck && CONFIG.verida.accessCheckEnabled) {
             const accessService = new AccessService()
 
             const accessRecord = await accessService.getAccessRecord(networkConnection.did)
@@ -81,6 +129,26 @@ export class Utils {
             if (options?.checkAdmin && !accessRecord?.admin) {
                 throw new Error("Access denied")
             }
+        }
+
+        if (apiKey) {
+            networkConnection.sessionString = apiKey
+        }
+
+        if (tokenId) {
+            networkConnection.tokenId = tokenId
+        }
+
+        if (limitDatastoreSchemas) {
+            networkConnection.limitDatastoreSchemas = limitDatastoreSchemas
+        }
+
+        if (appDID) {
+            networkConnection.appDID = appDID
+        }
+
+        if (payer) {
+            networkConnection.payer = payer
         }
 
         return networkConnection
@@ -308,8 +376,12 @@ export class Utils {
       return did
     }
 
-    public static nowTimestamp() {
+    public static nowTimestamp(): string {
         return (new Date()).toISOString()
+    }
+
+    public static nowEpoch(): number {
+        return Math.floor(Date.now() / 1000)
     }
 
     public static buildPermissions(req: Request) {

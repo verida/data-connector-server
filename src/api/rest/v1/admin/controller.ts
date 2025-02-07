@@ -9,15 +9,6 @@ import { Utils } from "../../../../utils";
 export class AdminController {
 
     public async logs(req: Request, res: Response) {
-        try {
-            await Utils.getNetworkConnectionFromRequest(req, { checkAdmin: true })
-        } catch (error: unknown) {
-            if (error instanceof Error && error.message.includes('Access denied')) {
-                return res.status(403).send('Access denied')
-            }
-            return res.status(500).send(error instanceof Error ? error.message : 'Something went wrong')
-        }
-
         if (!CONFIG.verida.logging.exposeLogs) {
             return res.status(403).send('Permission denied')
         }
@@ -43,15 +34,6 @@ export class AdminController {
     }
 
     public async clearLogs(req: Request, res: Response) {
-        try {
-            await Utils.getNetworkConnectionFromRequest(req, { checkAdmin: true })
-        } catch (error: unknown) {
-            if (error instanceof Error && error.message.includes('Access denied')) {
-                return res.status(403).send('Access denied')
-            }
-            return res.status(500).send(error instanceof Error ? error.message : 'Something went wrong')
-        }
-
         if (!CONFIG.verida.logging.exposeLogs) {
             return res.status(403).send('Permission denied')
         }

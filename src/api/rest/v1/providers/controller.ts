@@ -91,28 +91,40 @@ export default class Controller {
             }
 
             try {
-                const provider = Providers(providerName)
+                if (status === `upcoming`) {
+                    results.push({
+                        id: providerName,
+                        status,
+                        label: providerConfig.label,
+                        icon: `${CONFIG.assetsUrl}/${providerName}/icon.png`,
+                        description: providerConfig.description ? providerConfig.description : '',
+                        options: [],
+                        handlers: []
+                    })
+                } else {
+                    const provider = Providers(providerName)
 
-                // If the provider is upcoming, explicitly set the options and handlers to an empty array
+                    // If the provider is upcoming, explicitly set the options and handlers to an empty array
 
-                const options = status === 'upcoming' ? [] : provider.getOptions()
+                    const options = status === 'upcoming' ? [] : provider.getOptions()
 
-                const syncHandlers = await provider.getSyncHandlers()
-                const handlers: ProviderHandler[] = status === 'upcoming' ? [] : syncHandlers.map((handler) => ({
-                    id: handler.getId(),
-                    label: handler.getLabel(),
-                    options: handler.getOptions()
-                }))
+                    const syncHandlers = await provider.getSyncHandlers()
+                    const handlers: ProviderHandler[] = syncHandlers.map((handler) => ({
+                        id: handler.getId(),
+                        label: handler.getLabel(),
+                        options: handler.getOptions()
+                    }))
 
-                results.push({
-                    id: providerName,
-                    status,
-                    label: provider.getProviderLabel(),
-                    icon: provider.getProviderImageUrl(),
-                    description: provider.getDescription(),
-                    options,
-                    handlers
-                })
+                    results.push({
+                        id: providerName,
+                        status,
+                        label: provider.getProviderLabel(),
+                        icon: provider.getProviderImageUrl(),
+                        description: provider.getDescription(),
+                        options,
+                        handlers
+                    })
+                }
             } catch (error: unknown) {
                 // TODO: Once the tsconfig is updated, remove the 'unknown' type
                 // TODO: Once the tsconfig is updated, create a new Error with an explicit error message (e.g. 'Failed to load provider <providerName>') and pass the caught error as a cause (cause is not supported yet on this config)

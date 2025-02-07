@@ -200,34 +200,6 @@
         </div>
         <div class="row">
             <div class="col-md-10 offset-md-1">
-                <div>
-                    <div class="form-check model-form-input" style="float: right">
-                        <label for="model-select"><strong>Model:</strong></label>
-                        <select class="form-control" id="model-select">
-                            <!-- Model options will be dynamically populated based on the selected platform -->
-                        </select>
-                    </div>
-
-                    <div class="form-check" style="float: right">
-                        <label for="platform-select"><strong>Platform:</strong></label>
-                        <select class="form-control" id="platform-select">
-                            <option value="bedrock">AWS Bedrock</option>
-                            <option value="groq">Groq</option>
-                            <option value="byo-llm">BYO LLM</option>
-                        </select>
-                    </div>
-
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="privateData-input" checked="checked">
-                        <label class="form-check-label" for="privateData-input">
-                            LLM can access your data
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-10 offset-md-1">
                 <div class="chat-container" id="chat-container"></div>
                 <div class="input-group">
                     <textarea type="text" class="form-control" id="user-input" placeholder="Type your message..."></textarea>

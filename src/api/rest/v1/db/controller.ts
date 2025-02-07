@@ -9,9 +9,9 @@ export class DbController {
 
     public async getById(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
-            const dbName = req.params[0]
-            const rowId = req.params[1]
+            const dbName = req.params.database
+            const { context } = req.veridaNetworkConnection
+            const rowId = req.params.recordId
             const permissions = Utils.buildPermissions(req)
 
             const db = await context.openDatabase(dbName, {
@@ -43,8 +43,8 @@ export class DbController {
 
     public async create(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const dbName = req.params.database
+            const { context } = req.veridaNetworkConnection
 
             const permissions = Utils.buildPermissions(req)
             const db = await context.openDatabase(dbName, {
@@ -81,8 +81,8 @@ export class DbController {
 
     public async update(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
             const dbName = req.params.database
+            const { context } = req.veridaNetworkConnection
 
             const permissions = Utils.buildPermissions(req)
             const db = await context.openDatabase(dbName, {
@@ -135,8 +135,8 @@ export class DbController {
 
     public async query(req: Request, res: Response) {
         try {
-            const { context } = await Utils.getNetworkConnectionFromRequest(req)
-            const dbName = req.params[0]
+            const dbName = req.params.database
+            const { context } = req.veridaNetworkConnection
 
             const permissions = Utils.buildPermissions(req)
             const db = await context.openDatabase(dbName, {
