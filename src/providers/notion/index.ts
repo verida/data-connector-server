@@ -5,6 +5,7 @@ import { NotionProviderConfig } from "./interfaces";
 import { ConnectionCallbackResponse, PassportProfile } from "../../interfaces";
 import passport from "passport";
 import NotionStrategy from "./NotionStrategy"; 
+import NotionBlockHandler from "./block";
 
 export default class NotionProvider extends Base {
   protected config: NotionProviderConfig;
@@ -22,7 +23,9 @@ export default class NotionProvider extends Base {
   }
 
   public syncHandlers(): any[] {
-    return [];
+    return [
+      NotionBlockHandler
+    ];
   }
 
   public getScopes(): string[] {
