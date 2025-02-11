@@ -156,6 +156,9 @@ export interface SyncHandlerPosition {
     handlerId: string
     status: SyncHandlerStatus
 
+    // Are there more results to fetch?
+    moreResults?: boolean
+
     // Message describing the status of the sync
     syncMessage?: string
 
