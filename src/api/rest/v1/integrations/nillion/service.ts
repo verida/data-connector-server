@@ -4,7 +4,7 @@ import { nilql } from "@nillion/nilql";
 import CONFIG from "../../../../../config"
 
 import { NillionError } from "./nillion-error";
-import { NillionIntegrationConfigSchema, NillionV1DataCreateResponseSchema } from "./schemas";
+import { NillionFounderPersonalitySurveyDataSchema, NillionIntegrationConfigSchema, NillionV1DataCreateResponseSchema } from "./schemas";
 import {
   NillionIntegrationConfig,
   NillionServiceSaveDataArgs,
@@ -53,18 +53,7 @@ export class Service {
       store: true,
     }); // key can be discarded since we will never decrypt
 
-    const encryptedData: Record<string, any> = {}
-
-    for (const key in data) {
-        encryptedData[key] = {
-            $allot: await nilql.encrypt(secretKey, String(data[key])),
-        }
-    }
-
-    const slices = nilql.allot({
-      _id: uuidv4(),
-      ...encryptedData
-    });
+    const slices = await this.encryptData(nillionSchemaId, data, secretKey)
 
     // Using Promise.all to propagate any error and stop pending requests
     await Promise.all(hosts.map(async (host, index) => {
@@ -75,12 +64,14 @@ export class Service {
 
       const url = new URL(`${host.baseUrl}/api/v1/data/create`)
 
-      console.debug("Calling Nillion API /api/v1/data/create")
-      const response = await fetch(url.toString(), {
+      console.debug(`Calling Nillion API ${url.toString()}`)
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${host.bearerToken}`,
           "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${host.bearerToken}`,
         },
         body: JSON.stringify(payload),
       });
@@ -119,5 +110,48 @@ export class Service {
     }))
 
     console.log("Data saved to Nillion successfully")
+  }
+
+  private async encryptData(
+    schemaId: string,
+    data: Record<string, unknown>,
+    secretKey: any // Should be `SecretKey` but this type is not exported from `@nillion/nilql`
+  ) {
+    if (!this.config) {
+      throw new Error("Nillion integration configuration is not set")
+    }
+
+    let encryptedData: Record<string, any> = {}
+
+    switch (schemaId) {
+      case this.config.schemaIds.founderPersonalityTraitsSurvey:
+        // The Nillion API would reject the data if it doesn't match the schema
+        // So we validate it before.
+        const dataValidationResult = NillionFounderPersonalitySurveyDataSchema.safeParse(data)
+
+        if (!dataValidationResult.success) {
+          throw new Error(`Invalid data for Nillion schema ${schemaId}`)
+        }
+
+        encryptedData = dataValidationResult.data
+
+        const traits = dataValidationResult.data.traits;
+        for (const key of Object.keys(traits) as Array<keyof typeof traits>) {
+          encryptedData.traits[key].value = {
+            $allot: await nilql.encrypt(secretKey, traits[key].value),
+          }
+        }
+
+        break
+      default:
+        throw new Error(`Unsupported Nillion schema ID: ${schemaId}`)
+    }
+
+    const slices = nilql.allot({
+      _id: uuidv4(),
+      ...encryptedData
+    });
+
+    return slices
   }
 }

@@ -191,7 +191,10 @@
     },
     "integrations": {
         "nillion": {
-            "hosts": []
+            "hosts": [],
+            "schemaIds": {
+                "founderPersonalityTraitsSurvey": ""
+            }
         }
     }
 }
