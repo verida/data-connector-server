@@ -3,6 +3,7 @@ import { extractDidFromRequestParams } from "./utils"
 import { Service } from "./service"
 import { BadRequestError } from "../../../../errors/bad-request-error"
 import { GetAccessV1SuccessResponse, GetAccessV1ErrorResponse } from "./types";
+import CONFIG from "../../../../config"
 
 export class ControllerV1 {
   private service: Service
@@ -12,6 +13,13 @@ export class ControllerV1 {
   }
 
   async getAccess(req: Request, res: Response<GetAccessV1SuccessResponse | GetAccessV1ErrorResponse>) {
+    if (CONFIG.verida.accessCheckEnabled === false) {
+      return res.status(200).send({
+        status: "success",
+        access: "allowed"
+      })
+    }
+
     try {
       const did = extractDidFromRequestParams(req)
 
