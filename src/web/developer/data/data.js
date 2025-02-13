@@ -22,7 +22,9 @@ $(document).ready(function() {
         "Chat Message": "https://common.schemas.verida.io/social/chat/message/v0.1.0/schema.json",
         "Files": "https://common.schemas.verida.io/file/v0.1.0/schema.json",
         "Calendar": "https://common.schemas.verida.io/social/calendar/v0.1.0/schema.json",
-        "Event": "https://common.schemas.verida.io/social/event/v0.1.0/schema.json"
+        "Event": "https://common.schemas.verida.io/social/event/v0.1.0/schema.json",
+        "Playlist": "https://common.schemas.verida.io/media/playlist/v0.1.0/schema.json",
+        "History": "https://common.schemas.verida.io/activity/history/v0.1.0/schema.json"
     };
 
     // Load Verida Key and Schema from local storage

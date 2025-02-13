@@ -156,3 +156,41 @@ export interface SchemaEvent extends SchemaRecord {
     attachments?: CalendarAttachment[]
 
 }
+
+export enum SchemaHistoryActivityType {
+    LISTENING = "listening",
+    WATCHING = "watching",
+    BROWSING = "browsing",
+    READING = "reading"
+}
+
+export interface SchemaHistory extends SchemaRecord {
+    timestamp: string; // The time when the activity occurred
+    activityType: SchemaHistoryActivityType;
+    url?: string; // URL associated with the activity
+    duration?: number; // Duration of the activity in seconds
+}
+
+// Enum for the type of playlist (audio or video)
+export enum SchemaPlaylistType {
+    AUDIO = "audio",
+    VIDEO = "video"
+}
+
+// Interface representing a Track or Video in the playlist
+export interface SchemaSpotifyTrack {
+    id: string; // Unique identifier for the track/video
+    title: string; // Title of the track/video
+    artist?: string; // Name of the artist or content creator
+    album?: string; // Album name (if applicable)
+    thumbnail?: string; // URL of the thumbnail image
+    duration?: number; // Duration of the track/video in milliseconds
+    url?: string; // Direct URL to the track/video
+    type: SchemaPlaylistType; // Type of the track (audio or video)
+}
+
+export interface SchemaPlaylist extends SchemaRecord {
+    type: SchemaPlaylistType; // Type of the playlist (audio or video)
+    owner: Person; // Owner of the playlist
+    tracks: SchemaSpotifyTrack[]; // Array of track or video items in the playlist
+}
