@@ -188,5 +188,13 @@
     "notion": {
         "apiKey": "",
         "restrictedAccessDatabaseId": ""
+    },
+    "integrations": {
+        "nillion": {
+            "hosts": [],
+            "schemaIds": {
+                "founderPersonalityTraitsSurvey": ""
+            }
+        }
     }
 }

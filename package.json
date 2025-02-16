@@ -28,7 +28,7 @@
     "url": "https://github.com/verida/data-connector-server/issues"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=23"
   },
   "homepage": "https://github.com/verida/data-connector-server#readme",
   "dependencies": {
@@ -37,6 +37,7 @@
     "@langchain/aws": "^0.1.2",
     "@langchain/community": "^0.3.16",
     "@langchain/core": "^0.3.19",
+    "@nillion/nilql": "^0.0.0-alpha.9",
     "@node-oauth/express-oauth-server": "^4.1.1",
     "@notionhq/client": "^2.2.15",
     "@oauth-everything/passport-discord": "^1.0.2",
@@ -94,7 +95,7 @@
     "ts-mocha": "^9.0.2",
     "ts-textrank": "^1.0.3",
     "twitter-api-v2": "^1.14.0",
-    "uuid": "^10.0.0",
+    "uuid": "^11.0.5",
     "xlsx": "^0.18.5",
     "xoauth2": "^1.2.0",
     "zod": "^3.23.8"
