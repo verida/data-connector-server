@@ -52,7 +52,7 @@ export default class SyncManager {
         return false
     }
 
-    public async sync(providerId?: string, accountId?: string, force: boolean = false): Promise<Connection[]> {
+    public async sync(providerId?: string, accountId?: string, force: boolean = false, syncToEnd: boolean = false): Promise<Connection[]> {
         const connections: Connection[] = []
 
         const providers = await this.getProviders(providerId, accountId)
@@ -60,7 +60,7 @@ export default class SyncManager {
         
         for (let p in providers) {
             const provider = providers[p]
-            promises.push(provider.sync(undefined, undefined, force))
+            promises.push(provider.sync(undefined, undefined, force, syncToEnd))
         }
 
         const promiseResults = await Promise.allSettled(promises)

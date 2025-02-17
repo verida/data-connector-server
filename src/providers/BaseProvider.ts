@@ -204,7 +204,7 @@ export default class BaseProvider extends EventEmitter {
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken?: string, refreshToken?: string, force: boolean = false): Promise<Connection> {
+    public async sync(accessToken?: string, refreshToken?: string, force: boolean = false, syncToEnd: boolean = false): Promise<Connection> {
         try {
             // @todo: handle handler is in error state
 
@@ -275,7 +275,7 @@ export default class BaseProvider extends EventEmitter {
             }
 
             const syncHandlers = await this.getSyncHandlers()
-            const syncHandlerNames = await this._sync(syncHandlers, accessToken, refreshToken, forceHandlerSync)
+            const syncHandlerNames = await this._sync(syncHandlers, accessToken, refreshToken, forceHandlerSync, syncToEnd)
 
             // Add latest profile info
             this.connection.profile = await this.getProfile()
@@ -296,15 +296,15 @@ export default class BaseProvider extends EventEmitter {
         }
     }
 
-    protected async _sync(syncHandlers: BaseSyncHandler[], accessToken?: string, refreshToken?: string, forceHandlerSync?: boolean) {
+    protected async _sync(syncHandlers: BaseSyncHandler[], accessToken?: string, refreshToken?: string, forceHandlerSync?: boolean, syncToEnd?: boolean, followOnSync?: boolean): Promise<string[]> {
         const api = await this.getApi(accessToken, refreshToken)
         const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
         const syncPromises = []
-        const syncHandlerNames = []
+        const syncHandlerNames: string[] = []
         for (let h in syncHandlers) {
             const handler = syncHandlers[h]
             syncHandlerNames.push(handler.getId())
-            syncPromises.push(this._syncHandler(handler, api, syncPositionsDs, forceHandlerSync))
+            syncPromises.push(this._syncHandler(handler, api, syncPositionsDs, forceHandlerSync, followOnSync ? false : true))
         }
 
         const syncHandlerResults = await Promise.allSettled(syncPromises)
@@ -332,6 +332,13 @@ export default class BaseProvider extends EventEmitter {
                 // We have more results to fetch from this handler, so fetch again
                 syncAgainHandlers.push(handlerResult.value.handler)
             }
+        }
+
+        if (syncToEnd && syncAgainHandlers.length) {
+            for (const s of syncAgainHandlers) {
+                console.log(s.getLabel())
+            }
+            await this._sync(syncAgainHandlers, accessToken, refreshToken, forceHandlerSync, true, true)
         }
 
         return syncHandlerNames
@@ -413,7 +420,7 @@ export default class BaseProvider extends EventEmitter {
         this.connection.syncNext = new Date((new Date()).getTime() + syncInterval).toISOString()
     }
 
-    protected async _syncHandler(handler: BaseSyncHandler, api: any, syncPositionsDs: IDatastore, force: boolean = false): Promise<{
+    protected async _syncHandler(handler: BaseSyncHandler, api: any, syncPositionsDs: IDatastore, force: boolean = false, firstSync: boolean = true): Promise<{
         results: SyncHandlerResponse
         handler: BaseSyncHandler
     }> {
@@ -486,10 +493,14 @@ export default class BaseProvider extends EventEmitter {
         await syncPositionsDs.save(syncPosition, {
             forceUpdate: true
         })
-        
-        handler.on('log', async (syncLog: SyncProviderLogEvent) => {
+
+        const logMethod = async (syncLog: SyncProviderLogEvent) => {
             await providerInstance.logMessage(syncLog.level, syncLog.message, handler.getId(), schemaUri)
-        })
+        }
+        
+        if (firstSync) {
+            handler.on('log', logMethod)
+        }
 
         await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getId()}`, handler.getId(),schemaUri)
         let syncResults = await handler.sync(api, syncPosition, syncPositionsDs)
