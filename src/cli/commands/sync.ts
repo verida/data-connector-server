@@ -30,6 +30,13 @@ export const Sync: Command<SyncOptions> = {
       defaultValue: false,
       alias: "f",
     },
+    {
+      name: "syncToEnd",
+      description: "Sync until there are no more items? If not, will stop after batch limit is hit.",
+      type: "boolean",
+      defaultValue: false,
+      alias: "e",
+    },
   ],
   async handle({ options }) {
     if (!options.key) {
@@ -69,7 +76,8 @@ export const Sync: Command<SyncOptions> = {
       await provider.sync(
         undefined,
         undefined,
-        options.force
+        options.force,
+        options.syncToEnd
       )
     }
 
