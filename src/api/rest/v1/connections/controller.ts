@@ -52,13 +52,13 @@ export default class Controller {
             const syncManager = new SyncManager(networkInstance.context, req.requestId)
 
             if (instantComplete) {
-                syncManager.sync(undefined, undefined, forceSync)
+                syncManager.sync(undefined, undefined, forceSync, true)
 
                 return res.send({
                     success: true
                 })
             } else {
-                const connections = await syncManager.sync(undefined, undefined, forceSync)
+                const connections = await syncManager.sync(undefined, undefined, forceSync, true)
 
                 return res.send({
                     connections,
@@ -87,13 +87,13 @@ export default class Controller {
             const connection = await syncManager.getConnection(connectionId)
 
             if (instantComplete) {
-                syncManager.sync(connection.providerId, connection.accountId, forceSync)
+                syncManager.sync(connection.providerId, connection.accountId, forceSync, true)
 
                 return res.send({
                     success: true
                 })
             } else {
-                const connections = await syncManager.sync(connection.providerId, connection.accountId, forceSync)
+                const connections = await syncManager.sync(connection.providerId, connection.accountId, forceSync, true)
 
                 return res.send({
                     connections,
