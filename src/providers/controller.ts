@@ -121,7 +121,7 @@ export default class Controller {
                 throw new Error("No credentials provided")
             }
 
-            const syncManager = new SyncManager(networkConnection.context, req.requestId)
+            const syncManager = new SyncManager(networkConnection.context)
             const connection = await syncManager.saveNewConnection(providerId, connectionResponse.accessToken, connectionResponse.refreshToken, connectionResponse.profile)
 
             // Start syncing (async so we don't block)
