@@ -32,7 +32,7 @@ export const Sync: Command<SyncOptions> = {
     },
     {
       name: "syncToEnd",
-      description: "Sync until there are no more items? If not, will stop after batch limit is hit.",
+      description: "Sync until there are no more items. If not, will stop after batch limit is hit.",
       type: "boolean",
       defaultValue: false,
       alias: "e",
