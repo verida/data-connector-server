@@ -19,6 +19,7 @@ export default class BaseSyncHandler extends EventEmitter {
 
     constructor(config: any, connection: Connection, provider: BaseProvider) {
         super()
+
         // Handle any custom config for this handler
         if (config.handlers) {
             if (config.handlers[this.getId()]) {
@@ -73,7 +74,9 @@ export default class BaseSyncHandler extends EventEmitter {
                     break
             }
 
-            this.config.breakTimestamp = (new Date((new Date()).getTime() - monthMilliseconds * months)).toISOString()
+            if (!this.config.breakTimestamp) {
+                this.config.breakTimestamp = (new Date((new Date()).getTime() - monthMilliseconds * months)).toISOString()
+            }
         }
     }
 
