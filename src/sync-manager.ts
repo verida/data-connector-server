@@ -21,8 +21,6 @@ export default class SyncManager {
     private connectionDatastore?: IDatastore
     private connections?: BaseProvider[]
 
-    private status: SyncStatus = SyncStatus.CONNECTED
-
     public constructor(vaultContext: IContext) {
         this.vault = vaultContext
     }

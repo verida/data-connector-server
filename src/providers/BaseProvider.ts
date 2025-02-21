@@ -526,14 +526,16 @@ export default class BaseProvider extends EventEmitter {
             syncCount++
         }
 
-        syncPosition.latestSyncEnd = Utils.nowTimestamp()
-        if (syncPosition.status == SyncHandlerStatus.SYNCING) {
-            syncPosition.moreResults = true
+        syncResults.syncPosition.latestSyncEnd = Utils.nowTimestamp()
+        if (syncResults.syncPosition.status == SyncHandlerStatus.SYNCING) {
+            syncResults.syncPosition.moreResults = true
+        } else {
+            syncResults.syncPosition.moreResults = false
         }
 
-        syncPosition.status = SyncHandlerStatus.ENABLED
-        delete syncPosition['_rev']
-        await syncPositionsDs.save(syncPosition, {
+        syncResults.syncPosition.status = SyncHandlerStatus.ENABLED
+        delete syncResults.syncPosition['_rev']
+        await syncPositionsDs.save(syncResults.syncPosition, {
             forceUpdate: true
         })
 

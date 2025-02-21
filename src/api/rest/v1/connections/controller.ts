@@ -4,6 +4,7 @@ import { ConnectionHandler, SyncFrequency, SyncHandlerPosition, SyncStatus, Uniq
 import { Utils } from '../../../../utils'
 import CONFIG from '../../../../config'
 import BaseSyncHandler from '../../../../providers/BaseSyncHandler'
+import { BackgroundSyncManager } from '../../../../services/backgroundSync'
 
 const log4js = require("log4js")
 const logger = log4js.getLogger()
@@ -51,6 +52,8 @@ export default class Controller {
             const networkInstance = req.veridaNetworkConnection
             const syncManager = new SyncManager(networkInstance.context)
 
+            await BackgroundSyncManager.addAccount(networkInstance)
+
             if (instantComplete) {
                 syncManager.sync(undefined, undefined, forceSync, true)
 
@@ -84,6 +87,9 @@ export default class Controller {
 
             const networkInstance = req.veridaNetworkConnection
             const syncManager = new SyncManager(networkInstance.context)
+
+            await BackgroundSyncManager.addAccount(networkInstance)
+
             const connection = await syncManager.getConnection(connectionId)
 
             if (instantComplete) {
