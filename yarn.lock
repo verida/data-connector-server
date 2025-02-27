@@ -2866,19 +2866,7 @@
     tweetnacl "^1.0.3"
     uuid "^8.3.2"
 
-"@verida/storage-link@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@verida/storage-link/-/storage-link-4.1.0.tgz#fb502ec39181ac470b39b8c681aacca44e91c448"
-  integrity sha512-m8qP+elpsqTik9btYUcxJ/xlj8o1BwViOmJx+xiZF8SLFF7NlmnTiBR0/CFh/swusAFlLmta0+O50dk40JPTsQ==
-  dependencies:
-    "@verida/did-client" "^4.1.0"
-    "@verida/did-document" "^4.1.0"
-    "@verida/encryption-utils" "^4.0.0"
-    "@verida/keyring" "^4.1.0"
-    did-resolver "^4.0.0"
-    url-parse "^1.5.3"
-
-"@verida/storage-link@^4.4.1":
+"@verida/storage-link@^4.1.0", "@verida/storage-link@^4.4.1":
   version "4.4.1"
   resolved "https://registry.yarnpkg.com/@verida/storage-link/-/storage-link-4.4.1.tgz#62daa4fc25a499402df6b4bed9e59230a578b66a"
   integrity sha512-PAm3O2wRbiPpvJfbTq1lc8trJtJAHZsDVL6R3KUcOpz/iyUWAShf9tNU66Ko3EV2tufAs/eesl1YH6z33GeoBg==
