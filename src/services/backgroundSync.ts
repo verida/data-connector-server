@@ -32,9 +32,7 @@ export class BackgroundSync {
         if (!SYNC_ENABLED) {
             return
         }
-
         const { did } = networkConnection
-        // console.log(`addAccount(${did})`)
 
         const nowEpoch = new Date().getTime() / 1000.0
 
@@ -47,14 +45,12 @@ export class BackgroundSync {
     }
 
     public removeAccount(did: string) {
-        // console.log(`removeAccount(${did})`)
         if (this.syncAccounts[did]) {
             delete this.syncAccounts[did]
         }
     }
 
     protected doPendingSyncs() {
-        // console.log(`doPendingSyncs()`)
         const nowEpoch = new Date().getTime() / 1000.0
 
         // Loop through all sync accounts and sync those that need it
@@ -68,7 +64,6 @@ export class BackgroundSync {
     }
 
     protected async doSync(did: string): Promise<void> {
-        // console.log(`doSync(${did})`)
         if (this.syncAccounts[did]) {
             // Perform sync, sync manager will ensure multiple sync's don't happen at once for the same account
             const syncManager = new SyncManager(this.syncAccounts[did].networkConnection.context)

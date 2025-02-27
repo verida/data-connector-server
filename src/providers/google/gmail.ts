@@ -1,6 +1,6 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-import { BaseHandlerConfig, SyncItemsBreak, SyncItemsResult, SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
+import { SyncItemsBreak, SyncItemsResult, SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import { google, gmail_v1 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker"
