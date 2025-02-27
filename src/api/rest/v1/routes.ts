@@ -13,6 +13,7 @@ import SearchRoutes from "./search/routes"
 import AccountRoutes from './account/routes'
 import AuthRoutes from "./auth/routes"
 import AppRoutes from "./app/routes"
+import { routerV1 as integrationsRouterV1 } from './integrations/routes'
 
 const router = express.Router()
 
@@ -28,6 +29,7 @@ router.use('/llm', LLMRoutes)
 router.use('/search', SearchRoutes)
 router.use('/account', AccountRoutes)
 router.use('/app', AppRoutes)
+router.use('/integrations', integrationsRouterV1)
 
 router.use('/telegram', TelegramRoutes)
 

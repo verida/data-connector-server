@@ -11,48 +11,21 @@ const logger = log4js.getLogger()
 
 const DATA_CONNECTION_SCHEMA = serverconfig.verida.schemas.DATA_CONNECTIONS
 
-const delay = async (ms: number) => {
-    await new Promise((resolve: any) => setTimeout(() => resolve(), ms))
-}
-
 /**
  * Manage the syncronization of all the connections for a given DID
  */
 export default class SyncManager {
 
     private vault: IContext
-    private requestId: string
 
     private connectionDatastore?: IDatastore
     private connections?: BaseProvider[]
 
-    private status: SyncStatus = SyncStatus.CONNECTED
-
-    public constructor(vaultContext: IContext, requestId: string = 'none') {
+    public constructor(vaultContext: IContext) {
         this.vault = vaultContext
-        this.requestId = requestId
     }
 
-    /**
-     * Check-in to determine if processing is required
-     * 
-     * @returns boolean `true` if processing, `false` if nothing left to process
-     */
-    public async checkIn(): Promise<boolean> {
-        await this.init()
-
-        switch (this.status) {
-            case SyncStatus.CONNECTED:
-                // @todo: check if enough time has elapsed before syncing again
-                await this.sync()
-                return true
-            // @todo: Handle other cases
-        }
-
-        return false
-    }
-
-    public async sync(providerId?: string, accountId?: string, force: boolean = false): Promise<Connection[]> {
+    public async sync(providerId?: string, accountId?: string, force: boolean = false, syncToEnd: boolean = false): Promise<Connection[]> {
         const connections: Connection[] = []
 
         const providers = await this.getProviders(providerId, accountId)
@@ -60,7 +33,7 @@ export default class SyncManager {
         
         for (let p in providers) {
             const provider = providers[p]
-            promises.push(provider.sync(undefined, undefined, force))
+            promises.push(provider.sync(undefined, undefined, force, syncToEnd))
         }
 
         const promiseResults = await Promise.allSettled(promises)
@@ -71,12 +44,6 @@ export default class SyncManager {
         }
 
         return connections
-    }
-
-    private async init(): Promise<void> {
-        // This initializes the vault and connection datastore
-        await this.getProviders()
-
     }
 
     public async getConnection(connectionId: string): Promise<Connection | undefined> {

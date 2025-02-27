@@ -223,10 +223,10 @@ export class LLMController {
     }
 
     /**
-     * 
-     * @param req 
-     * @param res 
-     * @returns 
+     *
+     * @param req
+     * @param res
+     * @returns
      */
     public async agent(req: Request, res: Response) {
         try {

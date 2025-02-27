@@ -76,7 +76,7 @@ export class AuthClient {
         // }
 
         // Verify clientSecret timestamp is within minutes of current timestamp
-        const timeoutMins = CONFIG.verida.OAuthRequestTimeoutMins
+        const timeoutMins = CONFIG.verida.authRequestTimeoutMins
         const timeoutMs = timeoutMins * 60 * 1000; // 2 minutes in milliseconds
 
         const timestampMs = authRequest.timestamp * 1000

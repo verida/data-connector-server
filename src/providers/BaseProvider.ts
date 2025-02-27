@@ -204,7 +204,7 @@ export default class BaseProvider extends EventEmitter {
      * @param schemaUri 
      * @returns 
      */
-    public async sync(accessToken?: string, refreshToken?: string, force: boolean = false): Promise<Connection> {
+    public async sync(accessToken?: string, refreshToken?: string, force: boolean = false, syncToEnd: boolean = false): Promise<Connection> {
         try {
             // @todo: handle handler is in error state
 
@@ -275,40 +275,7 @@ export default class BaseProvider extends EventEmitter {
             }
 
             const syncHandlers = await this.getSyncHandlers()
-            const api = await this.getApi(accessToken, refreshToken)
-            const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
-            const syncPromises = []
-            const syncHandlerNames = []
-            for (let h in syncHandlers) {
-                const handler = syncHandlers[h]
-                syncHandlerNames.push(handler.getId())
-                syncPromises.push(this._syncHandler(handler, api, syncPositionsDs, forceHandlerSync))
-            }
-
-            const syncHandlerResults = await Promise.allSettled(syncPromises)
-            this.connection.syncStatus = SyncStatus.CONNECTED
-            for (const handlerResult of syncHandlerResults) {
-                if (handlerResult.status == "rejected") {
-                    const err = handlerResult.reason
-                    if (err instanceof InvalidTokenError) {
-                        this.connection.syncStatus = SyncStatus.INVALID_AUTH
-                        this.connection.syncMessage = `Permission denied due to token expiry. Reconnect required.`
-                        await this.logMessage(SyncProviderLogLevel.WARNING, this.connection.syncMessage)
-                        break
-                    } else {
-                        this.connection.syncStatus = SyncStatus.ERROR
-                        this.connection.syncMessage = `Unknown error: ${err.message}`
-                        await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
-                    }
-                } else if (handlerResult.value.syncPosition.status == SyncHandlerStatus.ERROR) {
-                    this.connection.syncStatus = SyncStatus.ERROR
-                    this.connection.syncMessage = `${handlerResult.value.syncPosition.handlerId} had an error (${handlerResult.value.syncPosition.syncMessage})`
-                    await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
-                }
-
-                // @todo if handlerResult.value.syncPosition.status == SyncHandlerStatus.SYNCING -- do we sync the handler again or let it stop?
-                // @todo if we do stop, change sync status to enabled
-            }
+            const syncHandlerNames = await this._sync(syncHandlers, accessToken, refreshToken, forceHandlerSync, syncToEnd)
 
             // Add latest profile info
             this.connection.profile = await this.getProfile()
@@ -322,13 +289,59 @@ export default class BaseProvider extends EventEmitter {
             await this.saveConnection()
             await this.logMessage(SyncProviderLogLevel.INFO, `Sync complete for ${this.getProviderId()} (${syncHandlerNames.join(', ')})`)
 
-            // @todo: do we sync again if needed?
-
             return this.connection
         } catch (err: any) {
             console.error(err)
             await this.logMessage(SyncProviderLogLevel.ERROR, `Sync error for ${this.getProviderId()} (${err.message})`)
         }
+    }
+
+    protected async _sync(syncHandlers: BaseSyncHandler[], accessToken?: string, refreshToken?: string, forceHandlerSync?: boolean, syncToEnd?: boolean, followOnSync?: boolean): Promise<string[]> {
+        const api = await this.getApi(accessToken, refreshToken)
+        const syncPositionsDs = await this.vault.openDatastore(SCHEMA_SYNC_POSITIONS)
+        const syncPromises = []
+        const syncHandlerNames: string[] = []
+        for (let h in syncHandlers) {
+            const handler = syncHandlers[h]
+            syncHandlerNames.push(handler.getId())
+            syncPromises.push(this._syncHandler(handler, api, syncPositionsDs, forceHandlerSync, followOnSync ? false : true))
+        }
+
+        const syncHandlerResults = await Promise.allSettled(syncPromises)
+        this.connection.syncStatus = SyncStatus.CONNECTED
+
+        const syncAgainHandlers: BaseSyncHandler[] = []
+        for (const handlerResult of syncHandlerResults) {
+            if (handlerResult.status == "rejected") {
+                const err = handlerResult.reason
+                if (err instanceof InvalidTokenError) {
+                    this.connection.syncStatus = SyncStatus.INVALID_AUTH
+                    this.connection.syncMessage = `Permission denied due to token expiry. Reconnect required.`
+                    await this.logMessage(SyncProviderLogLevel.WARNING, this.connection.syncMessage)
+                    break
+                } else {
+                    this.connection.syncStatus = SyncStatus.ERROR
+                    this.connection.syncMessage = `Unknown error: ${err.message}`
+                    await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
+                }
+            } else if (handlerResult.value.results.syncPosition.status == SyncHandlerStatus.ERROR) {
+                this.connection.syncStatus = SyncStatus.ERROR
+                this.connection.syncMessage = `${handlerResult.value.results.syncPosition.handlerId} had an error (${handlerResult.value.results.syncPosition.syncMessage})`
+                await this.logMessage(SyncProviderLogLevel.ERROR, this.connection.syncMessage)
+            } else if (handlerResult.value.results.syncPosition.moreResults) {
+                // We have more results to fetch from this handler, so fetch again
+                syncAgainHandlers.push(handlerResult.value.handler)
+            }
+        }
+
+        if (syncToEnd && syncAgainHandlers.length) {
+            for (const s of syncAgainHandlers) {
+                console.log(s.getLabel())
+            }
+            await this._sync(syncAgainHandlers, accessToken, refreshToken, forceHandlerSync, true, true)
+        }
+
+        return syncHandlerNames
     }
 
     /**
@@ -407,7 +420,10 @@ export default class BaseProvider extends EventEmitter {
         this.connection.syncNext = new Date((new Date()).getTime() + syncInterval).toISOString()
     }
 
-    protected async _syncHandler(handler: BaseSyncHandler, api: any, syncPositionsDs: IDatastore, force: boolean = false): Promise<SyncHandlerResponse> {
+    protected async _syncHandler(handler: BaseSyncHandler, api: any, syncPositionsDs: IDatastore, force: boolean = false, firstSync: boolean = true): Promise<{
+        results: SyncHandlerResponse
+        handler: BaseSyncHandler
+    }> {
         const providerInstance = this
         let syncCount = 0
         const schemaUri = handler.getSchemaUri()
@@ -420,8 +436,11 @@ export default class BaseProvider extends EventEmitter {
             syncPosition.latestSyncEnd = Utils.nowTimestamp()
             // If access is denied, don't even try to sync
             return {
-                syncPosition,
-                syncResults: []
+                    results: {
+                    syncPosition,
+                    syncResults: []
+                },
+                handler
             }
         }
 
@@ -437,8 +456,11 @@ export default class BaseProvider extends EventEmitter {
 
                 syncPosition.latestSyncEnd = Utils.nowTimestamp()
                 return {
-                    syncPosition,
-                    syncResults: []
+                    results: {
+                        syncPosition,
+                        syncResults: []
+                    },
+                    handler
                 }
             }
         } else if (syncPosition.status == SyncHandlerStatus.ERROR) {
@@ -448,8 +470,11 @@ export default class BaseProvider extends EventEmitter {
 
                 syncPosition.latestSyncEnd = Utils.nowTimestamp()
                 return {
-                    syncPosition,
-                    syncResults: []
+                    results: {
+                        syncPosition,
+                        syncResults: []
+                    },
+                    handler
                 }
             }
 
@@ -468,10 +493,14 @@ export default class BaseProvider extends EventEmitter {
         await syncPositionsDs.save(syncPosition, {
             forceUpdate: true
         })
-        
-        handler.on('log', async (syncLog: SyncProviderLogEvent) => {
+
+        const logMethod = async (syncLog: SyncProviderLogEvent) => {
             await providerInstance.logMessage(syncLog.level, syncLog.message, handler.getId(), schemaUri)
-        })
+        }
+        
+        if (firstSync) {
+            handler.on('log', logMethod)
+        }
 
         await this.logMessage(SyncProviderLogLevel.DEBUG, `Syncing ${handler.getId()}`, handler.getId(),schemaUri)
         let syncResults = await handler.sync(api, syncPosition, syncPositionsDs)
@@ -497,14 +526,23 @@ export default class BaseProvider extends EventEmitter {
             syncCount++
         }
 
-        syncPosition.latestSyncEnd = Utils.nowTimestamp()
-        syncPosition.status = SyncHandlerStatus.ENABLED
-        delete syncPosition['_rev']
-        await syncPositionsDs.save(syncPosition, {
+        syncResults.syncPosition.latestSyncEnd = Utils.nowTimestamp()
+        if (syncResults.syncPosition.status == SyncHandlerStatus.SYNCING) {
+            syncResults.syncPosition.moreResults = true
+        } else {
+            syncResults.syncPosition.moreResults = false
+        }
+
+        syncResults.syncPosition.status = SyncHandlerStatus.ENABLED
+        delete syncResults.syncPosition['_rev']
+        await syncPositionsDs.save(syncResults.syncPosition, {
             forceUpdate: true
         })
 
-        return syncResults
+        return {
+            results: syncResults,
+            handler
+        }
     }
 
     protected async getConnectionDs() {

@@ -11,6 +11,7 @@ export interface SyncOptions {
     providerId?: string
     network?: string
     force?: boolean
+    syncToEnd?: boolean
 }
 
 export interface ResetProviderOptions {

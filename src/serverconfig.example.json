@@ -80,7 +80,11 @@
         "maxHandlerRetries": 5,
         "providerTimeoutMins": 15,
         "handlerTimeoutMins": 15,
-        "OAuthRequestTimeoutMins": 2
+        "authRequestTimeoutMins": 2,
+        "backgroundSync": {
+            "enabled": false,
+            "intervalMins": 120
+        }
     },
     "providers": {
         "mock": {
@@ -188,5 +192,13 @@
     "notion": {
         "apiKey": "",
         "restrictedAccessDatabaseId": ""
+    },
+    "integrations": {
+        "nillion": {
+            "hosts": [],
+            "schemaIds": {
+                "founderPersonalityTraitsSurvey": ""
+            }
+        }
     }
 }

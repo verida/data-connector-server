@@ -277,7 +277,8 @@ export default class CalendarEventHandler extends GoogleHandler {
   private async buildResults(
     calendarId: string,
     response: calendar_v3.Schema$Events,
-    breakId: string
+    breakId: string,
+    breakTimestamp: string
   ): Promise<SyncEventItemsResult> {
     const results: SchemaEvent[] = [];
     let breakHit: SyncItemsBreak;
@@ -285,14 +286,14 @@ export default class CalendarEventHandler extends GoogleHandler {
     for (const event of response.items || []) {
       const eventId = event.id || "";
 
-      const isRecurring = !!event.recurrence; // Check if the event is recurring
+      const isRecurring = !!event.recurrence || event.recurringEventId; // Check if the event is recurring
 
       // If the event is recurring and starts more than one month later, skip it
-      if (isRecurring) {
-        const eventStart = new Date(event.start?.dateTime || `${event.start?.date}T00:00:00.000Z`);
+      const eventStart = new Date(event.start?.dateTime || `${event.start?.date}T00:00:00.000Z`);
+      if (isRecurring) {        
         const oneMonthLater = new Date(new Date().setMonth(new Date().getMonth() + 1));
 
-        if (eventStart > oneMonthLater) { 
+        if (eventStart > oneMonthLater) {
           continue; // Skip this event
         }
       }
@@ -305,6 +306,17 @@ export default class CalendarEventHandler extends GoogleHandler {
         };
         this.emit("log", logEvent);
         breakHit = SyncItemsBreak.ID;
+        break;
+      }
+
+      // Break if the break timestamp is hit
+      if (breakTimestamp && eventStart.toISOString() < breakTimestamp) {
+        const logEvent: SyncProviderLogEvent = {
+          level: SyncProviderLogLevel.DEBUG,
+          message: `Break timestamp hit (${breakTimestamp})`
+        }
+        this.emit('log', logEvent)
+        breakHit = SyncItemsBreak.TIMESTAMP
         break;
       }
 
@@ -330,6 +342,7 @@ export default class CalendarEventHandler extends GoogleHandler {
 
     let items: SchemaEvent[];
     let currentRange = rangeTracker.nextRange();
+
     let query: calendar_v3.Params$Resource$Events$List = {
       calendarId: calendar.sourceId,
       maxResults: this.config.eventBatchSize,
@@ -347,10 +360,12 @@ export default class CalendarEventHandler extends GoogleHandler {
     const latestResult = await this.buildResults(
       calendar.sourceId,
       response.data,
-      currentRange.endId
+      currentRange.endId,
+      _.has(this.config, "breakTimestamp") ? this.config.breakTimestamp : undefined
     );
 
     items = latestResult.items;
+
     // Update the range tracker
     if (items.length) {
       rangeTracker.completedRange(
@@ -379,7 +394,8 @@ export default class CalendarEventHandler extends GoogleHandler {
       const backfillResult = await this.buildResults(
         calendar.sourceId,
         backfillResponse.data,
-        currentRange.endId
+        currentRange.endId,
+        _.has(this.config, "breakTimestamp") ? this.config.breakTimestamp : undefined
       );
 
       items = items.concat(backfillResult.items)
@@ -406,7 +422,13 @@ export default class CalendarEventHandler extends GoogleHandler {
     totalEvents: number,
     calendarCount: number,
   ) {
-    syncPosition.status = SyncHandlerStatus.SYNCING;
-    syncPosition.syncMessage = `Batch complete (${totalEvents}) across (${calendarCount} calendars)`;
+
+    if (totalEvents === 0) {
+      syncPosition.syncMessage = `Stopping. All caught up.`
+      syncPosition.status = SyncHandlerStatus.ENABLED
+    } else {
+      syncPosition.status = SyncHandlerStatus.SYNCING;
+      syncPosition.syncMessage = `Batch complete (${totalEvents}) across (${calendarCount} calendars)`;
+    }
   }
 }
