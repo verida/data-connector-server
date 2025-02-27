@@ -2709,10 +2709,10 @@
     pouchdb-find "^7.2.2"
     uuid "^8.3.2"
 
-"@verida/client-ts@^4.4.1":
-  version "4.4.1"
-  resolved "https://registry.yarnpkg.com/@verida/client-ts/-/client-ts-4.4.1.tgz#29a307bf9cffe7709f3f45055e7fe52683dc2152"
-  integrity sha512-1YIqt4V/TO/a/qGAanLgcC14wYzw08386LVaT6fVnoXG7mA+GJGQewa3Plgr3BuR9/LhhMc1FaBZfL9B5Bg9NQ==
+"@verida/client-ts@^4.4.2":
+  version "4.4.2"
+  resolved "https://registry.yarnpkg.com/@verida/client-ts/-/client-ts-4.4.2.tgz#864af61bbe2c12836a83c284d31b8e13a555fede"
+  integrity sha512-hn77jZ9H03XEqOBwqpNO63EpbVd8W0Mk6Q3XiD8OAHYD/4cgfF+QxI3sMZOH8kYVMzVeWVH53KRGXxdysCG1HA==
   dependencies:
     "@verida/account" "^4.4.1"
     "@verida/did-client" "^4.4.1"

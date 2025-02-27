@@ -1,6 +1,6 @@
 import GoogleHandler from "./GoogleHandler";
 import CONFIG from "../../config";
-import { BaseHandlerConfig, SyncItemsBreak, SyncItemsResult, SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
+import { SyncItemsBreak, SyncItemsResult, SyncProviderLogEvent, SyncProviderLogLevel } from '../../interfaces'
 import { google, gmail_v1 } from "googleapis";
 import { GaxiosResponse } from "gaxios";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker"
@@ -131,6 +131,7 @@ export default class Gmail extends GoogleHandler {
         }, false) // No results and first batch, so break ID couldn't have been hit
       }
 
+      let backfillResult
       currentRange = rangeTracker.nextRange();
       if (items.length != this.config.batchSize && currentRange.startId) {
         // Not enough items, fetch more from the next page of results
@@ -141,7 +142,7 @@ export default class Gmail extends GoogleHandler {
         };
 
         const backfillResponse = await gmail.users.messages.list(query);
-        const backfillResult = await this.buildResults(
+        backfillResult = await this.buildResults(
           gmail,
           backfillResponse,
           currentRange.endId,
@@ -167,7 +168,10 @@ export default class Gmail extends GoogleHandler {
         }
       }
 
-      if (!items.length) {
+      if (backfillResult && backfillResult.breakHit) {
+        syncPosition.syncMessage = `Stopping. All caught up.`
+        syncPosition.status = SyncHandlerStatus.ENABLED
+      } else if (!items.length) {
         syncPosition.syncMessage = `Stopping. No results found.`
         syncPosition.status = SyncHandlerStatus.ENABLED
       } else {

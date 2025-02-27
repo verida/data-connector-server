@@ -229,6 +229,7 @@ export default class BaseSyncHandler extends EventEmitter {
             const syncResult = await this._sync(api, syncPosition)
             syncResults = <SchemaRecord[]> syncResult.results
             await this.handleResults(syncResult.position, syncResults, syncSchemaPositionDs)
+            syncPosition = syncResult.position
         } catch (err: any) {
             let message: string
             if (err instanceof AccessDeniedError) {
