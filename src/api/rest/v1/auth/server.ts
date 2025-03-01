@@ -97,13 +97,15 @@ class AuthServer {
     }
 
     public async createAuthToken(apiKeyData: APIKeyData, authUser: AuthUser, sessionString: string): Promise<string> {
+        await this._init()
+
         // Generate encryption key
         const encryptionKey = EncryptionUtils.randomKey(32)
         const b64Key = EncryptionUtils.encodeBase64(encryptionKey)
 
         const apiKeyDataString = JSON.stringify(apiKeyData)
         const encryptedAPIKeyData = EncryptionUtils.symEncrypt(apiKeyDataString, encryptionKey)
-        
+
         // Split the b64 session string into two parts, with the last part 48 bytes long
         const part1 = encryptedAPIKeyData.substring(0, API_KEY_SESSION_LENGTH)
         const part2 = encryptedAPIKeyData.substring(API_KEY_SESSION_LENGTH)
@@ -149,6 +151,8 @@ class AuthServer {
     }
 
     public async revokeToken(authUser: AuthUser, tokenId: string): Promise<void> {
+        await this._init()
+
         try {
             // Delete the token from the server
             const serverKeyDb = await this.context.openDatabase('api_keys')
