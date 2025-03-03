@@ -1,8 +1,8 @@
 # Use an official Node runtime as a parent image
-FROM node:23-bullseye
+FROM node:23-alpine
 
 # Install git so we can clone the repository
-RUN apt-get update && apt-get install -y git
+RUN apk update && apk add --no-cache python3 make g++ git
 
 # Set the working directory
 WORKDIR /usr/src/app
