@@ -2,7 +2,7 @@ module.exports = {
     apps: [
       {
         name: 'dcs',
-        script: './start.sh',
+        script: './docker/start.sh',
         interpreter: 'sh',
         kill_timeout: 15000,
       }
