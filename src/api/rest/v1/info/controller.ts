@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import CONFIG from "../../../../config"
 import { Utils } from "../../../../utils";
+const { exec } = require('child_process');
+import util from 'util';
+
+// Promisify exec to use async/await
+const execAsync = util.promisify(exec);
 
 function formatBytes(bytes: number): string {
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -44,6 +49,9 @@ export class AdminController {
     }
 
     public async status(req: Request, res: Response) {
+      const { stdout } = await execAsync('git rev-parse HEAD');
+      const gitHash = stdout
+
         return res.json({
             logsExposed: CONFIG.verida.logging.exposeLogs,
             environment: CONFIG.verida.environment,
@@ -51,7 +59,8 @@ export class AdminController {
             build: CONFIG.verida.build,
             schemas: CONFIG.verida.schemas,
             mode: CONFIG.verida.mode,
-            activeDIDs: Utils.didCount()
+            activeDIDs: Utils.didCount(),
+            gitHash
         })
     }
 }
