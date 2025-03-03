@@ -10,6 +10,9 @@ WORKDIR /usr/src/app
 # Clone the repository from the main branch
 RUN git clone -b main https://github.com/verida/data-connector-server.git
 
+# Install pm2 globally
+RUN yarn global add pm2
+
 # Change directory to the cloned repository
 WORKDIR /usr/src/app/data-connector-server
 
@@ -20,4 +23,4 @@ RUN yarn && yarn build
 EXPOSE 5021
 
 # Start the server using yarn
-CMD ["yarn", "run", "start"]
+CMD ["pm2-runtime", "start", "yarn", "--name", "dcs", "--", "run", "start"]
