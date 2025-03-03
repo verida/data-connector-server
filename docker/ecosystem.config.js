@@ -2,7 +2,9 @@ module.exports = {
     apps: [
       {
         name: 'dcs',
-        script: 'yarn run start',
+        script: './start.sh',
+        interpreter: 'sh',
+        kill_timeout: 15000,
       }
     ]
   };
