@@ -23,4 +23,4 @@ RUN yarn && yarn build
 EXPOSE 5021
 
 # Start the server using yarn
-CMD ["pm2-runtime", "start", "yarn", "--name", "dcs", "--", "run", "start"]
+CMD ["pm2-runtime", "dist/server.js", "--name", "dcs"]
