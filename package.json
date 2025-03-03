@@ -1,6 +1,6 @@
 {
   "name": "@verida/data-connector",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Verida Data Connector",
   "main": "dist/server.js",
   "scripts": {
@@ -82,6 +82,7 @@
     "mocha": "^9.2.1",
     "moment-timezone": "^0.5.45",
     "mongodb": "^6.12.0",
+    "multer": "^1.4.5-lts.1",
     "nano": "^9.0.5",
     "node-imap": "^0.9.6",
     "officeparser": "^4.1.1",
