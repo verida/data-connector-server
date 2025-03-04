@@ -9,16 +9,10 @@ const upload = multer({ storage });
 
 const router = express.Router()
 
-router.get(/logs$/, auth({
-    options: { checkAdmin: true }
-}), controller.logs)
+router.get(/logs$/, controller.logs)
 
-router.get(/clearLogs$/, auth({
-    options: { checkAdmin: true }
-}), controller.clearLogs)
+router.get(/clearLogs$/, controller.clearLogs)
 
-router.post(/updateConfig$/, upload.single('file'), auth({
-    options: { checkAdmin: true }
-}), controller.updateConfig)
+router.post(/updateConfig$/, upload.single('file'), controller.updateConfig)
 
 export default router
