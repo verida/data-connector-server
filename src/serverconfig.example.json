@@ -10,7 +10,7 @@
             "exposeLogs": false,
             "logsPassword": "a890s7dfna9df7"
         },
-        "accessCheckEnabled": true,
+        "accessCheckEnabled": false,
         "mode": "development",
         "environment": "banksia",
         "serverKey": "0x...",
