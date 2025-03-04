@@ -4,7 +4,6 @@ const path = require('path');
 const { exec } = require('child_process');
 import util from 'util';
 import CONFIG from "../../../../config"
-require('dotenv').config()
 
 // Promisify exec to use async/await
 const execAsync = util.promisify(exec);
@@ -65,7 +64,6 @@ export class AdminController {
         
         try {
             const password = req.query.password
-            console.log(`${ADMIN_PASSWORD} != ${password}`)
 
             if (ADMIN_PASSWORD != password) {
                 return res.status(403).send('Permission denied')

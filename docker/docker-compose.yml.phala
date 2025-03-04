@@ -4,5 +4,5 @@ services:
     ports:
       - "80:5021"
     environment:
-      - ADMIN_PASSWORD=
-      - SSL_ENABLED=
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SSL_ENABLED=${SSL_ENABLED}
