@@ -8,6 +8,8 @@ require('dotenv').config()
 const PORT = process.env.SERVER_PORT ? process.env.SERVER_PORT : 5021;
 const SSL_ENABLED = process.env.SSL_ENABLED ? process.env.SSL_ENABLED : false;
 
+console.log(process.env)
+
 const https = require("https")
 const fs = require("fs")
 

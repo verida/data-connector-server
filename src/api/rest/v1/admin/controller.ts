@@ -4,6 +4,7 @@ const path = require('path');
 const { exec } = require('child_process');
 import util from 'util';
 import CONFIG from "../../../../config"
+require('dotenv').config()
 
 // Promisify exec to use async/await
 const execAsync = util.promisify(exec);
