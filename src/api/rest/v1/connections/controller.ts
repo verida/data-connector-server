@@ -258,7 +258,7 @@ export default class Controller {
         }
     }
 
-    public static async disconnect(req: UniqueRequest, res: Response, next: any) {
+    public static async disconnect(req: UniqueRequest, res: Response) {
         try {
             const connectionId = req.params.connectionId
             const networkInstance = req.veridaNetworkConnection
@@ -283,7 +283,37 @@ export default class Controller {
         }
     }
 
-    public static async logs(req: UniqueRequest, res: Response, next: any) {
+    public static async profiles(req: UniqueRequest, res: Response) {
+        try {
+            const query = req.query
+            const providerId = query.providerId ? query.providerId.toString() : undefined
+            const accountId = query.accountId ? query.accountId.toString() : undefined
+
+            const networkInstance = req.veridaNetworkConnection
+            const syncManager = new SyncManager(networkInstance.context)
+            const connections = await syncManager.getProviders(providerId, accountId)
+
+            const result: Record<string, any> = {}
+            for (const connection of connections) {
+                const uniqueId = `${connection.getProviderId()}:${connection.getAccountId()}`
+                result[uniqueId] = connection.getProfile()
+            }
+
+            // @todo: catch and send errors
+            return res.send({
+                profiles: result,
+                success: true
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    public static async logs(req: UniqueRequest, res: Response) {
         try {
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');

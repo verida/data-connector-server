@@ -133,6 +133,45 @@ export class DbController {
         }
     }
 
+    public async count(req: Request, res: Response) {
+        try {
+            const dbName = req.params.database
+            const { context } = req.veridaNetworkConnection
+            const permissions = Utils.buildPermissions(req)
+
+            const db = await context.openDatabase(dbName, {
+                // @ts-ignore
+                permissions
+            })
+
+            const selector = req.body.query
+            const limit = 1000
+            const fields = ['_id']
+
+            const loops = 0
+            let count = 0
+            while (true) {
+                const result = await db.getMany(selector, {
+                    fields,
+                    limit,
+                    skip: loops * limit
+                })
+
+                if (result.length < limit) {
+                    count = loops*limit + result.length
+                    break
+                }
+            }
+
+            res.json({
+                count
+            })
+        } catch (error: any) {
+            console.log(error)
+            res.status(500).send(error.message);
+        }
+    }
+
     public async query(req: Request, res: Response) {
         try {
             const dbName = req.params.database
