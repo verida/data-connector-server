@@ -284,6 +284,15 @@ const SCOPES: Record<string, Scope> = {
         type: ScopeType.API,
         description: "Perform a keyword search across all user data",
         userNote: `Perform a keyword search across all accessible data`
+    },
+
+    /**
+     * Connection Scopes
+     */
+    "api:connections-profiles": {
+        type: ScopeType.API,
+        description: "Access profiles of third party accounts (ie: Google, Telegram)",
+        userNote: `Access profiles of third party accounts (ie: Google, Telegram)`
     }
 }
 
