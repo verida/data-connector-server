@@ -12,7 +12,11 @@ router.put('/:connectionId', auth(), Controller.update)
 router.delete('/:connectionId', auth(), Controller.disconnect)
 router.get('/profiles', auth({
     scopes: ["api:connections-profiles"],
-    credits: CONFIG.verida.billing.defaultCredits
+    credits: 0
 }), Controller.profiles)
+router.get('/status', auth({
+    scopes: ["api:connections-status"],
+    credits: 0
+}), Controller.status)
 
 export default router

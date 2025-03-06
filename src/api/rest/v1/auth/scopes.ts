@@ -293,6 +293,11 @@ const SCOPES: Record<string, Scope> = {
         type: ScopeType.API,
         description: "Access profiles of third party accounts (ie: Google, Telegram)",
         userNote: `Access profiles of third party accounts (ie: Google, Telegram)`
+    },
+    "api:connections-status": {
+        type: ScopeType.API,
+        description: "Access status information on connected third party accounts (ie: Google, Telegram)",
+        userNote: `Access status information on connected third party accounts (ie: Google, Telegram)`
     }
 }
 

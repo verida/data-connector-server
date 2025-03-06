@@ -167,6 +167,79 @@ export default class Controller {
         }
     }
 
+    public static async status(req: UniqueRequest, res: Response, next: any) {
+        try {
+            const query = req.query
+            const providerId = query.providerId ? query.providerId.toString() : undefined
+            const accountId = query.accountId ? query.accountId.toString() : undefined
+
+            const networkInstance = req.veridaNetworkConnection
+            const syncManager = new SyncManager(networkInstance.context)
+            const connections = await syncManager.getProviders(providerId, accountId)
+
+            const result: Record<string, any> = {}
+            for (const connection of connections) {
+                const handlerPositions: Record<string, any> = {}
+
+                for (const handler of await connection.getSyncHandlers()) {
+                    const handlerInfo = await connection.getSyncPosition(handler.getId())
+                    handlerPositions[handler.getId()] = {
+                        handlerId: handlerInfo.handlerId,
+                        latestSyncStart: handlerInfo.latestSyncStart,
+                        latestSyncEnd: handlerInfo.latestSyncEnd,
+                        newestDataTimestamp: handlerInfo.newestDataTimestamp,
+                        oldestDataTimestamp: handlerInfo.oldestDataTimestamp,
+                        status: handlerInfo.status,
+                        syncMessage: handlerInfo.syncMessage,
+                    }
+                }
+
+                const rawConnection = connection.getConnection()
+                
+                const redactedConnection: any = {
+                    _id: rawConnection._id,
+                    readableId: rawConnection.profile.readableId,
+                    providerId: rawConnection.providerId,
+                    accountId: rawConnection.accountId,
+                    syncStatus: rawConnection.syncStatus,
+                    syncStart: rawConnection.syncStart,
+                    syncEnd: rawConnection.syncEnd,
+                    syncFrequency: rawConnection.syncFrequency,
+                    syncNext: rawConnection.syncNext,
+                    syncMessage: rawConnection.syncMessage,
+                    handlers: []
+                }
+
+                for (const i in rawConnection.handlers) {
+                    const handler = rawConnection.handlers[i]
+                    const handlerPosition = handlerPositions[handler.id]
+
+                    if (handlerPosition) {
+                        redactedConnection.handlers[i] = {
+                            enabled: handler.enabled,
+                            ...handlerPosition
+                        }
+                    }
+                }
+
+                const uniqueId = `${connection.getProviderId()}:${connection.getAccountId()}`
+                result[uniqueId] = redactedConnection
+            }
+
+            // @todo: catch and send errors
+            return res.send({
+                items: Object.values(result),
+                success: true
+            })
+        } catch (error) {
+            console.log(error)
+            res.status(500).send({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
     public static async update(req: UniqueRequest, res: Response) {
         try {
             const connectionId = req.params.connectionId
