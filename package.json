@@ -1,6 +1,6 @@
 {
   "name": "@verida/data-connector",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Verida Data Connector",
   "main": "dist/server.js",
   "scripts": {
