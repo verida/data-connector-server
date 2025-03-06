@@ -1,3 +1,19 @@
+2024-02-27 (v1.2.0)
+------------------
+
+- Feature: Add count API endpoint for datastores and databases
+- Feature: Add connections/status API endpoint
+- Feature: Add connections/profiles API endpoint
+- Feature: Add docker container for easy deployment
+- Feature: Add phala deployment example
+- Fix: Add missing init() calls in auth server
+- Fix: Detect all shutdown signals and close server
+
+2024-02-27 (v1.1.0)
+------------------
+
+- Feature: Support ongoing background syncing of user data
+- Feature: Initial sync continues until no more data available
 
 2024-02-04 (v1.0.0)
 ------------------

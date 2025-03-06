@@ -132,6 +132,51 @@ export class DsController {
         }
     }
 
+    public async count(req: Request, res: Response) {
+        try {
+            const schemaName = Utils.getSchemaFromParams(req.params.schema)
+            const { context } = req.veridaNetworkConnection
+            const permissions = Utils.buildPermissions(req)
+
+            const ds = await context.openDatastore(schemaName, {
+                // @ts-ignore
+                permissions
+            })
+
+            const selector = req.body.query
+            const limit = 1000
+            const fields = ['_id']
+
+            const loops = 0
+            let count = 0
+            while (true) {
+                const result = await ds.getMany(selector, {
+                    fields,
+                    limit,
+                    skip: loops * limit
+                })
+
+                if (result.length < limit) {
+                    count = loops*limit + result.length
+                    break
+                }
+            }
+
+            res.json({
+                count
+            })
+        } catch (error: any) {
+            let message = error.message
+            if (error.message.match('invalid encoding')) {
+                message = 'Invalid encoding (check permissions header)'
+            }
+
+            res.status(500).send({
+                error: message
+            });
+        }
+    }
+
     public async query(req: Request, res: Response) {
         try {
             const schemaName = Utils.getSchemaFromParams(req.params.schema)

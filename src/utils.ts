@@ -82,7 +82,7 @@ export class Utils {
             }
             const bearerToken = authHeader.split(' ')[1];
 
-            if (!options.ignoreScopeCheck && !options.scopes) {
+            if (!options.ignoreScopeCheck && options.scopes.length === 0) {
                 throw new Error(`Invalid token (insufficient scope)`)
             }
 

@@ -11,6 +11,12 @@ router.get("/get/:database/:recordId", auth({
     credits: CONFIG.verida.billing.defaultCredits
 }), controller.getById)
 
+router.post("/count/:database", auth({
+    scopes: ["api:db-query"],
+    dbScope: "r",
+    credits: 0
+}), controller.count)
+
 router.post("/query/:database", auth({
     scopes: ["api:db-query"],
     dbScope: "r",

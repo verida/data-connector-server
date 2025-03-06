@@ -1,7 +1,7 @@
 {
     "serverUrl": "https://127.0.0.1:5021",
     "apiVersion": "v1",
-    "build": "1.0.2",
+    "build": "1.1.1-rc1",
     "assetsUrl": "https://127.0.0.1:5021/assets",
     "verida": {
         "logging": {
@@ -10,7 +10,7 @@
             "exposeLogs": false,
             "logsPassword": "a890s7dfna9df7"
         },
-        "accessCheckEnabled": true,
+        "accessCheckEnabled": false,
         "mode": "development",
         "environment": "banksia",
         "serverKey": "0x...",
