@@ -7,6 +7,7 @@
 - Feature: Add docker container for easy deployment
 - Feature: Add phala deployment example
 - Fix: Add missing init() calls in auth server
+- Fix: Detect all shutdown signals and close server
 
 2024-02-27 (v1.1.0)
 ------------------
