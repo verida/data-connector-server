@@ -184,6 +184,14 @@
             "messagesPerGroupLimit": 100,
             "maxGroupSize": 50,
             "useDbPos": true
+        },
+        "notion": {
+            "status": "active",
+            "label": "Notion",
+            "clientId": "",
+            "clientSecret": "",
+            "batchSize": 50,            
+            "maxSyncLoops": 1
         }
     },
     "providerDefaults": {
