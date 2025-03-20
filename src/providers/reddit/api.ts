@@ -178,6 +178,17 @@ export class RedditApi {
 
   /**
    *
+   * @summary Get the profile of auth token owner
+   * @returns
+   */
+  public async getUser(username: string): Promise<string> {
+    const user = await this._call<string>("GET", `/user/${username}/about.json`);
+
+    return user[0];
+  }
+
+  /**
+   *
    * @summary Get subreddits where the user is subcribed to, a contributor or a moderator
    * @see https://www.reddit.com/dev/api#GET_subreddits_mine_{where}
    * @returns
