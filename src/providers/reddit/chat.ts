@@ -13,12 +13,8 @@ import {
 import { ConnectionOptionType } from "../../interfaces";
 import { RedditChatType, RedditConfig } from "./reddit";
 import { RedditApi } from "./api";
-import {
-  SchemaChatMessageType,
-  SchemaSocialChatGroup,
-  SchemaSocialChatMessage,
-} from "../../schemas";
-import { UsersCache } from "../telegram/usersCache";
+import { SchemaChatMessageType, SchemaSocialChatMessage } from "../../schemas";
+import { UsersCache } from "./usersCache";
 import InvalidTokenError from "../InvalidTokenError";
 import { TDError } from "tdlib-native/dist";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
@@ -34,15 +30,15 @@ export interface SyncChatMessagesResult extends SyncItemsResult {
 /**
  * @summary This returns everything as a Listing, no need to categorize it
  */
-export default class MessagesHandler extends BaseSyncHandler {
+export default class ChatsHandler extends BaseSyncHandler {
   protected config: RedditConfig;
 
   public getName(): string {
-    return "messages";
+    return "chat";
   }
 
   public getLabel(): string {
-    return "Messages";
+    return "Chats";
   }
 
   public getSchemaUri(): string {
@@ -80,8 +76,8 @@ export default class MessagesHandler extends BaseSyncHandler {
         defaultValue: "3-months",
       },
       {
-        id: "messageTypes",
-        label: "Message types",
+        id: "chatTypes",
+        label: "Chat types",
         type: ConnectionOptionType.ENUM_MULTI,
         enumOptions: [
           {
@@ -118,19 +114,10 @@ export default class MessagesHandler extends BaseSyncHandler {
     api: RedditApi,
     syncPosition: SyncHandlerPosition
   ): Promise<SyncResponse> {
-    // const chatGroupDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_GROUP)
-    // const db2 = await chatGroupDs.getDb()
-    // await db2.destroy({})
-
-    // const chatMessageDs = await this.provider.getDatastore(CONFIG.verida.schemas.CHAT_MESSAGE)
-    // const db = await chatMessageDs.getDb()
-    // await db.destroy({})
-    // throw new Error('destroyed')
-
     try {
-      let messageCount = 0;
       let chats: SchemaSocialChatMessage[] = [];
       let chatHistory: SchemaSocialChatMessage[] = [];
+      const userCache = new UsersCache(api);
 
       if (this.config.batchSize > MAX_BATCH_SIZE) {
         throw new Error(
@@ -145,12 +132,10 @@ export default class MessagesHandler extends BaseSyncHandler {
       const latestResp = await api.getChats("inbox", this.config.batchSize);
       const latestResult = await this.buildResults(
         api,
+        userCache,
         latestResp,
         "inbox",
-        currentRange.endId,
-        _.has(this.config, "breakTimestamp")
-          ? this.config.breakTimestamp
-          : undefined
+        currentRange.endId
       );
 
       chats = latestResult.items;
@@ -207,21 +192,30 @@ export default class MessagesHandler extends BaseSyncHandler {
     }
   }
 
+  /**
+   *
+   * @summary Given a listing of chats creates a SyncChatMessagesResult object
+   * @param api
+   * @param latestResp
+   * @param chatType
+   * @param endId Optional id to stop
+   * @returns
+   */
   async buildResults(
     api: RedditApi,
+    userCache: UsersCache,
     latestResp: Listing<PrivateMessage>,
-    messageType: "inbox" | "unread" | "sent",
-    endId: string,
-    arg3: string
+    chatType: "inbox" | "unread" | "sent",
+    endId?: string
   ): Promise<SyncChatMessagesResult> {
     const results: SchemaSocialChatMessage[] = [];
     let breakHit: SyncItemsBreak;
 
     for (const chat of await latestResp.all()) {
-      if (chat.id === endId) {
+      if (endId && chat.id === endId) {
         const logEvent: SyncProviderLogEvent = {
           level: SyncProviderLogLevel.DEBUG,
-          message: `End ID hit (${chat.id})`,
+          message: `End chat ID hit (${chat.id})`,
         };
         this.emit("log", logEvent);
         breakHit = SyncItemsBreak.ID;
@@ -231,28 +225,27 @@ export default class MessagesHandler extends BaseSyncHandler {
       const createdTime = chat.created ?? new Date().toISOString();
 
       // Get the "from" user
-      const from = await this.getUser(api, chat.from.id);
+      const from = await userCache.getUser(chat.from.id);
 
       results.push({
         _id: chat.id,
-        // TODO
+        // NOTE This is
         groupId: "",
         // TODO This is documented but not included in the Devvit types
         // @ts-ignore
         groupName: chat.name,
         type:
-          messageType === "inbox" || messageType === "unread"
+          chatType === "inbox" || chatType === "unread"
             ? SchemaChatMessageType.RECEIVE
             : SchemaChatMessageType.SEND,
         messageText: chat.body,
         messageHTML: chat.bodyHtml,
         fromId: chat.from.id,
-        // TODO Get these from api, keep a cache and first fetch it from there
+        // NOTE Handle and username is the same
         fromHandle: from.username,
-        // TODO Get displayName
         fromName: from.username,
         sentAt: chat.created.toDateString(),
-        name: `Private message: ${chat.from}`,
+        name: `Private chat: ${chat.from}`,
       });
     }
 
@@ -260,26 +253,5 @@ export default class MessagesHandler extends BaseSyncHandler {
       items: results,
       breakHit,
     };
-  }
-
-  // TODO Refactor
-  cache: Map<string, User> = new Map();
-
-  /**
-   * 
-   * @summary Fetch a user or retrieve it from the cache
-   * @param api 
-   * @param id 
-   * @returns 
-   */
-  async getUser(api: RedditApi, id: string) {
-    const userFromCache = this.cache.get(id);
-
-    if (!userFromCache) {
-      const user = await api.getUser(id);
-      this.cache.set(id, user);
-    }
-
-    return userFromCache;
   }
 }
