@@ -1,5 +1,13 @@
-import { Devvit, Subreddit } from "@devvit/public-api";
-import axios, { Axios, AxiosInterceptorOptions, AxiosResponse } from "axios";
+import {
+  Devvit,
+  Listing,
+  PrivateMessage,
+  RedditAPIClient,
+  Subreddit,
+  User,
+  Comment,
+} from "@devvit/public-api";
+import axios, { Axios, AxiosResponse } from "axios";
 
 const OAUTH_ENDPOINT = "https://oauth.reddit.com/";
 
@@ -40,23 +48,28 @@ type RequestConfig = {
   pagination?: PaginationParams;
 };
 
-type Chat = {};
-
 type PaginationParams = {
   after: string;
 };
 
 /**
  * @abstract
- * @summary NOTE Data should be scrapped back as far as 3 months
+ * @summary This API is a combination of the original API and the in-development Devvit library(v0.11). This is required given that some of the methods are either
+ *    not supported or return incomplete data.
  */
 export class RedditApi {
   clientId: string;
   tdPath: string;
   client?: Axios;
+  devvitClient!: RedditAPIClient;
 
   constructor(clientId: string) {
     this.clientId = clientId;
+    Devvit.configure({
+      redditAPI: true,
+    });
+    // @ts-ignore Devvit exports RedditAPIClient as type
+    this.devvitClient = new RedditAPIClient({});
   }
 
   // Devvit is under development
@@ -149,20 +162,28 @@ export class RedditApi {
    * @see https://www.reddit.com/dev/api#GET_message_{where}
    * @returns
    */
-  public async getChats(): Promise<Chat[]> {
-    // TODO Add response interceptor to check message data and if it passed the 3 months
-    const customInterceptor: any[] = [];
+  public async getChats(
+    type: "inbox" | "unread" | "sent",
+    // TODO Batch size
+    batchSize: number
+  ): Promise<Listing<PrivateMessage>> {
+    return await this.devvitClient.getMessages({
+      type,
+    });
 
-    const chatDetail = await this._call<Chat[]>(
-      "GET",
-      "/message/inbox.json",
-      {
-        max_replies: 300,
-      },
-      customInterceptor
-    );
+    // // TODO Add response interceptor to check message data and if it passed the 3 months
+    // const customInterceptor: any[] = [];
 
-    return chatDetail;
+    // const chatDetail = await this._call<PrivateMessage[]>(
+    //   "GET",
+    //   "/message/inbox.json",
+    //   {
+    //     max_replies: 300,
+    //   },
+    //   customInterceptor
+    // );
+
+    // return chatDetail;
   }
 
   /**
@@ -171,6 +192,7 @@ export class RedditApi {
    * @returns
    */
   public async getMe(): Promise<string> {
+    // TODO Check if getAppUser returns the same
     const user = await this._call<string>("GET", "/api/v1/me.json");
 
     return user[0];
@@ -181,14 +203,15 @@ export class RedditApi {
    * @summary Get the profile of auth token owner
    * @returns
    */
-  public async getUser(username: string): Promise<string> {
-    const user = await this._call<string>("GET", `/user/${username}/about.json`);
-
-    return user[0];
+  public async getUser(usernameOrId: string | number): Promise<User> {
+    return typeof usernameOrId === "string"
+      ? await this.devvitClient.getUserByUsername(usernameOrId)
+      : await this.devvitClient.getUserById(String(usernameOrId));
   }
 
   /**
    *
+   * @summary This method is implemented by making api calls since no such Devvit method exists (v.0.11)
    * @summary Get subreddits where the user is subcribed to, a contributor or a moderator
    * @see https://www.reddit.com/dev/api#GET_subreddits_mine_{where}
    * @returns
@@ -223,5 +246,39 @@ export class RedditApi {
     );
 
     return subreddits.flat().flat();
+  }
+
+  /**
+   *
+   * @summary Fetch comments for a user
+   * @param user
+   * @param pageSize
+   * @param limit
+   * @param timeframe
+   * @param sort
+   * @param before
+   * @param after
+   * @returns
+   */
+  public async getComments(
+    user: User,
+    pageSize: number,
+    limit: number,
+    timeframe: "all" = "all",
+    sort: "new" = "new",
+    before?: string,
+    after?: string
+  ): Promise<Listing<Comment>> {
+    let options = {
+      pageSize: 1,
+      timeframe,
+      sort,
+      limit,
+      before,
+      after,
+    };
+    // TODO This might not be needed
+    options = JSON.parse(JSON.stringify(options));
+    return await user.getComments(options);
   }
 }
