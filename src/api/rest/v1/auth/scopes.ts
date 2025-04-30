@@ -109,12 +109,12 @@ function appendNewOnly(scopes: string[], newScope: string): string[] {
 /**
  * Take an array of scopes and expand any short hand scopes (ie: ds:file) to
  * the full scope. Convert base64 encoded URL scopes to have the actual URL.
- * 
+ *
  * If the same datastore or database scope is listed multiple times, merge them.
- * 
+ *
  * (ie: ds:r:<schema> and ds:rw:<schema>)
- * 
- * @param scopes 
+ *
+ * @param scopes
  */
 export function expandScopes(scopes: string[], expandPermissions: boolean = true): ExpandedScopes {
     const scopeValidity: Record<string, boolean> = {}
@@ -251,7 +251,7 @@ const SCOPES: Record<string, Scope> = {
 
     /**
      * Datastore Access Scopes
-     * 
+     *
      * Dynamically injected below
      */
     "api:llm-prompt": {
@@ -298,7 +298,16 @@ const SCOPES: Record<string, Scope> = {
         type: ScopeType.API,
         description: "Access status information on connected third party accounts (ie: Google, Telegram)",
         userNote: `Access status information on connected third party accounts (ie: Google, Telegram)`
-    }
+    },
+
+    /**
+     * App Developer Scopes
+     */
+    "api:app-developer": {
+        type: ScopeType.API,
+        description: "Access app developer features",
+        userNote: "Access app developer features"
+    },
 }
 
 for (const datastoreId in DATASTORE_LOOKUP) {
