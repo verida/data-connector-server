@@ -7,9 +7,10 @@ import {
   PassportProfile,
 } from "../../interfaces";
 import { RedditApi } from "./api";
-import CommentsHandler from "./comments";
+import ChatsHandler from "./comments";
 import { PassportStatic } from "passport";
 import crypto from "crypto";
+import MessagesHandler from "./chat";
 
 export interface RedditProviderConfig extends BaseProviderConfig {
   apiHash: string;
@@ -44,6 +45,7 @@ export default class RedditProvider extends Base {
 
   public syncHandlers(): any[] {
     return [
+      ChatsHandler,
       // CommentsHandler
     ];
   }
@@ -110,7 +112,6 @@ export default class RedditProvider extends Base {
     return result;
   }
 
-  // refreshToken and this.connection is undefined
   public async getApi(
     accessToken?: string,
     refreshToken?: string
@@ -127,25 +128,14 @@ export default class RedditProvider extends Base {
     }
 
     if (!refreshToken) {
-      throw new Error("Unable to load Reddit API");
+      throw new Error(
+        `Unable to load Telegram API, no refresh (bin file) token`
+      );
     }
-
-    // api.restoreBinFile(refreshToken);
 
     await api.getClient(true);
     this.api = api;
     return api;
-  }
-
-  public async close() {
-    try {
-      // const api = await this.getApi();
-      // const binFile = await api.closeClient();
-
-      // this.connection!.refreshToken = binFile;
-    } catch (err: any) {
-      // Error with binFile (possibly because auth has been disconnected), do nothing
-    }
   }
 
   public async init() {
@@ -175,3 +165,10 @@ export default class RedditProvider extends Base {
     );
   }
 }
+
+
+// TODO
+// Implement sync
+// Test handles errors appropriatelly
+// Schemas
+// README
