@@ -4,6 +4,7 @@ import auth from "../../../../middleware/auth";
 
 const router = express.Router()
 const appAuth = auth({
+    scopes: ['api:app-developer'],
     options: {
         // App DID's don't need to be whitelisted
         ignoreAccessCheck: true

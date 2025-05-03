@@ -18,26 +18,37 @@ function serialize(data: any): string {
 }
 
 export class AppController {
+    // TODO: Gracefully handle errors
 
     public async getAccount(req: Request, res: Response) {
-        const { did } = req.veridaNetworkConnection
+        try {
+            const { did } = req.veridaNetworkConnection
 
-        const account = await BillingManager.getAccount(did)
+            const account = await BillingManager.getAccount(did)
 
-        if (!account) {
-            return res.status(404).json({
-                success: false
+            if (!account) {
+                return res.status(404).json({
+                    success: false,
+                    error: "Account not found"
+                })
+            }
+
+            return res.json({
+                success: true,
+                account
+            })
+        } catch (error) {
+            console.error(error)
+            return res.status(500).json({
+                success: false,
+                error: "Something went wrong while retrieving account"
             })
         }
-        
-        return res.json({
-            account
-        })
     }
 
     public async register(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
-        
+
         return res.json({
             success: await BillingManager.registerAccount(did, BillingAccountType.APP)
         })
@@ -45,7 +56,7 @@ export class AppController {
 
     public async requests(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
-        
+
         return res.json({
             results: await UsageManager.getRequests(did)
         })
@@ -53,7 +64,7 @@ export class AppController {
 
     public async accountCount(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
-        
+
         return res.json(serialize({
             count: await UsageManager.getAccountCount(did)
         }))
@@ -63,7 +74,7 @@ export class AppController {
         const { did } = req.veridaNetworkConnection
         const startDateTime = req.params.start ? req.params.start.toString() : undefined
         const endDateTime = req.params.end ? req.params.end.toString() : undefined
-        
+
         return res.json(serialize({
             usage: await UsageManager.getUsageStats(did, startDateTime, endDateTime)
         }))
@@ -71,7 +82,7 @@ export class AppController {
 
     public async balance(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
-        
+
         const balance = await BillingManager.getBalance(did)
         return res.json(serialize({
             balance
@@ -87,7 +98,7 @@ export class AppController {
 
     public async deposits(req: Request, res: Response) {
         const { did } = req.veridaNetworkConnection
-        
+
         return res.json(serialize({
             deposits: await BillingManager.getDeposits(did)
         }))
