@@ -156,3 +156,26 @@ export interface SchemaEvent extends SchemaRecord {
     attachments?: CalendarAttachment[]
 
 }
+
+export interface SchemaMeetingTranscript extends SchemaRecord{
+    organizerEmail: string;
+    user?: SchemaPerson;
+    speakers?: SchemaPerson[];
+    meetingAttendees?: SchemaPerson[];
+    duration?: number;
+    dateTime?: string;
+    sentence?: SchemaMeetingTranscriptSentence[];       
+    calendarEventId?: string;
+}
+
+export interface SchemaPerson {
+    email?: string;
+    displayName: string;
+    name?: string;
+    phoneNumber?: string;
+}
+
+export interface SchemaMeetingTranscriptSentence {
+    rawText: string;
+    speakerName: string;
+}
