@@ -7,6 +7,7 @@ import {
   User,
   Comment,
 } from "@devvit/public-api";
+import { FlairListResponse } from "@devvit/protos";
 import axios, { Axios, AxiosResponse } from "axios";
 
 const OAUTH_ENDPOINT = "https://oauth.reddit.com/";
@@ -68,35 +69,26 @@ export class RedditApi {
     Devvit.configure({
       redditAPI: true,
     });
-    // @ts-ignore Devvit exports RedditAPIClient as type
-    this.devvitClient = new RedditAPIClient({});
+    // this.devvitClient = Devvit.use()
+
+    try {
+      this.client = axios.create();
+
+      this.client.interceptors.request.use(
+        ...requestInterceptor(this.clientId)
+      );
+
+      // Add a response interceptor
+      this.client.interceptors.response.use(...responseInterceptor);
+    } catch (err: any) {
+      console.error(`Reddit library error: ${err.message}`);
+      throw new Error(`Internal error with Telegram library`);
+    }
   }
 
   // Devvit is under development
-  public async getClient(useDevvit: boolean = false): Promise<Devvit | Axios> {
-    if (this.client) {
-      return this.client;
-    }
-
-    try {
-      if (useDevvit) {
-        // this.client = new Devvit();
-      } else {
-        this.client = axios.create();
-
-        this.client.interceptors.request.use(
-          ...requestInterceptor(this.clientId)
-        );
-
-        // Add a response interceptor
-        this.client.interceptors.response.use(...responseInterceptor);
-      }
-
-      return this.client;
-    } catch (err: any) {
-      console.error(`Telegram library error: ${err.message}`);
-      throw new Error(`Internal error with Telegram library`);
-    }
+  public getClient(): Devvit | Axios {
+    return this.client;
   }
 
   /**
@@ -118,9 +110,12 @@ export class RedditApi {
   ): Promise<Type[] | undefined> {
     let terminationCriteriaMet = true;
     let data: Type[] = [];
-    let pagination: PaginationParams = config.pagination;
+    let pagination: PaginationParams = config?.pagination;
 
-    const myInterceptor = axios.interceptors.request.use(...customInterceptor);
+    let myInterceptor;
+    if (customInterceptor) {
+      myInterceptor = axios.interceptors.request.use(...customInterceptor);
+    }
 
     let action;
     switch (method) {
@@ -146,12 +141,13 @@ export class RedditApi {
           ...pagination,
         },
       });
+      console.log(resp.data);
       data.push(resp.data.data);
       terminationCriteriaMet = resp.data.terminationCriteriaMet;
       pagination = resp.data.pagination;
     }
 
-    this.client.interceptors.request.eject(myInterceptor);
+    if (myInterceptor) this.client.interceptors.request.eject(myInterceptor);
 
     return data;
   }
@@ -194,6 +190,7 @@ export class RedditApi {
   public async getMe(): Promise<string> {
     // TODO Check if getAppUser returns the same
     const user = await this._call<string>("GET", "/api/v1/me.json");
+    console.log(this.clientId)
 
     return user[0];
   }

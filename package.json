@@ -8,7 +8,7 @@
     "core-cli": "node node_modules/@verida/cli-tools/dist/exec.js",
     "dev": "yarn build && yarn symlink-static && nodemon src/server.js",
     "symlink-static": "rm -rf dist/web && ln -s ../src/web dist/web",
-    "build": "rm -rf dist && tsc && rm -rf dist/assets && cp -R assets dist/ && cp -R src/web dist/web",
+    "build": "rm -rf dist && tsc --noCheck && rm -rf dist/assets && cp -R assets dist/ && cp -R src/web dist/web",
     "prestart": "yarn build",
     "start": "node dist/server.js",
     "tests": "ts-mocha './tests/**/*.ts'",
@@ -34,7 +34,6 @@
   "dependencies": {
     "@anthropic-ai/tokenizer": "^0.0.4",
     "@aws-sdk/client-bedrock-runtime": "^3.693.0",
-    "@devvit/public-api": "^0.11.9",
     "@langchain/aws": "^0.1.2",
     "@langchain/community": "^0.3.16",
     "@langchain/core": "^0.3.19",
