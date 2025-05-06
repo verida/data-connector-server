@@ -1,17 +1,16 @@
 import { Request, Response } from 'express'
 import Base from "../BaseProvider"
-import { BaseProviderConfig, ConnectionCallbackResponse } from '../../interfaces'
+import { BaseProviderConfig, ConnectionCallbackResponse, PassportProfile } from '../../interfaces'
 
 const passport = require("passport")
 import { Strategy as DiscordStrategy, Scope } from '@oauth-everything/passport-discord';
-import { REST, Client, GatewayIntentBits } from 'discord.js'
+import { REST } from '@discordjs/rest'
 import { DiscordSnowflake } from '@sapphire/snowflake'
 import dayjs from 'dayjs'
 import axios from 'axios'
 
-//import SBTs from './sbts'
-import Following from './following'
 import InvalidTokenError from '../InvalidTokenError';
+import DiscordChatMessageHandler from './chat-message';
 
 export interface DiscordProviderConfig extends BaseProviderConfig {
     clientID: string
@@ -21,7 +20,7 @@ export interface DiscordProviderConfig extends BaseProviderConfig {
 }
 
 // Note: If scopes change a user needs to disconnect and reconnect the app
-const SCOPE = [Scope.IDENTIFY, Scope.EMAIL, Scope.GUILDS, 'guilds.members.read']
+const SCOPE = [Scope.IDENTIFY, Scope.EMAIL, Scope.GUILDS, 'guilds.members.read', Scope.MESSAGES_READ, 'dm_channels.read']
 
 export default class DiscordProvider extends Base {
 
@@ -41,15 +40,14 @@ export default class DiscordProvider extends Base {
 
     public syncHandlers(): any[] {
         return [
-            //SBTs
-            Following
+            DiscordChatMessageHandler
         ]
         return []
     }
 
     public async connect(req: Request, res: Response, next: any): Promise<any> {
         this.init()
-        const auth = await passport.authenticate(this.getAccountId())
+        const auth = await passport.authenticate(this.getProviderId())
         return auth(req, res, next)
     }
 
@@ -65,7 +63,7 @@ export default class DiscordProvider extends Base {
         this.init()
 
         const promise = new Promise((resolve, rejects) => {
-            const auth = passport.authenticate(this.getAccountId(), {
+            const auth = passport.authenticate(this.getProviderId(), {
                 scope: SCOPE,
                 failureRedirect: '/failure/discord',
                 failureMessage: true
@@ -73,11 +71,30 @@ export default class DiscordProvider extends Base {
                 if (err) {
                     rejects(err)
                 } else {
+                                       
+                    const profile: PassportProfile = {
+                        id: data.profile.id,  // Discord user ID
+                        provider: data.profile.provider,  // discord
+                        displayName: data.profile.displayName,
+                        name: {
+                            familyName: '',  // Discord does not provide family name
+                            givenName: data.profile._json.global_name,  // Global name as the given name
+                        },
+                        emails: data.profile.emails,
+                        photos: data.profile.photos,  // Photos array from Discord profile
+                        connectionProfile: {
+                            username: data.profile.username,  // Discord username
+                            email: data.profile._json.email,  // Email from profile
+                            readableId: data.profile.displayName, 
+                            verified: data.profile._json.verified  // Verified status from Discord profile
+                        }
+                    };
+                  
                     const connectionToken: ConnectionCallbackResponse = {
                         id: data.profile.id,
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
-                        profile: data.profile
+                        profile: profile
                     }
     
                     resolve(connectionToken)

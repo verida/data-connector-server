@@ -40,6 +40,7 @@
     "@nillion/nilql": "^0.0.0-alpha.9",
     "@node-oauth/express-oauth-server": "^4.1.1",
     "@notionhq/client": "^2.2.15",
+    "@discordjs/rest": "^2.4.0",
     "@oauth-everything/passport-discord": "^1.0.2",
     "@sapphire/snowflake": "^3.4.2",
     "@superfaceai/passport-twitter-oauth2": "^1.2.3",
