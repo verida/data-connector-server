@@ -43,7 +43,7 @@ export enum YoutubeActivityType {
 }
 
 export interface Person {
-  email: string
+  email?: string
   displayName?: string
 }
 
