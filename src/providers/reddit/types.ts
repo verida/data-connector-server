@@ -262,6 +262,68 @@ export type Subreddit = {
   allow_predictions_tournament: boolean;
 };
 
+// These are messages like notifications
+export type MessageAsAComment = {
+  first_message: null;
+  first_message_name: null;
+  subreddit: string;
+  likes: null;
+  replies: string;
+  author_fullname: `${AccountPrefix}_${string}`;
+  id: string;
+  subject: string;
+  associated_awarding_id: null;
+  score: number;
+  author: string;
+  num_comments: number;
+  parent_id: `${EntityPrefixes}_${string}`;
+  subreddit_name_prefixed: `r/${string}`;
+  new: true;
+  type: "comment_reply";
+  body: string;
+  link_title: string;
+  dest: string;
+  was_comment: true;
+  body_html: string;
+  //   NOTE This is a comment entity
+  name: `${CommentPrefix}_${string}`;
+  created: number;
+  created_utc: number;
+  context: string;
+  distinguished: null;
+};
+
+// Reference: https://www.reddit.com/r/redditdev/comments/vuwhyp/fetch_private_messages_with_a_specific_reddit_user/
+export type PrivateMessages = {
+  first_message: null;
+  first_message_name: null;
+  subreddit: null;
+  likes: null;
+  replies: "";
+  author_fullname: `${AccountPrefix}_${string}`;
+  id: string;
+  subject: string;
+  associated_awarding_id: null;
+  score: number;
+  author: string;
+  num_comments: null;
+  parent_id: null;
+  subreddit_name_prefixed: null;
+  new: boolean;
+  type: "unknown";
+  body: string;
+  dest: string;
+  was_comment: boolean;
+  body_html: string;
+  name: `${CommentPrefix}_${string}`;
+  created: number;
+  created_utc: number;
+  context: string;
+  distinguished: null;
+};
+
+// Chat messages are not supported: https://www.reddit.com/r/redditdev/comments/17s83sf/chat_api/
+
 // API types
 export interface ListingType<Type> {
   after: EntityFullname;
