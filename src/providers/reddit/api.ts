@@ -1,16 +1,17 @@
-import {
-  Devvit,
-  Listing,
-  PrivateMessage,
-  RedditAPIClient,
-  Subreddit,
-  User,
-  Comment,
-} from "@devvit/public-api";
-import { FlairListResponse } from "@devvit/protos";
 import axios, { Axios, AxiosResponse } from "axios";
+import {
+  EntityFullname,
+  EntityPrefixes,
+  ListingType,
+  Account,
+  BaseRequestConfig,
+  PaginationParams,
+  Subreddit,
+  Message,
+  PrivateMessage,
+} from "./types";
 
-const OAUTH_ENDPOINT = "https://oauth.reddit.com/";
+const URL = "https://oauth.reddit.com";
 
 const requestInterceptor = (token: string) => [
   function (request: any) {
@@ -44,15 +45,6 @@ const responseInterceptor = [
   },
 ];
 
-type RequestConfig = {
-  max_replies?: number;
-  pagination?: PaginationParams;
-};
-
-type PaginationParams = {
-  after: string;
-};
-
 /**
  * @abstract
  * @summary This API is a combination of the original API and the in-development Devvit library(v0.11). This is required given that some of the methods are either
@@ -62,15 +54,11 @@ export class RedditApi {
   clientId: string;
   tdPath: string;
   client?: Axios;
-  devvitClient!: RedditAPIClient;
 
   constructor(clientId: string) {
-    this.clientId = clientId;
-    Devvit.configure({
-      redditAPI: true,
-    });
-    // this.devvitClient = Devvit.use()
-
+    // this.clientId = clientId;
+    this.clientId =
+      "eyJhbGciOiJSUzI1NiIsImtpZCI6IlNIQTI1NjpzS3dsMnlsV0VtMjVmcXhwTU40cWY4MXE2OWFFdWFyMnpLMUdhVGxjdWNZIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1c2VyIiwiZXhwIjoxNzQ2NjIwNzQxLjEwMjEzNSwiaWF0IjoxNzQ2NTM0MzQxLjEwMjEzNSwianRpIjoiSEp3bEpCaC1PYjBNM1g5N1JzUnZNZ1lwVnBmczlBIiwiY2lkIjoiMFItV0FNaHVvby1NeVEiLCJsaWQiOiJ0Ml93cW44M2t2bnoiLCJhaWQiOiJ0Ml93cW44M2t2bnoiLCJsY2EiOjE3MTExNDI1MjI4MzgsInNjcCI6ImVKeGtrZEdPdERBSWhkLUZhNV9nZjVVX20wMXRjWWFzTFFhb2szbjdEVm9jazcwN2NENHBIUDlES29xRkRDWlhncW5BQkZnVHJUREJSdVQ5bkxtM2cyaU5lOHRZc1puQ0JGbXdGRHJrbUxHc2lRUW1lSklheXhzbW9JTE55Rnl1dEdOTkxUMFFKcWhjTXJlRkhwYzJvYmtiaTU2ZEdGVzVyRHlvc1ZmbDB0akdGTFlueGpjYnF3MnB1QzZuTWtuTFF2a3NYdlRqTjlXMzl2bXpfU2EwSjhPS3F1bUIzaGxKQ0c0c2ZwaW0zZDlUazU2dEN4YTE5M3FRMnVkNjNLNTkxaXcwTzdlZjZfbHJJeG1YWTJoLUp2dDMxeS1oQTQ4OEx6UHFBRWFzNFVjWmRtUWRfbFVIVUxtZ0pHTUo0dE1JNU1ybDIzOEp0bXZUdjhidEV6OThNLUttTl96V0ROUnpDZUxRcF9IMUd3QUFfXzhRMWVUUiIsInJjaWQiOiJqeV9hQVlHQkF6TWVCdDBXLTl2R2F0Um4wUy1xU3RSSFRJRzVwZElaWDkwIiwiZmxvIjoyfQ.nerEP5TRIA2ISLM-_gGKf6fGxLbIcKLLICzK1zKDg2h566uTzTQzsbhDBgjeM0u4ncuTBi_XsAH8OjZnpSJTeOqxEPls9O1hzeIPrlepOlZn1zrLoH49SWouBHJxqUXP4K-vSS9f8Ail9MdIcVbVm79NCfBwxZBIsumTRr4CdSQn3rDINQ-ERG7jrFbTLhWHka9QOMjHR32_VvYWEJ0YKRLIvZs4R-DBQ48zVUkfR7S3b71T4bQsj9qaJE5tNdevsiwsSAn2OhpkXVrs1sL5nzs1f2KB0WW6zXBdgeQo1riJEv-BGFL7Q4PM3WJidj_kaB5i0_0uACiCH1sCAlQv0w";
     try {
       this.client = axios.create();
 
@@ -86,8 +74,7 @@ export class RedditApi {
     }
   }
 
-  // Devvit is under development
-  public getClient(): Devvit | Axios {
+  public getClient(): Axios {
     return this.client;
   }
 
@@ -104,8 +91,8 @@ export class RedditApi {
    */
   private async _call<Type>(
     method: "GET" | "POST" | "PUT",
-    endpoint: `${string}.json`,
-    config?: RequestConfig,
+    url: `${string}.json`,
+    config?: BaseRequestConfig,
     customInterceptor?: any[]
   ): Promise<Type[] | undefined> {
     let terminationCriteriaMet = true;
@@ -132,17 +119,28 @@ export class RedditApi {
 
     while (terminationCriteriaMet) {
       const resp = await action<{
-        data: Type;
+        kind: EntityPrefixes | "Listing";
+        data: Type | ListingType<Type>;
         terminationCriteriaMet: boolean;
         pagination: PaginationParams;
-      }>(`${OAUTH_ENDPOINT}${endpoint}?after=${after}`, {
+      }>(`${url}`, {
         params: {
           ...config,
           ...pagination,
         },
       });
-      console.log(resp.data);
-      data.push(resp.data.data);
+
+      // Single entities get returned
+      if (resp.data.kind !== "Listing") {
+        return [resp.data.data as Type];
+      }
+
+      data.push(
+        // Only keep the data, without the prefix
+        ...(resp.data.data as ListingType<Type>).children.map(
+          (withPrefix) => withPrefix.data
+        )
+      );
       terminationCriteriaMet = resp.data.terminationCriteriaMet;
       pagination = resp.data.pagination;
     }
@@ -153,33 +151,46 @@ export class RedditApi {
   }
 
   /**
+   * @see Chat messages are not supported: https://www.reddit.com/r/redditdev/comments/17s83sf/chat_api/
+   */
+  public async getChats() {
+    throw new Error("Not supported");
+  }
+
+  /**
    *
    * @summary Read all private messages from inbox, unread and sent folder from the past 3 months
    * @see https://www.reddit.com/dev/api#GET_message_{where}
    * @returns
    */
-  public async getChats(
-    type: "inbox" | "unread" | "sent",
-    // TODO Batch size
-    batchSize: number
-  ): Promise<Listing<PrivateMessage>> {
-    return await this.devvitClient.getMessages({
-      type,
-    });
+  public async getMessages(
+    type?: "inbox" | "unread" | "sent" | "all"
+  ): Promise<PrivateMessage[] | Message[]> {
+    let endpoints: `${string}.json`[] = [
+      "/message/inbox.json",
+      "/message/unread.json",
+      "/message/sent.json",
+    ];
 
-    // // TODO Add response interceptor to check message data and if it passed the 3 months
-    // const customInterceptor: any[] = [];
+    if (type && type !== "all") {
+      endpoints = [`/message/${type}.json`];
+    } else {
+      endpoints = ["/message/messages.json"];
+    }
 
-    // const chatDetail = await this._call<PrivateMessage[]>(
-    //   "GET",
-    //   "/message/inbox.json",
-    //   {
-    //     max_replies: 300,
-    //   },
-    //   customInterceptor
-    // );
+    const allMessages = await Promise.all(
+      endpoints.map(async (endpoint) => {
+        const messages = await this._call<Message>("GET", endpoint, {
+          count: 0,
+        });
 
-    // return chatDetail;
+        if (type && type === "all") {
+          return messages as unknown as PrivateMessage[];
+        }
+      })
+    );
+
+    return allMessages.flat();
   }
 
   /**
@@ -187,12 +198,16 @@ export class RedditApi {
    * @summary Get the profile of auth token owner
    * @returns
    */
-  public async getMe(): Promise<string> {
+  public async getMe(): Promise<Account> {
     // TODO Check if getAppUser returns the same
-    const user = await this._call<string>("GET", "/api/v1/me.json");
-    console.log(this.clientId)
+    try {
+      const url = `${URL}/api/v1/me.json`;
+      const user = await this._call<Account>("GET", url);
 
-    return user[0];
+      return user[0];
+    } catch (error) {
+      console.log(error.message);
+    }
   }
 
   /**
@@ -200,10 +215,20 @@ export class RedditApi {
    * @summary Get the profile of auth token owner
    * @returns
    */
-  public async getUser(usernameOrId: string | number): Promise<User> {
-    return typeof usernameOrId === "string"
-      ? await this.devvitClient.getUserByUsername(usernameOrId)
-      : await this.devvitClient.getUserById(String(usernameOrId));
+  public async getUser(username: string): Promise<Account> {
+    try {
+      const user = await this._call<Account>(
+        "GET",
+        `${URL}/user/${username}/about.json`
+      );
+
+      return user[0];
+    } catch (error) {
+      console.log(error.message);
+    }
+    // return typeof usernameOrId === "string"
+    //   ? await this.devvitClient.getUserByUsername(usernameOrId)
+    //   : await this.devvitClient.getUserById(String(usernameOrId));
   }
 
   /**
@@ -217,32 +242,15 @@ export class RedditApi {
     const endpoints: `${string}.json`[] = [
       "/subreddits/mine/contributor.json",
       "/subreddits/mine/moderator.json",
-      "/subreddits/mine/subscribe.json",
+      "/subreddits/mine/subscriber.json",
     ];
     const subreddits = await Promise.all(
       endpoints.map(async (endpoint) => {
-        return await this._call<Subreddit[]>(
-          "GET",
-          "/message/inbox.json",
-          {
-            max_replies: 300,
-          },
-          [
-            (response: AxiosResponse) => {
-              if (response.data.children.length === 0) {
-                return {
-                  data: [] as any[],
-                  terminationCriteriaMet: true,
-                  pagination: {},
-                };
-              }
-            },
-          ]
-        );
+        return await this._call<Subreddit>("GET", `${URL}${endpoint}`);
       })
     );
 
-    return subreddits.flat().flat();
+    return subreddits.flat();
   }
 
   /**
@@ -258,14 +266,14 @@ export class RedditApi {
    * @returns
    */
   public async getComments(
-    user: User,
+    username: string,
     pageSize: number,
     limit: number,
     timeframe: "all" = "all",
     sort: "new" = "new",
     before?: string,
     after?: string
-  ): Promise<Listing<Comment>> {
+  ): Promise<Comment[]> {
     let options = {
       pageSize: 1,
       timeframe,
@@ -276,6 +284,17 @@ export class RedditApi {
     };
     // TODO This might not be needed
     options = JSON.parse(JSON.stringify(options));
-    return await user.getComments(options);
+
+    try {
+      const url = `${URL}/user/${username}/comments.json`;
+      const comments = await this._call<Comment[]>(
+        "GET",
+        url as `${string}.json`
+      );
+      console.log(comments);
+      return [];
+    } catch (error) {
+      console.log(error.message);
+    }
   }
 }
