@@ -45,7 +45,7 @@ export default class RedditProvider extends Base {
 
   public syncHandlers(): any[] {
     return [
-      ChatsHandler,
+      // ChatsHandler,
       // CommentsHandler
     ];
   }
@@ -127,13 +127,13 @@ export default class RedditProvider extends Base {
       refreshToken = this.connection ? this.connection.refreshToken : undefined;
     }
 
-    if (!refreshToken) {
-      throw new Error(
-        `Unable to load Telegram API, no refresh (bin file) token`
-      );
-    }
+    // if (!refreshToken) {
+    //   throw new Error(
+    //     `Unable to load Reddit API, no refresh (bin file) token`
+    //   );
+    // }
 
-    await api.getClient(true);
+    await api.getClient();
     this.api = api;
     return api;
   }
@@ -171,4 +171,4 @@ export default class RedditProvider extends Base {
 // Implement sync
 // Test handles errors appropriatelly
 // Schemas
-// README
+// Refresh token

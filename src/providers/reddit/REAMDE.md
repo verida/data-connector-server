@@ -1,55 +1,49 @@
-# Notes
+# Reddit Connector
 
-`pdf-parse` is used to convert PDF files to text so their contents can be searched. There is a bug in the library that causes this message to be output to the console when fonts can't be found: `Warning: TT: undefined function: 32` (see https://github.com/mozilla/pdf.js/issues/3768#issuecomment-36468349)
+The Reddit connector fetches a user's personal reddit data from the past 3 months.
+
+## Handlers
+
+## Known issues
+
+1. Private chat messages are not supported in the official API, see [here](https://www.reddit.com/r/redditdev/comments/17s83sf/chat_api/)
 
 ## Refresh Tokens
 
-Google only provides a `refreshToken` when a user first connects their account. If the user attempts to reconnect, the second OAuth process will only return an `accessToken`.
+<!-- TODO -->
 
-# Known issues
+## Unit Tests
 
-1. Emails are processed in batches, up until the expiry date, then starts to fetch new again. Need to refactor to use range tracker helper.
+This repository contains a suite of unit tests designed to test the core Reddit API and to validate the integration of a Reddit account with the provider's synchronization handlers. The tests ensure that the Reddit data is correctly fetched and processed. The unit tests cover the following aspects:
 
-# YouTube Integration Unit Tests
+- Fetching and testing Reddit account.
+- Fetching and testing Reddit account's subreddits, including where the account has the role of contributor, moderator or subscriber.
+- Fetching and testing Reddit account's messages including notifications and private messages.
+- Fetching and testing Reddit account's comments
+- Fetching and testing Reddit account's interactions e.g. listing(posts, comments, etc.) that the user has upvoted, donwvoted, hidden or saved
 
-This repository contains a suite of unit tests designed to validate the integration of a YouTube account with the provider's synchronization handlers. The tests ensure that the YouTube data is correctly fetched and processed. The unit tests cover the following aspects:
-
-- Fetching and testing YouTube favorites.
-- Fetching and testing YouTube following (subscriptions).
-- Fetching and testing YouTube posts (uploaded videos).
-
-## Prerequisites
+### Prerequisites
 
 Before running the unit tests, ensure that you have the following set up:
 
-1. **YouTube Account**: A YouTube account with some activity is required. This activity includes uploaded videos, subscriptions, and liked videos.
+1. **Reddit Account**: A YouTube account with some activity is required. This activity includes uploaded videos, subscriptions, and liked videos.
 
-2. **YouTube Data**: Make sure your YouTube account has:
-   - **Favorites**: At least 14 videos you have liked.
-   - **Following**: At least 14 Channels you have subscribed to.
-   - **Posts**: At least 14 videos you have uploaded.
-3. **Activity**: Make sure you have made activities within the last 24 hours.
+2. **Reddit Account Data**: Make sure to have an account with some activity e.g. messages sent/received, comments, etc.
+   You can:
+   a. create a testing config file with the expected account information e.g. account name, number of messages, etc.
+   b. Run the tests with the following expected results
 
-## Running the Tests
+   - **Messages**: An account with more than 50 messages.
+   - **Comments**: More than 50 comments by your account.
+   - **Posts**: Have at least a post.
+
+3. **Authorized Application**: Make sure to create an authorized `web app` application and fill in the required information in the `serverconfig.local.json`
+
+### Running the Tests
 
 ```bash
-yarn run test tests/providers/google/youtube-[xxx].tests.ts
+# To run the API tests
+yarn run test tests/providers/reddit/api.test.ts
+# To run the handler tests
+yarn run test tests/providers/reddit/handlers/*.test.ts
 ```
-
-# Google Calendar Notes
-
-1. Calendar list involves subscribed calendars which are the other users created and default calendars such as Holidays, Birthdays. But only process calendars created by the user.
-2. Limit recurring events to 1 month in the future.
-
-
-<!--
-Each data source provider must contain the following:
-src/providers/<provider-name>/README.md containing:
-Instructions on how to obtain any necessary API keys for the server
-Instructions on how to configure the provider
-Any limitations of the provider (ie: Only fetches maximum of 1,000 records)
-Any issues where the data provided doesn't exactly match the schema
-Details of any new schemas created to support this API connector or modifications to existing schemas (including a link to a PR that contains the proposed schema changes in the @verida/schemas-common repo)
-Details of any future improvements or features that could be considered
-Details of any performance considerations
-Details of any known issues with the data source API being used -->
