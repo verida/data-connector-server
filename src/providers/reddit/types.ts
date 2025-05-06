@@ -1,23 +1,42 @@
-import { BaseHandlerConfig } from "../../interfaces"
+import { BaseHandlerConfig } from "../../interfaces";
 
 export enum RedditChatType {
-    INBOX = "chatTypeInbox",
-    UNREAD = "chatTypeUnread",
-    SENT = "chatTypeSent",
+  INBOX = "chatTypeInbox",
+  UNREAD = "chatTypeUnread",
+  SENT = "chatTypeSent",
 }
+
+type CommentPrefix = "t1";
+type AccountPrefix = "t2";
+type LinkPrefix = "t3";
+type MessagePrefix = "t4";
+type SubredditPrefix = "t5";
+type AwardPrefix = "t6";
+
+export type EntityPrefixes =
+  | CommentPrefix
+  | AccountPrefix
+  | LinkPrefix
+  | MessagePrefix
+  | SubredditPrefix
+  | AwardPrefix;
+
+// See here: https://www.reddit.com/dev/api/#fullnames
+export type EntityFullname = `${EntityPrefixes}_${string}`;
 
 export interface RedditConfig extends BaseHandlerConfig {
-    apiId: number
-    apiHash: string
-    maxSyncLoops: number
-    // What is the maximum number of days to backdate
-    messageMaxAgeDays: number,
-    // Maximum number of messages to process in a given batch
-    messageBatchSize: number
-    useDbPos: boolean
+  apiId: number;
+  apiHash: string;
+  maxSyncLoops: number;
+  // What is the maximum number of days to backdate
+  messageMaxAgeDays: number;
+  // Maximum number of messages to process in a given batch
+  messageBatchSize: number;
+  useDbPos: boolean;
 }
 
-export type User = {
+// 'Account' is name of the type, but 'User' is the name of the entity
+export type Account = {
   verified: boolean;
   is_blocked: boolean;
   coins: number;
@@ -80,7 +99,7 @@ export type Comment = {
   num_comments: number;
   parent_id: string;
   score: number;
-  author_fullname: string;// "t2_wqn83kvnz";
+  author_fullname: string; // "t2_wqn83kvnz";
   over_18: boolean;
   report_reasons: string | null;
   removal_reason: string | null;
@@ -93,12 +112,10 @@ export type Comment = {
   author_flair_css_class: null;
   is_submitter: boolean;
   collapsed: boolean;
-  author_flair_richtext: [
-    {
-      e: "text";
-      t: string;
-    }
-  ];
+  author_flair_richtext: {
+    e: "text";
+    t: string;
+  }[];
   author_patreon_flair: boolean;
   body_html: string;
   gildings: {};
@@ -135,3 +152,32 @@ export type Comment = {
   author_flair_template_id: null;
 };
 
+// API types
+export interface ListingType<Type> {
+  after: EntityFullname;
+  dist: number;
+  children: { kind: EntityPrefixes; data: Type }[];
+}
+
+export type BaseRequestConfig = {
+  count: number;
+  max_replies?: number;
+  pagination?: PaginationParams;
+};
+
+export type PaginationParams = {
+  before?: EntityFullname;
+  after?: EntityFullname;
+  afterData?: number;
+  beforeData?: number;
+};
+
+export type UserWhereConfig = {
+  // an integer between 2 and 10
+  // context: ?
+  sort: "hot" | "new" | "top" | "controversial";
+  t: "hour" | " day" | " week" | " month" | " year" | " all";
+  type: "links" | "comments";
+  // Expand subreddits
+  sr_details: boolean;
+} & BaseRequestConfig;
