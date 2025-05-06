@@ -3,15 +3,15 @@ import {
   Connection,
   SyncHandlerPosition,
   SyncHandlerStatus
-} from "../../../src/interfaces";
-import Providers from "../../../src/providers";
-import CommonUtils, { NetworkInstance } from "../../common.utils";
+} from "../../../../src/interfaces";
+import Providers from "../../../../src/providers";
+import CommonUtils, { NetworkInstance } from "../../../common.utils";
 
-import RedditCommentsHandler from "../../../src/providers/reddit/comments";
-import BaseProvider from "../../../src/providers/BaseProvider";
-import { CommonTests, GenericTestConfig } from "../../common.tests";
-import { TelegramConfig } from "../../../src/providers/telegram/interfaces";
-import { SchemaSocialChatGroup, SchemaSocialChatMessage } from "../../../src/schemas";
+import RedditCommentsHandler from "../../../../src/providers/reddit/comments";
+import BaseProvider from "../../../../src/providers/BaseProvider";
+import { CommonTests, GenericTestConfig } from "../../../common.tests";
+import { TelegramConfig } from "../../../../src/providers/telegram/interfaces";
+import { SchemaSocialChatGroup, SchemaSocialChatMessage } from "../../../../src/schemas";
 
 const providerId = "reddit";
 let network: NetworkInstance;
