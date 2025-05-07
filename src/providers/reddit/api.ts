@@ -1,14 +1,15 @@
 import axios, { Axios, AxiosResponse } from "axios";
 import {
-  EntityFullname,
+  Comment,
   EntityPrefixes,
-  ListingType,
   Account,
   BaseRequestConfig,
   PaginationParams,
   Subreddit,
   Message,
   PrivateMessage,
+  Post,
+  Listing,
 } from "./types";
 
 const URL = "https://oauth.reddit.com";
@@ -25,8 +26,11 @@ const requestInterceptor = (token: string) => [
   },
 ];
 
+const now = new Date();
+const threeMonthsAgo = now.setMonth(now.getMonth() - 3);
+
 /**
- * From the docs:
+ * TODO:
  * Clients connecting via OAuth2 may make up to 60 requests per minute. Monitor the following response headers to ensure that you're not exceeding the limits:
  *  X-Ratelimit-Used: Approximate number of requests used in this period
  *  X-Ratelimit-Remaining: Approximate number of requests left to use
@@ -56,9 +60,8 @@ export class RedditApi {
   client?: Axios;
 
   constructor(clientId: string) {
-    // this.clientId = clientId;
-    this.clientId =
-      "eyJhbGciOiJSUzI1NiIsImtpZCI6IlNIQTI1NjpzS3dsMnlsV0VtMjVmcXhwTU40cWY4MXE2OWFFdWFyMnpLMUdhVGxjdWNZIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1c2VyIiwiZXhwIjoxNzQ2NjIwNzQxLjEwMjEzNSwiaWF0IjoxNzQ2NTM0MzQxLjEwMjEzNSwianRpIjoiSEp3bEpCaC1PYjBNM1g5N1JzUnZNZ1lwVnBmczlBIiwiY2lkIjoiMFItV0FNaHVvby1NeVEiLCJsaWQiOiJ0Ml93cW44M2t2bnoiLCJhaWQiOiJ0Ml93cW44M2t2bnoiLCJsY2EiOjE3MTExNDI1MjI4MzgsInNjcCI6ImVKeGtrZEdPdERBSWhkLUZhNV9nZjVVX20wMXRjWWFzTFFhb2szbjdEVm9jazcwN2NENHBIUDlES29xRkRDWlhncW5BQkZnVHJUREJSdVQ5bkxtM2cyaU5lOHRZc1puQ0JGbXdGRHJrbUxHc2lRUW1lSklheXhzbW9JTE55Rnl1dEdOTkxUMFFKcWhjTXJlRkhwYzJvYmtiaTU2ZEdGVzVyRHlvc1ZmbDB0akdGTFlueGpjYnF3MnB1QzZuTWtuTFF2a3NYdlRqTjlXMzl2bXpfU2EwSjhPS3F1bUIzaGxKQ0c0c2ZwaW0zZDlUazU2dEN4YTE5M3FRMnVkNjNLNTkxaXcwTzdlZjZfbHJJeG1YWTJoLUp2dDMxeS1oQTQ4OEx6UHFBRWFzNFVjWmRtUWRfbFVIVUxtZ0pHTUo0dE1JNU1ybDIzOEp0bXZUdjhidEV6OThNLUttTl96V0ROUnpDZUxRcF9IMUd3QUFfXzhRMWVUUiIsInJjaWQiOiJqeV9hQVlHQkF6TWVCdDBXLTl2R2F0Um4wUy1xU3RSSFRJRzVwZElaWDkwIiwiZmxvIjoyfQ.nerEP5TRIA2ISLM-_gGKf6fGxLbIcKLLICzK1zKDg2h566uTzTQzsbhDBgjeM0u4ncuTBi_XsAH8OjZnpSJTeOqxEPls9O1hzeIPrlepOlZn1zrLoH49SWouBHJxqUXP4K-vSS9f8Ail9MdIcVbVm79NCfBwxZBIsumTRr4CdSQn3rDINQ-ERG7jrFbTLhWHka9QOMjHR32_VvYWEJ0YKRLIvZs4R-DBQ48zVUkfR7S3b71T4bQsj9qaJE5tNdevsiwsSAn2OhpkXVrs1sL5nzs1f2KB0WW6zXBdgeQo1riJEv-BGFL7Q4PM3WJidj_kaB5i0_0uACiCH1sCAlQv0w";
+    console.log(clientId);
+    this.clientId = clientId;
     try {
       this.client = axios.create();
 
@@ -120,9 +123,7 @@ export class RedditApi {
     while (terminationCriteriaMet) {
       const resp = await action<{
         kind: EntityPrefixes | "Listing";
-        data: Type | ListingType<Type>;
-        terminationCriteriaMet: boolean;
-        pagination: PaginationParams;
+        data: Type | Listing;
       }>(`${url}`, {
         params: {
           ...config,
@@ -132,65 +133,36 @@ export class RedditApi {
 
       // Single entities get returned
       if (resp.data.kind !== "Listing") {
-        return [resp.data.data as Type];
+        return [resp.data as Type];
       }
 
       data.push(
         // Only keep the data, without the prefix
-        ...(resp.data.data as ListingType<Type>).children.map(
-          (withPrefix) => withPrefix.data
+        ...(resp.data.data as Listing).children.map(
+          (withPrefix) => withPrefix.data as Type
         )
       );
-      terminationCriteriaMet = resp.data.terminationCriteriaMet;
-      pagination = resp.data.pagination;
+
+      // Check if termination criteria met, which includes default criteria e.g. Cretead.created_utc within last 3 months and custom termination criteria
+      terminationCriteriaMet =
+        (
+          (resp.data.data as Listing).children[
+            (resp.data.data as Listing).children.length - 1
+          ].data as Account | Comment | Subreddit | Post | Message
+        ).created_utc > threeMonthsAgo;
+      // Adjust pagination config
+
+      pagination = {
+        after: (resp.data.data as Listing).children[
+          (resp.data.data as Listing).children.length - 1
+        ].name,
+      };
     }
 
+    // Remove custom interceptor if used
     if (myInterceptor) this.client.interceptors.request.eject(myInterceptor);
 
     return data;
-  }
-
-  /**
-   * @see Chat messages are not supported: https://www.reddit.com/r/redditdev/comments/17s83sf/chat_api/
-   */
-  public async getChats() {
-    throw new Error("Not supported");
-  }
-
-  /**
-   *
-   * @summary Read all private messages from inbox, unread and sent folder from the past 3 months
-   * @see https://www.reddit.com/dev/api#GET_message_{where}
-   * @returns
-   */
-  public async getMessages(
-    type?: "inbox" | "unread" | "sent" | "all"
-  ): Promise<PrivateMessage[] | Message[]> {
-    let endpoints: `${string}.json`[] = [
-      "/message/inbox.json",
-      "/message/unread.json",
-      "/message/sent.json",
-    ];
-
-    if (type && type !== "all") {
-      endpoints = [`/message/${type}.json`];
-    } else {
-      endpoints = ["/message/messages.json"];
-    }
-
-    const allMessages = await Promise.all(
-      endpoints.map(async (endpoint) => {
-        const messages = await this._call<Message>("GET", endpoint, {
-          count: 0,
-        });
-
-        if (type && type === "all") {
-          return messages as unknown as PrivateMessage[];
-        }
-      })
-    );
-
-    return allMessages.flat();
   }
 
   /**
@@ -199,15 +171,11 @@ export class RedditApi {
    * @returns
    */
   public async getMe(): Promise<Account> {
-    // TODO Check if getAppUser returns the same
-    try {
-      const url = `${URL}/api/v1/me.json`;
-      const user = await this._call<Account>("GET", url);
+    const url = `${URL}/api/v1/me.json`;
+    const user = await this._call<Account>("GET", url);
+    // TODO Check if no error was returned
 
-      return user[0];
-    } catch (error) {
-      console.log(error.message);
-    }
+    return user[0];
   }
 
   /**
@@ -232,13 +200,59 @@ export class RedditApi {
   }
 
   /**
+   * @see Chat messages are not supported: https://www.reddit.com/r/redditdev/comments/17s83sf/chat_api/
+   */
+  public async getChats() {
+    throw new Error("Not supported");
+  }
+
+  /**
+   *
+   * @summary Read all private messages from inbox, unread and sent folder from the past 3 months
+   * @see https://www.reddit.com/dev/api#GET_message_{where}
+   * @returns
+   */
+  public async getMessages(
+    type?: "inbox" | "unread" | "sent" | "private"
+  ): Promise<(PrivateMessage | Message)[]> {
+    let endpoints: `${string}.json`[] = [
+      "/message/inbox.json",
+      "/message/unread.json",
+      "/message/sent.json",
+    ];
+
+    if (type && type !== "private") {
+      endpoints = [`/message/${type}.json`];
+    } else if (type) {
+      endpoints = ["/message/messages.json"];
+    }
+
+    const allMessages = await Promise.all(
+      endpoints.map(async (endpoint) => {
+        const messages = await this._call<Message>("GET", `${URL}${endpoint}`, {
+          count: 0,
+        });
+
+        if (type && type === "private") {
+          return messages as unknown as PrivateMessage[];
+        }
+        return messages as Message[];
+      })
+    );
+
+    return allMessages.flat();
+  }
+
+  /**
    *
    * @summary This method is implemented by making api calls since no such Devvit method exists (v.0.11)
    * @summary Get subreddits where the user is subcribed to, a contributor or a moderator
    * @see https://www.reddit.com/dev/api#GET_subreddits_mine_{where}
    * @returns
    */
-  public async getSubreddits(): Promise<Subreddit[] | undefined> {
+  public async getSubreddits(
+    type: "contributor" | "moderator" | "subscriber"
+  ): Promise<Subreddit[] | undefined> {
     const endpoints: `${string}.json`[] = [
       "/subreddits/mine/contributor.json",
       "/subreddits/mine/moderator.json",
@@ -253,6 +267,19 @@ export class RedditApi {
     return subreddits.flat();
   }
 
+  getPostsByMe(username: string) {
+    const url = `${URL}/user/${username}/submitted`;
+    // https://oauth.reddit.com/user/Delicious_Lychee_478/submitted.json
+  }
+
+  getPosts(
+    username: string,
+    type: "saved" | "upvoted" | "downvoted" | "hidden"
+  ) {
+    // TODO Move to params
+    const url = `${URL}/user/${username}/${type}.json?type=links`;
+  }
+
   /**
    *
    * @summary Fetch comments for a user
@@ -265,14 +292,14 @@ export class RedditApi {
    * @param after
    * @returns
    */
-  public async getComments(
-    username: string,
+  public async getCommentsByMe(
     pageSize: number,
     limit: number,
     timeframe: "all" = "all",
     sort: "new" = "new",
     before?: string,
-    after?: string
+    after?: string,
+    username?: string
   ): Promise<Comment[]> {
     let options = {
       pageSize: 1,
@@ -285,6 +312,10 @@ export class RedditApi {
     // TODO This might not be needed
     options = JSON.parse(JSON.stringify(options));
 
+    if (!username) {
+      username = (await this.getMe()).name;
+    }
+
     try {
       const url = `${URL}/user/${username}/comments.json`;
       const comments = await this._call<Comment[]>(
@@ -296,5 +327,12 @@ export class RedditApi {
     } catch (error) {
       console.log(error.message);
     }
+  }
+
+  getComments(
+    username: string,
+    type: "saved" | "upvoted" | "downvoted" | "hidden"
+  ) {
+    const url = `${URL}/user/${username}/${type}.json?type=comments`;
   }
 }
