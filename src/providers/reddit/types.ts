@@ -50,8 +50,8 @@ export type RedditBase = {
 };
 
 export type Listing = {
-  before: string | null;
-  after: string | null;
+  before: EntityFullname | null;
+  after: EntityFullname | null;
   modhash: string;
   children: RedditBase[];
 };
