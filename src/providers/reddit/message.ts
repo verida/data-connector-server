@@ -17,7 +17,6 @@ import { SchemaChatMessageType, SchemaSocialChatMessage } from "../../schemas";
 import { UsersCache } from "./usersCache";
 import InvalidTokenError from "../InvalidTokenError";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
-import { Listing, PrivateMessage, User } from "@devvit/public-api";
 const _ = require("lodash");
 
 const MAX_BATCH_SIZE = 1000;
@@ -45,7 +44,7 @@ export default class MessageHandler extends BaseSyncHandler {
   }
 
   public getProviderApplicationUrl(): string {
-    return "https://chat.reddit.com/";
+    return "https://www.reddit.com/message/messages";
   }
 
   public getOptions(): ProviderHandlerOption[] {
@@ -129,7 +128,7 @@ export default class MessageHandler extends BaseSyncHandler {
       let currentRange = rangeTracker.nextRange();
 
       const latestResp = await api.getMessages(
-        "inbox"
+        "private"
         // , this.config.batchSize
       );
       const latestResult = await this.buildResults(
@@ -219,6 +218,7 @@ export default class MessageHandler extends BaseSyncHandler {
         break;
       }
       // Get the "from" user
+      // If the message is not "private" there is no sender, it is more like a notification
       const from = await userCache.getUser(message.author);
       results.push({
         _id: message.name,
@@ -237,8 +237,8 @@ export default class MessageHandler extends BaseSyncHandler {
         // TODO This is not the id only the username
         fromId: message.author,
         // NOTE Handle and username is the same
-        fromHandle: from.username,
-        fromName: from.username,
+        fromHandle: from.id,
+        fromName: from.name,
         sentAt: new Date(message.created_utc).toDateString(),
         name: message.subject,
       });
