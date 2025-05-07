@@ -7,10 +7,11 @@ import {
   PassportProfile,
 } from "../../interfaces";
 import { RedditApi } from "./api";
-import ChatsHandler from "./comments";
-import { PassportStatic } from "passport";
 import crypto from "crypto";
-import MessagesHandler from "./chat";
+import MessageHandler from "./message";
+import CommentHandler from "./comment";
+import SubredditHandler from "./subreddit";
+import PostHandler from "./post";
 
 export interface RedditProviderConfig extends BaseProviderConfig {
   apiHash: string;
@@ -45,8 +46,10 @@ export default class RedditProvider extends Base {
 
   public syncHandlers(): any[] {
     return [
-      // ChatsHandler,
-      // CommentsHandler
+      MessageHandler,
+      // CommentHandler,
+      // SubredditHandler,
+      // PostHandler
     ];
   }
 
