@@ -11,12 +11,11 @@ import {
   SyncResponse,
 } from "../../interfaces";
 import { ConnectionOptionType } from "../../interfaces";
-import { RedditChatType, RedditConfig } from "./reddit";
+import { RedditChatType, RedditConfig } from "./types";
 import { RedditApi } from "./api";
 import { SchemaChatMessageType, SchemaSocialChatMessage } from "../../schemas";
 import { UsersCache } from "./usersCache";
 import InvalidTokenError from "../InvalidTokenError";
-import { TDError } from "tdlib-native/dist";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 import { Listing, PrivateMessage, User } from "@devvit/public-api";
 const _ = require("lodash");
@@ -30,7 +29,7 @@ export interface SyncChatMessagesResult extends SyncItemsResult {
 /**
  * @summary This returns everything as a Listing, no need to categorize it
  */
-export default class ChatsHandler extends BaseSyncHandler {
+export default class MessageHandler extends BaseSyncHandler {
   protected config: RedditConfig;
 
   public getName(): string {
@@ -129,11 +128,14 @@ export default class ChatsHandler extends BaseSyncHandler {
 
       let currentRange = rangeTracker.nextRange();
 
-      const latestResp = await api.getChats("inbox", this.config.batchSize);
+      const latestResp = await api.getMessages(
+        "inbox"
+        // , this.config.batchSize
+      );
       const latestResult = await this.buildResults(
         api,
         userCache,
-        latestResp,
+        latestResp as [],
         "inbox",
         currentRange.endId
       );
@@ -183,11 +185,6 @@ export default class ChatsHandler extends BaseSyncHandler {
       };
     } catch (err: any) {
       console.log(err.message);
-      if (err instanceof TDError) {
-        if (err.code == 401) {
-          throw new InvalidTokenError(err.message);
-        }
-      }
       throw err;
     }
   }
@@ -204,49 +201,47 @@ export default class ChatsHandler extends BaseSyncHandler {
   async buildResults(
     api: RedditApi,
     userCache: UsersCache,
-    latestResp: Listing<PrivateMessage>,
+    // latestResp: Listing<PrivateMessage>,
+    latestResp: [],
     chatType: "inbox" | "unread" | "sent",
     endId?: string
   ): Promise<SyncChatMessagesResult> {
     const results: SchemaSocialChatMessage[] = [];
     let breakHit: SyncItemsBreak;
 
-    for (const chat of await latestResp.all()) {
-      if (endId && chat.id === endId) {
-        const logEvent: SyncProviderLogEvent = {
-          level: SyncProviderLogLevel.DEBUG,
-          message: `End chat ID hit (${chat.id})`,
-        };
-        this.emit("log", logEvent);
-        breakHit = SyncItemsBreak.ID;
-        break;
-      }
-
-      const createdTime = chat.created ?? new Date().toISOString();
-
-      // Get the "from" user
-      const from = await userCache.getUser(chat.from.id);
-
-      results.push({
-        _id: chat.id,
-        // NOTE This is
-        groupId: "",
-        // TODO This is documented but not included in the Devvit types
-        // @ts-ignore
-        groupName: chat.name,
-        type:
-          chatType === "inbox" || chatType === "unread"
-            ? SchemaChatMessageType.RECEIVE
-            : SchemaChatMessageType.SEND,
-        messageText: chat.body,
-        messageHTML: chat.bodyHtml,
-        fromId: chat.from.id,
-        // NOTE Handle and username is the same
-        fromHandle: from.username,
-        fromName: from.username,
-        sentAt: chat.created.toDateString(),
-        name: `Private chat: ${chat.from}`,
-      });
+    for (const chat of await latestResp) {
+      // if (endId && chat.id === endId) {
+      //   const logEvent: SyncProviderLogEvent = {
+      //     level: SyncProviderLogLevel.DEBUG,
+      //     message: `End chat ID hit (${chat.id})`,
+      //   };
+      //   this.emit("log", logEvent);
+      //   breakHit = SyncItemsBreak.ID;
+      //   break;
+      // }
+      //   const createdTime = chat.created ?? new Date().toISOString();
+      //   // Get the "from" user
+      //   const from = await userCache.getUser(chat.from.id);
+      //   results.push({
+      //     _id: chat.id,
+      //     // NOTE This is
+      //     groupId: "",
+      //     // TODO This is documented but not included in the Devvit types
+      //     // @ts-ignore
+      //     groupName: chat.name,
+      //     type:
+      //       chatType === "inbox" || chatType === "unread"
+      //         ? SchemaChatMessageType.RECEIVE
+      //         : SchemaChatMessageType.SEND,
+      //     messageText: chat.body,
+      //     messageHTML: chat.bodyHtml,
+      //     fromId: chat.from.id,
+      //     // NOTE Handle and username is the same
+      //     fromHandle: from.username,
+      //     fromName: from.username,
+      //     sentAt: chat.created.toDateString(),
+      //     name: `Private chat: ${chat.from}`,
+      //   });
     }
 
     return {
