@@ -56,7 +56,14 @@ export default class RedditProvider extends Base {
     req.session.state = crypto.randomBytes(32).toString("hex");
     req.session.save((err) => console.log(err));
 
-    const auth = await passport.authenticate("reddit");
+    const auth = await passport.authenticate("reddit", {
+      // NOTE Setting this to permanent returns a refresh token
+      duration: "permanent",
+      scope: ["identity", "read", "privatemessages", "mysubreddits", "history"],
+      failureRedirect: "/failure/reddit",
+      failureMessage: true,
+      state: true,
+    });
 
     return auth(req, res, next);
   }
@@ -71,11 +78,11 @@ export default class RedditProvider extends Base {
     const promise = new Promise((resolve, rejects) => {
       const auth = passport.authenticate(
         "reddit",
+        // TODO Move these
         {
           failureRedirect: "/failure/reddit",
           failureMessage: true,
           state: true,
-          scope: ["identity", "read"],
         },
         function (err: any, data: any) {
           if (err) {
@@ -127,11 +134,9 @@ export default class RedditProvider extends Base {
       refreshToken = this.connection ? this.connection.refreshToken : undefined;
     }
 
-    // if (!refreshToken) {
-    //   throw new Error(
-    //     `Unable to load Reddit API, no refresh (bin file) token`
-    //   );
-    // }
+    if (!refreshToken) {
+      throw new Error(`Unable to load Reddit API, no refresh (bin file) token`);
+    }
 
     await api.getClient();
     this.api = api;
@@ -153,7 +158,6 @@ export default class RedditProvider extends Base {
           profile: any,
           cb: any
         ) {
-          // console.log(accessToken, refreshToken, profile, cb);
           // Simply return the raw data
           return cb(null, {
             accessToken,
@@ -166,9 +170,7 @@ export default class RedditProvider extends Base {
   }
 }
 
-
 // TODO
 // Implement sync
 // Test handles errors appropriatelly
 // Schemas
-// Refresh token
