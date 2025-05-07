@@ -119,7 +119,7 @@ export class RedditApi {
         action = this.client.put;
         break;
     }
-
+    let i = 0;
     while (terminationCriteriaMet) {
       const resp = await action<{
         kind: EntityPrefixes | "Listing";
@@ -136,26 +136,29 @@ export class RedditApi {
         return [resp.data as Type];
       }
 
+      const list = resp.data.data as Listing;
       data.push(
         // Only keep the data, without the prefix
-        ...(resp.data.data as Listing).children.map(
-          (withPrefix) => withPrefix.data as Type
-        )
+        ...list.children.map((withPrefix) => withPrefix.data as Type)
       );
 
       // Check if termination criteria met, which includes default criteria e.g. Cretead.created_utc within last 3 months and custom termination criteria
       terminationCriteriaMet =
+        list.after !== null &&
         (
-          (resp.data.data as Listing).children[
-            (resp.data.data as Listing).children.length - 1
-          ].data as Account | Comment | Subreddit | Post | Message
-        ).created_utc > threeMonthsAgo;
-      // Adjust pagination config
+          list.children[list.children.length - 1].data as
+            | Account
+            | Comment
+            | Subreddit
+            | Post
+            | Message
+        ).created_utc *
+          1000 >
+          threeMonthsAgo;
 
+      // Adjust pagination params
       pagination = {
-        after: (resp.data.data as Listing).children[
-          (resp.data.data as Listing).children.length - 1
-        ].name,
+        after: list.after,
       };
     }
 
