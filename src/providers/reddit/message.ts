@@ -11,7 +11,7 @@ import {
   SyncResponse,
 } from "../../interfaces";
 import { ConnectionOptionType } from "../../interfaces";
-import { RedditChatType, RedditConfig } from "./types";
+import { Message, RedditChatType, RedditConfig } from "./types";
 import { RedditApi } from "./api";
 import { SchemaChatMessageType, SchemaSocialChatMessage } from "../../schemas";
 import { UsersCache } from "./usersCache";
@@ -22,7 +22,7 @@ const _ = require("lodash");
 
 const MAX_BATCH_SIZE = 1000;
 
-export interface SyncChatMessagesResult extends SyncItemsResult {
+export interface SyncMessagesResult extends SyncItemsResult {
   items: SchemaSocialChatMessage[];
 }
 
@@ -114,8 +114,8 @@ export default class MessageHandler extends BaseSyncHandler {
     syncPosition: SyncHandlerPosition
   ): Promise<SyncResponse> {
     try {
-      let chats: SchemaSocialChatMessage[] = [];
-      let chatHistory: SchemaSocialChatMessage[] = [];
+      let messages: SchemaSocialChatMessage[] = [];
+      let messageHistory: SchemaSocialChatMessage[] = [];
       const userCache = new UsersCache(api);
 
       if (this.config.batchSize > MAX_BATCH_SIZE) {
@@ -140,14 +140,14 @@ export default class MessageHandler extends BaseSyncHandler {
         currentRange.endId
       );
 
-      chats = latestResult.items;
+      messages = latestResult.items;
       let nextPageToken = _.get(latestResp, "data.nextPageToken");
 
       // Update range if any chats have been fetched
-      if (chats.length) {
+      if (messages.length) {
         rangeTracker.completedRange(
           {
-            startId: chats[0].sourceId,
+            startId: messages[0].sourceId,
             endId: nextPageToken,
           },
           latestResult.breakHit === SyncItemsBreak.ID
@@ -165,22 +165,22 @@ export default class MessageHandler extends BaseSyncHandler {
       currentRange = rangeTracker.nextRange();
 
       // TODO
-      // if (chats.length != this.config.batchSize && currentRange.startId) {
+      // if (messages.length != this.config.batchSize && currentRange.startId) {
 
-      if (!chats.length) {
+      if (!messages.length) {
         syncPosition.syncMessage = `Stopping. No results found.`;
         syncPosition.status = SyncHandlerStatus.ENABLED;
       } else {
         syncPosition.syncMessage =
-          chats.length != this.config.batchSize && !nextPageToken
-            ? `Processed ${chats.length} items. Stopping. No more results.`
+          messages.length != this.config.batchSize && !nextPageToken
+            ? `Processed ${messages.length} items. Stopping. No more results.`
             : `Batch complete (${this.config.batchSize}). More results pending.`;
       }
 
       syncPosition.thisRef = rangeTracker.export();
 
       return {
-        results: Object.values(chats).concat(chatHistory),
+        results: Object.values(messages).concat(messageHistory),
         position: syncPosition,
       };
     } catch (err: any) {
@@ -201,47 +201,47 @@ export default class MessageHandler extends BaseSyncHandler {
   async buildResults(
     api: RedditApi,
     userCache: UsersCache,
-    // latestResp: Listing<PrivateMessage>,
-    latestResp: [],
-    chatType: "inbox" | "unread" | "sent",
+    latestResp: Message[],
+    messageType: "inbox" | "unread" | "sent" | "private",
     endId?: string
-  ): Promise<SyncChatMessagesResult> {
+  ): Promise<SyncMessagesResult> {
     const results: SchemaSocialChatMessage[] = [];
     let breakHit: SyncItemsBreak;
 
-    for (const chat of await latestResp) {
-      // if (endId && chat.id === endId) {
-      //   const logEvent: SyncProviderLogEvent = {
-      //     level: SyncProviderLogLevel.DEBUG,
-      //     message: `End chat ID hit (${chat.id})`,
-      //   };
-      //   this.emit("log", logEvent);
-      //   breakHit = SyncItemsBreak.ID;
-      //   break;
-      // }
-      //   const createdTime = chat.created ?? new Date().toISOString();
-      //   // Get the "from" user
-      //   const from = await userCache.getUser(chat.from.id);
-      //   results.push({
-      //     _id: chat.id,
-      //     // NOTE This is
-      //     groupId: "",
-      //     // TODO This is documented but not included in the Devvit types
-      //     // @ts-ignore
-      //     groupName: chat.name,
-      //     type:
-      //       chatType === "inbox" || chatType === "unread"
-      //         ? SchemaChatMessageType.RECEIVE
-      //         : SchemaChatMessageType.SEND,
-      //     messageText: chat.body,
-      //     messageHTML: chat.bodyHtml,
-      //     fromId: chat.from.id,
-      //     // NOTE Handle and username is the same
-      //     fromHandle: from.username,
-      //     fromName: from.username,
-      //     sentAt: chat.created.toDateString(),
-      //     name: `Private chat: ${chat.from}`,
-      //   });
+    for (const message of await latestResp) {
+      if (endId && message.name === endId) {
+        const logEvent: SyncProviderLogEvent = {
+          level: SyncProviderLogLevel.DEBUG,
+          message: `End message ID hit (${message.name})`,
+        };
+        this.emit("log", logEvent);
+        breakHit = SyncItemsBreak.ID;
+        break;
+      }
+      // Get the "from" user
+      const from = await userCache.getUser(message.author);
+      results.push({
+        _id: message.name,
+        // NOTE This is
+        groupId: "",
+        // TODO These
+        groupName: message.subject,
+        type:
+          messageType === "inbox" ||
+          messageType === "unread" ||
+          messageType === "private"
+            ? SchemaChatMessageType.RECEIVE
+            : SchemaChatMessageType.SEND,
+        messageText: message.body,
+        messageHTML: message.body_html,
+        // TODO This is not the id only the username
+        fromId: message.author,
+        // NOTE Handle and username is the same
+        fromHandle: from.username,
+        fromName: from.username,
+        sentAt: new Date(message.created_utc).toDateString(),
+        name: message.subject,
+      });
     }
 
     return {
