@@ -1,5 +1,5 @@
-import { User } from "@devvit/public-api";
 import { RedditApi } from "./api";
+import { Account } from "./types";
 
 export interface TelegramUserProfile {
   fullName: string;
@@ -12,7 +12,7 @@ export interface TelegramUserProfile {
  * Helper utility to fetch a user object
  */
 export class UsersCache {
-  private userCache: Record<string, User> = {};
+  private userCache: Record<string, Account> = {};
   private api: RedditApi;
 
   constructor(api: RedditApi) {
