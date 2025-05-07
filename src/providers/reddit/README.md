@@ -47,3 +47,11 @@ yarn run test tests/providers/reddit/api.test.ts
 # To run the handler tests
 yarn run test tests/providers/reddit/handlers/*.test.ts
 ```
+
+## Resources
+
+- [API Overview](https://www.reddit.com/dev/api/)
+- [Reddit Passport](https://github.com/Slotos/passport-reddit)
+- [OAuth2](https://github.com/reddit-archive/reddit/wiki/OAuth2)
+- [API Scopes](https://www.reddit.com/api/v1/scopes)
+- []()
