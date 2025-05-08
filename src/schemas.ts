@@ -173,5 +173,4 @@ export interface SchemaComment extends SchemaRecord {
     parentPost: string
     parentComment?: string
     score: number
-    type: "public" | "private" | "restricted"
 }
