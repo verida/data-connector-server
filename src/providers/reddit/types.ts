@@ -133,17 +133,17 @@ export type Message = {
   author: string;
   body: string;
   body_html: string;
-  context: `${string}?context=3`| ""
-  first_message: null | string
-  first_message_name: null | string
+  context: `${string}?context=3` | "";
+  first_message: null | string;
+  first_message_name: null | string;
   likes: boolean;
   link_title: string;
-  name: `${MessagePrefix}_${string}`
+  name: `${MessagePrefix}_${string}`;
   new: string;
   parent_id: null | `${EntityPrefixes}_${string}`;
-  replies: string | ""
+  replies: string | "";
   subject: string;
-  subreddit: null | string
+  subreddit: null | string;
   was_comment: boolean;
 } & Created;
 
@@ -200,12 +200,6 @@ export type Post = {
   stickied: boolean;
 } & Created;
 
-export type BaseRequestConfig = {
-  count: number;
-  max_replies?: number;
-  pagination?: PaginationParams;
-};
-
 export type PaginationParams = {
   before?: EntityFullname;
   after?: EntityFullname;
@@ -213,12 +207,44 @@ export type PaginationParams = {
   beforeData?: number;
 };
 
-export type UserWhereConfig = {
-  // an integer between 2 and 10
-  // context: ?
+export type BaseListingConfig = {
+  // fullname of a thing
+  after?: `${EntityPrefixes}_${string}`;
+  // fullname of a thing
+  before?: `${EntityPrefixes}_${string}`;
+  // a positive integer (default: 0)
+  count?: number;
+  // the maximum number of items desired (default: 25, maximum: 100)
+  limit?: number;
+  // (optional) expand subreddits
+  show?: "all";
+  sr_detail?: boolean;
+};
+
+export type SubredditConfig = BaseListingConfig;
+
+export type CommentConfig = {
+  context: number;
+  show: "given";
   sort: "hot" | "new" | "top" | "controversial";
   t: "hour" | " day" | " week" | " month" | " year" | " all";
-  type: "links" | "comments";
-  // Expand subreddits
-  sr_details: boolean;
-} & BaseRequestConfig;
+  type: "comments";
+  username: string;
+} & BaseListingConfig;
+
+export type PostConfig = {
+  context: number;
+  show: "given";
+  sort: "hot" | "new" | "top" | "controversial";
+  t: "hour" | " day" | " week" | " month" | " year" | " all";
+  type: "posts";
+  username: string;
+} & BaseListingConfig;
+
+export type MessageConfig = {
+  // the maximum number of items desired (default: 0, maximum: 300)
+  max_replies?: number;
+  // ?
+  mid?: any;
+  mark?: boolean;
+} & BaseListingConfig;

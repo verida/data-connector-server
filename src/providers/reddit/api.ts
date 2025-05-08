@@ -3,13 +3,16 @@ import {
   Comment,
   EntityPrefixes,
   Account,
-  BaseRequestConfig,
   PaginationParams,
   Subreddit,
   Message,
   PrivateMessage,
   Post,
   Listing,
+  SubredditConfig,
+  CommentConfig,
+  MessageConfig,
+  PostConfig,
 } from "./types";
 
 const URL = "https://oauth.reddit.com";
@@ -95,12 +98,11 @@ export class RedditApi {
   private async _call<Type>(
     method: "GET" | "POST" | "PUT",
     url: `${string}.json`,
-    config?: BaseRequestConfig,
+    config?: SubredditConfig | CommentConfig | MessageConfig | PostConfig,
     customInterceptor?: any[]
   ): Promise<Type[] | undefined> {
     let terminationCriteriaMet = true;
     let data: Type[] = [];
-    let pagination: PaginationParams = config?.pagination;
 
     let myInterceptor;
     if (customInterceptor) {
@@ -127,7 +129,6 @@ export class RedditApi {
       }>(`${url}`, {
         params: {
           ...config,
-          ...pagination,
         },
       });
 
@@ -157,9 +158,7 @@ export class RedditApi {
           threeMonthsAgo;
 
       // Adjust pagination params
-      pagination = {
-        after: list.after,
-      };
+      config.after = list.after;
     }
 
     // Remove custom interceptor if used
