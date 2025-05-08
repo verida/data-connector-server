@@ -154,5 +154,24 @@ export interface SchemaEvent extends SchemaRecord {
     attendees?: Person[]
     conferenceData?: object
     attachments?: CalendarAttachment[]
+}
 
+export interface SchemaForum extends SchemaRecord {
+    name: string;
+    description: string
+    over18: boolean
+    type: "public" | "private" | "restricted"
+    // ???
+    // syncData?: string
+}
+
+export interface SchemaComment extends SchemaRecord {
+    author: string
+    body: string
+    edited: boolean
+    parentForum: string
+    parentPost: string
+    parentComment?: string
+    score: number
+    type: "public" | "private" | "restricted"
 }
