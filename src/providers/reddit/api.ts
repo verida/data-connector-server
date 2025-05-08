@@ -13,6 +13,7 @@ import {
   CommentConfig,
   MessageConfig,
   PostConfig,
+  CommentFullname,
 } from "./types";
 
 const URL = "https://oauth.reddit.com";
@@ -294,47 +295,95 @@ export class RedditApi {
    * @param after
    * @returns
    */
-  public async getCommentsByMe(
-    pageSize: number,
-    limit: number,
-    timeframe: "all" = "all",
+  public async getCommentsCreatedByUser(
+    username?: string,
+    limit: number = 50,
     sort: "new" = "new",
-    before?: string,
-    after?: string,
-    username?: string
+    before?: CommentFullname,
+    after?: CommentFullname
   ): Promise<Comment[]> {
-    let options = {
-      pageSize: 1,
-      timeframe,
-      sort,
-      limit,
+    let options: CommentConfig = {
       before,
       after,
+      sort,
+      t: "all",
+      type: "comments",
+      username,
+      limit,
     };
-    // TODO This might not be needed
-    options = JSON.parse(JSON.stringify(options));
 
     if (!username) {
+      // Contrary to other object `name` field returns the username and not the "fullname"
       username = (await this.getMe()).name;
     }
 
     try {
       const url = `${URL}/user/${username}/comments.json`;
-      const comments = await this._call<Comment[]>(
+      const comments = await this._call<Comment>(
         "GET",
-        url as `${string}.json`
+        url as `${string}.json`,
+        options
       );
-      console.log(comments);
-      return [];
+      return comments;
     } catch (error) {
       console.log(error.message);
     }
   }
 
-  getComments(
-    username: string,
-    type: "saved" | "upvoted" | "downvoted" | "hidden"
+  /**
+   *
+   * @summary Get comments interacted by user (saved, upvodted, downvoted, hidden)
+   * @param type
+   * @param username
+   * @param limit
+   * @param sort
+   * @param before
+   * @param after
+   * @returns
+   */
+  async getComments(
+    type?: "saved" | "upvoted" | "downvoted" | "hidden",
+    username?: string,
+    limit: number = 50,
+    sort: "new" = "new",
+    before?: CommentFullname,
+    after?: CommentFullname
   ) {
-    const url = `${URL}/user/${username}/${type}.json?type=comments`;
+    let options: CommentConfig = {
+      before,
+      after,
+      sort,
+      t: "all",
+      type: "comments",
+      username,
+      limit,
+    };
+    let urls = [`${URL}/user/${username}/${type}.json?type=comments`];
+    if (!type) {
+      urls = [
+        `${URL}/user/${username}/saved.json?type=comments`,
+        `${URL}/user/${username}/upvoted.json?type=comments`,
+        `${URL}/user/${username}/downvoted.json?type=comments`,
+        `${URL}/user/${username}/hidden.json?type=comments`,
+      ];
+    }
+
+    if (!username) {
+      // Contrary to other object `name` field returns the username and not the "fullname"
+      username = (await this.getMe()).name;
+    }
+
+    try {
+      await Promise.all(urls.map(async url => {
+        const comments = await this._call<Comment>(
+          "GET",
+          url as `${string}.json`,
+          options
+        );
+        return comments;
+      }))
+    } catch (error) {
+      console.log(error.message);
+    }
   }
 }
