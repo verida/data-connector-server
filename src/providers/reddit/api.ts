@@ -176,7 +176,6 @@ export class RedditApi {
   public async getMe(): Promise<Account> {
     const url = `${URL}/api/v1/me.json`;
     const user = await this._call<Account>("GET", url);
-    // TODO Check if no error was returned
 
     return user[0];
   }
@@ -270,22 +269,85 @@ export class RedditApi {
     return subreddits.flat();
   }
 
-  getPostsByMe(username: string) {
-    const url = `${URL}/user/${username}/submitted`;
+  async getPostsCreatedByUser(
+    username?: string,
+    limit: number = 50,
+    sort: "new" = "new",
+    before?: CommentFullname,
+    after?: CommentFullname
+  ): Promise<Post[]> {
+    let options: PostConfig = {
+      before,
+      after,
+      sort,
+      t: "all",
+      type: "posts",
+      username,
+      limit,
+      show: "given",
+    };
+
+    const url = `${URL}/user/${username}/submitted.json`;
     // https://oauth.reddit.com/user/Delicious_Lychee_478/submitted.json
+    if (!username) {
+      // Contrary to other object `name` field returns the username and not the "fullname"
+      username = (await this.getMe()).name;
+    }
+
+    try {
+      const posts = await this._call<Post>(
+        "GET",
+        url as `${string}.json`,
+        options
+      );
+      return posts;
+    } catch (error) {
+      console.log(error.message);
+    }
   }
 
-  getPosts(
-    username: string,
-    type: "saved" | "upvoted" | "downvoted" | "hidden"
-  ) {
+  async getPosts(
+    type: "saved" | "upvoted" | "downvoted" | "hidden",
+    username?: string,
+    limit: number = 50,
+    sort: "new" = "new",
+    before?: CommentFullname,
+    after?: CommentFullname
+  ): Promise<Post[]> {
+    let options: PostConfig = {
+      before,
+      after,
+      sort,
+      t: "all",
+      type: "posts",
+      username,
+      limit,
+      show: "given",
+    };
+
     // TODO Move to params
     const url = `${URL}/user/${username}/${type}.json?type=links`;
+
+    if (!username) {
+      // Contrary to other object `name` field returns the username and not the "fullname"
+      username = (await this.getMe()).name;
+    }
+
+    try {
+      const posts = await this._call<Post>(
+        "GET",
+        url as `${string}.json`,
+        options
+      );
+      return posts;
+    } catch (error) {
+      console.log(error.message);
+    }
   }
 
   /**
    *
-   * @summary Fetch comments for a user
+   * @summary Get comments created by a user
    * @param user
    * @param pageSize
    * @param limit
@@ -374,14 +436,16 @@ export class RedditApi {
     }
 
     try {
-      await Promise.all(urls.map(async url => {
-        const comments = await this._call<Comment>(
-          "GET",
-          url as `${string}.json`,
-          options
-        );
-        return comments;
-      }))
+      await Promise.all(
+        urls.map(async (url) => {
+          const comments = await this._call<Comment>(
+            "GET",
+            url as `${string}.json`,
+            options
+          );
+          return comments;
+        })
+      );
     } catch (error) {
       console.log(error.message);
     }
