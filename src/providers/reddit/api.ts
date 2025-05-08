@@ -64,7 +64,6 @@ export class RedditApi {
   client?: Axios;
 
   constructor(clientId: string) {
-    console.log(clientId);
     this.clientId = clientId;
     try {
       this.client = axios.create();
@@ -196,9 +195,6 @@ export class RedditApi {
     } catch (error) {
       console.log(error.message);
     }
-    // return typeof usernameOrId === "string"
-    //   ? await this.devvitClient.getUserByUsername(usernameOrId)
-    //   : await this.devvitClient.getUserById(String(usernameOrId));
   }
 
   /**
@@ -215,8 +211,18 @@ export class RedditApi {
    * @returns
    */
   public async getMessages(
-    type?: "inbox" | "unread" | "sent" | "private"
+    type?: "inbox" | "unread" | "sent" | "private",
+    limit: number = 50,
+    before?: CommentFullname,
+    after?: CommentFullname
   ): Promise<(PrivateMessage | Message)[]> {
+    let options: MessageConfig = {
+      before,
+      after,
+      limit,
+      show: "given",
+    };
+
     let endpoints: `${string}.json`[] = [
       "/message/inbox.json",
       "/message/unread.json",
@@ -231,18 +237,27 @@ export class RedditApi {
 
     const allMessages = await Promise.all(
       endpoints.map(async (endpoint) => {
-        const messages = await this._call<Message>("GET", `${URL}${endpoint}`, {
-          count: 0,
-        });
+        try {
+          const messages = await this._call<Message>(
+            "GET",
+            `${URL}${endpoint}`,
+            options
+          );
 
-        if (type && type === "private") {
-          return messages as unknown as PrivateMessage[];
+          if (type && type === "private") {
+            return messages as unknown as PrivateMessage[];
+          }
+          return messages as Message[];
+        } catch (error) {
+          console.log("[Message] " + error.message);
+          return undefined;
         }
-        return messages as Message[];
       })
     );
 
-    return allMessages.flat();
+    const sol = allMessages.flat();
+    if (sol.length === 1 && sol[0] === undefined) return undefined;
+    return sol;
   }
 
   /**
@@ -253,20 +268,42 @@ export class RedditApi {
    * @returns
    */
   public async getSubreddits(
-    type: "contributor" | "moderator" | "subscriber"
+    type: "contributor" | "moderator" | "subscriber",
+    limit: number = 50,
+    before?: CommentFullname,
+    after?: CommentFullname
   ): Promise<Subreddit[] | undefined> {
-    const endpoints: `${string}.json`[] = [
-      "/subreddits/mine/contributor.json",
-      "/subreddits/mine/moderator.json",
-      "/subreddits/mine/subscriber.json",
-    ];
+    let options: SubredditConfig = {
+      after: after,
+      before,
+      limit,
+    };
+    let endpoints = [`/subreddits/mine/${type}.json`];
+    if (!type) {
+      endpoints = [
+        "/subreddits/mine/contributor.json",
+        "/subreddits/mine/moderator.json",
+        "/subreddits/mine/subscriber.json",
+      ];
+    }
     const subreddits = await Promise.all(
       endpoints.map(async (endpoint) => {
-        return await this._call<Subreddit>("GET", `${URL}${endpoint}`);
+        try {
+          return await this._call<Subreddit>(
+            "GET",
+            `${URL}${endpoint}` as `${string}.json`,
+            options
+          );
+        } catch (error) {
+          console.log("[Subreddit] " + error.message);
+          return undefined;
+        }
       })
     );
 
-    return subreddits.flat();
+    const sol = subreddits.flat();
+    if (sol.length === 1 && sol[0] === undefined) return undefined;
+    return sol;
   }
 
   async getPostsCreatedByUser(
@@ -288,7 +325,6 @@ export class RedditApi {
     };
 
     const url = `${URL}/user/${username}/submitted.json`;
-    // https://oauth.reddit.com/user/Delicious_Lychee_478/submitted.json
     if (!username) {
       // Contrary to other object `name` field returns the username and not the "fullname"
       username = (await this.getMe()).name;
@@ -325,24 +361,38 @@ export class RedditApi {
       show: "given",
     };
 
-    // TODO Move to params
-    const url = `${URL}/user/${username}/${type}.json?type=links`;
+    let urls = [`${URL}/user/${username}/${type}.json`];
+    if (!type) {
+      urls = [
+        `${URL}/user/${username}/saved.json`,
+        `${URL}/user/${username}/upvoted.json`,
+        `${URL}/user/${username}/downvoted.json`,
+        `${URL}/user/${username}/hidden.json`,
+      ];
+    }
 
     if (!username) {
       // Contrary to other object `name` field returns the username and not the "fullname"
       username = (await this.getMe()).name;
     }
 
-    try {
-      const posts = await this._call<Post>(
-        "GET",
-        url as `${string}.json`,
-        options
-      );
-      return posts;
-    } catch (error) {
-      console.log(error.message);
-    }
+    const posts = await Promise.all(
+      urls.map(async (url) => {
+        try {
+          return await this._call<Post>(
+            "GET",
+            url as `${string}.json`,
+            options
+          );
+        } catch (error) {
+          console.log("[Post] " + error.message);
+          return undefined;
+        }
+      })
+    );
+    const sol = posts.flat();
+    if (sol.length === 1 && sol[0] === undefined) return undefined;
+    return sol;
   }
 
   /**
@@ -378,6 +428,8 @@ export class RedditApi {
       // Contrary to other object `name` field returns the username and not the "fullname"
       username = (await this.getMe()).name;
     }
+
+    if (!username) return;
 
     try {
       const url = `${URL}/user/${username}/comments.json`;
@@ -420,6 +472,12 @@ export class RedditApi {
       username,
       limit,
     };
+
+    if (!username) {
+      // Contrary to other object `name` field returns the username and not the "fullname"
+      username = (await this.getMe()).name;
+    }
+
     let urls = [`${URL}/user/${username}/${type}.json?type=comments`];
     if (!type) {
       urls = [
@@ -430,24 +488,24 @@ export class RedditApi {
       ];
     }
 
-    if (!username) {
-      // Contrary to other object `name` field returns the username and not the "fullname"
-      username = (await this.getMe()).name;
-    }
-
-    try {
-      await Promise.all(
-        urls.map(async (url) => {
+    const comments = await Promise.all(
+      urls.map(async (url) => {
+        try {
           const comments = await this._call<Comment>(
             "GET",
             url as `${string}.json`,
             options
           );
           return comments;
-        })
-      );
-    } catch (error) {
-      console.log(error.message);
-    }
+        } catch (error) {
+          console.log("[Comment] " + error.message);
+          return undefined;
+        }
+      })
+    );
+
+    const sol = comments.flat();
+    if (sol.length === 1 && sol[0] === undefined) return undefined;
+    return sol;
   }
 }

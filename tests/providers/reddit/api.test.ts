@@ -4,7 +4,7 @@ import { RedditApi } from "../../../src/providers/reddit/api";
 import { CommonTests } from "../../common.tests";
 import CommonUtils from "../../common.utils";
 const assert = require("assert");
-import ChatsHandler from "../../../src/providers/reddit/chat";
+import ChatsHandler from "../../../src/providers/reddit/message";
 import { before } from "mocha/lib/mocha";
 import { API_CONFIG } from "./config";
 
@@ -32,52 +32,80 @@ describe("Reddit API test", async () => {
     assert.notStrictEqual(me, null);
   });
 
-  it.skip("should fetch user", async () => {
+  it("should fetch user", async () => {
     // TODO Fetch from config
     const user = await api.getUser(API_CONFIG.username);
     assert.notStrictEqual(user, null);
   });
 
-  it("should fetch privates messages", async () => {
+  it("should fetch messages", async () => {
     // Get all the messages
     const allMessages = await api.getMessages();
-    assert(allMessages > 0, "No messages fetched");
+    assert(allMessages.length > 0, "No messages fetched");
 
     const unreadMessages = await api.getMessages("unread");
     assert(
-      allMessages > unreadMessages,
+      allMessages.length >= unreadMessages.length,
       "All messages should contain unreadMessages"
     );
-  });
 
-  it("should fetch privates messages", async () => {
-    // Get all the messages
+    // Get all private messages
     const privateMessages = await api.getMessages("private");
-    assert(privateMessages > 0, "No messages fetched");
-
-    // Fetch messages in the last 2 months
-    const privateMessagesLast2Months = await api.getMessages("private", {
-      untilDate: twoMonthsAgo,
-    });
-
-    // There should be more messages in the last 3 months than last 2 months
-    assert(
-      privateMessages <= privateMessagesLast2Months,
-      "No messages fetched"
-    );
+    assert(privateMessages.length > 0, "No messages fetched");
   });
 
   it("should fetch comments", async () => {
-    const comments = await api.getComments();
-
+    // Should fetch comments created by owner
+    const comments = await api.getCommentsCreatedByUser();
     assert(comments.length > 0, "No comments found");
+
+    // Should fetch comments upvoted by a user
+    const commentsByUser = await api.getComments(
+      "upvoted",
+      API_CONFIG.username
+    );
+    assert(commentsByUser.length > 0, "No comments found by user");
+
+    // Should try to fetch comments upvoted by a random user and fail
+    const error = await api.getComments("upvoted", API_CONFIG.randomUsername);
+    assert(error === undefined, "Fetched upvoted comments without authority");
+
+    // Should fetch all interacted comments created by user
+    const interactedComments = await api.getComments();
+    assert(interactedComments.length > 0, "No interacted comments found");
+  });
+
+  it("should fetch posts", async () => {
+    // Should fetch comments created by owner
+    const posts = await api.getPostsCreatedByUser();
+    assert(posts.length > 0, "No posts found");
+
+    // Should fetch posts saved by a user
+    const postsByUser = await api.getPosts("saved", API_CONFIG.username);
+    assert(postsByUser.length > 0, "No posts found by user");
+
+    // Should try to fetch posts upvoted by a random user and fail
+    const error = await api.getPosts("upvoted", API_CONFIG.randomUsername);
+    assert(error === undefined, "Fetched upvoted posts without authority");
+
+    // Should fetch all interacted posts created by user
+    const interactedposts = await api.getPosts();
+    assert(interactedposts.length > 0, "No interacted posts found");
   });
 
   it("should fetch subreddits", async () => {
+    // Get all subreddits where the user is either a moderator, contributor or subscriber
     const allSubreddits = await api.getSubreddits();
     assert(allSubreddits.length > 0, "No subreddits found");
 
-    const moderatedSubreddits = await api.getSubreddits("moderator");
-    assert(moderatedSubreddits.length > 0, "No moderated subreddits found");
+    // Get all subreddits where the owner is a contributor
+    const contributorSubreddits = await api.getSubreddits("contributor");
+    // assert(moderatedSubreddits.length > 0, "No moderated subreddits found");
+
+    // All subreddits should contain a moderated subreddit
+    const should = allSubreddits.find(
+      (subreddit) => subreddit.name === contributorSubreddits[0].name
+    );
+    assert(!!should, "No moderated subreddits found");
   });
 });
