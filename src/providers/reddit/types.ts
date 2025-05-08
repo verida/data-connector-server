@@ -6,6 +6,12 @@ export enum RedditChatType {
   SENT = "chatTypeSent",
 }
 
+export enum SubredditType {
+  CONTRIBUTOR = "contributor",
+  MODERATOR = "moderator",
+  SUBSCRIBER = "subscriber",
+}
+
 type CommentPrefix = "t1";
 type AccountPrefix = "t2";
 type LinkPrefix = "t3";
@@ -66,6 +72,7 @@ export type Account = {
   has_mail: boolean | null;
   has_mod_mail: boolean | null;
   has_verified_email: boolean;
+  // TODO might only be a string, wtf
   id: `${AccountPrefix}_${string}`;
   inbox_count: number;
   is_friend: boolean;
@@ -78,6 +85,7 @@ export type Account = {
 } & Created;
 
 export type Comment = {
+  name: `${CommentPrefix}_${string}`;
   approved_by: string | null;
   author: string;
   author_flair_css_class: string;
@@ -104,6 +112,7 @@ export type Comment = {
 } & Created;
 
 export type Subreddit = {
+  name: `${SubredditPrefix}_${string}`;
   accounts_active: number;
   comment_score_hide_mins: number;
   description: string;
@@ -169,13 +178,14 @@ export type PrivateMessage = {
   dest: string;
   was_comment: boolean;
   body_html: string;
-  name: `${CommentPrefix}_${string}`;
+  name: `${MessagePrefix}_${string}`;
   context: string;
   distinguished: null;
 } & Created;
 
 // See: https://github.com/reddit-archive/reddit/wiki/JSON#link-implements-votable--created
 export type Post = {
+  name: `${LinkPrefix}_${string}`;
   author: string;
   author_flair_css_class: string;
   author_flair_text: string;
