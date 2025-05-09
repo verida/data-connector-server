@@ -11,23 +11,23 @@ export interface TelegramUserProfile {
 /**
  * Helper utility to fetch a user object
  */
-export class UsersCache {
-  private userCache: Record<string, Account> = {};
+export class AccountCache {
+  private accountCache: Record<string, Account> = {};
   private api: RedditApi;
 
   constructor(api: RedditApi) {
     this.api = api;
   }
 
-  public async getUser(userId: string) {
-    if (this.userCache[userId]) {
-      return this.userCache[userId];
+  public async getAccount(userId: string) {
+    if (this.accountCache[userId]) {
+      return this.accountCache[userId];
     }
 
     const user = await this.api.getUser(userId);
 
-    this.userCache[userId] = user;
+    this.accountCache[userId] = user;
 
-    return this.userCache[userId];
+    return this.accountCache[userId];
   }
 }
