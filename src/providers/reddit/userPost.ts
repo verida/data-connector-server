@@ -35,15 +35,15 @@ export interface SyncPostResult extends SyncItemsResult {
 /**
  * @summary This returns everything as a Listing, no need to categorize it
  */
-export default class MessageHandler extends BaseSyncHandler {
+export default class UserPostHandler extends BaseSyncHandler {
   protected config: RedditConfig;
 
   public getName(): string {
-    return "post";
+    return "userPost";
   }
 
   public getLabel(): string {
-    return "Posts";
+    return "User Posts";
   }
 
   public getSchemaUri(): string {
@@ -79,35 +79,6 @@ export default class MessageHandler extends BaseSyncHandler {
           },
         ],
         defaultValue: "3-months",
-      },
-      {
-        id: "postType",
-        label: "Post type",
-        type: ConnectionOptionType.ENUM_MULTI,
-        enumOptions: [
-          {
-            label: "Saved",
-            value: RedditPostType.SAVED,
-          },
-          {
-            label: "Upvoted",
-            value: RedditPostType.UPVOTED,
-          },
-          {
-            label: "Downvoted",
-            value: RedditPostType.DOWNVOTED,
-          },
-          {
-            label: "Hidden",
-            value: RedditPostType.HIDDEN,
-          },
-        ],
-        defaultValue: [
-          RedditPostType.SAVED,
-          RedditPostType.UPVOTED,
-          RedditPostType.DOWNVOTED,
-          RedditPostType.HIDDEN,
-        ].join(","),
       },
     ];
   }

@@ -8,21 +8,25 @@ import Providers from "../../../../src/providers";
 import CommonUtils, { NetworkInstance } from "../../../common.utils";
 
 import RedditPostHandler from "../../../../src/providers/reddit/post";
+import RedditUserPostHandler from "../../../../src/providers/reddit/userPost";
 import BaseProvider from "../../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../../common.tests";
-import { RedditConfig, RedditPostType } from "../../../../src/providers/reddit/types";
+import {
+  RedditConfig,
+  RedditPostType,
+} from "../../../../src/providers/reddit/types";
 
 const providerId = "reddit";
 let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
 let handlerName = "post";
+let otherHandlerName = "userPost";
 let testConfig: GenericTestConfig;
 let providerConfig: Omit<
   RedditConfig,
   "sbtImage" | "label" | "apiId" | "apiHash"
-> = {
-};
+> = {};
 
 describe(`${providerId} post tests`, function () {
   this.timeout(100000);
@@ -48,14 +52,16 @@ describe(`${providerId} post tests`, function () {
         connection
       );
 
+      const me = await api.getMe();
+
       handler.setConfig({
         postType: RedditPostType.UPVOTED,
         batchSize: 10,
-      })
+      });
 
       try {
         const syncPosition: SyncHandlerPosition = {
-          _id: `${providerId}-${handlerName}`,
+          _id: `${providerId}-${me.name}-${handlerName}`,
           providerId,
           handlerId: handler.getId(),
           accountId: provider.getAccountId(),
@@ -75,15 +81,25 @@ describe(`${providerId} post tests`, function () {
 
         throw err;
       }
+    });
+
+    it(`Can pass basic tests: ${otherHandlerName}`, async () => {
+      const { api, handler, provider } = await CommonTests.buildTestObjects(
+        providerId,
+        RedditUserPostHandler,
+        providerConfig,
+        connection
+      );
+
+      const me = await api.getMe();
 
       handler.setConfig({
-        postType: RedditPostType.CREATED,
         batchSize: 100,
       });
 
       try {
         const syncPosition: SyncHandlerPosition = {
-          _id: `${providerId}-${handlerName}`,
+          _id: `${providerId}-${me.name}-${handlerName}`,
           providerId,
           handlerId: handler.getId(),
           accountId: provider.getAccountId(),
