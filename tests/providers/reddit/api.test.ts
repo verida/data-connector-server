@@ -14,7 +14,9 @@ let api;
 const d = new Date();
 const twoMonthsAgo = d.setMonth(d.getMonth() - 2);
 
-describe("Reddit API test", async () => {
+describe("Reddit API test", async function () {
+  this.timeout(100000);
+
   before(async () => {
     connection = await CommonUtils.getConnection("reddit");
 
@@ -62,12 +64,13 @@ describe("Reddit API test", async () => {
     // Should fetch comments upvoted by a user
     const commentsByUser = await api.getComments(
       "upvoted",
+      1000,
       API_CONFIG.username
     );
     assert(commentsByUser.length > 0, "No comments found by user");
 
     // Should try to fetch comments upvoted by a random user and fail
-    const error = await api.getComments("upvoted", API_CONFIG.randomUsername);
+    const error = await api.getComments("upvoted", 1000, API_CONFIG.randomUsername);
     assert(error === undefined, "Fetched upvoted comments without authority");
 
     // Should fetch all interacted comments created by user
@@ -81,11 +84,11 @@ describe("Reddit API test", async () => {
     assert(posts.length > 0, "No posts found");
 
     // Should fetch posts saved by a user
-    const postsByUser = await api.getPosts("saved", API_CONFIG.username);
+    const postsByUser = await api.getPosts("saved", 1000, API_CONFIG.username);
     assert(postsByUser.length > 0, "No posts found by user");
 
     // Should try to fetch posts upvoted by a random user and fail
-    const error = await api.getPosts("upvoted", API_CONFIG.randomUsername);
+    const error = await api.getPosts("upvoted", 1000, API_CONFIG.randomUsername);
     assert(error === undefined, "Fetched upvoted posts without authority");
 
     // Should fetch all interacted posts created by user
