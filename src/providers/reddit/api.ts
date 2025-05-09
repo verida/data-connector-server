@@ -132,6 +132,7 @@ export class RedditApi {
     }
     let i = 0;
     while (terminationCriteriaMet) {
+      console.log(url, config);
       const resp = await action<{
         kind: EntityPrefixes | "Listing";
         data: Type | Listing;
@@ -346,11 +347,11 @@ export class RedditApi {
       show: "given",
     };
 
-    const url = `${URL}/user/${username}/submitted.json`;
     if (!username) {
       // Contrary to other object `name` field returns the username and not the "fullname"
       username = (await this.getMe()).name;
     }
+    const url = `${URL}/user/${username}/submitted.json`;
 
     try {
       const posts = await this._call<Post>(
@@ -387,6 +388,11 @@ export class RedditApi {
       show: "given",
     };
 
+    if (!username) {
+      // Contrary to other object `name` field returns the username and not the "fullname"
+      username = (await this.getMe()).name;
+    }
+
     let urls = [`${URL}/user/${username}/${type}.json`];
     if (!type) {
       urls = [
@@ -395,11 +401,6 @@ export class RedditApi {
         `${URL}/user/${username}/downvoted.json`,
         `${URL}/user/${username}/hidden.json`,
       ];
-    }
-
-    if (!username) {
-      // Contrary to other object `name` field returns the username and not the "fullname"
-      username = (await this.getMe()).name;
     }
 
     const posts = await Promise.all(
