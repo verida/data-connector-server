@@ -14,6 +14,9 @@ import {
   MessageConfig,
   PostConfig,
   CommentFullname,
+  MessageFullname,
+  SubredditFullname,
+  PostFullname,
 } from "./types";
 
 const URL = "https://oauth.reddit.com";
@@ -213,8 +216,8 @@ export class RedditApi {
   public async getMessages(
     type?: "inbox" | "unread" | "sent" | "private",
     limit: number = 50,
-    before?: CommentFullname,
-    after?: CommentFullname
+    before?: MessageFullname,
+    after?: MessageFullname
   ): Promise<(PrivateMessage | Message)[]> {
     let options: MessageConfig = {
       before,
@@ -270,8 +273,8 @@ export class RedditApi {
   public async getSubreddits(
     type: "contributor" | "moderator" | "subscriber",
     limit: number = 50,
-    before?: CommentFullname,
-    after?: CommentFullname
+    before?: SubredditFullname,
+    after?: SubredditFullname
   ): Promise<Subreddit[] | undefined> {
     let options: SubredditConfig = {
       after: after,
@@ -310,8 +313,8 @@ export class RedditApi {
     username?: string,
     limit: number = 50,
     sort: "new" = "new",
-    before?: CommentFullname,
-    after?: CommentFullname
+    before?: PostFullname,
+    after?: PostFullname
   ): Promise<Post[]> {
     let options: PostConfig = {
       before,
@@ -347,8 +350,8 @@ export class RedditApi {
     username?: string,
     limit: number = 50,
     sort: "new" = "new",
-    before?: CommentFullname,
-    after?: CommentFullname
+    before?: PostFullname,
+    after?: PostFullname
   ): Promise<Post[]> {
     let options: PostConfig = {
       before,
