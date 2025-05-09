@@ -11,10 +11,9 @@ import RedditMessageHandler from "../../../../src/providers/reddit/message";
 import BaseProvider from "../../../../src/providers/BaseProvider";
 import { CommonTests, GenericTestConfig } from "../../../common.tests";
 import {
-  SchemaSocialChatGroup,
-  SchemaSocialChatMessage,
-} from "../../../../src/schemas";
-import { RedditConfig } from "../../../../src/providers/reddit/types";
+  RedditConfig,
+  RedditMessageType,
+} from "../../../../src/providers/reddit/types";
 
 const providerId = "reddit";
 let network: NetworkInstance;
@@ -26,7 +25,7 @@ let providerConfig: Omit<
   RedditConfig,
   "sbtImage" | "label" | "apiId" | "apiHash"
 > = {
-  maxSyncLoops: 1,
+
 };
 
 // Tests:
@@ -56,13 +55,15 @@ describe(`${providerId} message tests`, function () {
         connection
       );
 
+      const me = await api.getMe();
+
       handler.setConfig({
         batchSize: 10,
-      })
+      });
 
       try {
         const syncPosition: SyncHandlerPosition = {
-          _id: `${providerId}-${handlerName}`,
+          _id: `${providerId}-${me.name}-${handlerName}`,
           providerId,
           handlerId: handler.getId(),
           accountId: provider.getAccountId(),
@@ -84,13 +85,13 @@ describe(`${providerId} message tests`, function () {
       }
 
       handler.setConfig({
-        messageType: "unread",
+        messageType: RedditMessageType.UNREAD,
         batchSize: 100,
       });
 
       try {
         const syncPosition: SyncHandlerPosition = {
-          _id: `${providerId}-${handlerName}`,
+          _id: `${providerId}-${me.name}-${handlerName}`,
           providerId,
           handlerId: handler.getId(),
           accountId: provider.getAccountId(),
@@ -99,7 +100,6 @@ describe(`${providerId} message tests`, function () {
 
         const response = await handler._sync(api, syncPosition);
         assert(response.results.length > 0, "No messages fetched");
-        console.log(response.results);
       } catch (err) {
         // ensure provider closes even if there's an error
         await provider.close();
