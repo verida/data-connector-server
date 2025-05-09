@@ -20,9 +20,11 @@ import {
 import { RedditApi } from "./api";
 import { SchemaComment } from "../../schemas";
 import { AccountCache } from "./accountCache";
-import InvalidTokenError from "../InvalidTokenError";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 const _ = require("lodash");
+
+const log4js = require("log4js");
+const logger = log4js.getLogger();
 
 const MAX_BATCH_SIZE = 1000;
 
@@ -101,7 +103,6 @@ export default class CommentHandler extends BaseSyncHandler {
           },
         ],
         defaultValue: [
-          RedditCommentType.CREATED,
           RedditCommentType.SAVED,
           RedditCommentType.UPVOTED,
           RedditCommentType.DOWNVOTED,
@@ -144,7 +145,6 @@ export default class CommentHandler extends BaseSyncHandler {
         currentRange.endId as CommentFullname
       );
 
-      console.log(latestResp)
       const latestResult = await this.buildResults(
         latestResp as [],
         currentRange.endId
@@ -191,7 +191,7 @@ export default class CommentHandler extends BaseSyncHandler {
         position: syncPosition,
       };
     } catch (err: any) {
-      console.log(err.message);
+      logger.error(err.message);
       throw err;
     }
   }

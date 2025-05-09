@@ -36,11 +36,11 @@ export default class UserCommentHandler extends BaseSyncHandler {
   protected config: RedditConfig;
 
   public getName(): string {
-    return "comment";
+    return "userComment";
   }
 
   public getLabel(): string {
-    return "Comments";
+    return "User Comments";
   }
 
   public getSchemaUri(): string {

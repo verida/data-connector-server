@@ -21,7 +21,7 @@ let network: NetworkInstance;
 let connection: Connection;
 let provider: BaseProvider;
 let handlerName = "comment";
-let otherHandlerName = "user-comment";
+let otherHandlerName = "userComment";
 let testConfig: GenericTestConfig;
 let providerConfig: Omit<
   RedditConfig,
@@ -70,7 +70,6 @@ describe(`${providerId} comment tests`, function () {
 
         // Batch 1
         let response = await handler._sync(api, syncPosition);
-        console.log(response.results.length);
         assert(
           response.results.length === 10,
           "Not batch amount comments fetched"
