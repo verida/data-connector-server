@@ -16,6 +16,7 @@ import {
   MessageFullname,
   SubredditFullname,
   PostFullname,
+  RedditCommentType,
 } from "./types";
 
 const log4js = require("log4js");
@@ -132,7 +133,6 @@ export class RedditApi {
     }
     let i = 0;
     while (terminationCriteriaMet) {
-      console.log(url, config);
       const resp = await action<{
         kind: EntityPrefixes | "Listing";
         data: Type | Listing;
@@ -438,8 +438,8 @@ export class RedditApi {
    */
   public async getCommentsCreatedByUser(
     username?: string,
+    maxFetch: number = 1000,
     backdate?: number | Date,
-    maxFetch?: number,
     after?: CommentFullname,
     before?: CommentFullname,
     limit?: number,
@@ -489,7 +489,7 @@ export class RedditApi {
    * @returns
    */
   async getComments(
-    type?: "saved" | "upvoted" | "downvoted" | "hidden",
+    type?: RedditCommentType,
     maxFetch: number = 1000,
     username?: string,
     backdate?: number | Date,

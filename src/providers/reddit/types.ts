@@ -1,9 +1,9 @@
 import { BaseHandlerConfig } from "../../interfaces";
 
-export enum RedditChatType {
-  INBOX = "chatTypeInbox",
-  UNREAD = "chatTypeUnread",
-  SENT = "chatTypeSent",
+export enum RedditMessageType {
+  INBOX = "inbox",
+  UNREAD = "unread",
+  SENT = "sent",
 }
 
 export enum SubredditType {
@@ -13,6 +13,14 @@ export enum SubredditType {
 }
 
 export enum RedditPostType {
+  CREATED = "created",
+  SAVED = "saved",
+  UPVOTED = "upvoted",
+  DOWNVOTED = "downvoted",
+  HIDDEN = "hidden",
+}
+
+export enum RedditCommentType {
   CREATED = "created",
   SAVED = "saved",
   UPVOTED = "upvoted",
@@ -57,6 +65,10 @@ export interface RedditConfig extends BaseHandlerConfig {
   // Maximum number of messages to process in a given batch
   messageBatchSize: number;
   useDbPos: boolean;
+  messageType: RedditMessageType;
+  postType: RedditPostType;
+  subredditType: SubredditType;
+  commentType: RedditCommentType;
 }
 
 export type RedditBase = {

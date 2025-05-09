@@ -128,8 +128,6 @@ export default class MessageHandler extends BaseSyncHandler {
         );
       }
 
-      // TODO Basically we receive a syncPosition with a startId and fetch entites until we have config.batchSize
-
       const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
 
       let currentRange = rangeTracker.nextRange();
@@ -137,7 +135,7 @@ export default class MessageHandler extends BaseSyncHandler {
       const me = await api.getMe();
 
       const latestResp = await api.getMessages(
-        "private",
+        this.config.messageType ?? "private",
         this.config.batchSize,
         undefined,
         currentRange.endId as MessageFullname
@@ -238,8 +236,8 @@ export default class MessageHandler extends BaseSyncHandler {
         messageText: message.body,
         messageHTML: message.body_html,
         fromId: message.author,
-        fromHandle: from.id,
-        fromName: from.name,
+        fromHandle: from?.id,
+        fromName: from?.name,
         sentAt: new Date(message.created_utc).toDateString(),
         name: message.subject,
         sourceApplication: "https://reddit.com",

@@ -174,6 +174,5 @@ export default class RedditProvider extends Base {
 }
 
 // TODO
-// Implement sync
-// Test handles errors appropriatelly
-// Schemas
+// Schemas TODO Create in official repo too
+// Refresh token
