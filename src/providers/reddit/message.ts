@@ -11,11 +11,16 @@ import {
   SyncResponse,
 } from "../../interfaces";
 import { ConnectionOptionType } from "../../interfaces";
-import { Message, RedditChatType, RedditConfig } from "./types";
+import {
+  Message,
+  MessageFullname,
+  RedditMessageType,
+  RedditConfig,
+  Account,
+} from "./types";
 import { RedditApi } from "./api";
 import { SchemaChatMessageType, SchemaSocialChatMessage } from "../../schemas";
-import { UsersCache } from "./usersCache";
-import InvalidTokenError from "../InvalidTokenError";
+import { AccountCache } from "./accountCache";
 import { ItemsRangeTracker } from "../../helpers/itemsRangeTracker";
 const _ = require("lodash");
 
@@ -44,7 +49,7 @@ export default class MessageHandler extends BaseSyncHandler {
   }
 
   public getProviderApplicationUrl(): string {
-    return "https://www.reddit.com/message/messages";
+    return "https://www.reddit.com/";
   }
 
   public getOptions(): ProviderHandlerOption[] {
@@ -74,28 +79,28 @@ export default class MessageHandler extends BaseSyncHandler {
         defaultValue: "3-months",
       },
       {
-        id: "chatTypes",
-        label: "Chat types",
+        id: "messageTypes",
+        label: "Message types",
         type: ConnectionOptionType.ENUM_MULTI,
         enumOptions: [
           {
             label: "Inbox",
-            value: RedditChatType.INBOX,
+            value: RedditMessageType.INBOX,
           },
           {
             label: "Unread",
-            value: RedditChatType.UNREAD,
+            value: RedditMessageType.UNREAD,
           },
           {
             label: "Sent",
-            value: RedditChatType.SENT,
+            value: RedditMessageType.SENT,
           },
         ],
         // Exclude super groups by default
         defaultValue: [
-          RedditChatType.INBOX,
-          RedditChatType.UNREAD,
-          RedditChatType.SENT,
+          RedditMessageType.INBOX,
+          RedditMessageType.UNREAD,
+          RedditMessageType.SENT,
         ].join(","),
       },
     ];
@@ -115,7 +120,7 @@ export default class MessageHandler extends BaseSyncHandler {
     try {
       let messages: SchemaSocialChatMessage[] = [];
       let messageHistory: SchemaSocialChatMessage[] = [];
-      const userCache = new UsersCache(api);
+      const accountCache = new AccountCache(api);
 
       if (this.config.batchSize > MAX_BATCH_SIZE) {
         throw new Error(
@@ -123,31 +128,37 @@ export default class MessageHandler extends BaseSyncHandler {
         );
       }
 
+      // TODO Basically we receive a syncPosition with a startId and fetch entites until we have config.batchSize
+
       const rangeTracker = new ItemsRangeTracker(syncPosition.thisRef);
 
       let currentRange = rangeTracker.nextRange();
 
+      const me = await api.getMe();
+
       const latestResp = await api.getMessages(
-        "private"
-        // , this.config.batchSize
+        "private",
+        this.config.batchSize,
+        undefined,
+        currentRange.endId as MessageFullname
       );
       const latestResult = await this.buildResults(
-        api,
-        userCache,
+        accountCache,
         latestResp as [],
-        "inbox",
-        currentRange.endId
+        me,
+        this.config.messageType ?? "private",
+        currentRange.startId
       );
 
       messages = latestResult.items;
-      let nextPageToken = _.get(latestResp, "data.nextPageToken");
+      let nextPageToken = latestResp[latestResp.length - 1].name;
 
       // Update range if any chats have been fetched
       if (messages.length) {
         rangeTracker.completedRange(
           {
-            startId: messages[0].sourceId,
-            endId: nextPageToken,
+            endId: messages[0].sourceId,
+            startId: nextPageToken,
           },
           latestResult.breakHit === SyncItemsBreak.ID
         );
@@ -162,9 +173,6 @@ export default class MessageHandler extends BaseSyncHandler {
       }
 
       currentRange = rangeTracker.nextRange();
-
-      // TODO
-      // if (messages.length != this.config.batchSize && currentRange.startId) {
 
       if (!messages.length) {
         syncPosition.syncMessage = `Stopping. No results found.`;
@@ -198,16 +206,16 @@ export default class MessageHandler extends BaseSyncHandler {
    * @returns
    */
   async buildResults(
-    api: RedditApi,
-    userCache: UsersCache,
+    accountCache: AccountCache,
     latestResp: Message[],
+    me: Account,
     messageType: "inbox" | "unread" | "sent" | "private",
     endId?: string
   ): Promise<SyncMessagesResult> {
     const results: SchemaSocialChatMessage[] = [];
     let breakHit: SyncItemsBreak;
 
-    for (const message of await latestResp) {
+    for (const message of latestResp) {
       if (endId && message.name === endId) {
         const logEvent: SyncProviderLogEvent = {
           level: SyncProviderLogLevel.DEBUG,
@@ -217,30 +225,27 @@ export default class MessageHandler extends BaseSyncHandler {
         breakHit = SyncItemsBreak.ID;
         break;
       }
-      // Get the "from" user
-      // If the message is not "private" there is no sender, it is more like a notification
-      const from = await userCache.getUser(message.author);
+
+      // Get the sender account
+      const from = await accountCache.getAccount(message.author);
+
       results.push({
-        _id: message.name,
-        // NOTE This is
-        groupId: "",
-        // TODO These
-        groupName: message.subject,
-        type:
-          messageType === "inbox" ||
-          messageType === "unread" ||
-          messageType === "private"
-            ? SchemaChatMessageType.RECEIVE
-            : SchemaChatMessageType.SEND,
+        // TODO
+        _id: `reddit-${me.name}-${message.name}`,
+        groupId: `private-${from}`,
+        groupName: `private-${from}`,
+        type: SchemaChatMessageType.RECEIVE,
         messageText: message.body,
         messageHTML: message.body_html,
-        // TODO This is not the id only the username
         fromId: message.author,
-        // NOTE Handle and username is the same
         fromHandle: from.id,
         fromName: from.name,
         sentAt: new Date(message.created_utc).toDateString(),
         name: message.subject,
+        sourceApplication: "https://reddit.com",
+        sourceId: message.name,
+        sourceData: message,
+        insertedAt: new Date(message.created_utc).toString(),
       });
     }
 

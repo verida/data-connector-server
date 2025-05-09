@@ -27,12 +27,6 @@ let providerConfig: Omit<
   "sbtImage" | "label" | "apiId" | "apiHash"
 > = {
   maxSyncLoops: 1,
-  groupLimit: 2,
-  messageMaxAgeDays: 7,
-  messageBatchSize: 20,
-  messagesPerGroupLimit: 10,
-  maxGroupSize: 100,
-  useDbPos: false,
 };
 
 // Tests:
@@ -62,6 +56,10 @@ describe(`${providerId} message tests`, function () {
         connection
       );
 
+      handler.setConfig({
+        batchSize: 10,
+      })
+
       try {
         const syncPosition: SyncHandlerPosition = {
           _id: `${providerId}-${handlerName}`,
@@ -72,8 +70,36 @@ describe(`${providerId} message tests`, function () {
         };
 
         // Batch 1
+        let response = await handler._sync(api, syncPosition);
+        assert(response.results.length > 0, "No messages fetched");
+
+        // Batch 2
+        response = await handler._sync(api, syncPosition);
+        assert(response.results.length > 0, "No messages fetched");
+      } catch (err) {
+        // ensure provider closes even if there's an error
+        await provider.close();
+
+        throw err;
+      }
+
+      handler.setConfig({
+        messageType: "unread",
+        batchSize: 100,
+      });
+
+      try {
+        const syncPosition: SyncHandlerPosition = {
+          _id: `${providerId}-${handlerName}`,
+          providerId,
+          handlerId: handler.getId(),
+          accountId: provider.getAccountId(),
+          status: SyncHandlerStatus.ENABLED,
+        };
+
         const response = await handler._sync(api, syncPosition);
         assert(response.results.length > 0, "No messages fetched");
+        console.log(response.results);
       } catch (err) {
         // ensure provider closes even if there's an error
         await provider.close();
