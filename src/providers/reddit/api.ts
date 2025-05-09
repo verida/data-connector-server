@@ -102,10 +102,13 @@ export class RedditApi {
     method: "GET" | "POST" | "PUT",
     url: `${string}.json`,
     config?: SubredditConfig | CommentConfig | MessageConfig | PostConfig,
+    backdate?: number | Date,
     customInterceptor?: any[]
   ): Promise<Type[] | undefined> {
     let terminationCriteriaMet = true;
     let data: Type[] = [];
+
+    backdate = backdate ? new Date(backdate) : threeMonthsAgo;
 
     let myInterceptor;
     if (customInterceptor) {
@@ -158,7 +161,7 @@ export class RedditApi {
             | Message
         ).created_utc *
           1000 >
-          threeMonthsAgo;
+          +backdate;
 
       // Adjust pagination params
       config.after = list.after;
@@ -216,8 +219,9 @@ export class RedditApi {
   public async getMessages(
     type?: "inbox" | "unread" | "sent" | "private",
     limit: number = 50,
+    backdate?: number | Date,
+    after?: MessageFullname,
     before?: MessageFullname,
-    after?: MessageFullname
   ): Promise<(PrivateMessage | Message)[]> {
     let options: MessageConfig = {
       before,
@@ -244,7 +248,8 @@ export class RedditApi {
           const messages = await this._call<Message>(
             "GET",
             `${URL}${endpoint}`,
-            options
+            options,
+            backdate
           );
 
           if (type && type === "private") {
@@ -273,8 +278,9 @@ export class RedditApi {
   public async getSubreddits(
     type: "contributor" | "moderator" | "subscriber",
     limit: number = 50,
+    backdate?: number |Date,
+    after?: SubredditFullname,
     before?: SubredditFullname,
-    after?: SubredditFullname
   ): Promise<Subreddit[] | undefined> {
     let options: SubredditConfig = {
       after: after,
@@ -295,7 +301,8 @@ export class RedditApi {
           return await this._call<Subreddit>(
             "GET",
             `${URL}${endpoint}` as `${string}.json`,
-            options
+            options,
+            backdate
           );
         } catch (error) {
           console.log("[Subreddit] " + error.message);
@@ -312,9 +319,10 @@ export class RedditApi {
   async getPostsCreatedByUser(
     username?: string,
     limit: number = 50,
-    sort: "new" = "new",
+    backdate?: number |Date,
+    after?: PostFullname,
     before?: PostFullname,
-    after?: PostFullname
+    sort: "new" = "new",
   ): Promise<Post[]> {
     let options: PostConfig = {
       before,
@@ -337,7 +345,8 @@ export class RedditApi {
       const posts = await this._call<Post>(
         "GET",
         url as `${string}.json`,
-        options
+        options,
+        backdate
       );
       return posts;
     } catch (error) {
@@ -349,9 +358,10 @@ export class RedditApi {
     type: "saved" | "upvoted" | "downvoted" | "hidden",
     username?: string,
     limit: number = 50,
-    sort: "new" = "new",
+    backdate?: number |Date,
+    after?: PostFullname,
     before?: PostFullname,
-    after?: PostFullname
+    sort: "new" = "new",
   ): Promise<Post[]> {
     let options: PostConfig = {
       before,
@@ -385,7 +395,8 @@ export class RedditApi {
           return await this._call<Post>(
             "GET",
             url as `${string}.json`,
-            options
+            options,
+            backdate
           );
         } catch (error) {
           console.log("[Post] " + error.message);
@@ -413,9 +424,10 @@ export class RedditApi {
   public async getCommentsCreatedByUser(
     username?: string,
     limit: number = 50,
-    sort: "new" = "new",
+    backdate?: number |Date,
+    after?: CommentFullname,
     before?: CommentFullname,
-    after?: CommentFullname
+    sort: "new" = "new",
   ): Promise<Comment[]> {
     let options: CommentConfig = {
       before,
@@ -439,7 +451,8 @@ export class RedditApi {
       const comments = await this._call<Comment>(
         "GET",
         url as `${string}.json`,
-        options
+        options,
+        backdate
       );
       return comments;
     } catch (error) {
@@ -461,10 +474,11 @@ export class RedditApi {
   async getComments(
     type?: "saved" | "upvoted" | "downvoted" | "hidden",
     username?: string,
+    backdate?: number |Date,
+    after?: CommentFullname,
+    before?: CommentFullname,
     limit: number = 50,
     sort: "new" = "new",
-    before?: CommentFullname,
-    after?: CommentFullname
   ) {
     let options: CommentConfig = {
       before,
@@ -497,7 +511,8 @@ export class RedditApi {
           const comments = await this._call<Comment>(
             "GET",
             url as `${string}.json`,
-            options
+            options,
+            backdate
           );
           return comments;
         } catch (error) {
