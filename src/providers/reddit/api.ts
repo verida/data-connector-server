@@ -3,7 +3,6 @@ import {
   Comment,
   EntityPrefixes,
   Account,
-  PaginationParams,
   Subreddit,
   Message,
   PrivateMessage,
@@ -18,6 +17,9 @@ import {
   SubredditFullname,
   PostFullname,
 } from "./types";
+
+const log4js = require("log4js");
+const logger = log4js.getLogger();
 
 const URL = "https://oauth.reddit.com";
 
@@ -78,8 +80,8 @@ export class RedditApi {
       // Add a response interceptor
       this.client.interceptors.response.use(...responseInterceptor);
     } catch (err: any) {
-      console.error(`Reddit library error: ${err.message}`);
-      throw new Error(`Internal error with Telegram library`);
+      logger.erroror(`Reddit library error: ${err.message}`);
+      throw new Error(`Internal error with Reddit library`);
     }
   }
 
@@ -101,6 +103,7 @@ export class RedditApi {
   private async _call<Type>(
     method: "GET" | "POST" | "PUT",
     url: `${string}.json`,
+    limit: number = 1000,
     config?: SubredditConfig | CommentConfig | MessageConfig | PostConfig,
     backdate?: number | Date,
     customInterceptor?: any[]
@@ -149,8 +152,11 @@ export class RedditApi {
         ...list.children.map((withPrefix) => withPrefix.data as Type)
       );
 
+      i += list.children.length;
+
       // Check if termination criteria met, which includes default criteria e.g. Cretead.created_utc within last 3 months and custom termination criteria
       terminationCriteriaMet =
+        i < limit &&
         list.after !== null &&
         (
           list.children[list.children.length - 1].data as
@@ -170,7 +176,7 @@ export class RedditApi {
     // Remove custom interceptor if used
     if (myInterceptor) this.client.interceptors.request.eject(myInterceptor);
 
-    return data;
+    return data.slice(0, limit);
   }
 
   /**
@@ -199,7 +205,7 @@ export class RedditApi {
 
       return user[0];
     } catch (error) {
-      console.log(error.message);
+      logger.error("[User] " + error.message);
     }
   }
 
@@ -218,10 +224,11 @@ export class RedditApi {
    */
   public async getMessages(
     type?: "inbox" | "unread" | "sent" | "private",
-    limit: number = 50,
+    maxFetch: number = 50,
     backdate?: number | Date,
     after?: MessageFullname,
     before?: MessageFullname,
+    limit?: number
   ): Promise<(PrivateMessage | Message)[]> {
     let options: MessageConfig = {
       before,
@@ -248,6 +255,7 @@ export class RedditApi {
           const messages = await this._call<Message>(
             "GET",
             `${URL}${endpoint}`,
+            maxFetch,
             options,
             backdate
           );
@@ -257,7 +265,7 @@ export class RedditApi {
           }
           return messages as Message[];
         } catch (error) {
-          console.log("[Message] " + error.message);
+          logger.error("[Message] " + error.message);
           return undefined;
         }
       })
@@ -277,10 +285,11 @@ export class RedditApi {
    */
   public async getSubreddits(
     type: "contributor" | "moderator" | "subscriber",
-    limit: number = 50,
-    backdate?: number |Date,
+    maxFetch: number,
+    backdate?: number | Date,
     after?: SubredditFullname,
     before?: SubredditFullname,
+    limit: number = 50
   ): Promise<Subreddit[] | undefined> {
     let options: SubredditConfig = {
       after: after,
@@ -301,11 +310,12 @@ export class RedditApi {
           return await this._call<Subreddit>(
             "GET",
             `${URL}${endpoint}` as `${string}.json`,
+            maxFetch,
             options,
             backdate
           );
         } catch (error) {
-          console.log("[Subreddit] " + error.message);
+          logger.error("[Subreddit] " + error.message);
           return undefined;
         }
       })
@@ -318,11 +328,12 @@ export class RedditApi {
 
   async getPostsCreatedByUser(
     username?: string,
-    limit: number = 50,
-    backdate?: number |Date,
+    maxFetch: number = 1000,
+    backdate?: number | Date,
     after?: PostFullname,
     before?: PostFullname,
-    sort: "new" = "new",
+    limit: number = 50,
+    sort: "new" = "new"
   ): Promise<Post[]> {
     let options: PostConfig = {
       before,
@@ -345,23 +356,25 @@ export class RedditApi {
       const posts = await this._call<Post>(
         "GET",
         url as `${string}.json`,
+        maxFetch,
         options,
         backdate
       );
       return posts;
     } catch (error) {
-      console.log(error.message);
+      logger.error("[Post] " + error.message);
     }
   }
 
   async getPosts(
     type: "saved" | "upvoted" | "downvoted" | "hidden",
+    maxFetch: number = 1000,
     username?: string,
-    limit: number = 50,
-    backdate?: number |Date,
+    backdate?: number | Date,
     after?: PostFullname,
     before?: PostFullname,
-    sort: "new" = "new",
+    limit: number = 50,
+    sort: "new" = "new"
   ): Promise<Post[]> {
     let options: PostConfig = {
       before,
@@ -395,11 +408,12 @@ export class RedditApi {
           return await this._call<Post>(
             "GET",
             url as `${string}.json`,
+            maxFetch,
             options,
             backdate
           );
         } catch (error) {
-          console.log("[Post] " + error.message);
+          logger.error("[Post] " + error.message);
           return undefined;
         }
       })
@@ -423,11 +437,12 @@ export class RedditApi {
    */
   public async getCommentsCreatedByUser(
     username?: string,
-    limit: number = 50,
-    backdate?: number |Date,
+    backdate?: number | Date,
+    maxFetch?: number,
     after?: CommentFullname,
     before?: CommentFullname,
-    sort: "new" = "new",
+    limit?: number,
+    sort: "new" = "new"
   ): Promise<Comment[]> {
     let options: CommentConfig = {
       before,
@@ -451,12 +466,13 @@ export class RedditApi {
       const comments = await this._call<Comment>(
         "GET",
         url as `${string}.json`,
+        maxFetch,
         options,
         backdate
       );
       return comments;
     } catch (error) {
-      console.log(error.message);
+      logger.error("[Comment] " + error.message);
     }
   }
 
@@ -473,12 +489,13 @@ export class RedditApi {
    */
   async getComments(
     type?: "saved" | "upvoted" | "downvoted" | "hidden",
+    maxFetch: number = 1000,
     username?: string,
-    backdate?: number |Date,
+    backdate?: number | Date,
     after?: CommentFullname,
     before?: CommentFullname,
     limit: number = 50,
-    sort: "new" = "new",
+    sort: "new" = "new"
   ) {
     let options: CommentConfig = {
       before,
@@ -511,12 +528,13 @@ export class RedditApi {
           const comments = await this._call<Comment>(
             "GET",
             url as `${string}.json`,
+            maxFetch,
             options,
             backdate
           );
           return comments;
         } catch (error) {
-          console.log("[Comment] " + error.message);
+          logger.error("[Comment] " + error.message);
           return undefined;
         }
       })
