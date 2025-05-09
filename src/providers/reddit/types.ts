@@ -12,9 +12,19 @@ export enum SubredditType {
   SUBSCRIBER = "subscriber",
 }
 
+export enum RedditPostType {
+  CREATED = "created",
+  SAVED = "saved",
+  UPVOTED = "upvoted",
+  DOWNVOTED = "downvoted",
+  HIDDEN = "hidden",
+}
+
 type CommentPrefix = "t1";
 type AccountPrefix = "t2";
+// In the "docs" a post is called a link
 type LinkPrefix = "t3";
+type PostPrefix = LinkPrefix;
 type MessagePrefix = "t4";
 type SubredditPrefix = "t5";
 type AwardPrefix = "t6";
@@ -26,6 +36,14 @@ export type EntityPrefixes =
   | MessagePrefix
   | SubredditPrefix
   | AwardPrefix;
+
+export type CommentFullname = `${CommentPrefix}_${string}`;
+export type AccountFullname = `${AccountPrefix}_${string}`;
+export type LinkFullname = `${LinkPrefix}_${string}`;
+export type PostFullname = `${PostPrefix}_${string}`;
+export type MessageFullname = `${MessagePrefix}_${string}`;
+export type SubredditFullname = `${SubredditPrefix}_${string}`;
+export type AwardFullname = `${AwardPrefix}_${string}`;
 
 // See here: https://www.reddit.com/dev/api/#fullnames
 export type EntityFullname = `${EntityPrefixes}_${string}`;
@@ -227,26 +245,25 @@ export type BaseListingConfig = {
   // the maximum number of items desired (default: 25, maximum: 100)
   limit?: number;
   // (optional) expand subreddits
-  show?: "all";
+  show?: "all" | "given";
   sr_detail?: boolean;
 };
 
 export type SubredditConfig = BaseListingConfig;
 
 export type CommentConfig = {
-  context: number;
-  show: "given";
+  context?: number;
   sort: "hot" | "new" | "top" | "controversial";
-  t: "hour" | " day" | " week" | " month" | " year" | " all";
+  t: "hour" | "day" | "week" | "month" | "year" | "all";
   type: "comments";
   username: string;
 } & BaseListingConfig;
 
 export type PostConfig = {
-  context: number;
+  context?: number;
   show: "given";
   sort: "hot" | "new" | "top" | "controversial";
-  t: "hour" | " day" | " week" | " month" | " year" | " all";
+  t: "hour" | "day" | "week" | "month" | "year" | "all";
   type: "posts";
   username: string;
 } & BaseListingConfig;
